@@ -1,0 +1,134 @@
+/* ==========================================================================
+   Navbar Stylesheet (Pure CSS)
+   ========================================================================== */
+
+.app-navbar {
+  background-color: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.app-navbar-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 16px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.navbar-logo-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+}
+
+.navbar-logo-img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
+
+.navbar-logo-brand {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  line-height: 1;
+}
+
+.navbar-brand-title {
+  display: flex;
+  align-items: center;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.4px;
+}
+
+.navbar-brand-tech {
+  color: #111827;
+}
+
+.navbar-brand-share {
+  color: #67BEC3;
+  margin-left: 3px;
+}
+
+.navbar-brand-sub {
+  font-size: 10px;
+  color: #6b7280;
+  font-weight: 500;
+  letter-spacing: -0.2px;
+  margin-top: 2px;
+  white-space: nowrap;
+}
+
+.navbar-links {
+  display: none;
+  align-items: center;
+  gap: 24px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+}
+
+@media (min-width: 768px) {
+  .navbar-links {
+    display: flex;
+  }
+}
+
+.navbar-link {
+  transition: color 0.2s;
+}
+.navbar-link:hover {
+  color: #67BEC3;
+}
+
+.navbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.navbar-btn-login {
+  font-size: 14px;
+  padding: 8px 16px;
+  color: #374151;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+.navbar-btn-login:hover {
+  color: #67BEC3;
+}
+
+.navbar-btn-register {
+  font-size: 14px;
+  padding: 8px 16px;
+  background-color: #67BEC3;
+  color: #ffffff;
+  border-radius: 8px;
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: background-color 0.2s;
+}
+.navbar-btn-register:hover {
+  background-color: #4CA6AC;
+}
+
+.navbar-btn-logout {
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  color: #4b5563;
+  transition: background-color 0.2s;
+}
+.navbar-btn-logout:hover {
+  background-color: #f3f4f6;
+}
+
