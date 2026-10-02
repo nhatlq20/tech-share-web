@@ -1,0 +1,16 @@
+/* ==========================================================================
+   PublicLayout Stylesheet (Pure CSS)
+   ========================================================================== */
+
+.public-layout-root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-page);
+  color: var(--text-main);
+}
+
+.public-layout-main {
+  flex: 1;
+}
+

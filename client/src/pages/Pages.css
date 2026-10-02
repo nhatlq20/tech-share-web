@@ -1,0 +1,69 @@
+/* ==========================================================================
+   Pages Stylesheet (Pure CSS for Secondary Pages)
+   ========================================================================== */
+
+.page-container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 32px 16px;
+}
+
+.page-card-sm {
+  max-width: 480px;
+  margin: 48px auto;
+  padding: 28px;
+  background-color: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e5e7eb;
+}
+
+.page-header-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 8px;
+}
+
+.page-header-sub {
+  font-size: 14px;
+  color: #6b7280;
+  margin-bottom: 24px;
+}
+
+.page-placeholder-box {
+  border: 2px dashed #cbd5e1;
+  border-radius: 12px;
+  padding: 32px 20px;
+  text-align: center;
+  color: #64748b;
+  background-color: #f8fafc;
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+
+.page-link-primary {
+  color: #67BEC3;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.page-link-primary:hover {
+  color: #4CA6AC;
+  text-decoration: underline;
+}
+
+.page-btn-primary {
+  display: inline-block;
+  padding: 10px 20px;
+  background-color: #67BEC3;
+  color: #ffffff;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+.page-btn-primary:hover {
+  background-color: #4CA6AC;
+}
+
