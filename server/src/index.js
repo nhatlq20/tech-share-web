@@ -54,11 +54,11 @@ app.use(errorHandler);
 
 // Start server
 const startServer = async () => {
-  // Kết nối MongoDB nếu có biến môi trường MONGO_URI
-  if (process.env.MONGO_URI) {
+  const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI;
+  if (mongoUri) {
     await connectDB();
   } else {
-    console.log('⚠️ MONGO_URI chưa được cấu hình trong .env, server chạy ở chế độ standalone.');
+    console.log('⚠️ MONGODB_URI chưa được cấu hình trong .env, server chạy ở chế độ standalone.');
   }
 
   app.listen(PORT, () => {
