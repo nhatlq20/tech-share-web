@@ -6,6 +6,8 @@ import {
   X,
 } from 'lucide-react';
 import { UserItem } from '../../types/admin';
+import { COLORS, PRIMARY } from '../../constants/colors';
+import { STRINGS } from '../../constants';
 import { AdminUsersTable } from './AdminUsersTable';
 import './AdminWorkspace.css';
 
@@ -65,8 +67,8 @@ export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({
       {/* 1. Header & Search Filters */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
         <div>
-          <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#0F172A', letterSpacing: '-0.02em', margin: 0 }}>
-            Quản lý Người dùng & Tín nhiệm
+          <h1 style={{ fontSize: '24px', fontWeight: 800, color: COLORS.neutral[900], letterSpacing: '-0.02em', margin: 0 }}>
+            {STRINGS.admin.users.title}
           </h1>
         </div>
 
@@ -74,10 +76,10 @@ export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
           {/* Search Box */}
           <div className="admin-search-pill" style={{ width: '280px' }}>
-            <Search size={16} style={{ color: '#67BEC3' }} />
+            <Search size={16} style={{ color: PRIMARY }} />
             <input
               type="text"
-              placeholder="Tìm theo Tên, Email, SĐT..."
+              placeholder={STRINGS.admin.users.searchPlaceholder}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -98,10 +100,10 @@ export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({
               outline: 'none',
             }}
           >
-            <option value="all">Tất cả vai trò</option>
-            <option value="admin">Quản trị viên (Admin)</option>
-            <option value="owner">Chủ thiết bị (Owner)</option>
-            <option value="renter">Khách thuê (Renter)</option>
+            <option value="all">{STRINGS.admin.users.roles.all}</option>
+            <option value="admin">{STRINGS.admin.users.roles.admin}</option>
+            <option value="owner">{STRINGS.admin.users.roles.owner}</option>
+            <option value="renter">{STRINGS.admin.users.roles.renter}</option>
           </select>
 
           {/* Status Filter */}
@@ -187,13 +189,13 @@ export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({
           <div className="admin-modal-card" style={{ maxWidth: '520px' }} onClick={(e) => e.stopPropagation()}>
             <div className="admin-modal-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Wallet size={20} style={{ color: '#67BEC3' }} />
+                <Wallet size={20} style={{ color: PRIMARY }} />
                 <h3 className="admin-modal-title">Hồ sơ Tài chính & Tín nhiệm Escrow</h3>
               </div>
               <button
                 type="button"
                 onClick={() => setSelectedUserForWallet(null)}
-                style={{ cursor: 'pointer', color: '#94A3B8', border: 'none', background: 'none' }}
+                style={{ cursor: 'pointer', color: COLORS.neutral[400], border: 'none', background: 'none' }}
               >
                 <X size={18} />
               </button>
@@ -203,13 +205,13 @@ export const AdminUsersTab: React.FC<AdminUsersTabProps> = ({
               <img
                 src={selectedUserForWallet.avatar}
                 alt={selectedUserForWallet.name}
-                style={{ width: '56px', height: '56px', borderRadius: '50%', border: '2px solid #67BEC3' }}
+                style={{ width: '56px', height: '56px', borderRadius: '50%', border: `2px solid ${PRIMARY}` }}
               />
               <div>
-                <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: '#0F172A' }}>
+                <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: COLORS.neutral[900] }}>
                   {selectedUserForWallet.name}
                 </h4>
-                <div style={{ fontSize: '12.5px', color: '#64748B', marginTop: '2px' }}>
+                <div style={{ fontSize: '12.5px', color: COLORS.neutral[500], marginTop: '2px' }}>
                   {selectedUserForWallet.email} • {selectedUserForWallet.phone}
                 </div>
               </div>

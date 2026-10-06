@@ -1,0 +1,228 @@
+/**
+ * TechShare Design System - UI Strings Dictionary
+ * 
+ * QUY CHUẨN CHỐNG HARDCODE (NO HARDCODING RULE):
+ * Toàn bộ chuỗi văn bản (Tiếng Việt/Tiếng Anh), nhãn nút, tiêu đề modal,
+ * thông báo lỗi, gợi ý placeholder được tập trung tại đây.
+ */
+
+export const STRINGS = {
+  // Chuỗi dùng chung (Common)
+  common: {
+    loading: 'Đang tải...',
+    processing: 'Đang xử lý...',
+    refresh: 'Làm mới',
+    refreshing: 'Đang làm mới...',
+    search: 'Tìm kiếm',
+    close: 'Đóng',
+    confirm: 'Xác nhận',
+    cancel: 'Hủy bỏ',
+    delete: 'Xóa',
+    edit: 'Chỉnh sửa',
+    save: 'Lưu thay đổi',
+    viewDetails: 'Chi tiết',
+    actions: 'Hành động',
+    status: 'Trạng thái',
+    all: 'Tất cả',
+    emptyList: 'Danh sách rỗng',
+    notFound: 'Không tìm thấy dữ liệu phù hợp',
+    phone: 'Số điện thoại',
+    email: 'Email',
+    address: 'Địa chỉ',
+    date: 'Ngày',
+    day: 'ngày',
+    vnd: 'đ',
+  },
+
+  // Phân hệ Admin Dashboard
+  admin: {
+    dashboard: {
+      brandTitle: 'TechShare Hub',
+      brandSubtitle: 'Quản trị hệ thống',
+      searchPlaceholder: 'Tìm kiếm nhanh đơn hàng, người dùng, sản phẩm...',
+      atlasSynced: 'Đã đồng bộ Atlas',
+      justNow: 'Vừa xong',
+      adminRole: 'System Admin',
+      adminName: 'Trần Nhật',
+      overviewTab: 'Tổng quan hệ thống',
+      devicesTab: 'Kiểm duyệt thiết bị',
+      usersTab: 'Người dùng & Tín nhiệm',
+      ekycTab: 'Xét duyệt eKYC',
+      settingsTab: 'Cài đặt hệ thống',
+    },
+
+    overview: {
+      title: 'Tổng quan Hệ thống TechShare',
+      subtitle: 'Dữ liệu thời gian thực được đồng bộ trực tiếp từ MongoDB Atlas',
+      totalRevenue: 'Tổng doanh thu sàn',
+      activeOrders: 'Đơn thuê hoạt động',
+      totalDevices: 'Tổng thiết bị trên sàn',
+      activeUsers: 'Người dùng đang hoạt động',
+      pendingEkyc: 'Hồ sơ eKYC chờ duyệt',
+      revenueChartTitle: 'Biến động Doanh thu & Giao dịch',
+      timeRanges: {
+        '7d': '7 ngày qua',
+        month: 'Tháng này',
+        year: 'Năm nay',
+      },
+      categoryDistributionTitle: 'Phân bổ Thiết bị',
+      platformWide: 'Toàn sàn',
+      totalOrdersPrefix: 'Số giao dịch:',
+      totalOrdersSuffix: 'lượt thuê',
+      deviceUnit: 'thiết bị',
+    },
+
+    devices: {
+      title: 'Kiểm duyệt Thiết bị trên Sàn',
+      searchPlaceholder: 'Tìm theo Tên thiết bị, Hãng, Chủ máy...',
+      categories: {
+        all: 'Tất cả',
+        smartphone: 'Smartphone',
+        laptop: 'Laptop',
+        camera: 'Máy ảnh',
+        drone: 'Flycam',
+        audio: 'Âm thanh',
+        gaming: 'Gaming',
+        accessory: 'Phụ kiện',
+      },
+      table: {
+        colDevice: 'Thiết bị',
+        colCategory: 'Danh mục',
+        colOwner: 'Chủ thiết bị',
+        colPrice: 'Giá thuê',
+        colStatus: 'Trạng thái',
+        colActions: 'Hành động',
+        viewSpecsBtn: 'Specs',
+        deleteBtn: 'Gỡ bỏ',
+        emptyMessage: 'Không có thiết bị nào phù hợp với bộ lọc hiện tại.',
+      },
+      status: {
+        available: 'Sẵn sàng',
+        rented: 'Đang cho thuê',
+        maintenance: 'Bảo trì',
+        pending: 'Chờ duyệt',
+      },
+      modalSpecs: {
+        title: 'Thông số kỹ thuật & Chi tiết thiết bị',
+        partnerOwner: 'Đối tác TechShare',
+        ownerPrefix: 'Chủ thiết bị:',
+        depositLabel: 'Tiền cọc thiết bị',
+        ratingLabel: 'Đánh giá trung bình',
+        reviewsSuffix: 'lượt',
+        specsTitle: 'Thông số kỹ thuật chính:',
+        descriptionTitle: 'Mô tả sản phẩm:',
+        noDescription: 'Chưa có thông tin mô tả chi tiết từ chủ sở hữu.',
+        closeBtn: 'Đóng',
+      },
+      modalDelete: {
+        title: 'Xác nhận gỡ bỏ thiết bị',
+        warningTitle: 'Hành động này không thể hoàn tác!',
+        warningMessage: 'Thiết bị này sẽ bị ẩn vĩnh viễn khỏi danh mục hiển thị cho khách thuê trên toàn hệ sinh thái TechShare.',
+        cancelBtn: 'Hủy bỏ',
+        confirmBtn: 'Gỡ bỏ ngay',
+        deleting: 'Đang gỡ bỏ...',
+      },
+      toasts: {
+        fetchFailed: 'Không thể kết nối đến máy chủ lấy danh sách thiết bị!',
+        deleteSuccess: 'Đã gỡ bỏ thiết bị thành công khỏi sàn!',
+        deleteFailed: 'Gỡ bỏ thiết bị thất bại. Vui lòng thử lại!',
+      },
+    },
+
+    users: {
+      title: 'Quản lý Người dùng & Tín nhiệm',
+      searchPlaceholder: 'Tìm theo Tên, Email, SĐT...',
+      roles: {
+        all: 'Tất cả vai trò',
+        admin: 'Quản trị viên',
+        owner: 'Chủ thiết bị',
+        renter: 'Khách thuê',
+        both: 'Chủ & Khách',
+      },
+      table: {
+        colMember: 'Thành viên',
+        colRole: 'Vai trò',
+        colTrustScore: 'Điểm tín nhiệm',
+        colStatus: 'Trạng thái',
+        colActions: 'Hành động',
+        detailBtn: 'Chi tiết',
+        lockBtn: 'Khóa',
+        unlockBtn: 'Mở khóa',
+        verifiedBadge: 'Tài khoản đã hoàn tất xác thực eKYC CCCD',
+        trustScoreTitle: 'Điểm tín nhiệm:',
+        activeStatus: 'Hoạt động',
+        lockedStatus: 'Đã khóa',
+        emptyMessage: 'Không tìm thấy người dùng nào phù hợp.',
+      },
+      modalWallet: {
+        title: 'Hồ sơ Tài chính & Tín nhiệm Escrow',
+        availableBalance: 'Số dư ví khả dụng',
+        heldBalance: 'Số dư ký quỹ giữ (Hold)',
+        trustScoreTitle: 'Điểm tín nhiệm Escrow',
+        verifiedStatus: 'Đã xác thực danh tính eKYC CCCD',
+        unverifiedStatus: 'Chưa hoàn tất eKYC',
+      },
+      modalLock: {
+        titleLock: 'Khóa tài khoản người dùng',
+        titleUnlock: 'Mở khóa tài khoản người dùng',
+        warningLock: 'Bạn có chắc chắn muốn KHÓA tài khoản này? Người dùng sẽ không thể đăng nhập hoặc tạo giao dịch thuê.',
+        warningUnlock: 'Bạn có chắc chắn muốn MỞ KHÓA tài khoản này để người dùng tiếp tục hoạt động?',
+      },
+      toasts: {
+        fetchFailed: 'Không thể lấy dữ liệu người dùng!',
+        lockSuccess: 'Đã khóa tài khoản thành công!',
+        unlockSuccess: 'Đã mở khóa tài khoản thành công!',
+        actionFailed: 'Thao tác thất bại, vui lòng thử lại!',
+      },
+    },
+
+    ekyc: {
+      title: 'Xét duyệt Hồ sơ eKYC Cấp Tích Xanh',
+      tabs: {
+        pending: 'Chờ duyệt',
+        approved: 'Đã duyệt',
+        rejected: 'Đã từ chối',
+        all: 'Tất cả',
+      },
+      emptyState: {
+        title: 'Không có hồ sơ nào cần duyệt',
+        loadingTitle: 'Đang tải danh sách hồ sơ...',
+        description: 'Tất cả yêu cầu xác thực danh tính công dân đều đã được xử lý xong.',
+      },
+      card: {
+        idCardPrefix: 'Số CCCD:',
+        phonePrefix: 'SĐT:',
+        emailPrefix: 'Email:',
+        submittedDatePrefix: 'Ngày gửi:',
+        frontLabel: '1. Mặt trước CCCD',
+        backLabel: '2. Mặt sau CCCD',
+        selfieLabel: '3. Chân dung cầm CCCD',
+        approveBtn: 'Duyệt & Cấp Tích Xanh',
+        rejectBtn: 'Từ chối',
+      },
+      modalReject: {
+        title: 'Từ chối hồ sơ xác thực eKYC',
+        reasonPrompt: 'Vui lòng chọn hoặc nhập lý do từ chối để gửi thông báo hướng dẫn lại cho người dùng:',
+        customReasonPlaceholder: 'Nhập lý do cụ thể khác nếu cần...',
+        cancelBtn: 'Đóng',
+        confirmBtn: 'Xác nhận Từ chối',
+      },
+      reasons: [
+        'Hình ảnh CCCD bị mờ, lóa sáng hoặc thông tin không rõ nét.',
+        'Ảnh chân dung Selfie không khớp với khuôn mặt trên CCCD.',
+        'Số CCCD hoặc thông tin họ tên không trùng khớp với hồ sơ đăng ký.',
+        'Ảnh giấy tờ bị cắt góc, có dấu hiệu chỉnh sửa hoặc không hợp lệ.',
+      ],
+      toasts: {
+        fetchFailed: 'Không thể tải danh sách hồ sơ eKYC!',
+        approveSuccess: 'Đã duyệt hồ sơ và cấp tích xanh thành công cho',
+        approveFailed: 'Phê duyệt hồ sơ thất bại!',
+        rejectSuccess: 'Đã từ chối hồ sơ của',
+        rejectFailed: 'Từ chối hồ sơ thất bại!',
+      },
+    },
+  },
+} as const;
+
+export default STRINGS;
+

@@ -6,6 +6,9 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { AdminTab, AdminKPIData, CategoryStat, AdminUser, AdminDevice, AdminEkycRequest } from '../../types/admin';
+import { COLORS, PRIMARY, PRIMARY_DARK, CATEGORY_COLORS } from '../../constants/colors';
+import { API_CONFIG } from '../../constants/config';
+import { STRINGS } from '../../constants/strings';
 import { AdminSidebarContent } from './AdminSidebarContent';
 import { AdminOverviewTab } from './AdminOverviewTab';
 import { AdminUsersTab } from './AdminUsersTab';
@@ -58,21 +61,19 @@ const DEFAULT_CHARTS = {
 };
 
 const DEFAULT_CATEGORIES: CategoryStat[] = [
-  { id: 'smartphone', name: 'Smartphone & Tablet', count: 14, percent: 29, color: '#67BEC3' },
-  { id: 'laptop', name: 'Laptop & Workstation', count: 10, percent: 21, color: '#38BDF8' },
-  { id: 'camera', name: 'Máy ảnh & Ống kính', count: 8, percent: 17, color: '#818CF8' },
-  { id: 'drone', name: 'Flycam & Gimbal', count: 5, percent: 11, color: '#F472B6' },
-  { id: 'audio', name: 'Tai nghe & Âm thanh', count: 6, percent: 13, color: '#FBBF24' },
-  { id: 'gaming', name: 'Máy chơi game & VR', count: 4, percent: 9, color: '#34D399' },
+  { id: 'smartphone', name: 'Smartphone & Tablet', count: 14, percent: 29, color: CATEGORY_COLORS.smartphone },
+  { id: 'laptop', name: 'Laptop & Workstation', count: 10, percent: 21, color: CATEGORY_COLORS.laptop },
+  { id: 'camera', name: 'Máy ảnh & Ống kính', count: 8, percent: 17, color: CATEGORY_COLORS.camera },
+  { id: 'drone', name: 'Flycam & Gimbal', count: 5, percent: 11, color: CATEGORY_COLORS.drone },
+  { id: 'audio', name: 'Tai nghe & Âm thanh', count: 6, percent: 13, color: CATEGORY_COLORS.audio },
+  { id: 'gaming', name: 'Máy chơi game & VR', count: 4, percent: 9, color: CATEGORY_COLORS.gaming },
 ];
-
-const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 export const AdminDashboardScreen: React.FC = () => {
   const [currentTab, setCurrentTab] = useState<AdminTab>('overview');
   const [globalSearch, setGlobalSearch] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [lastSynced, setLastSynced] = useState<string>('Vừa xong');
+  const [lastSynced, setLastSynced] = useState<string>(STRINGS.admin.dashboard.justNow);
 
   // State data
   const [kpi, setKpi] = useState<AdminKPIData>(DEFAULT_KPI);
@@ -87,7 +88,7 @@ export const AdminDashboardScreen: React.FC = () => {
     setIsLoading(true);
     try {
       // 1. Fetch Analytics
-      const resAnalytics = await fetch(`${API_BASE}/admin/analytics`);
+      const resAnalytics = await fetch(`${API_CONFIG.BASE_URL}/admin/analytics`);
       if (resAnalytics.ok) {
         const json = await resAnalytics.json();
         if (json.success && json.data) {
@@ -118,15 +119,7 @@ export const AdminDashboardScreen: React.FC = () => {
           if (Array.isArray(raw.categoryStats)) {
             setCategories(raw.categoryStats);
           } else if (Array.isArray(raw.categoryDistribution)) {
-            const colorMap: Record<string, string> = {
-              smartphone: '#67BEC3',
-              laptop: '#38BDF8',
-              camera: '#818CF8',
-              drone: '#F472B6',
-              audio: '#FBBF24',
-              gaming: '#34D399',
-              accessory: '#A78BFA',
-            };
+            const colorMap: Record<string, string> = CATEGORY_COLORS;
             const nameMap: Record<string, string> = {
               smartphone: 'Smartphone & Tablet',
               laptop: 'Laptop & Workstation',
@@ -141,7 +134,7 @@ export const AdminDashboardScreen: React.FC = () => {
               name: nameMap[c.category] || c.category,
               count: c.count,
               percent: c.percentage ?? c.percent ?? 10,
-              color: colorMap[c.category] || '#67BEC3',
+              color: colorMap[c.category] || PRIMARY,
             }));
             setCategories(mapped);
           }
@@ -151,7 +144,7 @@ export const AdminDashboardScreen: React.FC = () => {
       // 2. Fetch Devices from MongoDB Atlas
       let liveDevices: AdminDevice[] = [];
       try {
-        const resDevices = await fetch(`${API_BASE}/admin/devices`);
+        const resDevices = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.ADMIN_DEVICES}`);
         if (resDevices.ok) {
           const json = await resDevices.json();
           const items = Array.isArray(json.data) ? json.data : Array.isArray(json) ? json : [];
@@ -189,9 +182,9 @@ export const AdminDashboardScreen: React.FC = () => {
       // 3. Fetch eKYC Requests from MongoDB Atlas
       let liveEkyc: AdminEkycRequest[] = [];
       try {
-        let resEkyc = await fetch(`${API_BASE}/admin/ekyc`);
+        let resEkyc = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.ADMIN_EKYC}`);
         if (!resEkyc.ok) {
-          resEkyc = await fetch(`${API_BASE}/admin/ekyc-requests`);
+          resEkyc = await fetch(`${API_CONFIG.BASE_URL}/admin/ekyc-requests`);
         }
         if (resEkyc.ok) {
           const json = await resEkyc.json();
@@ -221,7 +214,7 @@ export const AdminDashboardScreen: React.FC = () => {
 
       // 4. Fetch / Extract live Users from MongoDB Atlas
       try {
-        const resUsers = await fetch(`${API_BASE}/admin/users`);
+        const resUsers = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.ADMIN_USERS}`);
         if (resUsers.ok) {
           const json = await resUsers.json();
           if (json.success && Array.isArray(json.data) && json.data.length > 0) {
@@ -310,7 +303,7 @@ export const AdminDashboardScreen: React.FC = () => {
   // Action: Toggle user status (Khóa / Mở khóa)
   const handleToggleUserStatus = async (userId: string, currentStatus: boolean) => {
     try {
-      const res = await fetch(`${API_BASE}/admin/users/${userId}/status`, {
+      const res = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.ADMIN_TOGGLE_USER(userId)}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isActive: !currentStatus }),
@@ -336,7 +329,7 @@ export const AdminDashboardScreen: React.FC = () => {
   // Action: Remove device violation
   const handleRemoveDevice = async (deviceId: string) => {
     try {
-      const res = await fetch(`${API_BASE}/admin/devices/${deviceId}`, {
+      const res = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.ADMIN_DELETE_DEVICE(deviceId)}`, {
         method: 'DELETE',
       });
       if (res.ok) {
@@ -353,7 +346,7 @@ export const AdminDashboardScreen: React.FC = () => {
   // Action: Approve eKYC
   const handleApproveEkyc = async (requestId: string) => {
     try {
-      const res = await fetch(`${API_BASE}/admin/ekyc/${requestId}/approve`, {
+      const res = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.ADMIN_APPROVE_EKYC(requestId)}`, {
         method: 'PATCH',
       });
       if (res.ok) {
@@ -375,7 +368,7 @@ export const AdminDashboardScreen: React.FC = () => {
   // Action: Reject eKYC
   const handleRejectEkyc = async (requestId: string, reason: string) => {
     try {
-      const res = await fetch(`${API_BASE}/admin/ekyc/${requestId}/reject`, {
+      const res = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.ADMIN_REJECT_EKYC(requestId)}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ reason }),
@@ -420,10 +413,10 @@ export const AdminDashboardScreen: React.FC = () => {
         <header className="admin-topbar">
           {/* Pill Search Bar */}
           <div className="admin-search-pill">
-            <Search size={16} style={{ color: '#67BEC3', flexShrink: 0 }} />
+            <Search size={16} style={{ color: PRIMARY, flexShrink: 0 }} />
             <input
               type="text"
-              placeholder="Tìm kiếm nhanh đơn hàng, người dùng, sản phẩm..."
+              placeholder={STRINGS.admin.dashboard.searchPlaceholder}
               value={globalSearch}
               onChange={(e) => setGlobalSearch(e.target.value)}
             />
@@ -433,8 +426,8 @@ export const AdminDashboardScreen: React.FC = () => {
           <div className="admin-topbar-actions">
             {/* Realtime Sync Tag */}
             <div className="admin-sync-tag" title="Đồng bộ tự động MongoDB Atlas">
-              <CheckCircle2 size={14} style={{ color: '#286E74' }} />
-              <span>Đã đồng bộ Atlas ({lastSynced})</span>
+              <CheckCircle2 size={14} style={{ color: PRIMARY_DARK }} />
+              <span>{STRINGS.admin.dashboard.atlasSynced} ({lastSynced})</span>
             </div>
 
             {/* Refresh Button */}
@@ -464,14 +457,14 @@ export const AdminDashboardScreen: React.FC = () => {
               <img
                 src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop"
                 alt="Admin"
-                style={{ width: '36px', height: '36px', borderRadius: '50%', border: '2px solid #67BEC3' }}
+                style={{ width: '36px', height: '36px', borderRadius: '50%', border: `2px solid ${PRIMARY}` }}
               />
               <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <span style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A' }}>
-                  Trần Nhật
+                <span style={{ fontSize: '13px', fontWeight: 700, color: COLORS.neutral[900] }}>
+                  {STRINGS.admin.dashboard.adminName}
                 </span>
-                <span style={{ fontSize: '11px', color: '#286E74', fontWeight: 600 }}>
-                  System Admin
+                <span style={{ fontSize: '11px', color: PRIMARY_DARK, fontWeight: 600 }}>
+                  {STRINGS.admin.dashboard.adminRole}
                 </span>
               </div>
             </div>

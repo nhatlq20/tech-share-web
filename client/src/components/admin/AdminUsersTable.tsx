@@ -9,6 +9,8 @@ import {
   Shield,
 } from 'lucide-react';
 import { UserItem } from '../../types/admin';
+import { COLORS, PRIMARY_DARK, PRIMARY_SURFACE, SUCCESS, DANGER } from '../../constants/colors';
+import { STRINGS, MAGIC_NUMBERS } from '../../constants';
 import './AdminWorkspace.css';
 
 export interface AdminUsersTableProps {
@@ -32,20 +34,26 @@ export const AdminUsersTable: React.FC<AdminUsersTableProps> = ({
       <div className="w-full overflow-x-auto hide-scrollbar admin-table-container">
         <table
           className="admin-table w-full text-left"
-          style={{ width: '100%', minWidth: '780px', borderCollapse: 'collapse' }}
+          style={{ width: '100%', minWidth: `${MAGIC_NUMBERS.UI.TABLE_MIN_WIDTH_PX}px`, borderCollapse: 'collapse' }}
         >
           <thead>
             <tr>
               {/* Cột 1: Thành viên & Liên hệ (Tích hợp Tích xanh eKYC) */}
               <th style={{ minWidth: '280px', width: '38%', paddingLeft: '20px' }}>
-                Thành viên & Liên hệ
+                {STRINGS.admin.users.table.colMember}
               </th>
               {/* Cột 2: Vai trò */}
-              <th style={{ minWidth: '140px', width: '18%' }}>Vai trò</th>
+              <th style={{ minWidth: '140px', width: '18%' }}>
+                {STRINGS.admin.users.table.colRole}
+              </th>
               {/* Cột 3: Điểm tín nhiệm (Rút gọn) */}
-              <th style={{ minWidth: '120px', width: '14%' }}>Điểm tín nhiệm</th>
+              <th style={{ minWidth: '120px', width: '14%' }}>
+                {STRINGS.admin.users.table.colTrustScore}
+              </th>
               {/* Cột 4: Trạng thái */}
-              <th style={{ minWidth: '120px', width: '14%' }}>Trạng thái</th>
+              <th style={{ minWidth: '120px', width: '14%' }}>
+                {STRINGS.admin.users.table.colStatus}
+              </th>
               {/* Cột 5: Hành động (Đầy đủ bên phải) */}
               <th
                 style={{
@@ -55,7 +63,7 @@ export const AdminUsersTable: React.FC<AdminUsersTableProps> = ({
                   paddingRight: '24px',
                 }}
               >
-                Hành động
+                {STRINGS.admin.users.table.colActions}
               </th>
             </tr>
           </thead>
@@ -127,8 +135,8 @@ export const AdminUsersTable: React.FC<AdminUsersTableProps> = ({
                               <CheckCircle2
                                 size={15}
                                 style={{
-                                  color: '#286E74',
-                                  fill: '#E8F6F7',
+                                  color: PRIMARY_DARK,
+                                  fill: PRIMARY_SURFACE,
                                   flexShrink: 0,
                                 }}
                               />
@@ -137,7 +145,7 @@ export const AdminUsersTable: React.FC<AdminUsersTableProps> = ({
                           <span
                             style={{
                               fontSize: '11px',
-                              color: '#94A3B8',
+                              color: COLORS.neutral[400],
                               fontWeight: 500,
                               fontFamily: 'monospace',
                             }}
@@ -196,27 +204,27 @@ export const AdminUsersTable: React.FC<AdminUsersTableProps> = ({
                           user.role === 'admin'
                             ? '#F3E8FF'
                             : user.role === 'owner'
-                            ? '#E0F2FE'
+                            ? COLORS.status.info.badgeBg
                             : user.role === 'both'
-                            ? '#E8F6F7'
-                            : '#F1F5F9',
+                            ? PRIMARY_SURFACE
+                            : COLORS.neutral[100],
                         color:
                           user.role === 'admin'
                             ? '#7E22CE'
                             : user.role === 'owner'
-                            ? '#0369A1'
+                            ? COLORS.status.info.text
                             : user.role === 'both'
-                            ? '#286E74'
-                            : '#475569',
+                            ? PRIMARY_DARK
+                            : COLORS.neutral[600],
                       }}
                     >
                       {user.role === 'admin'
-                        ? 'Quản trị viên'
+                        ? STRINGS.admin.users.roles.admin
                         : user.role === 'owner'
-                        ? 'Chủ thiết bị'
+                        ? STRINGS.admin.users.roles.owner
                         : user.role === 'both'
-                        ? 'Chủ & Khách'
-                        : 'Khách thuê'}
+                        ? STRINGS.admin.users.roles.both
+                        : STRINGS.admin.users.roles.renter}
                     </span>
                   </td>
 
@@ -234,25 +242,25 @@ export const AdminUsersTable: React.FC<AdminUsersTableProps> = ({
                         fontSize: '12.5px',
                         border: '1px solid',
                         backgroundColor:
-                          user.trustScore >= 85
-                            ? '#F0FDF4'
-                            : user.trustScore >= 70
-                            ? '#FEFCE8'
-                            : '#FEF2F2',
+                          user.trustScore >= MAGIC_NUMBERS.TRUST_SCORE.EXCELLENT_THRESHOLD
+                            ? COLORS.status.success.bg
+                            : user.trustScore >= MAGIC_NUMBERS.TRUST_SCORE.GOOD_THRESHOLD
+                            ? COLORS.status.warning.bg
+                            : COLORS.status.danger.bg,
                         color:
-                          user.trustScore >= 85
-                            ? '#15803D'
-                            : user.trustScore >= 70
-                            ? '#A16207'
-                            : '#B91C1C',
+                          user.trustScore >= MAGIC_NUMBERS.TRUST_SCORE.EXCELLENT_THRESHOLD
+                            ? COLORS.status.success.text
+                            : user.trustScore >= MAGIC_NUMBERS.TRUST_SCORE.GOOD_THRESHOLD
+                            ? COLORS.status.warning.text
+                            : COLORS.status.danger.text,
                         borderColor:
-                          user.trustScore >= 85
-                            ? '#BBF7D0'
-                            : user.trustScore >= 70
-                            ? '#FEF08A'
-                            : '#FECACA',
+                          user.trustScore >= MAGIC_NUMBERS.TRUST_SCORE.EXCELLENT_THRESHOLD
+                            ? COLORS.status.success.border
+                            : user.trustScore >= MAGIC_NUMBERS.TRUST_SCORE.GOOD_THRESHOLD
+                            ? COLORS.status.warning.border
+                            : COLORS.status.danger.border,
                       }}
-                      title={`Điểm tín nhiệm: ${user.trustScore}/100`}
+                      title={`${STRINGS.admin.users.table.trustScoreTitle} ${user.trustScore}/${MAGIC_NUMBERS.TRUST_SCORE.MAX}`}
                     >
                       <Shield size={13} style={{ flexShrink: 0 }} />
                       <span>{user.trustScore}</span>
@@ -268,11 +276,11 @@ export const AdminUsersTable: React.FC<AdminUsersTableProps> = ({
                             width: '6px',
                             height: '6px',
                             borderRadius: '50%',
-                            backgroundColor: '#22C55E',
+                            backgroundColor: SUCCESS,
                             flexShrink: 0,
                           }}
                         />
-                        Hoạt động
+                        {STRINGS.admin.users.table.activeStatus}
                       </span>
                     ) : (
                       <span className="admin-pill-badge locked whitespace-nowrap">
@@ -281,11 +289,11 @@ export const AdminUsersTable: React.FC<AdminUsersTableProps> = ({
                             width: '6px',
                             height: '6px',
                             borderRadius: '50%',
-                            backgroundColor: '#EF4444',
+                            backgroundColor: DANGER,
                             flexShrink: 0,
                           }}
                         />
-                        Đã khóa
+                        {STRINGS.admin.users.table.lockedStatus}
                       </span>
                     )}
                   </td>
@@ -316,7 +324,7 @@ export const AdminUsersTable: React.FC<AdminUsersTableProps> = ({
                         title="Xem thông tin chi tiết & Ví Escrow"
                       >
                         <Eye size={13} style={{ flexShrink: 0 }} />
-                        <span>Chi tiết</span>
+                        <span>{STRINGS.admin.users.table.detailBtn}</span>
                       </button>
 
                       {/* Nút Khóa / Mở khóa (Nền đỏ/xanh, chữ trắng) */}
@@ -334,7 +342,7 @@ export const AdminUsersTable: React.FC<AdminUsersTableProps> = ({
                         ) : (
                           <Unlock size={13} style={{ flexShrink: 0 }} />
                         )}
-                        <span>{user.isActive ? 'Khóa' : 'Mở khóa'}</span>
+                        <span>{user.isActive ? STRINGS.admin.users.table.lockBtn : STRINGS.admin.users.table.unlockBtn}</span>
                       </button>
                     </div>
                   </td>

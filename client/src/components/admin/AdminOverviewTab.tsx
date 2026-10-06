@@ -9,6 +9,8 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { AdminKPIData, ChartDataPoint, CategoryStat } from '../../types/admin';
+import { COLORS, PRIMARY, CATEGORY_COLORS } from '../../constants/colors';
+import { STRINGS, MAGIC_NUMBERS } from '../../constants';
 
 interface AdminOverviewTabProps {
   kpi: AdminKPIData;
@@ -55,19 +57,19 @@ export const AdminOverviewTab: React.FC<AdminOverviewTabProps> = ({
     Array.isArray(categoryStats) && categoryStats.length > 0
       ? categoryStats
       : [
-          { id: 'smartphone', name: 'Smartphone & Tablet', count: 7, percent: 54, color: '#67BEC3' },
-          { id: 'camera', name: 'Máy ảnh & Ống kính', count: 2, percent: 15, color: '#818CF8' },
-          { id: 'laptop', name: 'Laptop & Workstation', count: 1, percent: 8, color: '#38BDF8' },
-          { id: 'audio', name: 'Tai nghe & Âm thanh', count: 1, percent: 8, color: '#FBBF24' },
-          { id: 'gaming', name: 'Máy chơi game & VR', count: 1, percent: 8, color: '#34D399' },
-          { id: 'accessory', name: 'Phụ kiện công nghệ', count: 1, percent: 8, color: '#F472B6' },
+          { id: 'smartphone', name: 'Smartphone & Tablet', count: 7, percent: 54, color: CATEGORY_COLORS.smartphone },
+          { id: 'camera', name: 'Máy ảnh & Ống kính', count: 2, percent: 15, color: CATEGORY_COLORS.camera },
+          { id: 'laptop', name: 'Laptop & Workstation', count: 1, percent: 8, color: CATEGORY_COLORS.laptop },
+          { id: 'audio', name: 'Tai nghe & Âm thanh', count: 1, percent: 8, color: CATEGORY_COLORS.audio },
+          { id: 'gaming', name: 'Máy chơi game & VR', count: 1, percent: 8, color: CATEGORY_COLORS.gaming },
+          { id: 'accessory', name: 'Phụ kiện công nghệ', count: 1, percent: 8, color: CATEGORY_COLORS.accessory },
         ];
 
   // SVG Chart calculation parameters
-  const chartWidth = 620;
-  const chartHeight = 220;
-  const paddingX = 40;
-  const paddingY = 30;
+  const chartWidth = MAGIC_NUMBERS.CHART.DEFAULT_WIDTH;
+  const chartHeight = MAGIC_NUMBERS.CHART.DEFAULT_HEIGHT;
+  const paddingX = MAGIC_NUMBERS.CHART.PADDING_X;
+  const paddingY = MAGIC_NUMBERS.CHART.PADDING_Y;
 
   const maxVal = Math.max(...activePoints.map((p) => p.revenue), 1000000);
   const minVal = 0;
@@ -105,8 +107,8 @@ export const AdminOverviewTab: React.FC<AdminOverviewTabProps> = ({
       {/* 1. Header Section */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
         <div>
-          <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#0F172A', letterSpacing: '-0.02em', margin: 0 }}>
-            Tổng quan hệ thống
+          <h1 style={{ fontSize: '24px', fontWeight: 800, color: COLORS.neutral[900], letterSpacing: '-0.02em', margin: 0 }}>
+            {STRINGS.admin.overview.title}
           </h1>
         </div>
 
@@ -255,8 +257,8 @@ export const AdminOverviewTab: React.FC<AdminOverviewTabProps> = ({
             >
               <defs>
                 <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#67BEC3" stopOpacity="0.32" />
-                  <stop offset="100%" stopColor="#67BEC3" stopOpacity="0.0" />
+                  <stop offset="0%" stopColor={PRIMARY} stopOpacity="0.32" />
+                  <stop offset="100%" stopColor={PRIMARY} stopOpacity="0.0" />
                 </linearGradient>
               </defs>
 
@@ -270,7 +272,7 @@ export const AdminOverviewTab: React.FC<AdminOverviewTabProps> = ({
                       y1={y}
                       x2={chartWidth - paddingX}
                       y2={y}
-                      stroke="#F1F5F9"
+                      stroke={COLORS.neutral[100]}
                       strokeWidth="1.5"
                       strokeDasharray="4 4"
                     />
@@ -279,7 +281,7 @@ export const AdminOverviewTab: React.FC<AdminOverviewTabProps> = ({
                       y={y + 4}
                       textAnchor="end"
                       fontSize="10"
-                      fill="#94A3B8"
+                      fill={COLORS.neutral[400]}
                     >
                       {Math.round((pct * maxVal) / 1000000)}Tr
                     </text>
@@ -296,7 +298,7 @@ export const AdminOverviewTab: React.FC<AdminOverviewTabProps> = ({
               {activePoints.length > 0 && (
                 <polyline
                   fill="none"
-                  stroke="#67BEC3"
+                  stroke={PRIMARY}
                   strokeWidth="3.5"
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -355,10 +357,10 @@ export const AdminOverviewTab: React.FC<AdminOverviewTabProps> = ({
                   zIndex: 20,
                 }}
               >
-                <div style={{ fontWeight: 700, color: '#67BEC3' }}>
+                <div style={{ fontWeight: 700, color: PRIMARY }}>
                   {hoveredPoint.name}: {formatVND(hoveredPoint.revenue)}
                 </div>
-                <div style={{ color: '#CBD5E1', fontSize: '11px', marginTop: '2px' }}>
+                <div style={{ color: COLORS.neutral[300], fontSize: '11px', marginTop: '2px' }}>
                   Số giao dịch: {hoveredPoint.orders} lượt thuê
                 </div>
               </div>
@@ -391,7 +393,7 @@ export const AdminOverviewTab: React.FC<AdminOverviewTabProps> = ({
                     className="admin-progress-bar"
                     style={{
                       width: `${Math.min(cat.percent, 100)}%`,
-                      backgroundColor: cat.color || '#67BEC3',
+                      backgroundColor: cat.color || PRIMARY,
                     }}
                   />
                 </div>

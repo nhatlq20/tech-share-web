@@ -22,6 +22,8 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { DeviceItem } from '../../types/admin';
+import { COLORS, PRIMARY, SUCCESS, DANGER } from '../../constants/colors';
+import { STRINGS, API_CONFIG } from '../../constants';
 import './AdminWorkspace.css';
 
 interface AdminDevicesTabProps {
@@ -39,8 +41,6 @@ const CATEGORIES = [
   { id: 'audio', label: 'Âm thanh', icon: Headphones },
   { id: 'gaming', label: 'Gaming', icon: Gamepad2 },
 ];
-
-const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 // Format currency helper
 const formatVND = (num: number) => {
@@ -94,7 +94,7 @@ const DeviceDetailModal: React.FC<DeviceDetailModalProps> = ({ device, onClose }
         {/* Modal Header */}
         <div className="admin-modal-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Sparkles size={20} style={{ color: '#67BEC3' }} />
+            <Sparkles size={20} style={{ color: PRIMARY }} />
             <h3 className="admin-modal-title">Thông số kỹ thuật & Chi tiết thiết bị</h3>
           </div>
           <button
@@ -102,7 +102,7 @@ const DeviceDetailModal: React.FC<DeviceDetailModalProps> = ({ device, onClose }
             onClick={onClose}
             style={{
               cursor: 'pointer',
-              color: '#94A3B8',
+              color: COLORS.neutral[400],
               padding: '4px',
               border: 'none',
               background: 'none',
@@ -284,16 +284,16 @@ const DeviceDetailModal: React.FC<DeviceDetailModalProps> = ({ device, onClose }
                 <User size={18} />
               </div>
               <div>
-                <div style={{ fontWeight: 700, color: '#0F172A', fontSize: '13.5px' }}>
+                <div style={{ fontWeight: 700, color: COLORS.neutral[900], fontSize: '13.5px' }}>
                   {ownerInfo.name || 'Chủ thiết bị đối tác'}
                 </div>
-                <div style={{ fontSize: '12px', color: '#64748B', display: 'flex', gap: '8px' }}>
+                <div style={{ fontSize: '12px', color: COLORS.neutral[500], display: 'flex', gap: '8px' }}>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                    <Phone size={11} style={{ color: '#67BEC3' }} /> {ownerInfo.phone || '0901234567'}
+                    <Phone size={11} style={{ color: PRIMARY }} /> {ownerInfo.phone || '0901234567'}
                   </span>
                   {ownerInfo.email && (
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                      <Mail size={11} style={{ color: '#67BEC3' }} /> {ownerInfo.email}
+                      <Mail size={11} style={{ color: PRIMARY }} /> {ownerInfo.email}
                     </span>
                   )}
                 </div>
@@ -308,7 +308,7 @@ const DeviceDetailModal: React.FC<DeviceDetailModalProps> = ({ device, onClose }
             style={{
               fontSize: '12px',
               fontWeight: 700,
-              color: '#475569',
+              color: COLORS.neutral[600],
               textTransform: 'uppercase',
               letterSpacing: '0.05em',
               marginBottom: '6px',
@@ -319,12 +319,12 @@ const DeviceDetailModal: React.FC<DeviceDetailModalProps> = ({ device, onClose }
           <div
             style={{
               fontSize: '13px',
-              color: '#334155',
-              backgroundColor: '#F8FAFC',
+              color: COLORS.neutral[700],
+              backgroundColor: COLORS.neutral[50],
               padding: '12px 14px',
               borderRadius: '10px',
               lineHeight: 1.6,
-              border: '1px solid #F1F5F9',
+              border: `1px solid ${COLORS.neutral[100]}`,
               maxHeight: '110px',
               overflowY: 'auto',
             }}
@@ -339,7 +339,7 @@ const DeviceDetailModal: React.FC<DeviceDetailModalProps> = ({ device, onClose }
             display: 'flex',
             justifyContent: 'flex-end',
             paddingTop: '14px',
-            borderTop: '1px solid #F1F5F9',
+            borderTop: `1px solid ${COLORS.neutral[100]}`,
           }}
         >
           <button
@@ -350,7 +350,7 @@ const DeviceDetailModal: React.FC<DeviceDetailModalProps> = ({ device, onClose }
               padding: '9px 24px',
               fontSize: '13px',
               fontWeight: 700,
-              backgroundColor: '#67BEC3',
+              backgroundColor: PRIMARY,
             }}
           >
             Đóng
@@ -753,9 +753,9 @@ export const AdminDevicesTab: React.FC<AdminDevicesTabProps> = ({
   const fetchDevices = useCallback(async () => {
     setLoading(true);
     try {
-      let res = await fetch(`${API_BASE}/admin/devices`);
+      let res = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.ADMIN_DEVICES}`);
       if (!res.ok) {
-        res = await fetch(`${API_BASE}/devices`);
+        res = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.DEVICES}`);
       }
       if (res.ok) {
         const json = await res.json();
@@ -826,7 +826,7 @@ export const AdminDevicesTab: React.FC<AdminDevicesTabProps> = ({
         await propsOnRemoveDevice(deviceToDelete._id);
       } else {
         // 2. Tự gọi API DELETE
-        const res = await fetch(`${API_BASE}/admin/devices/${deviceToDelete._id}`, {
+        const res = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.ADMIN_DELETE_DEVICE(deviceToDelete._id)}`, {
           method: 'DELETE',
         });
         if (!res.ok) {
@@ -864,9 +864,9 @@ export const AdminDevicesTab: React.FC<AdminDevicesTabProps> = ({
       {toast && (
         <div className="admin-toast-container">
           <div className={`admin-toast ${toast.type}`}>
-            {toast.type === 'success' && <CheckCircle2 size={18} style={{ color: '#10B981' }} />}
-            {toast.type === 'error' && <AlertTriangle size={18} style={{ color: '#EF4444' }} />}
-            {toast.type === 'info' && <Sparkles size={18} style={{ color: '#67BEC3' }} />}
+            {toast.type === 'success' && <CheckCircle2 size={18} style={{ color: SUCCESS }} />}
+            {toast.type === 'error' && <AlertTriangle size={18} style={{ color: DANGER }} />}
+            {toast.type === 'info' && <Sparkles size={18} style={{ color: PRIMARY }} />}
             <span>{toast.message}</span>
             <button
               onClick={() => setToast(null)}
@@ -874,7 +874,7 @@ export const AdminDevicesTab: React.FC<AdminDevicesTabProps> = ({
                 marginLeft: 'auto',
                 border: 'none',
                 background: 'none',
-                color: '#94A3B8',
+                color: COLORS.neutral[400],
                 cursor: 'pointer',
                 padding: '2px',
               }}
@@ -888,8 +888,8 @@ export const AdminDevicesTab: React.FC<AdminDevicesTabProps> = ({
       {/* 1. Header Toolbar (Title, Refresh & Search) */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#0F172A', letterSpacing: '-0.02em', margin: 0 }}>
-            Kiểm duyệt Thiết bị trên Sàn
+          <h1 style={{ fontSize: '24px', fontWeight: 800, color: COLORS.neutral[900], letterSpacing: '-0.02em', margin: 0 }}>
+            {STRINGS.admin.devices.title}
           </h1>
           <button
             type="button"
@@ -900,16 +900,16 @@ export const AdminDevicesTab: React.FC<AdminDevicesTabProps> = ({
             style={{ padding: '6px 10px', fontSize: '11px', borderRadius: '8px' }}
           >
             <RefreshCw size={12} className={loading ? 'animate-spin' : ''} />
-            <span>{loading ? 'Đang tải...' : 'Làm mới'}</span>
+            <span>{loading ? STRINGS.common.loading : STRINGS.common.refresh}</span>
           </button>
         </div>
 
         {/* Search Pill Input */}
         <div className="admin-search-pill" style={{ width: '320px' }}>
-          <Search size={16} style={{ color: '#67BEC3', flexShrink: 0 }} />
+          <Search size={16} style={{ color: PRIMARY, flexShrink: 0 }} />
           <input
             type="text"
-            placeholder="Tìm theo Tên thiết bị, Hãng, Chủ máy..."
+            placeholder={STRINGS.admin.devices.searchPlaceholder}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -917,7 +917,7 @@ export const AdminDevicesTab: React.FC<AdminDevicesTabProps> = ({
             <button
               type="button"
               onClick={() => setSearchTerm('')}
-              style={{ color: '#94A3B8', cursor: 'pointer', padding: '2px', border: 'none', background: 'none' }}
+              style={{ color: COLORS.neutral[400], cursor: 'pointer', padding: '2px', border: 'none', background: 'none' }}
             >
               <X size={14} />
             </button>
@@ -938,7 +938,7 @@ export const AdminDevicesTab: React.FC<AdminDevicesTabProps> = ({
               onClick={() => setSelectedCategory(cat.id)}
               className={`admin-cat-pill ${isActive ? 'active' : ''}`}
             >
-              <Icon size={14} style={{ color: isActive ? '#67BEC3' : '#94A3B8' }} />
+              <Icon size={14} style={{ color: isActive ? PRIMARY : COLORS.neutral[400] }} />
               <span>{cat.label}</span>
             </button>
           );

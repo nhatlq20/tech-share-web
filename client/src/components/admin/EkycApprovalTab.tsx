@@ -15,6 +15,8 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { AdminEkycRequest } from '../../types/admin';
+import { COLORS, PRIMARY, PRIMARY_HOVER, PRIMARY_SURFACE, SUCCESS, DANGER } from '../../constants/colors';
+import { STRINGS, API_CONFIG, MAGIC_NUMBERS } from '../../constants';
 import './AdminWorkspace.css';
 
 export interface EkycApprovalTabProps {
@@ -24,14 +26,7 @@ export interface EkycApprovalTabProps {
   isLoading?: boolean;
 }
 
-const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
-
-const COMMON_REJECT_REASONS = [
-  'Hình ảnh CCCD bị mờ, lóa sáng hoặc thông tin không rõ nét.',
-  'Thông tin họ tên và số CCCD không trùng khớp với tài khoản.',
-  'Ảnh chân dung selfie không rõ khuôn mặt hoặc không khớp ảnh CCCD.',
-  'Giấy tờ tùy thân đã hết hạn sử dụng hoặc không hợp lệ.',
-];
+const COMMON_REJECT_REASONS = STRINGS.admin.ekyc.reasons;
 
 export const EkycApprovalTab: React.FC<EkycApprovalTabProps> = ({
   requests: propsRequests,
@@ -52,7 +47,7 @@ export const EkycApprovalTab: React.FC<EkycApprovalTabProps> = ({
   // Auto-dismiss toast
   useEffect(() => {
     if (toast) {
-      const timer = setTimeout(() => setToast(null), 3500);
+      const timer = setTimeout(() => setToast(null), MAGIC_NUMBERS.UI.TOAST_AUTO_DISMISS_MS);
       return () => clearTimeout(timer);
     }
   }, [toast]);
@@ -68,7 +63,7 @@ export const EkycApprovalTab: React.FC<EkycApprovalTabProps> = ({
   const fetchRequests = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/admin/ekyc`);
+      const res = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.ADMIN_EKYC}`);
       if (res.ok) {
         const json = await res.json();
         const items = Array.isArray(json.data) ? json.data : Array.isArray(json) ? json : [];
@@ -107,7 +102,7 @@ export const EkycApprovalTab: React.FC<EkycApprovalTabProps> = ({
       if (propsOnApprove) {
         await propsOnApprove(id);
       } else {
-        await fetch(`${API_BASE}/admin/ekyc/${id}/approve`, { method: 'PATCH' });
+        await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.ADMIN_APPROVE_EKYC(id)}`, { method: 'PATCH' });
       }
 
       // Optimistic update
@@ -139,7 +134,7 @@ export const EkycApprovalTab: React.FC<EkycApprovalTabProps> = ({
       if (propsOnReject) {
         await propsOnReject(rejectModalReq._id, finalReason);
       } else {
-        await fetch(`${API_BASE}/admin/ekyc/${rejectModalReq._id}/reject`, {
+        await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.ADMIN_REJECT_EKYC(rejectModalReq._id)}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ reason: finalReason }),
@@ -178,9 +173,9 @@ export const EkycApprovalTab: React.FC<EkycApprovalTabProps> = ({
       {toast && (
         <div className="admin-toast-container">
           <div className={`admin-toast ${toast.type}`}>
-            {toast.type === 'success' && <CheckCircle2 size={18} style={{ color: '#10B981' }} />}
-            {toast.type === 'error' && <AlertTriangle size={18} style={{ color: '#EF4444' }} />}
-            {toast.type === 'info' && <Sparkles size={18} style={{ color: '#67BEC3' }} />}
+            {toast.type === 'success' && <CheckCircle2 size={18} style={{ color: SUCCESS }} />}
+            {toast.type === 'error' && <AlertTriangle size={18} style={{ color: DANGER }} />}
+            {toast.type === 'info' && <Sparkles size={18} style={{ color: PRIMARY }} />}
             <span>{toast.message}</span>
             <button
               onClick={() => setToast(null)}
@@ -345,17 +340,17 @@ export const EkycApprovalTab: React.FC<EkycApprovalTabProps> = ({
             boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
           }}
         >
-          {/* Icon Checkmark lớn bọc trong vòng tròn nền màu xanh Teal nhạt (#E8F6F7), màu icon #67BEC3 */}
+          {/* Icon Checkmark lớn bọc trong vòng tròn nền màu xanh Teal nhạt (PRIMARY_SURFACE), màu icon PRIMARY */}
           <div
             style={{
               width: '80px',
               height: '80px',
               borderRadius: '50%',
-              backgroundColor: '#E8F6F7',
+              backgroundColor: PRIMARY_SURFACE,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#67BEC3',
+              color: PRIMARY,
               marginBottom: '18px',
             }}
           >
@@ -504,8 +499,8 @@ export const EkycApprovalTab: React.FC<EkycApprovalTabProps> = ({
                         }}
                       >
                         <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                          <CreditCard size={13} style={{ color: '#67BEC3' }} />
-                          Số CCCD: <strong style={{ color: '#0F172A' }}>{req.idCardNumber}</strong>
+                          <CreditCard size={13} style={{ color: PRIMARY }} />
+                          Số CCCD: <strong style={{ color: COLORS.neutral[900] }}>{req.idCardNumber}</strong>
                         </span>
                         <span>•</span>
                         <span>SĐT: {req.phone}</span>
@@ -513,14 +508,14 @@ export const EkycApprovalTab: React.FC<EkycApprovalTabProps> = ({
                         <span>Email: {req.email}</span>
                         <span>•</span>
                         <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                          <Calendar size={13} style={{ color: '#94A3B8' }} />
+                          <Calendar size={13} style={{ color: COLORS.neutral[400] }} />
                           Ngày gửi: {formattedDate}
                         </span>
                         {req.address && (
                           <>
                             <span>•</span>
                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                              <MapPin size={13} style={{ color: '#94A3B8' }} />
+                              <MapPin size={13} style={{ color: COLORS.neutral[400] }} />
                               {req.address}
                             </span>
                           </>
@@ -549,7 +544,7 @@ export const EkycApprovalTab: React.FC<EkycApprovalTabProps> = ({
                         <span>Từ chối</span>
                       </button>
 
-                      {/* Nút Duyệt: Nền #67BEC3, chữ trắng */}
+                      {/* Nút Duyệt: Nền PRIMARY, chữ trắng */}
                       <button
                         type="button"
                         onClick={() => handleApprove(req._id, req.fullName)}
@@ -560,8 +555,8 @@ export const EkycApprovalTab: React.FC<EkycApprovalTabProps> = ({
                           fontSize: '12.5px',
                           fontWeight: 700,
                           borderRadius: '10px',
-                          backgroundColor: '#67BEC3',
-                          border: '1px solid #4CA6AC',
+                          backgroundColor: PRIMARY,
+                          border: `1px solid ${PRIMARY_HOVER}`,
                         }}
                         title="Duyệt hồ sơ và cấp Tích Xanh"
                       >
@@ -619,7 +614,7 @@ export const EkycApprovalTab: React.FC<EkycApprovalTabProps> = ({
                       }}
                     >
                       <span>1. Mặt trước CCCD</span>
-                      <ZoomIn size={13} style={{ color: '#67BEC3' }} />
+                      <ZoomIn size={13} style={{ color: PRIMARY }} />
                     </div>
                     <img
                       src={req.idCardFrontUrl}
@@ -664,7 +659,7 @@ export const EkycApprovalTab: React.FC<EkycApprovalTabProps> = ({
                       }}
                     >
                       <span>2. Mặt sau CCCD</span>
-                      <ZoomIn size={13} style={{ color: '#67BEC3' }} />
+                      <ZoomIn size={13} style={{ color: PRIMARY }} />
                     </div>
                     <img
                       src={req.idCardBackUrl}
@@ -709,7 +704,7 @@ export const EkycApprovalTab: React.FC<EkycApprovalTabProps> = ({
                       }}
                     >
                       <span>3. Chân dung cầm CCCD</span>
-                      <ZoomIn size={13} style={{ color: '#67BEC3' }} />
+                      <ZoomIn size={13} style={{ color: PRIMARY }} />
                     </div>
                     <img
                       src={req.selfieUrl}
@@ -796,7 +791,7 @@ export const EkycApprovalTab: React.FC<EkycApprovalTabProps> = ({
                 type="button"
                 className="admin-btn admin-btn-primary"
                 onClick={() => setLightboxImage(null)}
-                style={{ backgroundColor: '#67BEC3', padding: '8px 20px', fontSize: '13px' }}
+                style={{ backgroundColor: PRIMARY, padding: '8px 20px', fontSize: '13px' }}
               >
                 Đóng ảnh
               </button>

@@ -23,13 +23,11 @@ import {
   X,
 } from 'lucide-react';
 import './HomePage.css';
+import { PRIMARY } from '../constants/colors';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CONSTANTS & MOCK DATA
 // ─────────────────────────────────────────────────────────────────────────────
-
-const PRIMARY = '#67BEC3';
-const PRIMARY_DARK = '#4CA6AC';
 
 const NAV_LINKS = ['Chợ Tốt', 'Xe cộ', 'Bất động sản', 'Việc làm'];
 
