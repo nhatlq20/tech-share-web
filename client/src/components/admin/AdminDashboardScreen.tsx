@@ -4,10 +4,8 @@ import {
   Bell,
   RefreshCw,
   CheckCircle2,
-  Database,
-  Menu,
 } from 'lucide-react';
-import { AdminTab, AdminKPIData, ChartDataPoint, CategoryStat, AdminUser, AdminDevice, AdminEkycRequest } from '../../types/admin';
+import { AdminTab, AdminKPIData, CategoryStat, AdminUser, AdminDevice, AdminEkycRequest } from '../../types/admin';
 import { AdminSidebarContent } from './AdminSidebarContent';
 import { AdminOverviewTab } from './AdminOverviewTab';
 import { AdminUsersTab } from './AdminUsersTab';
