@@ -14,6 +14,9 @@ const getBaseUrl = () => {
     // Ignore in environments without import.meta support
   }
   if (typeof window !== 'undefined') {
+    if (window.location.hostname === 'localhost' && window.location.port === '3000') {
+      return 'http://localhost:5000/api';
+    }
     return '/api';
   }
   return 'http://localhost:5000/api';

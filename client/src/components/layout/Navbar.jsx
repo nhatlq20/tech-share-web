@@ -19,7 +19,7 @@ export const Navbar = () => {
               <span className="navbar-brand-share">Share</span>
             </div>
             <span className="navbar-brand-sub">
-              Thuê thiết bị công nghệ dễ dàng
+              Easy Tech Device Rentals
             </span>
           </div>
         </Link>
@@ -27,16 +27,16 @@ export const Navbar = () => {
         {/* Nav Links */}
         <nav className="navbar-links">
           <Link to={ROUTES.HOME} className="navbar-link">
-            Trang chủ
+            Home
           </Link>
           <Link to={ROUTES.EXPLORE} className="navbar-link">
-            Khám phá thiết bị
+            Explore
           </Link>
           <Link to={ROUTES.NEARBY} className="navbar-link">
-            Gần bạn
+            Nearby
           </Link>
           <Link to={ROUTES.COMPARE || '/compare'} className="navbar-link">
-            So sánh
+            Compare
           </Link>
         </nav>
 
@@ -55,7 +55,7 @@ export const Navbar = () => {
                 onClick={logout}
                 className="navbar-btn-logout"
               >
-                Đăng xuất
+                Log Out
               </button>
             </div>
           ) : (
@@ -64,13 +64,13 @@ export const Navbar = () => {
                 to={ROUTES.LOGIN}
                 className="navbar-btn-login"
               >
-                Đăng nhập
+                Log In
               </Link>
               <Link
                 to={ROUTES.REGISTER}
                 className="navbar-btn-register"
               >
-                Đăng ký
+                Register
               </Link>
             </div>
           )}
