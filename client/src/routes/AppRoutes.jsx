@@ -17,14 +17,16 @@ export const AppRoutes = () => {
       {/* Trang chủ - Home / Marketplace đầy đủ 5 khối giao diện */}
       <Route path={ROUTES.HOME} element={<HomePage />} />
 
+      {/* Admin Workspace - Hoàn toàn độc lập, ẩn toàn bộ Client Navbar & Footer */}
+      <Route path={ROUTES.ADMIN} element={<AdminPage />} />
+      <Route path={ROUTES.DASHBOARD} element={<AdminPage />} />
+
       {/* Các route phụ dùng chung PublicLayout */}
       <Route element={<PublicLayout />}>
         <Route path={ROUTES.EXPLORE} element={<CatalogPage />} />
         <Route path={ROUTES.DEVICE_DETAIL} element={<DeviceDetailPage />} />
         <Route path={ROUTES.LOGIN} element={<LoginPage />} />
         <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
-        <Route path={ROUTES.DASHBOARD} element={<DashboardPage />} />
-        <Route path={ROUTES.ADMIN} element={<AdminPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>
