@@ -579,6 +579,15 @@
   background: #94A3B8;
 }
 
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 .admin-table {
   width: 100%;
   border-collapse: collapse;
@@ -706,10 +715,12 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 3px 10px;
+  padding: 4px 10px;
   border-radius: 9999px;
   font-size: 11.5px;
   font-weight: 700;
+  white-space: nowrap !important;
+  flex-shrink: 0;
 }
 
 .admin-pill-badge.active {
@@ -730,6 +741,74 @@
 .admin-pill-badge.pending {
   background-color: #FEF3C7;
   color: #D97706;
+}
+
+/* User Table Action Buttons (Pill shaped, no text wrap) */
+.admin-user-btn-detail {
+  white-space: nowrap !important;
+  padding: 6px 16px;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background-color: #FFFFFF;
+  border: 1px solid #CBD5E1;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.admin-user-btn-detail:hover {
+  border-color: #67BEC3;
+  color: #286E74;
+  background-color: #E8F6F7;
+}
+
+.admin-user-btn-lock {
+  white-space: nowrap !important;
+  padding: 6px 16px;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background-color: #EF4444;
+  border: 1px solid #EF4444;
+  color: #FFFFFF;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.admin-user-btn-lock:hover {
+  background-color: #DC2626;
+  border-color: #DC2626;
+}
+
+.admin-user-btn-unlock {
+  white-space: nowrap !important;
+  padding: 6px 16px;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background-color: #10B981;
+  border: 1px solid #10B981;
+  color: #FFFFFF;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.admin-user-btn-unlock:hover {
+  background-color: #059669;
+  border-color: #059669;
 }
 
 /* Action Buttons */

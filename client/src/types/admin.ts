@@ -25,20 +25,22 @@ export interface CategoryStat {
   color: string;
 }
 
-export interface AdminUser {
+export interface UserItem {
   _id: string;
   name: string;
   email: string;
   phone: string;
   avatar: string;
-  role: 'admin' | 'owner' | 'renter' | string;
-  isVerified: boolean;
+  role: 'admin' | 'renter' | 'owner' | 'both' | string;
   trustScore: number;
+  isVerified: boolean;
   walletBalance: number;
-  walletEscrowBalance: number;
   isActive: boolean;
-  createdAt: string | Date;
+  walletEscrowBalance?: number;
+  createdAt?: string | Date;
 }
+
+export type AdminUser = UserItem;
 
 export interface AdminDevice {
   _id: string;
