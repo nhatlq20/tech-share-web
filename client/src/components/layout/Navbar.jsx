@@ -32,6 +32,9 @@ export const Navbar = () => {
           <Link to={ROUTES.EXPLORE} className="navbar-link">
             Khám phá thiết bị
           </Link>
+          <Link to={ROUTES.NEARBY} className="navbar-link">
+            Gần bạn
+          </Link>
           <Link to={ROUTES.COMPARE || '/compare'} className="navbar-link">
             So sánh
           </Link>
