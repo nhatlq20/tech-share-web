@@ -3,6 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import express from 'express';
 import cors from 'cors';
+import mongoose from 'mongoose';
 import { connectDB } from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
 import deviceRoutes from './routes/deviceRoutes.js';
@@ -41,6 +42,8 @@ app.get('/api/health', (req, res) => {
   res.json({
     status: 'ONLINE',
     project: 'TechShare Express + MongoDB Backend',
+    dbState: mongoose.connection.readyState,
+    dbName: mongoose.connection.name,
     timestamp: new Date().toISOString(),
   });
 });

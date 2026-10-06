@@ -63,7 +63,16 @@ export const getDevices = async (
     };
   }
 
-  return response as DeviceListResponse;
+  // Handle standard wrapper with data array
+  if (response && typeof response === 'object' && Array.isArray((response as DeviceListResponse).data)) {
+    return response as DeviceListResponse;
+  }
+
+  // Reject invalid response shapes (such as placeholder objects { message: '...' })
+  const errorMessage = (response && typeof response === 'object' && 'message' in response)
+    ? String((response as { message: unknown }).message)
+    : 'Invalid response format from server';
+  throw new Error(errorMessage);
 };
 
 /**

@@ -10,9 +10,9 @@ export const Footer = () => {
           <span>© 2026 TechShare. All rights reserved.</span>
         </div>
         <div className="footer-links">
-          <a href="#" className="footer-link">Điều khoản dịch vụ</a>
-          <a href="#" className="footer-link">Chính sách bảo mật</a>
-          <a href="#" className="footer-link">Liên hệ hỗ trợ</a>
+          <a href="#" className="footer-link">Terms of Service</a>
+          <a href="#" className="footer-link">Privacy Policy</a>
+          <a href="#" className="footer-link">Support</a>
         </div>
       </div>
     </footer>

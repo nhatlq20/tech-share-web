@@ -1,0 +1,194 @@
+/* ==========================================================================
+   DeviceCard Stylesheet — TechShare Web
+   ========================================================================== */
+
+.device-card-item {
+  width: 100%;
+  height: 100%;
+  display: flex;
+}
+
+.device-card-link {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.device-card-link:hover {
+  transform: translateY(-3px);
+  border-color: #67BEC3;
+  box-shadow: 0 12px 24px -4px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.03);
+}
+
+.device-card-link:focus-visible {
+  outline: 2px solid #67BEC3;
+  outline-offset: 3px;
+  border-color: #67BEC3;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   IMAGE CONTAINER
+   ───────────────────────────────────────────────────────────────────────────── */
+.device-card-image-wrap {
+  position: relative;
+  width: 100%;
+  height: 190px;
+  background-color: #f1f5f9;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.device-card-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.device-card-link:hover .device-card-image {
+  transform: scale(1.03);
+}
+
+.device-card-image-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  color: #94a3b8;
+  gap: 6px;
+}
+
+.device-card-image-fallback .fallback-icon {
+  color: #94a3b8;
+}
+
+.device-card-image-fallback .fallback-text {
+  font-size: 12px;
+  font-weight: 500;
+  color: #64748b;
+}
+
+.device-card-condition-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(4px);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.2px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   BODY CONTENT
+   ───────────────────────────────────────────────────────────────────────────── */
+.device-card-content {
+  padding: 14px 14px 16px 14px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.device-card-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+
+.device-card-brand {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #4CA6AC;
+  background-color: #eef8f8;
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+
+.device-card-category {
+  font-size: 11px;
+  font-weight: 500;
+  color: #64748b;
+}
+
+.device-card-title {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.4;
+  color: #0f172a;
+  margin: 0 0 12px 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-height: 39px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   FOOTER (PRICE & RATING)
+   ───────────────────────────────────────────────────────────────────────────── */
+.device-card-footer {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.device-card-price-wrap {
+  display: flex;
+  align-items: baseline;
+}
+
+.device-card-price {
+  font-size: 15px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.device-card-rating-wrap {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  color: #d97706;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.device-card-rating-wrap .rating-star-icon {
+  color: #f59e0b;
+}
+
+.device-card-rating-val {
+  color: #1e293b;
+}
+
+.device-card-reviews-count {
+  font-size: 11px;
+  font-weight: 500;
+  color: #94a3b8;
+  margin-left: 1px;
+}

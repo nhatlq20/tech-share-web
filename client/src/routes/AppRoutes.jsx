@@ -15,15 +15,9 @@ import { NotFoundPage } from '../pages/NotFoundPage.jsx';
 export const AppRoutes = () => {
   return (
     <Routes>
-      {/* Trang chủ - Home / Marketplace đầy đủ 5 khối giao diện */}
-      <Route path={ROUTES.HOME} element={<HomePage />} />
-
-      {/* Admin Workspace - Hoàn toàn độc lập, ẩn toàn bộ Client Navbar & Footer */}
-      <Route path={ROUTES.ADMIN} element={<AdminPage />} />
-      <Route path={ROUTES.DASHBOARD} element={<AdminPage />} />
-
-      {/* Các route phụ dùng chung PublicLayout */}
+      {/* Tất cả route công khai dùng chung PublicLayout */}
       <Route element={<PublicLayout />}>
+        <Route path={ROUTES.HOME} element={<HomePage />} />
         <Route path={ROUTES.EXPLORE} element={<CatalogPage />} />
         <Route path={ROUTES.DEVICE_DETAIL} element={<DeviceDetailPage />} />
         <Route path={ROUTES.DEVICE_DETAIL_LEGACY} element={<DeviceDetailPage />} />
