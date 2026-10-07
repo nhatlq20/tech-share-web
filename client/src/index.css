@@ -1,5 +1,9 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* ==========================================================================
-   TechShare Global Stylesheet (Pure CSS - No Tailwind)
+   TechShare Global Stylesheet
    ========================================================================== */
 
 :root {

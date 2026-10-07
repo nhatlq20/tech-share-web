@@ -10,11 +10,21 @@ import { LoginPage } from '../pages/LoginPage.jsx';
 import { RegisterPage } from '../pages/RegisterPage.jsx';
 import { DashboardPage } from '../pages/DashboardPage.jsx';
 import { AdminPage } from '../pages/AdminPage.jsx';
+import { OwnerPage } from '../pages/OwnerPage.jsx';
 import { NotFoundPage } from '../pages/NotFoundPage.jsx';
 
 export const AppRoutes = () => {
   return (
     <Routes>
+      {/* Phân hệ Owner Hub (Chủ thiết bị) - Dedicated Workspace Layout */}
+      <Route path={ROUTES.OWNER} element={<OwnerPage />} />
+      <Route path={ROUTES.OWNER_DASHBOARD} element={<OwnerPage />} />
+      <Route path={ROUTES.OWNER_DEVICES} element={<OwnerPage />} />
+      <Route path={ROUTES.OWNER_BOOKINGS} element={<OwnerPage />} />
+      <Route path={ROUTES.OWNER_CALENDAR} element={<OwnerPage />} />
+      <Route path={ROUTES.OWNER_ANALYTICS} element={<OwnerPage />} />
+      <Route path={ROUTES.OWNER_WALLET} element={<OwnerPage />} />
+
       {/* Tất cả route công khai dùng chung PublicLayout */}
       <Route element={<PublicLayout />}>
         <Route path={ROUTES.HOME} element={<HomePage />} />
