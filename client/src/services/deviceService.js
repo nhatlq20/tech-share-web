@@ -117,6 +117,9 @@ export const getNearbyDevices = async (params = {}) => {
     cleanParams.radius = radius;
   }
 
+  if (params.page != null) cleanParams.page = params.page;
+  if (params.limit != null) cleanParams.limit = params.limit;
+
   const response = await api.get('/devices/nearby', { params: cleanParams });
 
   // Handle direct array returns if backend doesn't use the standard wrapper

@@ -139,59 +139,43 @@ export const getDevices = async (req, res, next) => {
  */
 export const getNearbyDevices = async (req, res, next) => {
   try {
-    const { lat, lng, latitude, longitude, radius = 10000 } = req.query;
-
-    const userLat = parseFloat(lat ?? latitude);
-    const userLng = parseFloat(lng ?? longitude);
-    const maxDistance = parseFloat(radius) || 10000;
-
-    if (isNaN(userLat) || isNaN(userLng)) {
-      return res.status(400).json({
-        success: false,
-        message: "Valid coordinates (lat, lng) are required.",
-      });
+    const { lat, lng, latitude, longitude, radius = 10000, page = 1, limit = 12 } = req.query;
+    const userLat = Number(lat ?? latitude);
+    const userLng = Number(lng ?? longitude);
+    const maxDistance = Number(radius);
+    const pageNum = Number(page);
+    const limitNum = Math.min(100, Number(limit));
+    if (lat == null && latitude == null || lng == null && longitude == null ||
+        !Number.isFinite(userLat) || Math.abs(userLat) > 90 ||
+        !Number.isFinite(userLng) || Math.abs(userLng) > 180 ||
+        !Number.isFinite(maxDistance) || maxDistance <= 0 ||
+        !Number.isInteger(pageNum) || pageNum < 1 ||
+        !Number.isInteger(limitNum) || limitNum < 1) {
+      return res.status(400).json({ success: false, message: "Valid coordinates, radius, page and limit are required." });
     }
-
-    const query = {
-      isDeleted: { $ne: true },
-      location: {
-        $nearSphere: {
-          $geometry: {
-            type: "Point",
-            coordinates: [userLng, userLat],
-          },
-          $maxDistance: maxDistance,
-        },
-      },
-    };
-
-    let devices = [];
-    if (mongoose.connection.readyState === 1) {
-      devices = await Device.find(query).limit(50).lean({ virtuals: true });
-    } else {
-      const devicesCol = getDevicesCollection();
-      devices = await devicesCol.find(query).limit(50).toArray();
-    }
-
+    const collection = getDevicesCollection();
+    const [result] = await collection.aggregate([
+      { $geoNear: {
+        near: { type: "Point", coordinates: [userLng, userLat] },
+        key: "location",
+        distanceField: "distanceMeters",
+        maxDistance,
+        spherical: true,
+        query: { isDeleted: { $ne: true } },
+      } },
+      { $facet: {
+        data: [{ $skip: (pageNum - 1) * limitNum }, { $limit: limitNum }],
+        totals: [{ $count: "total" }],
+      } },
+    ]).toArray();
+    const devices = result.data;
+    const total = result.totals[0]?.total || 0;
     return res.status(200).json({
-      success: true,
-      count: devices.length,
-      data: devices,
+      success: true, count: devices.length, data: devices,
+      pagination: { page: pageNum, limit: limitNum, total, totalPages: Math.ceil(total / limitNum) || 1 },
     });
   } catch (error) {
-    // If geospatial index is not created yet, fallback to find without $nearSphere
-    try {
-      const devices = await Device.find({ isDeleted: { $ne: true } })
-        .limit(20)
-        .lean({ virtuals: true });
-      return res.status(200).json({
-        success: true,
-        count: devices.length,
-        data: devices,
-      });
-    } catch (fallbackError) {
-      next(error);
-    }
+    next(error);
   }
 };
 
@@ -232,55 +216,59 @@ export const getDeviceById = async (req, res, next) => {
   }
 };
 
-const createDevice = async (req, res) => {
+export const createDevice = async (req, res) => {
   try {
     const {
       name,
+      title,
       category,
       brand,
       yearOfManufacture,
       condition,
       description,
       pricePerDay,
+      dailyRate,
       depositAmount,
+      depositValue,
       addressText,
+      address,
       specs,
+      images,
     } = req.body;
 
-    const ownerId = req.auth.id;
-    const year = Number(yearOfManufacture);
+    const ownerId = req.user?.userId || req.user?._id || req.user?.id || req.user?.accountId || req.auth?.id;
+    const deviceName = (name || title || "").trim();
+    const year = yearOfManufacture ? Number(yearOfManufacture) : undefined;
 
     if (
-      yearOfManufacture == null ||
-      yearOfManufacture === "" ||
-      !Number.isInteger(year) ||
-      year < 1990 ||
-      year > new Date().getFullYear()
+      yearOfManufacture != null &&
+      yearOfManufacture !== "" &&
+      (!Number.isInteger(year) ||
+        year < 1990 ||
+        year > new Date().getFullYear())
     ) {
       return res.status(400).json({
         success: false,
         message: "Invalid year of manufacture",
       });
     }
+
     if (
-      !name?.trim() ||
+      !deviceName ||
       !category?.trim() ||
-      !brand?.trim() ||
-      !description?.trim() ||
-      !condition ||
-      !addressText?.trim()
+      !brand?.trim()
     ) {
       return res.status(400).json({
         success: false,
         message: "Please fill in all required fields",
       });
     }
-    const price = Number(pricePerDay);
-    const deposit = Number(depositAmount);
+
+    const price = Number(pricePerDay ?? dailyRate);
+    const deposit = Number(depositAmount ?? depositValue ?? 0);
 
     if (
-      pricePerDay == null ||
-      pricePerDay === "" ||
+      price == null ||
       !Number.isFinite(price) ||
       price <= 0
     ) {
@@ -291,8 +279,6 @@ const createDevice = async (req, res) => {
     }
 
     if (
-      depositAmount == null ||
-      depositAmount === "" ||
       !Number.isFinite(deposit) ||
       deposit < 0
     ) {
@@ -303,26 +289,36 @@ const createDevice = async (req, res) => {
     }
 
     const device = await Device.create({
-      ownerId,
-      name,
-      category,
-      brand,
-      yearOfManufacture: Number(yearOfManufacture),
-      pricePerDay,
-      depositAmount,
-      description,
-      specs,
+      owner: ownerId || null,
+      ownerId: ownerId || null,
+      title: deviceName,
+      name: deviceName,
+      category: category.trim().toLowerCase(),
+      brand: brand.trim(),
+      yearOfManufacture: year,
+      condition: condition || "good",
+      dailyRate: price,
+      pricePerDay: price,
+      depositValue: deposit,
+      depositAmount: deposit,
+      address: (addressText || address || "Hà Nội, Việt Nam").trim(),
+      description: description?.trim() || "",
+      specs: specs || {},
+      images: Array.isArray(images) ? images : [],
+      status: "available",
     });
 
     return res.status(201).json({
       success: true,
       message: "Device created successfully",
+      data: device,
       device,
     });
   } catch (error) {
-    res.status(500).json({
+    console.error("Error creating device:", error);
+    return res.status(500).json({
       success: false,
-      message: "Internal server error",
+      message: error.message || "Internal server error",
     });
   }
 };

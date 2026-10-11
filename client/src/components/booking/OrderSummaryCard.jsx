@@ -7,6 +7,7 @@ import {
   ArrowRight,
   Loader2,
   Sparkles,
+  AlertCircle,
 } from 'lucide-react';
 import { STRINGS } from '../../constants/strings.js';
 import { formatPrice } from '../../utils/formatters.js';
@@ -24,6 +25,7 @@ export const OrderSummaryCard = ({
   totalAmount = 0,
   isSubmitting = false,
   canSubmit = false,
+  errorMessage = null,
   onSubmit,
 }) => {
   const title = (device?.title || device?.name || 'TechShare Device').trim();
@@ -175,6 +177,14 @@ export const OrderSummaryCard = ({
           </>
         )}
       </button>
+
+      {/* Direct Form / API Error Alert */}
+      {errorMessage && (
+        <div className="p-3 rounded-xl bg-red-50 text-red-600 text-xs flex items-center gap-2 border border-red-100">
+          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          <span className="font-semibold">{errorMessage}</span>
+        </div>
+      )}
 
       {/* Escrow Guarantee Badges */}
       <div className="pt-3 border-t border-slate-100 flex flex-col gap-2">

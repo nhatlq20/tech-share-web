@@ -3,12 +3,13 @@ import {
   getDevices,
   getNearbyDevices,
   getDeviceById,
+  createDevice,
 } from '../controllers/deviceController.js';
 import { getDeviceAvailability } from '../controllers/bookingController.js';
+import { protect } from '../middlewares/authMiddleware.js';
 
 import {
   getOwnerDevices,
-  createOwnerDevice,
   toggleDeviceStatus,
   toggleBlockedDate,
   getOwnerAnalytics,
@@ -20,9 +21,6 @@ const router = express.Router();
 router.get('/nearby', getNearbyDevices);
 router.get('/my-devices', getOwnerDevices);
 router.get('/owner/analytics', getOwnerAnalytics);
-
-// Create device
-router.post('/', createOwnerDevice);
 
 // Root devices listing with search, category, pagination & sorting
 router.get('/', getDevices);
@@ -36,6 +34,9 @@ router.patch('/:id/blocked-dates', toggleBlockedDate);
 
 // Parameterized device detail route
 router.get('/:id', getDeviceById);
+
+// Create device route
+router.post('/', protect, createDevice);
 
 export default router;
 
