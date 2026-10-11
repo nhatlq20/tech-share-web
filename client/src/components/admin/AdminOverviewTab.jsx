@@ -296,12 +296,12 @@ export const AdminOverviewTab = ({
       </div>
 
       {/* 3. Lưới Biểu đồ Doanh thu (Recharts) & Phân bổ Danh mục */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Cột trái (lg:col-span-2): Biểu đồ doanh thu Recharts AreaChart */}
-        <div className="admin-card lg:col-span-2 bg-white rounded-2xl p-6 lg:p-8 border border-slate-100 shadow-sm flex flex-col justify-between">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Cột trái (lg:col-span-7 xl:col-span-8): Biểu đồ doanh thu Recharts AreaChart */}
+        <div className="admin-card lg:col-span-7 xl:col-span-8 bg-white rounded-2xl p-6 lg:p-8 border border-slate-100 shadow-sm flex flex-col justify-between">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
             <div>
-              <h2 className="text-lg font-bold text-slate-900 tracking-tight">
+              <h2 className="text-lg font-bold text-slate-900 tracking-tight whitespace-nowrap">
                 {t.revenueChartTitle}
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">{t.subtitle}</p>
@@ -309,7 +309,7 @@ export const AdminOverviewTab = ({
 
             {/* Time Range Selector Tabs */}
             <div
-              className="inline-flex items-center p-1 bg-slate-50 rounded-xl border border-slate-200 self-start sm:self-auto"
+              className="inline-flex items-center p-1 bg-slate-50 rounded-xl border border-slate-200 self-start sm:self-auto shrink-0"
               role="tablist"
             >
               <button
@@ -317,7 +317,7 @@ export const AdminOverviewTab = ({
                 role="tab"
                 aria-selected={timeRange === '7d'}
                 onClick={() => setTimeRange('7d')}
-                className={`px-3 py-1.5 text-xs rounded-lg transition-all cursor-pointer ${
+                className={`px-3 py-1.5 text-xs rounded-lg transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                   timeRange === '7d'
                     ? 'bg-white text-[#286E74] font-bold shadow-xs'
                     : 'text-slate-500 hover:text-slate-800 font-medium'
@@ -330,7 +330,7 @@ export const AdminOverviewTab = ({
                 role="tab"
                 aria-selected={timeRange === 'month'}
                 onClick={() => setTimeRange('month')}
-                className={`px-3 py-1.5 text-xs rounded-lg transition-all cursor-pointer ${
+                className={`px-3 py-1.5 text-xs rounded-lg transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                   timeRange === 'month'
                     ? 'bg-white text-[#286E74] font-bold shadow-xs'
                     : 'text-slate-500 hover:text-slate-800 font-medium'
@@ -343,7 +343,7 @@ export const AdminOverviewTab = ({
                 role="tab"
                 aria-selected={timeRange === 'year'}
                 onClick={() => setTimeRange('year')}
-                className={`px-3 py-1.5 text-xs rounded-lg transition-all cursor-pointer ${
+                className={`px-3 py-1.5 text-xs rounded-lg transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                   timeRange === 'year'
                     ? 'bg-white text-[#286E74] font-bold shadow-xs'
                     : 'text-slate-500 hover:text-slate-800 font-medium'
@@ -413,13 +413,13 @@ export const AdminOverviewTab = ({
         </div>
 
         {/* Cột phải: Phân bổ Danh mục Thiết bị (Category Breakdown) */}
-        <div className="admin-card bg-white rounded-2xl p-6 lg:p-8 border border-slate-100 shadow-sm flex flex-col justify-between">
+        <div className="admin-card lg:col-span-5 xl:col-span-4 bg-white rounded-2xl p-6 border border-slate-100 shadow-sm flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-bold text-slate-900 tracking-tight">
+            <div className="flex items-center justify-between gap-3 mb-6">
+              <h2 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight whitespace-nowrap">
                 {t.categoryDistributionTitle}
               </h2>
-              <span className="inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full bg-[#EEF8F8] text-[#286E74]">
+              <span className="inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full bg-[#EEF8F8] text-[#286E74] whitespace-nowrap shrink-0">
                 {t.platformWide}
               </span>
             </div>

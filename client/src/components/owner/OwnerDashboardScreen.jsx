@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Search, PlusCircle } from 'lucide-react';
+import { Search, PlusCircle, Bell, RefreshCw } from 'lucide-react';
 import { OwnerSidebar } from './OwnerSidebar';
 import { OwnerOverviewTab } from './OwnerOverviewTab';
 import { OwnerDevicesTab } from './OwnerDevicesTab';
@@ -10,7 +10,6 @@ import { OwnerAnalyticsTab } from './OwnerAnalyticsTab';
 import { OwnerWalletTab } from './OwnerWalletTab';
 import { ROUTES } from '../../routes/routes';
 import { STRINGS } from '../../constants/strings';
-import { COLORS } from '../../constants/colors';
 import { API_CONFIG } from '../../constants/config';
 import './OwnerWorkspace.css';
 
@@ -266,6 +265,7 @@ export const OwnerDashboardScreen = () => {
   });
   const [isPostModalOpen, setIsPostModalOpen] = useState(false);
   const [globalSearch, setGlobalSearch] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   // Determine current active path
   const currentPath = location.pathname;
@@ -277,6 +277,7 @@ export const OwnerDashboardScreen = () => {
 
   // Fetch Owner live data (fallback safely)
   const fetchOwnerData = useCallback(async () => {
+    setIsLoading(true);
     try {
       const token = localStorage.getItem('techshare_token');
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
@@ -300,6 +301,8 @@ export const OwnerDashboardScreen = () => {
       }
     } catch (err) {
       // Keep rich demo data
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
@@ -382,7 +385,7 @@ export const OwnerDashboardScreen = () => {
   const pendingApprovalsCount = bookings.filter((b) => b.status === 'pending').length;
 
   return (
-    <div className="owner-hub-wrapper h-screen overflow-hidden flex">
+    <div className="owner-hub-wrapper">
       {/* 1. Fixed Left Sidebar */}
       <OwnerSidebar
         currentPath={currentPath}
@@ -394,12 +397,12 @@ export const OwnerDashboardScreen = () => {
         }}
       />
 
-      {/* 2. Main Workspace (Fit-to-Screen Container) */}
-      <main className="owner-main-wrap h-screen overflow-hidden flex flex-col flex-1" role="main">
+      {/* 2. Main Workspace */}
+      <main className="owner-main-wrap" role="main">
         {/* Topbar */}
-        <header className="owner-topbar shrink-0">
+        <header className="owner-topbar">
           <div className="owner-search-pill">
-            <Search size={15} color={COLORS.primary.DEFAULT} />
+            <Search size={16} style={{ color: '#67BEC3', flexShrink: 0 }} />
             <input
               type="text"
               placeholder={STRINGS.admin.dashboard.searchPlaceholder}
@@ -408,20 +411,87 @@ export const OwnerDashboardScreen = () => {
             />
           </div>
 
-          <div className="owner-topbar-right">
+          <div className="owner-topbar-actions">
+            {/* Primary Action Button: + Add Equipment */}
             <button
               type="button"
               className="owner-top-action-btn"
               onClick={() => setIsPostModalOpen(true)}
             >
               <PlusCircle size={15} />
-              <span>{STRINGS.owner.devices.postBtn}</span>
+              <span>{STRINGS.owner.overview.postDeviceBtn}</span>
             </button>
+
+            {/* Refresh Button */}
+            <button
+              type="button"
+              onClick={fetchOwnerData}
+              disabled={isLoading}
+              className="owner-action-btn"
+              title={STRINGS.owner.overview.refresh}
+            >
+              <RefreshCw
+                size={16}
+                style={{ animation: isLoading ? 'spin 1s linear infinite' : 'none' }}
+              />
+            </button>
+
+            {/* Notification Bell */}
+            <button
+              type="button"
+              className="owner-action-btn"
+              title="Rental Requests"
+              onClick={() => handleNavigate(ROUTES.OWNER_BOOKINGS)}
+            >
+              <Bell size={16} />
+              {pendingApprovalsCount > 0 && <span className="owner-notif-dot" />}
+            </button>
+
+            {/* Partner Header Chip */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                paddingLeft: '8px',
+              }}
+            >
+              <img
+                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop"
+                alt={STRINGS.owner.sidebar.avatarAlt}
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '50%',
+                  border: '2px solid #67BEC3',
+                }}
+              />
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span
+                  style={{
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    color: '#0F172A',
+                  }}
+                >
+                  {STRINGS.owner.sidebar.ownerName}
+                </span>
+                <span
+                  style={{
+                    fontSize: '11px',
+                    color: '#286E74',
+                    fontWeight: 600,
+                  }}
+                >
+                  {STRINGS.owner.sidebar.ownerRole}
+                </span>
+              </div>
+            </div>
           </div>
         </header>
 
-        {/* Content Body Based on URL Route (Fit-to-Screen flex-1 min-h-0) */}
-        <div className="owner-content-body flex-1 min-h-0 flex flex-col overflow-hidden">
+        {/* Content Body Based on URL Route */}
+        <section className="owner-content-body">
           {/* A. /owner/dashboard or /owner */}
           {(currentPath === ROUTES.OWNER_DASHBOARD || currentPath === ROUTES.OWNER) && (
             <OwnerOverviewTab
@@ -429,6 +499,8 @@ export const OwnerDashboardScreen = () => {
               recentBookings={bookings}
               onNavigate={handleNavigate}
               onOpenPostModal={() => setIsPostModalOpen(true)}
+              onRefresh={fetchOwnerData}
+              isLoading={isLoading}
             />
           )}
 
@@ -477,7 +549,7 @@ export const OwnerDashboardScreen = () => {
           {currentPath === ROUTES.OWNER_WALLET && (
             <OwnerWalletTab />
           )}
-        </div>
+        </section>
       </main>
     </div>
   );
