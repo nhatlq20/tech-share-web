@@ -139,59 +139,43 @@ export const getDevices = async (req, res, next) => {
  */
 export const getNearbyDevices = async (req, res, next) => {
   try {
-    const { lat, lng, latitude, longitude, radius = 10000 } = req.query;
-
-    const userLat = parseFloat(lat ?? latitude);
-    const userLng = parseFloat(lng ?? longitude);
-    const maxDistance = parseFloat(radius) || 10000;
-
-    if (isNaN(userLat) || isNaN(userLng)) {
-      return res.status(400).json({
-        success: false,
-        message: "Valid coordinates (lat, lng) are required.",
-      });
+    const { lat, lng, latitude, longitude, radius = 10000, page = 1, limit = 12 } = req.query;
+    const userLat = Number(lat ?? latitude);
+    const userLng = Number(lng ?? longitude);
+    const maxDistance = Number(radius);
+    const pageNum = Number(page);
+    const limitNum = Math.min(100, Number(limit));
+    if (lat == null && latitude == null || lng == null && longitude == null ||
+        !Number.isFinite(userLat) || Math.abs(userLat) > 90 ||
+        !Number.isFinite(userLng) || Math.abs(userLng) > 180 ||
+        !Number.isFinite(maxDistance) || maxDistance <= 0 ||
+        !Number.isInteger(pageNum) || pageNum < 1 ||
+        !Number.isInteger(limitNum) || limitNum < 1) {
+      return res.status(400).json({ success: false, message: "Valid coordinates, radius, page and limit are required." });
     }
-
-    const query = {
-      isDeleted: { $ne: true },
-      location: {
-        $nearSphere: {
-          $geometry: {
-            type: "Point",
-            coordinates: [userLng, userLat],
-          },
-          $maxDistance: maxDistance,
-        },
-      },
-    };
-
-    let devices = [];
-    if (mongoose.connection.readyState === 1) {
-      devices = await Device.find(query).limit(50).lean({ virtuals: true });
-    } else {
-      const devicesCol = getDevicesCollection();
-      devices = await devicesCol.find(query).limit(50).toArray();
-    }
-
+    const collection = getDevicesCollection();
+    const [result] = await collection.aggregate([
+      { $geoNear: {
+        near: { type: "Point", coordinates: [userLng, userLat] },
+        key: "location",
+        distanceField: "distanceMeters",
+        maxDistance,
+        spherical: true,
+        query: { isDeleted: { $ne: true } },
+      } },
+      { $facet: {
+        data: [{ $skip: (pageNum - 1) * limitNum }, { $limit: limitNum }],
+        totals: [{ $count: "total" }],
+      } },
+    ]).toArray();
+    const devices = result.data;
+    const total = result.totals[0]?.total || 0;
     return res.status(200).json({
-      success: true,
-      count: devices.length,
-      data: devices,
+      success: true, count: devices.length, data: devices,
+      pagination: { page: pageNum, limit: limitNum, total, totalPages: Math.ceil(total / limitNum) || 1 },
     });
   } catch (error) {
-    // If geospatial index is not created yet, fallback to find without $nearSphere
-    try {
-      const devices = await Device.find({ isDeleted: { $ne: true } })
-        .limit(20)
-        .lean({ virtuals: true });
-      return res.status(200).json({
-        success: true,
-        count: devices.length,
-        data: devices,
-      });
-    } catch (fallbackError) {
-      next(error);
-    }
+    next(error);
   }
 };
 
