@@ -1,8 +1,9 @@
 import React from 'react';
-import { AdminDashboardScreen } from '../components/admin/AdminDashboardScreen';
+import { Navigate } from 'react-router-dom';
+import { ROUTES } from '../routes/routes.js';
 
 export const DashboardPage = () => {
-  return <AdminDashboardScreen />;
+  return <Navigate to={ROUTES.ADMIN_DASHBOARD} replace />;
 };
 
 export default DashboardPage;

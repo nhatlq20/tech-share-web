@@ -81,7 +81,7 @@ export const ProfilePage = () => {
 
   const handleLogout = () => {
     logout();
-    navigate(ROUTES.LOGIN);
+    navigate(ROUTES.HOME);
   };
 
   /**

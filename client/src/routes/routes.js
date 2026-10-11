@@ -13,8 +13,11 @@ export const ROUTES = {
   NEARBY: '/nearby',
   LOGIN: '/login',
   REGISTER: '/register',
-  DASHBOARD: '/dashboard',
+  // Admin Hub Routes
   ADMIN: '/admin',
+  ADMIN_DASHBOARD: '/admin/dashboard',
+  DASHBOARD: '/admin/dashboard',
+  ADMIN_LOGIN: '/admin/login',
   PROFILE: '/profile',
 
   // Owner Hub Routes

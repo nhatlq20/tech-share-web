@@ -1,11 +1,17 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../routes/routes.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import './Navbar.css';
 
 export const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
 
   return (
     <header className="app-navbar">
@@ -84,7 +90,7 @@ export const Navbar = () => {
               </Link>
 
               <button
-                onClick={logout}
+                onClick={handleLogout}
                 className="navbar-btn-logout"
                 title="Đăng xuất"
               >
