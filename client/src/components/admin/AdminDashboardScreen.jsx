@@ -403,7 +403,7 @@ export const AdminDashboardScreen = () => {
       {/* A. Fixed Left Sidebar */}
       <AdminSidebarContent currentTab={currentTab} onSelectTab={setCurrentTab} pendingEkycCount={pendingEkycCount} onLogout={() => {
       localStorage.clear();
-      window.location.href = '/login';
+      window.location.href = '/';
     }} onSwitchToClient={() => {
       window.location.href = '/';
     }} />

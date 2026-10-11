@@ -580,6 +580,157 @@ export const STRINGS = {
       },
     },
   },
+
+  // Phân hệ Đặt thuê & Khách hàng (Booking & Checkout)
+  booking: {
+    checkout: {
+      breadcrumbHome: 'Trang chủ',
+      breadcrumbExplore: 'Khám phá',
+      breadcrumbDetail: 'Chi tiết thiết bị',
+      breadcrumbCheckout: 'Đặt thuê',
+      headerTitle: 'Đặt thuê Thiết bị',
+      headerSubtitle: 'Chọn thời gian thuê, xác nhận địa chỉ và hoàn tất yêu cầu thuê qua hệ thống TechShare Escrow.',
+      steps: {
+        step1: '1. Chọn ngày & Thông tin',
+        step2: '2. Kiểm tra chi phí & Ưu đãi',
+        step3: '3. Hoàn tất đặt thuê',
+      },
+    },
+
+    datePicker: {
+      title: 'Khoảng thời gian thuê',
+      subtitle: 'Chọn ngày bắt đầu và kết thúc bạn muốn sử dụng thiết bị (Các ngày màu xám đã có người đặt trước)',
+      startDateLabel: 'Ngày nhận máy',
+      endDateLabel: 'Ngày trả máy',
+      selectStartDate: 'Chọn ngày nhận',
+      selectEndDate: 'Chọn ngày trả',
+      notSelected: 'Chưa chọn',
+      totalDaysPrefix: 'Tổng thời gian thuê:',
+      totalDaysSuffix: 'ngày',
+      clearDates: 'Chọn lại',
+      quickSelectLabel: 'Chọn nhanh:',
+      quick1Day: '1 ngày',
+      quickWeekend: 'Cuối tuần',
+      quick1Week: '1 tuần (7 ngày)',
+      legendAvailable: 'Còn trống',
+      legendSelected: 'Khoảng ngày thuê',
+      legendBlocked: 'Đã khóa / Đã thuê',
+      legendToday: 'Hôm nay',
+      conflictAlert: 'Khoảng ngày bạn chọn chứa ngày đã có người đặt hoặc chủ máy bận. Vui lòng chọn khoảng ngày trống liên tục.',
+      minDaysAlert: 'Thời gian thuê tối thiểu là 1 ngày.',
+      pastDateAlert: 'Không thể chọn ngày trong quá khứ.',
+      monthPrev: 'Tháng trước',
+      monthNext: 'Tháng sau',
+      daysOfWeek: ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'],
+    },
+
+    delivery: {
+      title: 'Thông tin người nhận & Bàn giao',
+      subtitle: 'Chủ thiết bị sẽ liên hệ với bạn theo thông tin này để bàn giao máy',
+      recipientNameLabel: 'Họ và tên người nhận *',
+      recipientNamePlaceholder: 'Ví dụ: Nguyễn Văn A',
+      phoneLabel: 'Số điện thoại liên hệ *',
+      phonePlaceholder: 'Ví dụ: 0912 345 678',
+      addressLabel: 'Địa chỉ nhận máy / Bàn giao *',
+      addressPlaceholder: 'Số nhà, tên đường, phường/xã, quận/huyện, tỉnh/thành phố...',
+      noteLabel: 'Ghi chú cho chủ máy (Không bắt buộc)',
+      notePlaceholder: 'Ví dụ: Hẹn nhận máy sau 17h, cần mang thêm cáp chuyển đổi HDMI...',
+    },
+
+    payment: {
+      title: 'Phương thức Đặt cọc & Thanh toán',
+      subtitle: 'Giao dịch qua TechShare được bảo hiểm 100% bằng cơ chế ký quỹ Escrow an toàn',
+      methods: {
+        escrow: {
+          title: 'Ví Ký quỹ TechShare Escrow',
+          badge: 'Khuyên dùng',
+          desc: 'Tiền cọc và tiền thuê được hệ thống giữ an toàn. Chỉ giải ngân cho chủ máy khi bạn nhận và kiểm tra thiết bị đúng cam kết.',
+        },
+        bankTransfer: {
+          title: 'Chuyển khoản Ngân hàng (VietQR)',
+          badge: 'Tự động duyệt',
+          desc: 'Quét mã VietQR chuyển khoản trực tiếp, hệ thống ghi nhận thanh toán tự động trong 30 giây.',
+        },
+        cod: {
+          title: 'Thanh toán trực tiếp khi nhận máy',
+          badge: 'Gặp mặt trực tiếp',
+          desc: 'Bàn giao thiết bị và thanh toán tại địa điểm giao nhận đã thỏa thuận.',
+        },
+      },
+    },
+
+    agreement: {
+      title: 'Cam kết & Điều khoản thuê',
+      termsText: 'Tôi đã đọc và đồng ý với Điều khoản dịch vụ và Chính sách bồi hoàn thiết bị của TechShare.',
+      pledgeText: 'Cam kết bảo quản nguyên vẹn tài sản, không tự ý tháo dỡ linh kiện và hoàn trả đúng hẹn theo hợp đồng.',
+    },
+
+    summary: {
+      title: 'Tóm tắt đơn hàng',
+      dailyRateLabel: 'Đơn giá thuê:',
+      durationLabel: 'Thời gian thuê:',
+      baseRentalFee: 'Tạm tính tiền thuê:',
+      longRentalDiscount: 'Chiết khấu thuê dài ngày:',
+      longDiscountBadge3: 'Giảm 10% (>= 3 ngày)',
+      longDiscountBadge7: 'Giảm 20% (>= 7 ngày)',
+      voucherDiscount: 'Mã ưu đãi giảm giá:',
+      depositLabel: 'Tiền ký quỹ (Đặt cọc):',
+      depositTooltip: 'Tiền cọc được hệ thống bảo toàn và hoàn trả 100% ngay sau khi kết thúc hợp đồng thuê mà không phát sinh sự cố.',
+      totalAmountLabel: 'Tổng thanh toán:',
+      submitBtn: 'Xác nhận Đặt thuê ngay',
+      submittingBtn: 'Đang tạo đơn thuê...',
+      guarantees: {
+        item1: 'Bảo vệ người thuê 100% qua Escrow',
+        item2: 'Hoàn cọc nhanh chóng trong 24h',
+        item3: 'Hỗ trợ kỹ thuật 24/7 từ TechShare',
+      },
+    },
+
+    voucher: {
+      title: 'Mã giảm giá Voucher',
+      placeholder: 'Nhập mã (ví dụ: WELCOME50)',
+      applyBtn: 'Áp dụng',
+      appliedText: 'Đã áp dụng mã',
+      removeBtn: 'Gỡ bỏ',
+      suggestionTitle: 'Mã ưu đãi có sẵn:',
+      codes: {
+        welcome50: 'WELCOME50',
+        welcome50Desc: 'Giảm 50.000đ cho đơn đầu',
+        weekend10: 'WEEKEND10',
+        weekend10Desc: 'Giảm 10% tiền thuê',
+      },
+      errors: {
+        invalid: 'Mã voucher không hợp lệ hoặc đã hết lượt sử dụng.',
+        empty: 'Vui lòng nhập mã voucher.',
+      },
+      success: 'Áp dụng mã giảm giá thành công!',
+    },
+
+    successModal: {
+      title: 'Yêu cầu Đặt thuê Thành công!',
+      subtitle: 'Đơn thuê của bạn đã được ghi nhận vào hệ thống và đang chờ chủ thiết bị phê duyệt.',
+      codePrefix: 'Mã đơn thuê:',
+      copyCodeBtn: 'Sao chép mã',
+      copiedText: 'Đã sao chép!',
+      deviceInfo: 'Thiết bị thuê:',
+      durationInfo: 'Thời gian:',
+      totalInfo: 'Tổng số tiền:',
+      statusPendingBadge: 'Chờ chủ máy duyệt (Pending)',
+      noticeText: 'Chủ thiết bị sẽ nhận được thông báo ngay lập tức. Sau khi duyệt, bạn sẽ nhận được mã QR bàn giao thiết bị.',
+      viewMyBookingsBtn: 'Xem Quản lý đơn của tôi',
+      continueExploreBtn: 'Khám phá thêm thiết bị khác',
+    },
+
+    validation: {
+      noDatesSelected: 'Vui lòng chọn ngày nhận và ngày trả trên lịch tương tác.',
+      rangeHasBlockedDates: 'Khoảng thời gian bạn chọn có ngày đã bị khóa. Vui lòng chọn khoảng ngày còn trống.',
+      missingRecipientName: 'Vui lòng nhập họ và tên người nhận máy.',
+      missingPhone: 'Vui lòng nhập số điện thoại liên hệ.',
+      invalidPhone: 'Số điện thoại không đúng định dạng (từ 10 chữ số).',
+      missingAddress: 'Vui lòng nhập địa chỉ nhận máy / bàn giao.',
+      mustAgreeTerms: 'Vui lòng xác nhận đồng ý với Điều khoản dịch vụ và Cam kết bảo quản thiết bị.',
+    },
+  },
 } as const;
 
 export default STRINGS;

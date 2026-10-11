@@ -5,10 +5,12 @@ import { PublicLayout } from '../layouts/PublicLayout.jsx';
 import { HomePage } from '../pages/HomePage.jsx';
 import { CatalogPage } from '../pages/CatalogPage.jsx';
 import { DeviceDetailPage } from '../pages/DeviceDetailPage.jsx';
+import { BookingCheckoutPage } from '../pages/booking/BookingCheckoutPage.jsx';
 import { NearbyPage } from '../pages/NearbyPage.jsx';
 import { LoginPage } from '../pages/LoginPage.jsx';
 import { RegisterPage } from '../pages/RegisterPage.jsx';
 import { AdminPage } from '../pages/AdminPage.jsx';
+import { AdminLoginPage } from '../pages/AdminLoginPage.jsx';
 import { OwnerPage } from '../pages/OwnerPage.jsx';
 import { ProfilePage } from '../pages/ProfilePage.jsx';
 import { NotFoundPage } from '../pages/NotFoundPage.jsx';
@@ -16,6 +18,9 @@ import { NotFoundPage } from '../pages/NotFoundPage.jsx';
 export const AppRoutes = () => {
   return (
     <Routes>
+      {/* Admin Portal – không có Navbar/Footer, chỉ vào bằng URL trực tiếp */}
+      <Route path={ROUTES.ADMIN_LOGIN} element={<AdminLoginPage />} />
+
       {/* Phân hệ Owner Hub (Chủ thiết bị) - Dedicated Workspace Layout */}
       <Route path={ROUTES.OWNER} element={<OwnerPage />} />
       <Route path={ROUTES.OWNER_DASHBOARD} element={<OwnerPage />} />
@@ -35,6 +40,7 @@ export const AppRoutes = () => {
         <Route path={ROUTES.EXPLORE} element={<CatalogPage />} />
         <Route path={ROUTES.DEVICE_DETAIL} element={<DeviceDetailPage />} />
         <Route path={ROUTES.DEVICE_DETAIL_LEGACY} element={<DeviceDetailPage />} />
+        <Route path={ROUTES.BOOKING_CHECKOUT} element={<BookingCheckoutPage />} />
         <Route path={ROUTES.NEARBY} element={<NearbyPage />} />
         <Route path={ROUTES.LOGIN} element={<LoginPage />} />
         <Route path={ROUTES.REGISTER} element={<RegisterPage />} />

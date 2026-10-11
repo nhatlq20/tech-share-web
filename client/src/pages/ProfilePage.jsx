@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { api } from '../services/api.js';
+import { uploadAvatar } from '../services/uploadService.js';
 import { ROUTES } from '../routes/routes.js';
 import './ProfilePage.css';
 
@@ -32,15 +33,16 @@ const formatVND = (amount = 0) => {
 
 export const ProfilePage = () => {
   const navigate = useNavigate();
-  const { user: authUser, account: authAccount, token, isAuthenticated, logout, login } = useAuth();
+  const { user: authUser, account: authAccount, token, isAuthenticated, logout, login, refreshProfile } = useAuth();
 
   const [userData, setUserData] = useState(authUser);
   const [accountData, setAccountData] = useState(authAccount);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Trạng thái tải ảnh đại diện lên Cloudinary
+  // Trạng thái upload avatar
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0); // 0–100
   const [feedbackMsg, setFeedbackMsg] = useState(null);
 
   useEffect(() => {
@@ -79,89 +81,84 @@ export const ProfilePage = () => {
 
   const handleLogout = () => {
     logout();
-    navigate(ROUTES.LOGIN);
+    navigate(ROUTES.HOME);
   };
 
-  // Xử lý tải ảnh đại diện lên Cloudinary qua API Backend
+  /**
+   * handleAvatarUpload – flow tối ưu hiệu suất:
+   *   1. Validate file (type, size)
+   *   2. Nén + resize bằng Canvas (không thư viện ngoài)
+   *   3. Upload thẳng từ browser → Cloudinary (XHR có progress)
+   *   4. Chỉ gửi URL ngắn lên server để lưu DB (~100 bytes thay vì ~MB)
+   */
   const handleAvatarUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Validate type
     if (!file.type.startsWith('image/')) {
-      setFeedbackMsg({
-        type: 'error',
-        text: 'Vui lòng chọn file hình ảnh hợp lệ (JPG, PNG, WEBP).',
-      });
+      setFeedbackMsg({ type: 'error', text: 'Vui lòng chọn file hình ảnh hợp lệ (JPG, PNG, WEBP, GIF).' });
       return;
     }
 
-    // Giới hạn 10MB
-    if (file.size > 10 * 1024 * 1024) {
-      setFeedbackMsg({
-        type: 'error',
-        text: 'Kích thước file ảnh không được vượt quá 10MB.',
-      });
+    // Giới hạn 20MB (sẽ nén xuống rất nhỏ trước khi upload)
+    if (file.size > 20 * 1024 * 1024) {
+      setFeedbackMsg({ type: 'error', text: 'File ảnh không được vượt quá 20MB.' });
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const base64Data = reader.result;
-      try {
-        setUploadingAvatar(true);
-        setFeedbackMsg(null);
+    try {
+      setUploadingAvatar(true);
+      setUploadProgress(0);
+      setFeedbackMsg(null);
 
-        // Gọi Backend Endpoint upload lên Cloudinary & cập nhật database
-        const res = await api.post(
-          '/users/avatar',
-          { image: base64Data },
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+      // Bước 1 + 2: Nén & upload thẳng lên Cloudinary từ browser
+      // Server KHÔNG nhận ảnh nặng – chỉ nhận URL cuối (~80 ký tự)
+      const { url: avatarUrl, compressedSize, savingsPct } = await uploadAvatar(file, {
+        maxSize: 800,
+        quality: 0.82,
+        onProgress: (pct) => setUploadProgress(pct),
+      });
 
-        if (res?.success && res?.avatar) {
-          setUserData((prev) => ({ ...prev, avatar: res.avatar }));
+      // Bước 3: Gửi chỉ URL lên server để lưu vào DB
+      const res = await api.patch(
+        '/users/avatar',
+        { avatarUrl },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
-          // Cập nhật AuthContext và LocalStorage để Header hiển thị avatar mới
-          if (res.user) {
-            login({
-              token,
-              user: res.user,
-              account: accountData || authAccount,
-            });
-          }
+      if (res?.success) {
+        const newAvatar = res.avatar || avatarUrl;
 
-          setFeedbackMsg({
-            type: 'success',
-            text: 'Cập nhật ảnh đại diện lên Cloudinary thành công!',
-          });
+        // Cập nhật state local
+        setUserData((prev) => ({ ...prev, avatar: newAvatar }));
 
-          setTimeout(() => {
-            setFeedbackMsg(null);
-          }, 4000);
-        } else {
-          setFeedbackMsg({
-            type: 'error',
-            text: res?.message || 'Không thể cập nhật ảnh đại diện.',
-          });
-        }
-      } catch (err) {
-        console.error('Lỗi khi tải avatar:', err);
-        setFeedbackMsg({
-          type: 'error',
-          text: err.data?.message || err.message || 'Lỗi kết nối khi tải ảnh lên Cloudinary.',
+        // Đồng bộ AuthContext + localStorage → Navbar tự cập nhật
+        login({
+          token,
+          user: res.user ? res.user : { ...(userData || authUser), avatar: newAvatar },
+          account: accountData || authAccount,
         });
-      } finally {
-        setUploadingAvatar(false);
-        // Reset file input để có thể chọn lại cùng 1 file nếu muốn
-        e.target.value = '';
-      }
-    };
 
-    reader.readAsDataURL(file);
+        setFeedbackMsg({
+          type: 'success',
+          text: `Cập nhật avatar thành công! (Đã nén ${savingsPct}%, còn ${(compressedSize / 1024).toFixed(0)}KB)`,
+        });
+        setTimeout(() => setFeedbackMsg(null), 5000);
+      } else {
+        setFeedbackMsg({ type: 'error', text: res?.message || 'Không thể lưu ảnh đại diện.' });
+      }
+    } catch (err) {
+      console.error('[Avatar] Upload lỗi:', err);
+      setFeedbackMsg({
+        type: 'error',
+        text: err?.message || 'Lỗi khi tải ảnh lên. Vui lòng thử lại.',
+      });
+    } finally {
+      setUploadingAvatar(false);
+      setUploadProgress(0);
+      e.target.value = '';
+    }
   };
 
   if (!isAuthenticated && !token) {
@@ -251,10 +248,29 @@ export const ProfilePage = () => {
                   {(profile.name || account.username || 'U').charAt(0).toUpperCase()}
                 </div>
 
-                {/* Loading overlay khi đang tải ảnh lên Cloudinary */}
+                {/* Overlay upload với progress bar */}
                 {uploadingAvatar && (
                   <div className="profile-avatar-loading-overlay">
-                    <div className="profile-spinner-sm" />
+                    {uploadProgress > 0 ? (
+                      <div className="profile-upload-progress-ring">
+                        <svg viewBox="0 0 36 36" width="48" height="48">
+                          <circle
+                            cx="18" cy="18" r="15.9"
+                            fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="2.5"
+                          />
+                          <circle
+                            cx="18" cy="18" r="15.9"
+                            fill="none" stroke="#67BEC3" strokeWidth="2.5"
+                            strokeDasharray={`${uploadProgress} 100`}
+                            strokeLinecap="round"
+                            transform="rotate(-90 18 18)"
+                          />
+                        </svg>
+                        <span className="profile-upload-pct">{uploadProgress}%</span>
+                      </div>
+                    ) : (
+                      <div className="profile-spinner-sm" />
+                    )}
                   </div>
                 )}
 

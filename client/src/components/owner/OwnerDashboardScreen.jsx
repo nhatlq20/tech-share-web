@@ -390,7 +390,7 @@ export const OwnerDashboardScreen = () => {
         pendingCount={pendingApprovalsCount}
         onLogout={() => {
           localStorage.removeItem('techshare_token');
-          window.location.href = ROUTES.LOGIN;
+          window.location.href = ROUTES.HOME;
         }}
       />
 

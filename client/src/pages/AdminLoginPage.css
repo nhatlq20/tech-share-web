@@ -1,0 +1,17 @@
+/* ==========================================================================
+   AdminLoginPage.css
+   Dùng lại toàn bộ styles từ LoginPage.css
+   Chỉ override badge màu để phân biệt Admin Portal
+   ========================================================================== */
+@import './LoginPage.css';
+
+/* Badge Admin – đổi màu sang tím/indigo thay vì teal để phân biệt */
+.admin-login-badge-pill {
+  background-color: #ede9fe;
+  color: #5b21b6;
+}
+
+/* Thanh accent trên đầu card – đổi sang indigo */
+.admin-login-card::before {
+  background: linear-gradient(90deg, #7c3aed, #5b21b6, #7c3aed);
+}

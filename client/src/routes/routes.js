@@ -7,6 +7,9 @@ export const ROUTES = {
   DEVICE_DETAIL: '/device/:deviceId',
   DEVICE_DETAIL_LEGACY: '/devices/:id',
   DEVICE_DETAIL_PATH: (deviceId) => `/device/${deviceId}`,
+  BOOKING_CHECKOUT: '/booking/:deviceId',
+  BOOKING_CHECKOUT_PATH: (deviceId) => `/booking/${deviceId}`,
+  MY_BOOKINGS: '/my-bookings',
   NEARBY: '/nearby',
   LOGIN: '/login',
   REGISTER: '/register',
@@ -14,6 +17,7 @@ export const ROUTES = {
   ADMIN: '/admin',
   ADMIN_DASHBOARD: '/admin/dashboard',
   DASHBOARD: '/admin/dashboard',
+  ADMIN_LOGIN: '/admin/login',
   PROFILE: '/profile',
 
   // Owner Hub Routes

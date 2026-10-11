@@ -130,11 +130,9 @@ export const AdminSidebarContent = ({
           <span>{t.switchToClient}</span>
         </button>
 
-        <button
-          type="button"
-          onClick={onLogout || (() => { window.location.href = '/login'; })}
-          className="admin-footer-btn logout"
-        >
+        <button type="button" onClick={onLogout || (() => {
+        window.location.href = '/';
+      })} className="admin-footer-btn logout">
           <LogOut size={15} />
           <span>{t.logout}</span>
         </button>

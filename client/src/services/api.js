@@ -45,27 +45,32 @@ const buildUrl = (endpoint, params) => {
   return url;
 };
 
+/**
+ * Xử lý response chung – throw Error nếu không ok
+ */
+const handleResponse = async (res) => {
+  if (!res.ok) {
+    const errorBody = await res.json().catch(() => null);
+    const error = new Error(errorBody?.message || `HTTP error! status: ${res.status}`);
+    error.status = res.status;
+    error.data = errorBody;
+    throw error;
+  }
+  return res.json();
+};
+
 export const api = {
   get: async (endpoint, options = {}) => {
     const url = buildUrl(endpoint, options.params);
     const res = await fetch(url, {
       method: 'GET',
       headers: {
-        'Accept': 'application/json',
+        Accept: 'application/json',
         ...(options.headers || {}),
       },
-      ...options,
+      signal: options.signal,
     });
-
-    if (!res.ok) {
-      const errorBody = await res.json().catch(() => null);
-      const error = new Error(errorBody?.message || `HTTP error! status: ${res.status}`);
-      error.status = res.status;
-      error.data = errorBody;
-      throw error;
-    }
-
-    return res.json();
+    return handleResponse(res);
   },
 
   post: async (endpoint, data, options = {}) => {
@@ -74,22 +79,57 @@ export const api = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json',
+        Accept: 'application/json',
+        // Merge thêm headers từ caller (vd: Authorization) mà không ghi đè Content-Type
         ...(options.headers || {}),
       },
       body: JSON.stringify(data),
-      ...options,
+      signal: options.signal,
     });
+    return handleResponse(res);
+  },
 
-    if (!res.ok) {
-      const errorBody = await res.json().catch(() => null);
-      const error = new Error(errorBody?.message || `HTTP error! status: ${res.status}`);
-      error.status = res.status;
-      error.data = errorBody;
-      throw error;
-    }
+  patch: async (endpoint, data, options = {}) => {
+    const url = buildUrl(endpoint, options.params);
+    const res = await fetch(url, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        ...(options.headers || {}),
+      },
+      body: JSON.stringify(data),
+      signal: options.signal,
+    });
+    return handleResponse(res);
+  },
 
-    return res.json();
+  put: async (endpoint, data, options = {}) => {
+    const url = buildUrl(endpoint, options.params);
+    const res = await fetch(url, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        ...(options.headers || {}),
+      },
+      body: JSON.stringify(data),
+      signal: options.signal,
+    });
+    return handleResponse(res);
+  },
+
+  delete: async (endpoint, options = {}) => {
+    const url = buildUrl(endpoint, options.params);
+    const res = await fetch(url, {
+      method: 'DELETE',
+      headers: {
+        Accept: 'application/json',
+        ...(options.headers || {}),
+      },
+      signal: options.signal,
+    });
+    return handleResponse(res);
   },
 };
 
