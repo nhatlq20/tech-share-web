@@ -44,6 +44,12 @@ export const Navbar = () => {
           <Link to={ROUTES.COMPARE || '/compare'} className="navbar-link">
             Compare
           </Link>
+          {/* Chỉ hiện với Owner */}
+          {user?.role === 'owner' && (
+            <Link to={ROUTES.OWNER} className="navbar-link navbar-link-owner">
+              Owner
+            </Link>
+          )}
         </nav>
 
         {/* Auth Actions */}

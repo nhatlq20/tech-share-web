@@ -70,7 +70,13 @@ export const LoginPage = () => {
 
         setSuccessMessage('Đăng nhập thành công! Đang chuyển hướng...');
         setTimeout(() => {
-          navigate(from, { replace: true });
+          // Owner → vào thẳng trang quản lý
+          if (role === 'owner') {
+            navigate(ROUTES.OWNER, { replace: true });
+          } else {
+            // Renter → về trang đích trước đó hoặc home
+            navigate(from, { replace: true });
+          }
         }, 600);
       } else {
         setErrorMessage(res?.message || 'Đăng nhập không thành công.');
