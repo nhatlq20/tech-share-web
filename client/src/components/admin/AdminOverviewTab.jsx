@@ -1,368 +1,460 @@
 import React, { useState } from 'react';
-import { Users, Cpu, ShoppingBag, TrendingUp, Download, ArrowUpRight, RefreshCw } from 'lucide-react';
+import {
+  Users,
+  Cpu,
+  ShoppingBag,
+  TrendingUp,
+  Download,
+  ArrowUpRight,
+  RefreshCw,
+} from 'lucide-react';
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RechartsTooltip,
+} from 'recharts';
+import { STRINGS } from '../../constants/strings';
+
+const formatVND = (amount = 0) => {
+  return new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
+    currency: 'VND',
+  }).format(amount);
+};
+
+// Soft UI Tooltip for Recharts
+const CustomRevenueTooltip = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
+    const val = payload[0].value;
+    const orders = payload[0].payload?.orders;
+    const t = STRINGS.admin.overview;
+
+    return (
+      <div className="bg-slate-900/95 text-white px-3.5 py-2.5 rounded-xl shadow-xl text-xs border border-slate-700/60 backdrop-blur-md">
+        <div className="text-[11px] text-slate-400 font-medium">{label}</div>
+        <div className="font-bold text-[#67BEC3] text-sm mt-0.5">
+          {formatVND(val)}
+        </div>
+        {typeof orders === 'number' && (
+          <div className="text-[11px] text-slate-300 mt-1 flex items-center gap-1">
+            <span>{t.totalOrdersPrefix}</span>
+            <span className="font-semibold text-white">{orders}</span>
+            <span>{t.totalOrdersSuffix}</span>
+          </div>
+        )}
+      </div>
+    );
+  }
+  return null;
+};
+
 export const AdminOverviewTab = ({
   kpi,
   chartData,
   categoryStats,
   onRefresh,
-  isLoading = false
+  isLoading = false,
 }) => {
+  const t = STRINGS.admin.overview;
   const [timeRange, setTimeRange] = useState('7d');
-  const [hoveredPoint, setHoveredPoint] = useState(null);
+
+  // Fallbacks using standard sample metrics
   const safeKpi = {
     totalUsers: kpi?.totalUsers ?? 18,
     activeUsers: kpi?.activeUsers ?? 16,
-    totalDevices: kpi?.totalDevices ?? 13,
-    availableDevices: kpi?.availableDevices ?? 11,
-    activeBookings: kpi?.activeBookings ?? 3,
-    pendingEkyc: kpi?.pendingEkyc ?? 0,
-    totalRevenue: kpi?.totalRevenue ?? 49770000,
-    revenueFormatted: kpi?.revenueFormatted || new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
-    }).format(kpi?.totalRevenue ?? 49770000)
+    totalDevices: kpi?.totalDevices ?? 98,
+    availableDevices: kpi?.availableDevices ?? 84,
+    activeBookings: kpi?.activeBookings ?? 28,
+    pendingEkyc: kpi?.pendingEkyc ?? 3,
+    totalRevenue: kpi?.totalRevenue ?? 838381000,
+    revenueFormatted:
+      kpi?.revenueFormatted || formatVND(kpi?.totalRevenue ?? 838381000),
   };
+
   const safeChartData = chartData || {
-    '7d': [],
-    month: [],
-    year: []
-  };
-  const activePoints = (safeChartData && (safeChartData[timeRange] || safeChartData['7d'])) || [];
-  const safeCategories = Array.isArray(categoryStats) && categoryStats.length > 0 ? categoryStats : [{
-    id: 'smartphone',
-    name: 'Smartphone & Tablet',
-    count: 7,
-    percent: 54,
-    color: '#67BEC3'
-  }, {
-    id: 'camera',
-    name: 'Máy ảnh & Ống kính',
-    count: 2,
-    percent: 15,
-    color: '#818CF8'
-  }, {
-    id: 'laptop',
-    name: 'Laptop & Workstation',
-    count: 1,
-    percent: 8,
-    color: '#38BDF8'
-  }, {
-    id: 'audio',
-    name: 'Tai nghe & Âm thanh',
-    count: 1,
-    percent: 8,
-    color: '#FBBF24'
-  }, {
-    id: 'gaming',
-    name: 'Máy chơi game & VR',
-    count: 1,
-    percent: 8,
-    color: '#34D399'
-  }, {
-    id: 'accessory',
-    name: 'Phụ kiện công nghệ',
-    count: 1,
-    percent: 8,
-    color: '#F472B6'
-  }];
-
-  // SVG Chart calculation parameters
-  const chartWidth = 620;
-  const chartHeight = 220;
-  const paddingX = 40;
-  const paddingY = 30;
-  const maxVal = Math.max(...activePoints.map(p => p.revenue), 1000000);
-  const minVal = 0;
-  const getX = index => {
-    if (activePoints.length <= 1) return paddingX;
-    return paddingX + index * (chartWidth - paddingX * 2) / (activePoints.length - 1);
-  };
-  const getY = value => {
-    const range = maxVal - minVal || 1;
-    return chartHeight - paddingY - (value - minVal) / range * (chartHeight - paddingY * 2);
+    '7d': [
+      { name: 'Mon', revenue: 65000000, orders: 8 },
+      { name: 'Tue', revenue: 98000000, orders: 12 },
+      { name: 'Wed', revenue: 84000000, orders: 10 },
+      { name: 'Thu', revenue: 146000000, orders: 18 },
+      { name: 'Fri', revenue: 162000000, orders: 20 },
+      { name: 'Sat', revenue: 198000000, orders: 25 },
+      { name: 'Sun', revenue: 185381000, orders: 23 },
+    ],
+    month: [
+      { name: 'Week 1', revenue: 165000000, orders: 24 },
+      { name: 'Week 2', revenue: 210000000, orders: 32 },
+      { name: 'Week 3', revenue: 198000000, orders: 29 },
+      { name: 'Week 4', revenue: 265381000, orders: 41 },
+    ],
+    year: [
+      { name: 'Jan', revenue: 52000000, orders: 14 },
+      { name: 'Feb', revenue: 64000000, orders: 18 },
+      { name: 'Mar', revenue: 78000000, orders: 22 },
+      { name: 'Apr', revenue: 85000000, orders: 25 },
+      { name: 'May', revenue: 92000000, orders: 28 },
+      { name: 'Jun', revenue: 110000000, orders: 34 },
+      { name: 'Jul', revenue: 125000000, orders: 38 },
+      { name: 'Aug', revenue: 118000000, orders: 36 },
+      { name: 'Sep', revenue: 135000000, orders: 42 },
+      { name: 'Oct', revenue: 148000000, orders: 46 },
+      { name: 'Nov', revenue: 162000000, orders: 50 },
+      { name: 'Dec', revenue: 185000000, orders: 58 },
+    ],
   };
 
-  // Generate SVG path points
-  const pointsString = activePoints.map((p, i) => `${getX(i)},${getY(p.revenue)}`).join(' ');
-  const areaPath = activePoints.length > 0 ? `M ${getX(0)},${chartHeight - paddingY} ` + activePoints.map((p, i) => `L ${getX(i)},${getY(p.revenue)}`).join(' ') + ` L ${getX(activePoints.length - 1)},${chartHeight - paddingY} Z` : '';
-  const formatVND = num => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
-    }).format(num);
+  const activePoints =
+    (safeChartData && (safeChartData[timeRange] || safeChartData['7d'])) || [];
+
+  const VI_TO_EN_CATEGORY_MAP = {
+    'Máy ảnh & Ống kính': t.categories.camera,
+    'Flycam & Gimbal': t.categories.drone,
+    'Tai nghe & Âm thanh': t.categories.audio,
+    'Máy chơi game & VR': t.categories.gaming,
+    'Phụ kiện công nghệ': t.categories.accessory,
+    'Điện thoại & Tablet': t.categories.smartphone,
+    'Smartphone & Tablet': t.categories.smartphone,
+    'Laptop & Workstation': t.categories.laptop,
   };
-  return <div style={{
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '24px'
-  }}>
+
+  const rawCategories =
+    Array.isArray(categoryStats) && categoryStats.length > 0
+      ? categoryStats
+      : [
+          {
+            id: 'smartphone',
+            name: t.categories.smartphone,
+            count: 36,
+            percent: 37,
+            color: '#67BEC3',
+          },
+          {
+            id: 'laptop',
+            name: t.categories.laptop,
+            count: 24,
+            percent: 25,
+            color: '#38BDF8',
+          },
+          {
+            id: 'camera',
+            name: t.categories.camera,
+            count: 18,
+            percent: 18,
+            color: '#818CF8',
+          },
+          {
+            id: 'drone',
+            name: t.categories.drone,
+            count: 10,
+            percent: 10,
+            color: '#F472B6',
+          },
+          {
+            id: 'audio',
+            name: t.categories.audio,
+            count: 6,
+            percent: 6,
+            color: '#FBBF24',
+          },
+          {
+            id: 'gaming',
+            name: t.categories.gaming,
+            count: 4,
+            percent: 4,
+            color: '#34D399',
+          },
+        ];
+
+  const safeCategories = rawCategories.map((cat) => ({
+    ...cat,
+    name: VI_TO_EN_CATEGORY_MAP[cat.name] || cat.name,
+  }));
+
+  return (
+    <div className="flex flex-col gap-6">
       {/* 1. Header Section */}
-      <div style={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      flexWrap: 'wrap',
-      gap: '16px'
-    }}>
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 style={{
-          fontSize: '24px',
-          fontWeight: 800,
-          color: '#0F172A',
-          letterSpacing: '-0.02em',
-          margin: 0
-        }}>
-            Tổng quan hệ thống
+          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+            {t.title}
           </h1>
+          <p className="text-xs text-slate-500 mt-1">{t.subtitle}</p>
         </div>
 
-        <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '10px'
-      }}>
-          <button type="button" onClick={onRefresh} className="admin-btn admin-btn-outline" disabled={isLoading} title="Làm mới dữ liệu từ MongoDB Atlas">
+        <div className="flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={onRefresh}
+            className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 hover:border-slate-300 transition-all shadow-xs disabled:opacity-60 cursor-pointer"
+            disabled={isLoading}
+            title={t.refreshTooltip}
+          >
             <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''} />
-            <span>{isLoading ? 'Đang tải...' : 'Làm mới'}</span>
+            <span>{isLoading ? t.loading : t.refresh}</span>
           </button>
 
-          <button type="button" className="admin-btn admin-btn-primary" onClick={() => alert('Báo cáo thống kê quản trị TechShare đã được chuẩn bị tải về.')}>
+          <button
+            type="button"
+            className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-xl bg-[#67BEC3] text-white hover:bg-[#4CA6AC] transition-all shadow-xs cursor-pointer"
+            onClick={() => alert(t.reportAlert)}
+          >
             <Download size={14} />
-            <span>Tải báo cáo CSV</span>
+            <span>{t.downloadCsv}</span>
           </button>
         </div>
       </div>
 
-      {/* 2. Lưới 4 Thẻ KPI */}
-      <div className="admin-kpi-grid">
-        {/* KPI 1: Người dùng */}
-        <div className="admin-kpi-card">
-          <div className="admin-kpi-top">
-            <div className="admin-kpi-icon">
+      {/* 2. Lưới 4 Thẻ KPI (Overview Stat Cards) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+        {/* KPI 1: Total Users */}
+        <div className="admin-kpi-card bg-white rounded-2xl p-6 border border-slate-100 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-4">
+            <div className="w-11 h-11 rounded-xl bg-[#EEF8F8] text-[#67BEC3] flex items-center justify-center">
               <Users size={22} />
             </div>
-            <span className="admin-kpi-badge">
-              <ArrowUpRight size={12} style={{
-              display: 'inline',
-              marginRight: '2px'
-            }} />
+            <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600">
+              <ArrowUpRight size={13} />
               +18%
             </span>
           </div>
           <div>
-            <div className="admin-kpi-value">{safeKpi.totalUsers}</div>
-            <div className="admin-kpi-label">Tổng người dùng</div>
+            <p className="text-3xl font-bold text-slate-800 tracking-tight">
+              {safeKpi.totalUsers}
+            </p>
+            <p className="text-sm font-medium text-slate-500 mt-1">
+              {t.totalUsers}
+            </p>
           </div>
         </div>
 
-        {/* KPI 2: Thiết bị công nghệ */}
-        <div className="admin-kpi-card">
-          <div className="admin-kpi-top">
-            <div className="admin-kpi-icon">
+        {/* KPI 2: Total Devices */}
+        <div className="admin-kpi-card bg-white rounded-2xl p-6 border border-slate-100 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-4">
+            <div className="w-11 h-11 rounded-xl bg-[#EEF8F8] text-[#67BEC3] flex items-center justify-center">
               <Cpu size={22} />
             </div>
-            <span className="admin-kpi-badge">
-              <ArrowUpRight size={12} style={{
-              display: 'inline',
-              marginRight: '2px'
-            }} />
+            <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600">
+              <ArrowUpRight size={13} />
               +12%
             </span>
           </div>
           <div>
-            <div className="admin-kpi-value">{safeKpi.totalDevices}</div>
-            <div className="admin-kpi-label">Thiết bị trên sàn</div>
+            <p className="text-3xl font-bold text-slate-800 tracking-tight">
+              {safeKpi.totalDevices}
+            </p>
+            <p className="text-sm font-medium text-slate-500 mt-1">
+              {t.totalDevices}
+            </p>
           </div>
         </div>
 
-        {/* KPI 3: Đơn thuê */}
-        <div className="admin-kpi-card">
-          <div className="admin-kpi-top">
-            <div className="admin-kpi-icon">
+        {/* KPI 3: Active Rentals */}
+        <div className="admin-kpi-card bg-white rounded-2xl p-6 border border-slate-100 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-4">
+            <div className="w-11 h-11 rounded-xl bg-[#EEF8F8] text-[#67BEC3] flex items-center justify-center">
               <ShoppingBag size={22} />
             </div>
-            <span className="admin-kpi-badge">
-              <ArrowUpRight size={12} style={{
-              display: 'inline',
-              marginRight: '2px'
-            }} />
+            <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600">
+              <ArrowUpRight size={13} />
               +24%
             </span>
           </div>
           <div>
-            <div className="admin-kpi-value">{safeKpi.activeBookings}</div>
-            <div className="admin-kpi-label">Đơn thuê hoạt động</div>
+            <p className="text-3xl font-bold text-slate-800 tracking-tight">
+              {safeKpi.activeBookings}
+            </p>
+            <p className="text-sm font-medium text-slate-500 mt-1">
+              {t.activeOrders}
+            </p>
           </div>
         </div>
 
-        {/* KPI 4: Doanh thu */}
-        <div className="admin-kpi-card">
-          <div className="admin-kpi-top">
-            <div className="admin-kpi-icon">
+        {/* KPI 4: Total Revenue */}
+        <div className="admin-kpi-card bg-white rounded-2xl p-6 border border-slate-100 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-4">
+            <div className="w-11 h-11 rounded-xl bg-[#EEF8F8] text-[#67BEC3] flex items-center justify-center">
               <TrendingUp size={22} />
             </div>
-            <span className="admin-kpi-badge">
-              <ArrowUpRight size={12} style={{
-              display: 'inline',
-              marginRight: '2px'
-            }} />
+            <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600">
+              <ArrowUpRight size={13} />
               +15%
             </span>
           </div>
           <div>
-            <div className="admin-kpi-value" style={{
-            fontSize: '22px',
-            color: '#286E74'
-          }}>
+            <p className="text-3xl font-bold text-[#67BEC3] tracking-tight">
               {safeKpi.revenueFormatted || formatVND(safeKpi.totalRevenue)}
-            </div>
-            <div className="admin-kpi-label">Tổng doanh thu sàn</div>
+            </p>
+            <p className="text-sm font-medium text-slate-500 mt-1">
+              {t.totalRevenue}
+            </p>
           </div>
         </div>
       </div>
 
-      {/* 3. Lưới Biểu đồ Doanh thu & Phân bổ Danh mục */}
-      <div className="admin-overview-grid">
-        {/* Cột trái: Biểu đồ doanh thu với 3 Tabs riêng biệt */}
-        <div className="admin-card" style={{
-        padding: '24px 28px'
-      }}>
-          <div className="admin-card-header">
+      {/* 3. Lưới Biểu đồ Doanh thu (Recharts) & Phân bổ Danh mục */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Cột trái (lg:col-span-2): Biểu đồ doanh thu Recharts AreaChart */}
+        <div className="admin-card lg:col-span-2 bg-white rounded-2xl p-6 lg:p-8 border border-slate-100 shadow-sm flex flex-col justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
             <div>
-              <div className="admin-card-title">Doanh thu & Số lượng Giao dịch</div>
+              <h2 className="text-lg font-bold text-slate-900 tracking-tight">
+                {t.revenueChartTitle}
+              </h2>
+              <p className="text-xs text-slate-500 mt-0.5">{t.subtitle}</p>
             </div>
 
-            {/* 3 Tabs / Pill buttons riêng biệt */}
-            <div className="admin-tab-group" role="tablist">
-              <button type="button" role="tab" aria-selected={timeRange === '7d'} onClick={() => setTimeRange('7d')} className={`admin-tab-pill ${timeRange === '7d' ? 'active' : ''}`}>
-                7 Ngày
+            {/* Time Range Selector Tabs */}
+            <div
+              className="inline-flex items-center p-1 bg-slate-50 rounded-xl border border-slate-200 self-start sm:self-auto"
+              role="tablist"
+            >
+              <button
+                type="button"
+                role="tab"
+                aria-selected={timeRange === '7d'}
+                onClick={() => setTimeRange('7d')}
+                className={`px-3 py-1.5 text-xs rounded-lg transition-all cursor-pointer ${
+                  timeRange === '7d'
+                    ? 'bg-white text-[#286E74] font-bold shadow-xs'
+                    : 'text-slate-500 hover:text-slate-800 font-medium'
+                }`}
+              >
+                {t.timeRanges['7d']}
               </button>
-              <button type="button" role="tab" aria-selected={timeRange === 'month'} onClick={() => setTimeRange('month')} className={`admin-tab-pill ${timeRange === 'month' ? 'active' : ''}`}>
-                Tháng này
+              <button
+                type="button"
+                role="tab"
+                aria-selected={timeRange === 'month'}
+                onClick={() => setTimeRange('month')}
+                className={`px-3 py-1.5 text-xs rounded-lg transition-all cursor-pointer ${
+                  timeRange === 'month'
+                    ? 'bg-white text-[#286E74] font-bold shadow-xs'
+                    : 'text-slate-500 hover:text-slate-800 font-medium'
+                }`}
+              >
+                {t.timeRanges.month}
               </button>
-              <button type="button" role="tab" aria-selected={timeRange === 'year'} onClick={() => setTimeRange('year')} className={`admin-tab-pill ${timeRange === 'year' ? 'active' : ''}`}>
-                Năm nay
+              <button
+                type="button"
+                role="tab"
+                aria-selected={timeRange === 'year'}
+                onClick={() => setTimeRange('year')}
+                className={`px-3 py-1.5 text-xs rounded-lg transition-all cursor-pointer ${
+                  timeRange === 'year'
+                    ? 'bg-white text-[#286E74] font-bold shadow-xs'
+                    : 'text-slate-500 hover:text-slate-800 font-medium'
+                }`}
+              >
+                {t.timeRanges.year}
               </button>
             </div>
           </div>
 
-          {/* Interactive Responsive SVG Line Chart */}
-          <div style={{
-          position: 'relative',
-          width: '100%',
-          height: '240px',
-          marginTop: '10px'
-        }}>
-            <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} style={{
-            width: '100%',
-            height: '100%',
-            overflow: 'visible'
-          }}>
-              <defs>
-                <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#67BEC3" stopOpacity="0.32" />
-                  <stop offset="100%" stopColor="#67BEC3" stopOpacity="0.0" />
-                </linearGradient>
-              </defs>
-
-              {/* Grid Lines */}
-              {[0, 0.33, 0.66, 1].map((pct, idx) => {
-              const y = chartHeight - paddingY - pct * (chartHeight - paddingY * 2);
-              return <g key={idx}>
-                    <line x1={paddingX} y1={y} x2={chartWidth - paddingX} y2={y} stroke="#F1F5F9" strokeWidth="1.5" strokeDasharray="4 4" />
-                    <text x={paddingX - 8} y={y + 4} textAnchor="end" fontSize="10" fill="#94A3B8">
-                      {Math.round(pct * maxVal / 1000000)}Tr
-                    </text>
-                  </g>;
-            })}
-
-              {/* Area Under Curve */}
-              {areaPath && <path d={areaPath} fill="url(#areaGradient)" />}
-
-              {/* Line */}
-              {activePoints.length > 0 && <polyline fill="none" stroke="#67BEC3" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" points={pointsString} />}
-
-              {/* Data Points */}
-              {activePoints.map((point, idx) => {
-              const cx = getX(idx);
-              const cy = getY(point.revenue);
-              const isHovered = hoveredPoint?.name === point.name;
-              return <g key={point.name}>
-                    <circle cx={cx} cy={cy} r={isHovered ? 6 : 4} fill="#FFFFFF" stroke="#286E74" strokeWidth={isHovered ? 3 : 2} style={{
-                  cursor: 'pointer',
-                  transition: 'all 0.2s'
-                }} onMouseEnter={() => setHoveredPoint(point)} onMouseLeave={() => setHoveredPoint(null)} />
-                    <text x={cx} y={chartHeight - 8} textAnchor="middle" fontSize="11" fontWeight={isHovered ? '700' : '500'} fill={isHovered ? '#286E74' : '#64748B'}>
-                      {point.name}
-                    </text>
-                  </g>;
-            })}
-            </svg>
-
-            {/* Hover Tooltip */}
-            {hoveredPoint && <div style={{
-            position: 'absolute',
-            top: '10px',
-            right: '20px',
-            backgroundColor: '#0F172A',
-            color: '#FFFFFF',
-            padding: '8px 12px',
-            borderRadius: '10px',
-            fontSize: '12px',
-            boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
-            pointerEvents: 'none',
-            zIndex: 20
-          }}>
-                <div style={{
-              fontWeight: 700,
-              color: '#67BEC3'
-            }}>
-                  {hoveredPoint.name}: {formatVND(hoveredPoint.revenue)}
-                </div>
-                <div style={{
-              color: '#CBD5E1',
-              fontSize: '11px',
-              marginTop: '2px'
-            }}>
-                  Số giao dịch: {hoveredPoint.orders} lượt thuê
-                </div>
-              </div>}
+          {/* Recharts AreaChart Container */}
+          <div className="w-full h-72 md:h-80 mt-2">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart
+                data={activePoints}
+                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+              >
+                <defs>
+                  <linearGradient
+                    id="adminRevenueGradient"
+                    x1="0"
+                    y1="0"
+                    x2="0"
+                    y2="1"
+                  >
+                    <stop offset="5%" stopColor="#67BEC3" stopOpacity={0.35} />
+                    <stop offset="95%" stopColor="#67BEC3" stopOpacity={0.0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  vertical={false}
+                  stroke="#F1F5F9"
+                />
+                <XAxis
+                  dataKey="name"
+                  stroke="#94A3B8"
+                  fontSize={12}
+                  tickLine={false}
+                  axisLine={{ stroke: '#E2E8F0' }}
+                />
+                <YAxis
+                  stroke="#94A3B8"
+                  fontSize={11}
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={(val) => `${(val / 1000000).toFixed(0)}M`}
+                />
+                <RechartsTooltip content={<CustomRevenueTooltip />} />
+                <Area
+                  type="monotone"
+                  dataKey="revenue"
+                  stroke="#67BEC3"
+                  strokeWidth={3}
+                  fillOpacity={1}
+                  fill="url(#adminRevenueGradient)"
+                  activeDot={{
+                    r: 6,
+                    fill: '#FFFFFF',
+                    stroke: '#286E74',
+                    strokeWidth: 2,
+                  }}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Cột phải: Phân bổ danh mục thiết bị (Category Progress Bars) */}
-        <div className="admin-card" style={{
-        padding: '24px 22px'
-      }}>
-          <div className="admin-card-header">
-            <div>
-              <div className="admin-card-title">Phân bổ Thiết bị</div>
+        {/* Cột phải: Phân bổ Danh mục Thiết bị (Category Breakdown) */}
+        <div className="admin-card bg-white rounded-2xl p-6 lg:p-8 border border-slate-100 shadow-sm flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-lg font-bold text-slate-900 tracking-tight">
+                {t.categoryDistributionTitle}
+              </h2>
+              <span className="inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full bg-[#EEF8F8] text-[#286E74]">
+                {t.platformWide}
+              </span>
             </div>
-            <span className="admin-pill-badge active" style={{
-            fontSize: '11px'
-          }}>
-              Toàn sàn
-            </span>
-          </div>
 
-          <div className="admin-category-list">
-            {safeCategories.map(cat => <div key={cat.id} className="admin-category-item">
-                <div className="admin-category-meta">
-                  <span className="admin-cat-name">{cat.name}</span>
-                  <span className="admin-cat-count">
-                    <strong>{cat.count}</strong> thiết bị ({cat.percent}%)
-                  </span>
+            <div className="flex flex-col">
+              {safeCategories.map((cat) => (
+                <div key={cat.id} className="flex flex-col gap-2 mb-4 last:mb-0">
+                  <div className="flex items-center justify-between text-sm font-medium text-slate-700">
+                    <span className="font-semibold text-slate-800">
+                      {cat.name}
+                    </span>
+                    <span className="ml-auto text-xs text-slate-500">
+                      <strong className="text-slate-700 font-semibold">
+                        {cat.count}
+                      </strong>{' '}
+                      {t.deviceUnit} ({cat.percent}%)
+                    </span>
+                  </div>
+                  <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden mt-1">
+                    <div
+                      className="h-full rounded-full transition-all duration-500"
+                      style={{
+                        width: `${Math.min(cat.percent, 100)}%`,
+                        backgroundColor: cat.color || '#67BEC3',
+                      }}
+                    />
+                  </div>
                 </div>
-                <div className="admin-progress-track">
-                  <div className="admin-progress-bar" style={{
-                width: `${Math.min(cat.percent, 100)}%`,
-                backgroundColor: cat.color || '#67BEC3'
-              }} />
-                </div>
-              </div>)}
+              ))}
+            </div>
           </div>
         </div>
       </div>
-    </div>;
+    </div>
+  );
 };
+
 export default AdminOverviewTab;
