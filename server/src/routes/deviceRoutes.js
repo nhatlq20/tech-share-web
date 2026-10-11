@@ -4,6 +4,7 @@ import {
   getNearbyDevices,
   getDeviceById,
 } from '../controllers/deviceController.js';
+import { getDeviceAvailability } from '../controllers/bookingController.js';
 
 const router = express.Router();
 
@@ -13,7 +14,11 @@ router.get('/nearby', getNearbyDevices);
 // Root devices listing with search, category, pagination & sorting
 router.get('/', getDevices);
 
+// Device availability for calendar & booking range picker
+router.get('/:id/availability', getDeviceAvailability);
+
 // Parameterized device detail route
 router.get('/:id', getDeviceById);
 
 export default router;
+
