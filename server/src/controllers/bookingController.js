@@ -3,7 +3,7 @@ import Device from '../models/Device.js';
 import Booking from '../models/Booking.js';
 
 /**
- * Format Date to YYYY-MM-DD in local/UTC string
+ * Format Date to YYYY-MM-DD in local string
  */
 const formatDateKey = (date) => {
   const d = new Date(date);
@@ -14,14 +14,15 @@ const formatDateKey = (date) => {
 };
 
 /**
- * Helper to generate unique booking code: TS-XXXXXX
+ * Generate Atlas system standard booking code (Format BXXXXXXXXX, e.g. B967685850)
+ * 100% consistent with tech-share-app mobile format
  */
 const generateBookingCode = async () => {
   let code = '';
   let exists = true;
   while (exists) {
-    const randomNum = Math.floor(100000 + Math.random() * 900000);
-    code = `TS-${randomNum}`;
+    const randomNum = Math.floor(100000000 + Math.random() * 900000000);
+    code = `B${randomNum}`;
     const found = await Booking.findOne({ bookingCode: code });
     if (!found) {
       exists = false;
@@ -31,8 +32,16 @@ const generateBookingCode = async () => {
 };
 
 /**
+ * Generate device handover QR token (Format: TSQR-BXXXXXXXXX-XXXX)
+ */
+const generateQrToken = (bookingCode) => {
+  const suffix = Math.random().toString(36).substring(2, 6).toUpperCase();
+  return `TSQR-${bookingCode}-${suffix}`;
+};
+
+/**
  * 1. GET /api/devices/:id/availability
- * Returns blocked dates and active bookings for a device
+ * Retrieve busy schedule (owner's blockedDates and existing booked ranges)
  */
 export const getDeviceAvailability = async (req, res, next) => {
   try {
@@ -41,7 +50,7 @@ export const getDeviceAvailability = async (req, res, next) => {
     if (!mongoose.isValidObjectId(id)) {
       return res.status(400).json({
         success: false,
-        message: 'Mã thiết bị không hợp lệ.',
+        message: 'Invalid device ID.',
       });
     }
 
@@ -49,7 +58,7 @@ export const getDeviceAvailability = async (req, res, next) => {
     if (!device) {
       return res.status(404).json({
         success: false,
-        message: 'Không tìm thấy thiết bị.',
+        message: 'Device not found.',
       });
     }
 
@@ -57,13 +66,10 @@ export const getDeviceAvailability = async (req, res, next) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // Get active/approved/pending bookings that end today or later
-    const deviceQuery = mongoose.isValidObjectId(id)
-      ? { $or: [{ device: new mongoose.Types.ObjectId(id) }, { deviceId: id.toString() }] }
-      : { deviceId: id.toString() };
-
+    // Query all valid active bookings for device (supporting both deviceId and device)
+    const deviceObjId = new mongoose.Types.ObjectId(id);
     const bookings = await Booking.find({
-      ...deviceQuery,
+      $or: [{ device: deviceObjId }, { deviceId: deviceObjId }],
       status: { $in: ['pending', 'approved', 'active'] },
       endDate: { $gte: today },
     })
@@ -72,18 +78,17 @@ export const getDeviceAvailability = async (req, res, next) => {
 
     const disabledDatesSet = new Set();
 
-    // 1. Add owner blocked dates
+    // 1. Get dates explicitly blocked by owner (blockedDates)
     const blockedDates = Array.isArray(device.blockedDates) ? device.blockedDates : [];
     blockedDates.forEach((date) => {
       disabledDatesSet.add(formatDateKey(date));
     });
 
-    // 2. Add booked ranges
+    // 2. Get date ranges already booked by renters
     const bookedRanges = bookings.map((b) => {
       const start = new Date(b.startDate);
       const end = new Date(b.endDate);
 
-      // Iterate each day in range and mark as disabled
       const cur = new Date(start);
       cur.setHours(0, 0, 0, 0);
       const endClean = new Date(end);
@@ -107,7 +112,9 @@ export const getDeviceAvailability = async (req, res, next) => {
       data: {
         deviceId: id,
         title: device.title || device.name,
+        pricePerDayAtBooking: device.dailyRate ?? device.pricePerDay ?? 0,
         dailyRate: device.dailyRate ?? device.pricePerDay ?? 0,
+        depositFee: device.depositValue || 0,
         depositValue: device.depositValue || 0,
         blockedDates,
         bookedRanges,
@@ -121,7 +128,7 @@ export const getDeviceAvailability = async (req, res, next) => {
 
 /**
  * 2. POST /api/bookings
- * Create a new rental booking request
+ * Create new booking with all fields synchronized with MongoDB Atlas schema
  */
 export const createBooking = async (req, res, next) => {
   try {
@@ -129,7 +136,9 @@ export const createBooking = async (req, res, next) => {
       deviceId,
       startDate,
       endDate,
+      deliveryMethod = 'delivery',
       deliveryAddress,
+      renterId,
       renterInfo,
       voucherCode,
       note,
@@ -140,7 +149,7 @@ export const createBooking = async (req, res, next) => {
     if (!deviceId || !mongoose.isValidObjectId(deviceId)) {
       return res.status(400).json({
         success: false,
-        message: 'Mã thiết bị không hợp lệ.',
+        message: 'Invalid device ID.',
       });
     }
 
@@ -148,15 +157,27 @@ export const createBooking = async (req, res, next) => {
     if (!device) {
       return res.status(404).json({
         success: false,
-        message: 'Thiết bị không tồn tại hoặc đã bị gỡ bỏ.',
+        message: 'Device not found or has been removed.',
       });
     }
 
-    // Validate delivery address
-    if (!deliveryAddress || !deliveryAddress.recipientName || !deliveryAddress.phone || !deliveryAddress.address) {
+    // Normalize handover delivery address to String format (Atlas / tech-share-app standard)
+    let formattedDeliveryAddress = '';
+    let recipientName = '';
+    let phone = '';
+
+    if (typeof deliveryAddress === 'object' && deliveryAddress !== null) {
+      recipientName = deliveryAddress.recipientName || '';
+      phone = deliveryAddress.phone || '';
+      formattedDeliveryAddress = deliveryAddress.address || '';
+    } else if (typeof deliveryAddress === 'string') {
+      formattedDeliveryAddress = deliveryAddress.trim();
+    }
+
+    if (!formattedDeliveryAddress) {
       return res.status(400).json({
         success: false,
-        message: 'Vui lòng cung cấp đầy đủ thông tin giao nhận (Tên, SĐT, Địa chỉ).',
+        message: 'Please provide delivery / handover address.',
       });
     }
 
@@ -167,7 +188,7 @@ export const createBooking = async (req, res, next) => {
     if (isNaN(start.getTime()) || isNaN(end.getTime())) {
       return res.status(400).json({
         success: false,
-        message: 'Ngày nhận hoặc ngày trả không đúng định dạng.',
+        message: 'Invalid pickup date or return date format.',
       });
     }
 
@@ -180,24 +201,25 @@ export const createBooking = async (req, res, next) => {
     if (start < today) {
       return res.status(400).json({
         success: false,
-        message: 'Ngày nhận máy không thể ở trong quá khứ.',
+        message: 'Pickup date cannot be in the past.',
       });
     }
 
     if (end < start) {
       return res.status(400).json({
         success: false,
-        message: 'Ngày trả máy phải lớn hơn hoặc bằng ngày nhận máy.',
+        message: 'Return date must be greater than or equal to pickup date.',
       });
     }
 
-    // Calculate total days (1 day minimum)
+    // Calculate total rental days
     const diffTime = end.getTime() - start.getTime();
     const totalDays = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
 
-    // 1. Check conflicts with existing active/approved/pending bookings
+    // 1. Check date conflict against active / approved / pending bookings
+    const deviceObjId = new mongoose.Types.ObjectId(deviceId);
     const conflictBooking = await Booking.findOne({
-      $or: [{ device: device._id }, { deviceId: device._id.toString() }],
+      $or: [{ device: deviceObjId }, { deviceId: deviceObjId }],
       status: { $in: ['pending', 'approved', 'active'] },
       startDate: { $lte: end },
       endDate: { $gte: start },
@@ -206,11 +228,11 @@ export const createBooking = async (req, res, next) => {
     if (conflictBooking) {
       return res.status(409).json({
         success: false,
-        message: 'Rất tiếc! Thiết bị đã có người đặt trong khoảng thời gian bạn chọn.',
+        message: 'Sorry! This device is already booked for the selected date range.',
       });
     }
 
-    // 2. Check conflicts with owner blocked dates
+    // 2. Check date conflict against owner blockedDates
     if (Array.isArray(device.blockedDates) && device.blockedDates.length > 0) {
       const hasBlockedConflict = device.blockedDates.some((bDate) => {
         const bd = new Date(bDate);
@@ -221,24 +243,26 @@ export const createBooking = async (req, res, next) => {
       if (hasBlockedConflict) {
         return res.status(409).json({
           success: false,
-          message: 'Khoảng thời gian bạn chọn trùng với lịch bận đã khóa của chủ máy.',
+          message: 'Selected date range conflicts with owner blocked dates.',
         });
       }
     }
 
-    // 3. Pricing & Discounts calculation
+    // 3. Calculate rental fees and long-term rental discounts
     const dailyRate = device.dailyRate ?? device.pricePerDay ?? 0;
     const rentalFee = dailyRate * totalDays;
 
-    // Long rental discount (>=3 days: 10%, >=7 days: 20%)
+    let discountPercent = 0;
     let longRentalDiscount = 0;
     if (totalDays >= 7) {
+      discountPercent = 20;
       longRentalDiscount = Math.round(rentalFee * 0.2);
     } else if (totalDays >= 3) {
+      discountPercent = 10;
       longRentalDiscount = Math.round(rentalFee * 0.1);
     }
 
-    // Voucher discount validation
+    // Voucher discount
     let voucherDiscount = 0;
     const cleanVoucher = (voucherCode || '').toString().trim().toUpperCase();
     if (cleanVoucher === 'WELCOME50') {
@@ -248,52 +272,101 @@ export const createBooking = async (req, res, next) => {
     }
 
     const discountAmount = longRentalDiscount + voucherDiscount;
-    const depositValue = device.depositValue || 0;
+    const depositFee = device.depositValue || 0;
     const finalRentalFee = Math.max(0, rentalFee - discountAmount);
-    const totalAmount = finalRentalFee + depositValue;
+    const totalAmount = finalRentalFee + depositFee;
 
-    // Generate unique booking code
+    // Generate booking code and handover QR token
     const bookingCode = await generateBookingCode();
+    const qrToken = generateQrToken(bookingCode);
 
+    // Resolve effective renterId & ownerId
+    const effectiveRenterId = renterId && mongoose.isValidObjectId(renterId)
+      ? new mongoose.Types.ObjectId(renterId)
+      : (req.user?._id || null);
+
+    const effectiveOwnerId = device.owner && mongoose.isValidObjectId(device.owner)
+      ? new mongoose.Types.ObjectId(device.owner)
+      : null;
+
+    // Create Booking instance with 100% Atlas-synchronized fields
     const newBooking = new Booking({
       bookingCode,
+      qrToken,
+      deviceId: device._id,
       device: device._id,
-      deviceId: device._id.toString(),
-      owner: device.owner || null,
-      ownerId: device.owner ? device.owner.toString() : '',
+      renterId: effectiveRenterId,
+      renter: effectiveRenterId,
+      ownerId: effectiveOwnerId,
+      owner: effectiveOwnerId,
       renterInfo: renterInfo || {
-        name: deliveryAddress.recipientName,
-        phone: deliveryAddress.phone,
-        email: '',
+        name: recipientName || 'Renter',
+        phone: phone || '',
+        email: req.user?.email || '',
       },
       startDate: start,
       endDate: end,
       totalDays,
-      dailyRate,
+      pricePerDayAtBooking: dailyRate,
+      dailyRate: dailyRate,
       rentalFee,
+      discountPercent,
       discountAmount,
       voucherCode: cleanVoucher,
-      depositValue,
+      voucherDiscount,
+      depositFee,
+      depositValue: depositFee,
       totalAmount,
+      deliveryMethod: deliveryMethod || 'delivery',
+      deliveryAddress: formattedDeliveryAddress,
       status: 'pending',
       paymentStatus: 'unpaid',
       paymentMethod,
-      deliveryAddress,
+      rejectReason: '',
+      cancelReason: '',
       note: (note || '').trim(),
+      handoverPhotos: {
+        beforeRental: [],
+        afterRental: [],
+      },
+      conditionNotes: {
+        before: '',
+        after: '',
+      },
+      digitalSignature: '',
       timeline: [
         {
           status: 'pending',
+          note: 'Booking created',
+          timestamp: new Date(),
           updatedAt: new Date(),
-          note: 'Đơn thuê đã được gửi thành công, chờ chủ máy phê duyệt.',
         },
       ],
+      extensionRequest: {
+        requestedDays: 0,
+        additionalFee: 0,
+        status: 'none',
+      },
+      disputeStatus: 'none',
+      disputeNote: '',
+      dispute: {
+        isDisputed: false,
+        reason: '',
+        requestedAmount: 0,
+        proofPhotos: [],
+        resolutionStatus: 'none',
+        adminNote: '',
+      },
+      reminder6hSent: false,
+      reminder2hSent: false,
+      isReviewed: false,
     });
 
     await newBooking.save();
 
     return res.status(201).json({
       success: true,
-      message: 'Đặt thuê thiết bị thành công! Đơn của bạn đang chờ chủ máy duyệt.',
+      message: 'Device booked successfully! Awaiting owner approval.',
       data: newBooking,
     });
   } catch (error) {
@@ -303,7 +376,7 @@ export const createBooking = async (req, res, next) => {
 
 /**
  * 3. GET /api/bookings/my-bookings
- * Returns bookings list with optional status filtering
+ * Retrieve bookings list with pagination and device population
  */
 export const getMyBookings = async (req, res, next) => {
   try {
@@ -320,7 +393,8 @@ export const getMyBookings = async (req, res, next) => {
 
     const total = await Booking.countDocuments(filter);
     const bookings = await Booking.find(filter)
-      .populate('device', 'title name brand category images dailyRate depositValue location address')
+      .populate('device', 'title name brand category images dailyRate pricePerDayAtBooking depositValue depositFee location address')
+      .populate('deviceId', 'title name brand category images dailyRate pricePerDayAtBooking depositValue depositFee location address')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limitNum)
@@ -344,7 +418,7 @@ export const getMyBookings = async (req, res, next) => {
 
 /**
  * 4. GET /api/bookings/:id
- * Retrieve details of a single booking
+ * Retrieve booking details by ID or bookingCode (supports both TS-... and B...)
  */
 export const getBookingById = async (req, res, next) => {
   try {
@@ -356,13 +430,14 @@ export const getBookingById = async (req, res, next) => {
     }
 
     const booking = await Booking.findOne(query)
-      .populate('device', 'title name brand category images dailyRate depositValue location address specs condition')
+      .populate('device', 'title name brand category images dailyRate pricePerDayAtBooking depositValue depositFee location address specs condition')
+      .populate('deviceId', 'title name brand category images dailyRate pricePerDayAtBooking depositValue depositFee location address specs condition')
       .lean();
 
     if (!booking) {
       return res.status(404).json({
         success: false,
-        message: 'Không tìm thấy thông tin đơn thuê.',
+        message: 'Booking not found.',
       });
     }
 
@@ -377,25 +452,25 @@ export const getBookingById = async (req, res, next) => {
 
 /**
  * 5. POST /api/bookings/validate-pricing
- * Helper endpoint to calculate exact pricing and preview discount breakdown
+ * Calculate rental pricing and validate promotional voucher
  */
 export const validatePricing = async (req, res, next) => {
   try {
     const { deviceId, startDate, endDate, voucherCode } = req.body;
 
     if (!deviceId || !mongoose.isValidObjectId(deviceId)) {
-      return res.status(400).json({ success: false, message: 'Mã thiết bị không hợp lệ.' });
+      return res.status(400).json({ success: false, message: 'Invalid device ID.' });
     }
 
     const device = await Device.findOne({ _id: deviceId, isDeleted: { $ne: true } }).lean();
     if (!device) {
-      return res.status(404).json({ success: false, message: 'Thiết bị không tồn tại.' });
+      return res.status(404).json({ success: false, message: 'Device not found.' });
     }
 
     const start = new Date(startDate);
     const end = new Date(endDate);
     if (isNaN(start.getTime()) || isNaN(end.getTime()) || end < start) {
-      return res.status(400).json({ success: false, message: 'Khoảng thời gian không hợp lệ.' });
+      return res.status(400).json({ success: false, message: 'Invalid date range.' });
     }
 
     const diffTime = end.getTime() - start.getTime();
@@ -403,13 +478,13 @@ export const validatePricing = async (req, res, next) => {
     const dailyRate = device.dailyRate ?? device.pricePerDay ?? 0;
     const rentalFee = dailyRate * totalDays;
 
+    let discountPercent = 0;
     let longRentalDiscount = 0;
-    let longRentalDiscountPercent = 0;
     if (totalDays >= 7) {
-      longRentalDiscountPercent = 20;
+      discountPercent = 20;
       longRentalDiscount = Math.round(rentalFee * 0.2);
     } else if (totalDays >= 3) {
-      longRentalDiscountPercent = 10;
+      discountPercent = 10;
       longRentalDiscount = Math.round(rentalFee * 0.1);
     }
 
@@ -421,33 +496,36 @@ export const validatePricing = async (req, res, next) => {
     if (cleanVoucher === 'WELCOME50') {
       voucherDiscount = Math.min(50000, rentalFee);
       voucherValid = true;
-      voucherMessage = 'Đã áp dụng mã WELCOME50 (-50.000đ)';
+      voucherMessage = 'Applied voucher WELCOME50 (-50,000 VND)';
     } else if (cleanVoucher === 'WEEKEND10') {
       voucherDiscount = Math.round(rentalFee * 0.1);
       voucherValid = true;
-      voucherMessage = 'Đã áp dụng mã WEEKEND10 (-10%)';
+      voucherMessage = 'Applied voucher WEEKEND10 (-10%)';
     } else if (cleanVoucher) {
-      voucherMessage = 'Mã voucher không hợp lệ hoặc đã hết hạn';
+      voucherMessage = 'Invalid or expired voucher code';
     }
 
     const discountAmount = longRentalDiscount + voucherDiscount;
-    const depositValue = device.depositValue || 0;
+    const depositFee = device.depositValue || 0;
     const finalRentalFee = Math.max(0, rentalFee - discountAmount);
-    const totalAmount = finalRentalFee + depositValue;
+    const totalAmount = finalRentalFee + depositFee;
 
     return res.status(200).json({
       success: true,
       data: {
         totalDays,
+        pricePerDayAtBooking: dailyRate,
         dailyRate,
         rentalFee,
+        discountPercent,
         longRentalDiscount,
-        longRentalDiscountPercent,
+        longRentalDiscountPercent: discountPercent,
         voucherDiscount,
         voucherValid,
         voucherMessage,
         discountAmount,
-        depositValue,
+        depositFee,
+        depositValue: depositFee,
         finalRentalFee,
         totalAmount,
       },

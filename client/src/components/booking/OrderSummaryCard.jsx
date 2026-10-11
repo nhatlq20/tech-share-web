@@ -26,7 +26,7 @@ export const OrderSummaryCard = ({
   canSubmit = false,
   onSubmit,
 }) => {
-  const title = (device?.title || device?.name || 'Thiết bị TechShare').trim();
+  const title = (device?.title || device?.name || 'TechShare Device').trim();
   const brand = (device?.brand || '').trim();
   const imageUrl = Array.isArray(device?.images) && device.images.length > 0 ? device.images[0] : null;
   const rating = (device?.rating ?? device?.ratingAvg ?? 5.0).toFixed(1);
@@ -70,7 +70,7 @@ export const OrderSummaryCard = ({
             <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
             <span className="font-semibold text-slate-700">{rating}</span>
             <span>•</span>
-            <span className="text-slate-500">{formatPrice(dailyRate)} / ngày</span>
+            <span className="text-slate-500">{formatPrice(dailyRate)} / day</span>
           </div>
         </div>
       </div>
@@ -87,7 +87,7 @@ export const OrderSummaryCard = ({
         <div className="flex items-center justify-between text-slate-600">
           <span>{STRINGS.booking.summary.durationLabel}</span>
           <span className="font-semibold text-slate-800">
-            {totalDays > 0 ? `${totalDays} ${STRINGS.common.day}` : '—'}
+            {totalDays > 0 ? `${totalDays} ${totalDays === 1 ? 'day' : 'days'}` : '—'}
           </span>
         </div>
 
@@ -148,7 +148,7 @@ export const OrderSummaryCard = ({
             {STRINGS.booking.summary.totalAmountLabel}
           </span>
           <span className="text-[10px] text-slate-400">
-            (Đã bao gồm tiền thuê + tiền cọc)
+            (Includes rental fee + security deposit)
           </span>
         </div>
         <div className="text-xl font-extrabold text-slate-900 tracking-tight">

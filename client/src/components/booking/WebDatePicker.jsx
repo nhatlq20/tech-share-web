@@ -80,7 +80,7 @@ export const WebDatePicker = ({
     // Shift: Monday(1)->0, Tuesday(2)->1 ... Sunday(0)->6
     const offset = firstDayIndex === 0 ? 6 : firstDayIndex - 1;
 
-    const title = `Tháng ${month + 1}, ${year}`;
+    const title = currentMonthDate.toLocaleString('en-US', { month: 'long', year: 'numeric' });
 
     return {
       daysInMonth: daysCount,
