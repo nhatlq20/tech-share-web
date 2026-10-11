@@ -15,6 +15,7 @@ export const ROUTES = {
   REGISTER: '/register',
   DASHBOARD: '/dashboard',
   ADMIN: '/admin',
+  PROFILE: '/profile',
 
   // Owner Hub Routes
   OWNER: '/owner',

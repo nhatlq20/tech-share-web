@@ -43,19 +43,52 @@ export const Navbar = () => {
         {/* Auth Actions */}
         <div className="navbar-actions">
           {isAuthenticated ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div className="navbar-user-section">
+              {/* Avatar linking to Profile Page */}
               <Link
-                to={user?.role === 'admin' ? (ROUTES.ADMIN?.ROOT || ROUTES.ADMIN) : (ROUTES.DASHBOARD?.ROOT || ROUTES.DASHBOARD)}
-                className="navbar-link"
-                style={{ fontWeight: 600 }}
+                to={ROUTES.PROFILE}
+                className="navbar-avatar-link"
+                title={`Hồ sơ cá nhân: ${user?.name || user?.email || 'Xem Profile'}`}
               >
-                {user?.fullName || user?.name || 'Dashboard'}
+                <div className="navbar-avatar-wrapper">
+                  {user?.avatar ? (
+                    <img
+                      src={user.avatar}
+                      alt={user?.name || 'Avatar'}
+                      className="navbar-avatar-img"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        const fallback = e.currentTarget.parentElement.querySelector('.navbar-avatar-fallback');
+                        if (fallback) fallback.style.display = 'flex';
+                      }}
+                    />
+                  ) : null}
+                  <div
+                    className="navbar-avatar-fallback"
+                    style={{ display: user?.avatar ? 'none' : 'flex' }}
+                  >
+                    {(user?.name || user?.email || 'U').charAt(0).toUpperCase()}
+                  </div>
+                  <span className="navbar-avatar-status" title="Đang trực tuyến" />
+                </div>
+                <div className="navbar-user-meta">
+                  <span className="navbar-user-name">{user?.name || 'Người dùng'}</span>
+                  <span className="navbar-user-role">
+                    {user?.role === 'admin'
+                      ? 'Quản trị viên'
+                      : user?.role === 'owner'
+                      ? 'Chủ thiết bị'
+                      : 'Người thuê'}
+                  </span>
+                </div>
               </Link>
+
               <button
                 onClick={logout}
                 className="navbar-btn-logout"
+                title="Đăng xuất"
               >
-                Log Out
+                Đăng xuất
               </button>
             </div>
           ) : (

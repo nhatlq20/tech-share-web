@@ -12,6 +12,7 @@ import { RegisterPage } from '../pages/RegisterPage.jsx';
 import { DashboardPage } from '../pages/DashboardPage.jsx';
 import { AdminPage } from '../pages/AdminPage.jsx';
 import { OwnerPage } from '../pages/OwnerPage.jsx';
+import { ProfilePage } from '../pages/ProfilePage.jsx';
 import { NotFoundPage } from '../pages/NotFoundPage.jsx';
 
 export const AppRoutes = () => {
@@ -36,6 +37,7 @@ export const AppRoutes = () => {
         <Route path={ROUTES.NEARBY} element={<NearbyPage />} />
         <Route path={ROUTES.LOGIN} element={<LoginPage />} />
         <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
+        <Route path={ROUTES.PROFILE} element={<ProfilePage />} />
         <Route path={ROUTES.DASHBOARD} element={<DashboardPage />} />
         <Route path={ROUTES.ADMIN} element={<AdminPage />} />
         <Route path="*" element={<NotFoundPage />} />
