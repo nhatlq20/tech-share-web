@@ -8,6 +8,7 @@ import { PublicLayout } from '../layouts/PublicLayout.jsx';
 import { HomePage } from '../pages/HomePage.jsx';
 import { CatalogPage } from '../pages/CatalogPage.jsx';
 import { DeviceDetailPage } from '../pages/DeviceDetailPage.jsx';
+import { BookingCheckoutPage } from '../pages/booking/BookingCheckoutPage.jsx';
 import { NearbyPage } from '../pages/NearbyPage.jsx';
 import { LoginPage } from '../pages/LoginPage.jsx';
 import { RegisterPage } from '../pages/RegisterPage.jsx';
