@@ -36,6 +36,11 @@ export const API_CONFIG = {
     BOOKINGS_MY: '/bookings/my-bookings',
     BOOKING_BY_ID: (id: string) => `/bookings/${id}`,
     BOOKING_VALIDATE_PRICING: '/bookings/validate-pricing',
+    NOTIFICATIONS: '/notifications',
+    NOTIFICATIONS_READ_ALL: '/notifications/read-all',
+    NOTIFICATIONS_READ: (id: string) => `/notifications/${id}/read`,
+    NOTIFICATIONS_FCM_TOKEN: '/notifications/fcm-token',
+    NOTIFICATIONS_TEST: '/notifications/test',
   },
 } as const;
 
