@@ -5,6 +5,7 @@ import { COLORS } from '../../constants/colors';
 
 export const OwnerCalendarTab = ({ 
   devices = [], 
+  bookings = [],
   blockedDatesMap = {}, 
   onToggleBlockedDate 
 }) => {
@@ -21,8 +22,8 @@ export const OwnerCalendarTab = ({
   const firstDayOfWeek = new Date(currentYear, currentMonth, 1).getDay(); // 0 is Sun
 
   const monthNames = [
-    'Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6',
-    'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
   ];
 
   const handlePrevMonth = () => {
@@ -54,13 +55,13 @@ export const OwnerCalendarTab = ({
   const todayYear = now.getFullYear();
   const isCurrentMonthYear = currentMonth === todayMonth && currentYear === todayYear;
 
-  // Lọc số ngày đã khóa trong tháng hiện tại
+  // Filter blocked dates in current month
   const monthPrefix = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
   const blockedDatesInMonth = blockedDates.filter((d) => d.startsWith(monthPrefix));
 
   return (
     <div className="owner-calendar-container flex-1 min-h-0 flex flex-col overflow-y-auto thin-scrollbar pr-1 pb-6 gap-3">
-      {/* 1. Header tinh gọn */}
+      {/* 1. Header */}
       <div className="flex flex-wrap items-center justify-between gap-2 shrink-0">
         <div>
           <h1 className="text-xl font-bold text-slate-800 leading-tight">
@@ -71,7 +72,7 @@ export const OwnerCalendarTab = ({
           </p>
         </div>
 
-        {/* Badge thống kê nhanh số ngày đã khóa */}
+        {/* Quick blocked count badge */}
         <div className="flex items-center gap-2">
           <div className="px-2.5 py-1 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-1.5 shadow-2xs">
             <Lock size={12} />
@@ -80,7 +81,7 @@ export const OwnerCalendarTab = ({
         </div>
       </div>
 
-      {/* 2. Device Selector & Legend Bar (Thu gọn chiều cao, padding p-2.5) */}
+      {/* 2. Device Selector & Legend Bar */}
       <div className="bg-white rounded-xl border border-slate-100 shadow-xs p-2.5 sm:p-3 flex flex-wrap items-center justify-between gap-3 shrink-0">
         <div className="flex items-center gap-2.5 flex-1 min-w-[260px]">
           <label className="text-xs font-semibold text-slate-700 whitespace-nowrap flex items-center gap-1.5">
@@ -94,7 +95,7 @@ export const OwnerCalendarTab = ({
           >
             {devices.map((d) => (
               <option key={d._id} value={d._id}>
-                {d.name} ({d.brand})
+                {d.name} {d.brand ? `(${d.brand})` : ''}
               </option>
             ))}
           </select>
@@ -117,7 +118,7 @@ export const OwnerCalendarTab = ({
         </div>
       </div>
 
-      {/* 3. Main Calendar Card (Thu gọn Card ngày ~54px, vừa vặn không bị vỡ) */}
+      {/* 3. Main Calendar Card */}
       <div className="bg-white rounded-xl border border-slate-100 shadow-xs p-3.5 sm:p-4 shrink-0 flex flex-col">
         {/* Month Navigation & Controls */}
         <div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 mb-2 border-b border-slate-100">
@@ -127,8 +128,8 @@ export const OwnerCalendarTab = ({
               <span>{monthNames[currentMonth]} {currentYear}</span>
             </h2>
             {isCurrentMonthYear && (
-              <span className="text-[10px] font-semibold text-brand-700 bg-brand-50 px-2 py-0.5 rounded-full border border-brand-200">
-                Hiện tại
+              <span className="text-[10px] font-semibold text-[#286E74] bg-[#EEF8F8] px-2 py-0.5 rounded-full border border-[#67BEC3]/30">
+                Current
               </span>
             )}
           </div>
@@ -142,7 +143,7 @@ export const OwnerCalendarTab = ({
                 setCurrentMonth(cur.getMonth());
                 setCurrentYear(cur.getFullYear());
               }}
-              title="Quay lại tháng hiện tại"
+              title="Return to current month"
             >
               {t.todayBtn}
             </button>
@@ -151,7 +152,7 @@ export const OwnerCalendarTab = ({
               type="button"
               className="p-1 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-600 hover:text-slate-900 transition-colors cursor-pointer"
               onClick={handlePrevMonth}
-              title="Tháng trước"
+              title="Previous month"
             >
               <ChevronLeft size={16} />
             </button>
@@ -159,7 +160,7 @@ export const OwnerCalendarTab = ({
               type="button"
               className="p-1 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-600 hover:text-slate-900 transition-colors cursor-pointer"
               onClick={handleNextMonth}
-              title="Tháng sau"
+              title="Next month"
             >
               <ChevronRight size={16} />
             </button>
@@ -182,22 +183,22 @@ export const OwnerCalendarTab = ({
                 });
               }}
               className="text-[10px] text-rose-600 hover:text-rose-700 font-semibold cursor-pointer underline shrink-0 transition-colors"
-              title="Mở tất cả các ngày đang khóa trong tháng này"
+              title="Unblock all dates in this month"
             >
               {t.clearAllBtn} ({blockedDatesInMonth.length})
             </button>
           )}
         </div>
 
-        {/* Weekday headers: 7 columns */}
+        {/* Weekday headers: 7 columns (English) */}
         <div className="grid grid-cols-7 gap-1.5 text-center text-[11px] font-bold text-slate-400 mb-1 uppercase tracking-wider">
-          <div className="text-rose-500/80">CN</div>
-          <div>T2</div>
-          <div>T3</div>
-          <div>T4</div>
-          <div>T5</div>
-          <div>T6</div>
-          <div className="text-rose-500/80">T7</div>
+          <div className="text-rose-500/80">Sun</div>
+          <div>Mon</div>
+          <div>Tue</div>
+          <div>Wed</div>
+          <div>Thu</div>
+          <div>Fri</div>
+          <div className="text-rose-500/80">Sat</div>
         </div>
 
         {/* Calendar days grid */}
@@ -212,8 +213,18 @@ export const OwnerCalendarTab = ({
             const dayNum = idx + 1;
             const dateKey = formatDateKey(dayNum);
             const isBlocked = blockedDates.includes(dateKey);
-            // Simulated rented dates (for demo)
-            const isRented = dayNum === 15 || dayNum === 16;
+
+            // Compute actual rented state from live MongoDB bookings
+            const isRented = bookings.some((b) => {
+              if (b.status !== 'active' && b.status !== 'approved') return false;
+              const devId = b.deviceId || b.device?._id || b.device?.id;
+              if (devId && devId.toString() !== selectedDeviceId.toString()) return false;
+              const start = (b.startDate || b.rentalPeriod?.startDate || '').split('T')[0];
+              const end = (b.endDate || b.rentalPeriod?.endDate || '').split('T')[0];
+              if (!start || !end) return false;
+              return dateKey >= start && dateKey <= end;
+            });
+
             const isToday = dayNum === todayDay && currentMonth === todayMonth && currentYear === todayYear;
 
             let dayClass = 'available';
@@ -231,17 +242,17 @@ export const OwnerCalendarTab = ({
                 }}
                 title={
                   isRented 
-                    ? 'Thiết bị đang cho khách thuê' 
+                    ? 'Device is currently rented by customer' 
                     : isBlocked 
-                      ? 'Nhấp để mở lại ngày này' 
-                      : 'Nhấp để khóa lịch ngày này'
+                      ? 'Click to unblock this date' 
+                      : 'Click to block this date'
                 }
               >
-                {/* Top row: Số ngày + Nhãn 'Nay' */}
+                {/* Top row: Day number + Today badge */}
                 <div className="flex items-center justify-between w-full">
                   <span className={`text-xs font-bold leading-none ${
                     isToday 
-                      ? 'text-brand-600' 
+                      ? 'text-[#286E74]' 
                       : isBlocked 
                         ? 'text-rose-700' 
                         : isRented 
@@ -251,13 +262,13 @@ export const OwnerCalendarTab = ({
                     {dayNum}
                   </span>
                   {isToday && (
-                    <span className="text-[9px] font-bold text-brand-600 bg-brand-50 px-1 py-0.2 rounded border border-brand-200 leading-none">
-                      Nay
+                    <span className="text-[9px] font-bold text-[#286E74] bg-[#EEF8F8] px-1 py-0.2 rounded border border-[#67BEC3]/30 leading-none">
+                      Today
                     </span>
                   )}
                 </div>
 
-                {/* Bottom row: Thẻ trạng thái tinh gọn */}
+                {/* Bottom row: Status tag */}
                 <div className="w-full flex items-center justify-start mt-auto">
                   {isBlocked && (
                     <span className="text-[10px] font-semibold text-rose-700 bg-rose-100/90 px-1.5 py-0.5 rounded flex items-center gap-0.5 leading-none">
@@ -270,7 +281,7 @@ export const OwnerCalendarTab = ({
                     </span>
                   )}
                   {!isBlocked && !isRented && (
-                    <span className="text-[9px] text-slate-400 group-hover:text-brand-600 transition-colors font-medium">
+                    <span className="text-[9px] text-slate-400 group-hover:text-[#286E74] transition-colors font-medium">
                       {t.statusAvailable}
                     </span>
                   )}

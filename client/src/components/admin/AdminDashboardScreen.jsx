@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Search, Bell, RefreshCw } from 'lucide-react';
+import { Search, RefreshCw } from 'lucide-react';
 import { AdminSidebarContent } from './AdminSidebarContent';
 import { AdminOverviewTab } from './AdminOverviewTab';
 import { AdminUsersTab } from './AdminUsersTab';
 import { AdminDevicesTab } from './AdminDevicesTab';
 import { AdminEkycTab } from './AdminEkycTab';
+import { NotificationDropdown } from '../notifications/NotificationDropdown';
 import { STRINGS } from '../../constants/strings';
 import './AdminWorkspace.css';
 
@@ -439,16 +440,8 @@ export const AdminDashboardScreen = () => {
               />
             </button>
 
-            {/* Notification Bell */}
-            <button
-              type="button"
-              className="admin-action-btn"
-              title="Notifications"
-              onClick={() => setCurrentTab('ekyc')}
-            >
-              <Bell size={16} />
-              {pendingEkycCount > 0 && <span className="admin-notif-dot" />}
-            </button>
+            {/* Notification Bell Dropdown */}
+            <NotificationDropdown />
 
             {/* Admin Header Chip */}
             <div

@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../routes/routes.js';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { NotificationDropdown } from '../notifications/NotificationDropdown.jsx';
 import './Navbar.css';
 
 export const Navbar = () => {
@@ -56,6 +57,9 @@ export const Navbar = () => {
         <div className="navbar-actions">
           {isAuthenticated ? (
             <div className="navbar-user-section">
+              {/* Notification Bell Dropdown */}
+              <NotificationDropdown />
+
               {/* Avatar linking to Profile Page */}
               <Link
                 to={ROUTES.PROFILE}

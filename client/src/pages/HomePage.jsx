@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Sparkles,
   Smartphone,
@@ -14,11 +14,12 @@ import {
   RefreshCw,
   PackageOpen,
 } from 'lucide-react';
-import { deviceService } from '../services/deviceService.ts';
+import { deviceService } from '../services/deviceService.js';
 import { DeviceGrid } from '../components/device/DeviceGrid.jsx';
 import { HeroSection } from '../components/home/HeroSection';
 import { STRINGS } from '../constants/strings';
 import './HomePage.css';
+import { useUserLocation } from '../hooks/useUserLocation';
 
 const getCategories = () => [
   { id: 'all', label: STRINGS.home.categories.all, icon: Sparkles },
@@ -40,15 +41,7 @@ export const HomePage = () => {
 
   const categoryScrollRef = useRef(null);
 
-  const filteredDevices = devices.filter((dev) => {
-    const matchesCat = selectedCategory === 'all' || dev.category?.toLowerCase() === selectedCategory.toLowerCase();
-    const query = searchTerm.trim().toLowerCase();
-    const matchesSearch = !query ||
-      dev.name?.toLowerCase().includes(query) ||
-      dev.brand?.toLowerCase().includes(query) ||
-      dev.category?.toLowerCase().includes(query);
-    return matchesCat && matchesSearch;
-  });
+  const filteredDevices = devices;
 
   const handleScroll = (direction) => {
     if (categoryScrollRef.current) {
@@ -59,58 +52,36 @@ export const HomePage = () => {
     }
   };
 
-  /**
-   * Fetches the default list of devices from the backend.
-   */
-  const loadDevices = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const res = await deviceService.getDevices();
-      if (!Array.isArray(res?.data)) {
-        throw new Error('Invalid device list response from server');
-      }
-      setDevices(res.data);
-    } catch (err) {
-      setError(err?.message || 'Unable to load devices.');
-      setDevices([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const location = useUserLocation();
+  const [requestAttempt, setRequestAttempt] = useState(0);
+  const loadDevices = () => {
+    if (location.error) location.retry();
+    else { setLoading(true); setError(null); setRequestAttempt((value) => value + 1); }
+  };
 
   useEffect(() => {
-    let isMounted = true;
+    let active = true;
+    setDevices([]);
+    setError(null);
+    setLoading(true);
+    if (location.loading || location.error || location.latitude == null || location.longitude == null) {
+      return () => { active = false; };
+    }
+    deviceService.getNearbyDevices({
+      lat: location.latitude, lng: location.longitude, radius: 10000, page: 1, limit: 12,
+    }).then((res) => {
+      if (!Array.isArray(res?.data) || res.data.length > 12) throw new Error('Invalid nearby response');
+      if (active) setDevices(res.data);
+    }).catch(() => {
+      if (active) setError(STRINGS.home.nearby.apiError);
+    }).finally(() => {
+      if (active) setLoading(false);
+    });
+    return () => { active = false; };
+  }, [location.latitude, location.longitude, location.loading, location.error, requestAttempt]);
 
-    const executeInitialLoad = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const res = await deviceService.getDevices();
-        if (isMounted) {
-          if (!Array.isArray(res?.data)) {
-            throw new Error('Invalid device list response from server');
-          }
-          setDevices(res.data);
-        }
-      } catch (err) {
-        if (isMounted) {
-          setError(err?.message || 'Unable to load devices.');
-          setDevices([]);
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    executeInitialLoad();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  const busy = location.loading || (!location.error && loading);
+  const displayError = location.error || error;
 
   return (
     <div className="home-page-root">
@@ -180,17 +151,18 @@ export const HomePage = () => {
           <div className="home-devices-header">
             <div>
               <h2 id="devices-heading" className="home-devices-title">
-                {STRINGS.home.devices.heading}
+                {STRINGS.home.nearby.heading}
               </h2>
               <p className="home-devices-subtitle">
-                {STRINGS.home.devices.subtitle}
+                {STRINGS.home.nearby.subtitle}
               </p>
             </div>
           </div>
 
+          {busy && <p role="status">{location.loading ? STRINGS.home.nearby.locationLoading : STRINGS.home.nearby.apiLoading}</p>}
           {/* Loading State */}
-          {loading && (
-            <div className="devices-loading-grid" aria-label={STRINGS.home.devices.loadingAria}>
+          {busy && (
+            <div className="devices-loading-grid" aria-label={location.loading ? STRINGS.home.nearby.locationLoading : STRINGS.home.nearby.apiLoading}>
               {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
                 <div key={i} className="skeleton-card" aria-hidden="true">
                   <div className="skeleton-thumb" />
@@ -205,13 +177,13 @@ export const HomePage = () => {
           )}
 
           {/* Error State */}
-          {!loading && error && (
+          {!busy && displayError && (
             <div className="home-devices-state home-devices-error">
               <div className="state-icon-circle state-error-icon">
                 <AlertCircle size={28} />
               </div>
-              <h3 className="state-title">{STRINGS.home.devices.errorTitle}</h3>
-              <p className="state-desc">{error}</p>
+              <h3 className="state-title">{location.error ? STRINGS.home.nearby.locationError : STRINGS.home.nearby.apiError}</h3>
+              <p className="state-desc">{displayError}</p>
               <button
                 type="button"
                 onClick={loadDevices}
@@ -223,32 +195,17 @@ export const HomePage = () => {
           )}
 
           {/* Empty State */}
-          {!loading && !error && filteredDevices.length === 0 && (
+          {!busy && !displayError && filteredDevices.length === 0 && (
             <div className="home-devices-state home-devices-empty">
               <div className="state-icon-circle state-empty-icon">
                 <PackageOpen size={28} />
               </div>
-              <h3 className="state-title">{STRINGS.home.devices.emptyTitle}</h3>
-              <p className="state-desc">
-                {searchTerm
-                  ? STRINGS.home.devices.emptySearchDesc(searchTerm)
-                  : STRINGS.home.devices.emptyDefaultDesc}
-              </p>
-              {searchTerm && (
-                <button
-                  type="button"
-                  onClick={() => setSearchTerm('')}
-                  className="state-retry-btn"
-                  style={{ marginTop: '12px' }}
-                >
-                  {STRINGS.home.devices.clearSearchBtn}
-                </button>
-              )}
+              <h3 className="state-title">{STRINGS.home.nearby.empty}</h3>
             </div>
           )}
 
           {/* Success State */}
-          {!loading && !error && filteredDevices.length > 0 && (
+          {!busy && !displayError && filteredDevices.length > 0 && (
             <DeviceGrid devices={filteredDevices} />
           )}
         </div>

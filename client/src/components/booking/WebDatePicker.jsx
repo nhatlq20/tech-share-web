@@ -9,8 +9,8 @@ import {
   AlertCircle,
   Sparkles,
 } from 'lucide-react';
-import { STRINGS } from '../../constants/strings.ts';
-import { MAGIC_NUMBERS } from '../../constants/config.ts';
+import { STRINGS } from '../../constants/strings.js';
+import { MAGIC_NUMBERS } from '../../constants/config.js';
 import './WebDatePicker.css';
 
 /**

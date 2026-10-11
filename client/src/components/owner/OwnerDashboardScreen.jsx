@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Search, PlusCircle } from 'lucide-react';
+import { Search, PlusCircle, RefreshCw } from 'lucide-react';
 import { OwnerSidebar } from './OwnerSidebar';
 import { OwnerOverviewTab } from './OwnerOverviewTab';
 import { OwnerDevicesTab } from './OwnerDevicesTab';
@@ -9,263 +9,37 @@ import { OwnerCalendarTab } from './OwnerCalendarTab';
 import { OwnerAnalyticsTab } from './OwnerAnalyticsTab';
 import { OwnerWalletTab } from './OwnerWalletTab';
 import PostDevicePage from '../../pages/PostDevicePage';
+import { NotificationDropdown } from '../notifications/NotificationDropdown';
 import { ROUTES } from '../../routes/routes';
 import { STRINGS } from '../../constants/strings';
-import { COLORS } from '../../constants/colors';
 import { API_CONFIG } from '../../constants/config';
 import './OwnerWorkspace.css';
-
-// Default Owner Data
-const DEFAULT_OWNER_KPI = {
-  totalDevices: 8,
-  activeRentals: 3,
-  pendingApprovals: 2,
-  monthlyRevenue: 14850000,
-  monthlyRevenueFormatted: '14.850.000 ₫',
-  utilizationRate: 75,
-  trustScore: 98,
-  ratingAvg: 4.9,
-};
-
-const DEFAULT_DEVICES = [
-  {
-    _id: 'dev_1',
-    name: 'Sony Alpha A7 IV Kit 28-70mm OSS',
-    brand: 'Sony',
-    category: 'camera',
-    dailyRate: 350000,
-    depositAmount: 2500000,
-    status: 'available',
-    images: [
-      'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=400&q=80'
-    ],
-    ratingAvg: 4.9,
-    rentalCount: 14,
-    condition: 'Mới 99%, lens sạch bụi',
-    specs: { sensor: '33MP Full-Frame', video: '4K 60p' },
-    createdAt: '2026-09-15'
-  },
-  {
-    _id: 'dev_2',
-    name: 'MacBook Pro 16 inch M3 Pro (36GB / 512GB)',
-    brand: 'Apple',
-    category: 'laptop',
-    dailyRate: 450000,
-    depositAmount: 5000000,
-    status: 'rented',
-    images: [
-      'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=400&q=80'
-    ],
-    ratingAvg: 5.0,
-    rentalCount: 9,
-    condition: 'Pin 100%, bảo hành chính hãng',
-    specs: { chip: 'M3 Pro', ram: '36GB' },
-    createdAt: '2026-09-20'
-  },
-  {
-    _id: 'dev_3',
-    name: 'DJI Mini 4 Pro Fly More Combo Plus',
-    brand: 'DJI',
-    category: 'drone',
-    dailyRate: 300000,
-    depositAmount: 2000000,
-    status: 'available',
-    images: [
-      'https://images.unsplash.com/photo-1508614589041-895b88991e3e?auto=format&fit=crop&w=400&q=80'
-    ],
-    ratingAvg: 4.8,
-    rentalCount: 22,
-    condition: 'Kèm 3 pin, sạc nhanh và balo',
-    specs: { flightTime: '45 mins', range: '20km' },
-    createdAt: '2026-09-01'
-  },
-  {
-    _id: 'dev_4',
-    name: 'Sony WH-1000XM5 Chống ồn chủ động',
-    brand: 'Sony',
-    category: 'audio',
-    dailyRate: 90000,
-    depositAmount: 800000,
-    status: 'maintenance',
-    images: [
-      'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=400&q=80'
-    ],
-    ratingAvg: 4.7,
-    rentalCount: 18,
-    condition: 'Đang thay đệm tai mới',
-    specs: { battery: '30h', anc: 'V1 processor' },
-    createdAt: '2026-08-10'
-  }
-];
-
-const DEFAULT_BOOKINGS = [
-  {
-    _id: 'book_1',
-    id: 'TS-2026-881',
-    bookingCode: 'TS-2026-881',
-    deviceId: 'dev_1',
-    deviceName: 'Sony Alpha A7 IV Kit 28-70mm OSS',
-    deviceImage: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=150&q=80',
-    device: {
-      name: 'Sony Alpha A7 IV Kit 28-70mm OSS',
-      imageUrl: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=150&q=80'
-    },
-    deviceCategory: 'camera',
-    dailyRate: 350000,
-    renter: {
-      _id: 'user_r1',
-      name: 'Nguyễn Văn Minh',
-      email: 'minh.nguyen@gmail.com',
-      phone: '0912345678',
-      avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80',
-      avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80',
-      trustScore: 92,
-      isVerified: true
-    },
-    rentalPeriod: {
-      startDate: '2026-10-08',
-      endDate: '2026-10-10',
-      totalDays: 2
-    },
-    startDate: '2026-10-08',
-    endDate: '2026-10-10',
-    totalDays: 2,
-    totalPrice: 700000,
-    totalRentalPrice: 700000,
-    depositAmount: 2500000,
-    status: 'pending',
-    deliveryMethod: 'pickup',
-    createdAt: '2026-10-07 08:15'
-  },
-  {
-    _id: 'book_2',
-    id: 'TS-2026-882',
-    bookingCode: 'TS-2026-882',
-    deviceId: 'dev_2',
-    deviceName: 'MacBook Pro 16 inch M3 Pro (36GB / 512GB)',
-    deviceImage: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=150&q=80',
-    device: {
-      name: 'MacBook Pro 16 inch M3 Pro (36GB / 512GB)',
-      imageUrl: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=150&q=80'
-    },
-    deviceCategory: 'laptop',
-    dailyRate: 450000,
-    renter: {
-      _id: 'user_r2',
-      name: 'Lê Hoàng Yến',
-      email: 'hoangyen.le@fpt.edu.vn',
-      phone: '0987654321',
-      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80',
-      avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80',
-      trustScore: 88,
-      isVerified: true
-    },
-    rentalPeriod: {
-      startDate: '2026-10-09',
-      endDate: '2026-10-14',
-      totalDays: 5
-    },
-    startDate: '2026-10-09',
-    endDate: '2026-10-14',
-    totalDays: 5,
-    totalPrice: 2025000,
-    totalRentalPrice: 2025000, // Long rental discount
-    depositAmount: 5000000,
-    status: 'pending',
-    deliveryMethod: 'pickup',
-    createdAt: '2026-10-07 07:30'
-  },
-  {
-    _id: 'book_3',
-    id: 'TS-2026-879',
-    bookingCode: 'TS-2026-879',
-    deviceId: 'dev_3',
-    deviceName: 'DJI Mini 4 Pro Fly More Combo Plus',
-    deviceImage: 'https://images.unsplash.com/photo-1508614589041-895b88991e3e?auto=format&fit=crop&w=150&q=80',
-    device: {
-      name: 'DJI Mini 4 Pro Fly More Combo Plus',
-      imageUrl: 'https://images.unsplash.com/photo-1508614589041-895b88991e3e?auto=format&fit=crop&w=150&q=80'
-    },
-    deviceCategory: 'drone',
-    dailyRate: 300000,
-    renter: {
-      _id: 'user_r3',
-      name: 'Trần Quang Hùng',
-      email: 'quanghung@media.vn',
-      phone: '0903112233',
-      avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=150&q=80',
-      avatarUrl: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=150&q=80',
-      trustScore: 95,
-      isVerified: true
-    },
-    rentalPeriod: {
-      startDate: '2026-10-07',
-      endDate: '2026-10-08',
-      totalDays: 1
-    },
-    startDate: '2026-10-07',
-    endDate: '2026-10-08',
-    totalDays: 1,
-    totalPrice: 300000,
-    totalRentalPrice: 300000,
-    depositAmount: 2000000,
-    status: 'approved',
-    deliveryMethod: 'pickup',
-    createdAt: '2026-10-06 18:00'
-  },
-  {
-    _id: 'book_4',
-    id: 'TS-2026-870',
-    bookingCode: 'TS-2026-870',
-    deviceId: 'dev_2',
-    deviceName: 'MacBook Pro 16 inch M3 Pro (36GB / 512GB)',
-    deviceImage: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=150&q=80',
-    device: {
-      name: 'MacBook Pro 16 inch M3 Pro (36GB / 512GB)',
-      imageUrl: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=150&q=80'
-    },
-    deviceCategory: 'laptop',
-    dailyRate: 450000,
-    renter: {
-      _id: 'user_r4',
-      name: 'Vũ Thái Dương',
-      email: 'thaiduong.dev@gmail.com',
-      phone: '0945678901',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80',
-      avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80',
-      trustScore: 85,
-      isVerified: false
-    },
-    rentalPeriod: {
-      startDate: '2026-10-04',
-      endDate: '2026-10-08',
-      totalDays: 4
-    },
-    startDate: '2026-10-04',
-    endDate: '2026-10-08',
-    totalDays: 4,
-    totalPrice: 1800000,
-    totalRentalPrice: 1800000,
-    depositAmount: 5000000,
-    status: 'active',
-    deliveryMethod: 'shipping',
-    createdAt: '2026-10-03 14:20'
-  }
-];
 
 export const OwnerDashboardScreen = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // State
-  const [kpi, setKpi] = useState(DEFAULT_OWNER_KPI);
-  const [devices, setDevices] = useState(DEFAULT_DEVICES);
-  const [bookings, setBookings] = useState(DEFAULT_BOOKINGS);
-  const [blockedDatesMap, setBlockedDatesMap] = useState({
-    dev_1: ['2026-10-12', '2026-10-13'],
-    dev_2: ['2026-10-20']
+  // State initialized with clean DB empty states (No seed data)
+  const [kpi, setKpi] = useState({
+    totalDevices: 0,
+    activeRentals: 0,
+    pendingApprovals: 0,
+    monthlyRevenue: 0,
+    monthlyRevenueFormatted: '0 ₫',
+    escrowHolding: 0,
+    escrowHoldingFormatted: '0 ₫',
+    utilizationRate: 0,
+    trustScore: 100,
+    ratingAvg: 5.0,
+    owner: null,
   });
+  const [devices, setDevices] = useState([]);
+  const [bookings, setBookings] = useState([]);
+  const [charts, setCharts] = useState({ '7d': [], month: [], year: [] });
+  const [utilization, setUtilization] = useState([]);
+  const [blockedDatesMap, setBlockedDatesMap] = useState({});
   const [globalSearch, setGlobalSearch] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   // Determine current active path
   const currentPath = location.pathname;
@@ -275,31 +49,53 @@ export const OwnerDashboardScreen = () => {
     navigate(path);
   };
 
-  // Fetch Owner live data (fallback safely)
+  // Fetch Owner live data directly from MongoDB Atlas backend
   const fetchOwnerData = useCallback(async () => {
+    setIsLoading(true);
     try {
       const token = localStorage.getItem('techshare_token');
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-      // 1. Fetch devices
-      const resDev = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.OWNER_DEVICES}`, { headers });
-      if (resDev.ok) {
-        const jsonDev = await resDev.json();
-        if (jsonDev.success && Array.isArray(jsonDev.data) && jsonDev.data.length > 0) {
-          setDevices(jsonDev.data);
+      // 1. Fetch overview, KPI & charts
+      const resOverview = await fetch(`${API_CONFIG.BASE_URL}/owner/overview`, { headers });
+      if (resOverview.ok) {
+        const jsonOverview = await resOverview.json();
+        if (jsonOverview.success && jsonOverview.data) {
+          if (jsonOverview.data.kpi) setKpi(jsonOverview.data.kpi);
+          if (jsonOverview.data.charts) setCharts(jsonOverview.data.charts);
+          if (jsonOverview.data.utilization) setUtilization(jsonOverview.data.utilization);
         }
       }
 
-      // 2. Fetch bookings
+      // 2. Fetch owner equipment/devices
+      const resDev = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.OWNER_DEVICES}`, { headers });
+      if (resDev.ok) {
+        const jsonDev = await resDev.json();
+        if (jsonDev.success && Array.isArray(jsonDev.data)) {
+          setDevices(jsonDev.data);
+          // Sync blocked dates map from devices
+          const bMap = {};
+          jsonDev.data.forEach((d) => {
+            if (d._id && Array.isArray(d.blockedDates)) {
+              bMap[d._id] = d.blockedDates;
+            }
+          });
+          setBlockedDatesMap(bMap);
+        }
+      }
+
+      // 3. Fetch owner bookings
       const resBook = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.OWNER_BOOKINGS}`, { headers });
       if (resBook.ok) {
         const jsonBook = await resBook.json();
-        if (jsonBook.success && Array.isArray(jsonBook.data) && jsonBook.data.length > 0) {
+        if (jsonBook.success && Array.isArray(jsonBook.data)) {
           setBookings(jsonBook.data);
         }
       }
     } catch (err) {
-      // Keep rich demo data
+      console.error('Failed to fetch live owner data from DB:', err);
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
@@ -307,11 +103,26 @@ export const OwnerDashboardScreen = () => {
     fetchOwnerData();
   }, [fetchOwnerData]);
 
-  // Actions: Toggle device status
-  const handleToggleDeviceStatus = (deviceId, newStatus) => {
+  // Actions: Toggle device status (Active MongoDB mutation)
+  const handleToggleDeviceStatus = async (deviceId, newStatus) => {
     setDevices((prev) =>
       prev.map((d) => (d._id === deviceId ? { ...d, status: newStatus } : d))
     );
+    try {
+      const token = localStorage.getItem('techshare_token');
+      const headers = {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      };
+      await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.OWNER_TOGGLE_DEVICE(deviceId)}`, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify({ status: newStatus }),
+      });
+      fetchOwnerData();
+    } catch (err) {
+      console.error('Failed to toggle device status in DB:', err);
+    }
   };
 
   const handleDeviceCreated = (device) => {
@@ -338,74 +149,107 @@ export const OwnerDashboardScreen = () => {
     });
   };
 
-  // Actions: Approve booking
-  const handleApproveBooking = (bookingId) => {
+  // Actions: Approve booking (Active MongoDB mutation)
+  const handleApproveBooking = async (bookingId) => {
     setBookings((prev) =>
       prev.map((b) => (b._id === bookingId ? { ...b, status: 'approved' } : b))
     );
-    setKpi((prev) => ({
-      ...prev,
-      pendingApprovals: Math.max(0, prev.pendingApprovals - 1)
-    }));
+    try {
+      const token = localStorage.getItem('techshare_token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.OWNER_APPROVE_BOOKING(bookingId)}`, {
+        method: 'PATCH',
+        headers,
+      });
+      fetchOwnerData();
+    } catch (err) {
+      console.error('Failed to approve booking in DB:', err);
+    }
   };
 
-  // Actions: Reject booking
-  const handleRejectBooking = (bookingId, reason) => {
+  // Actions: Reject booking (Active MongoDB mutation)
+  const handleRejectBooking = async (bookingId, reason) => {
     setBookings((prev) =>
       prev.map((b) =>
         b._id === bookingId ? { ...b, status: 'rejected', rejectReason: reason } : b
       )
     );
-    setKpi((prev) => ({
-      ...prev,
-      pendingApprovals: Math.max(0, prev.pendingApprovals - 1)
-    }));
+    try {
+      const token = localStorage.getItem('techshare_token');
+      const headers = {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      };
+      await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.OWNER_REJECT_BOOKING(bookingId)}`, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify({ reason }),
+      });
+      fetchOwnerData();
+    } catch (err) {
+      console.error('Failed to reject booking in DB:', err);
+    }
   };
 
-  // Actions: QR Handover (N-02) -> active
-  const handleHandover = (bookingId) => {
+  // Actions: QR Handover -> active (Active MongoDB mutation)
+  const handleHandover = async (bookingId) => {
     setBookings((prev) =>
       prev.map((b) => (b._id === bookingId ? { ...b, status: 'active' } : b))
     );
-    setKpi((prev) => ({
-      ...prev,
-      activeRentals: prev.activeRentals + 1
-    }));
+    try {
+      const token = localStorage.getItem('techshare_token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.OWNER_HANDOVER_QR(bookingId)}`, {
+        method: 'PATCH',
+        headers,
+      });
+      fetchOwnerData();
+    } catch (err) {
+      console.error('Failed to handover booking in DB:', err);
+    }
   };
 
-  // Actions: Complete return (N-02) -> completed
-  const handleCompleteReturn = (bookingId) => {
+  // Actions: Complete return -> completed (Active MongoDB mutation)
+  const handleCompleteReturn = async (bookingId) => {
     setBookings((prev) =>
       prev.map((b) => (b._id === bookingId ? { ...b, status: 'completed' } : b))
     );
-    setKpi((prev) => ({
-      ...prev,
-      activeRentals: Math.max(0, prev.activeRentals - 1)
-    }));
+    try {
+      const token = localStorage.getItem('techshare_token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.OWNER_COMPLETE_BOOKING(bookingId)}`, {
+        method: 'PATCH',
+        headers,
+      });
+      fetchOwnerData();
+    } catch (err) {
+      console.error('Failed to complete booking in DB:', err);
+    }
   };
 
   // Pending count for sidebar badge
   const pendingApprovalsCount = bookings.filter((b) => b.status === 'pending').length;
 
   return (
-    <div className="owner-hub-wrapper h-screen overflow-hidden flex">
+    <div className="owner-hub-wrapper">
       {/* 1. Fixed Left Sidebar */}
       <OwnerSidebar
         currentPath={currentPath}
         onNavigate={handleNavigate}
         pendingCount={pendingApprovalsCount}
+        owner={kpi?.owner}
         onLogout={() => {
           localStorage.removeItem('techshare_token');
           window.location.href = ROUTES.HOME;
         }}
       />
 
-      {/* 2. Main Workspace (Fit-to-Screen Container) */}
-      <main className="owner-main-wrap h-screen overflow-hidden flex flex-col flex-1" role="main">
+      {/* 2. Main Workspace */}
+      <main className="owner-main-wrap" role="main">
         {/* Topbar */}
-        <header className="owner-topbar shrink-0">
+        <header className="owner-topbar">
           <div className="owner-search-pill">
-            <Search size={15} color={COLORS.primary.DEFAULT} />
+            <Search size={16} style={{ color: '#67BEC3', flexShrink: 0 }} />
             <input
               type="text"
               placeholder={STRINGS.admin.dashboard.searchPlaceholder}
@@ -414,26 +258,91 @@ export const OwnerDashboardScreen = () => {
             />
           </div>
 
-          <div className="owner-topbar-right">
+          <div className="owner-topbar-actions">
+            {/* Primary Action Button: + Add Equipment */}
             <button
               type="button"
               className="owner-top-action-btn"
               onClick={() => handleNavigate(ROUTES.OWNER_DEVICE_NEW)}
             >
               <PlusCircle size={15} />
-              <span>{STRINGS.owner.devices.postBtn}</span>
+              <span>{STRINGS.owner.overview.postDeviceBtn}</span>
             </button>
+
+            {/* Refresh Button */}
+            <button
+              type="button"
+              onClick={fetchOwnerData}
+              disabled={isLoading}
+              className="owner-action-btn"
+              title={STRINGS.owner.overview.refresh}
+            >
+              <RefreshCw
+                size={16}
+                style={{ animation: isLoading ? 'spin 1s linear infinite' : 'none' }}
+              />
+            </button>
+
+            {/* Notification Bell Dropdown */}
+            <NotificationDropdown />
+
+            {/* Partner Header Chip */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                paddingLeft: '8px',
+              }}
+            >
+              <img
+                src={kpi?.owner?.avatarUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop"}
+                alt={STRINGS.owner.sidebar.avatarAlt}
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '50%',
+                  border: '2px solid #67BEC3',
+                  objectFit: 'cover',
+                }}
+              />
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span
+                  style={{
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    color: '#0F172A',
+                  }}
+                >
+                  {kpi?.owner?.name || STRINGS.owner.sidebar.ownerName}
+                </span>
+                <span
+                  style={{
+                    fontSize: '11px',
+                    color: '#286E74',
+                    fontWeight: 600,
+                  }}
+                >
+                  {STRINGS.owner.sidebar.ownerRole}
+                </span>
+              </div>
+            </div>
           </div>
         </header>
 
-        {/* Content Body Based on URL Route (Fit-to-Screen flex-1 min-h-0) */}
-        <div className="owner-content-body flex-1 min-h-0 flex flex-col overflow-hidden">
+        {/* Content Body Based on URL Route */}
+        <section className="owner-content-body">
           {/* A. /owner/dashboard or /owner */}
           {(currentPath === ROUTES.OWNER_DASHBOARD || currentPath === ROUTES.OWNER) && (
             <OwnerOverviewTab
               kpi={kpi}
+              charts={charts}
+              utilization={utilization}
               recentBookings={bookings}
               onNavigate={handleNavigate}
+              onOpenPostModal={() => handleNavigate(ROUTES.OWNER_DEVICE_NEW)}
+              onRefresh={fetchOwnerData}
+              isLoading={isLoading}
             />
           )}
 
@@ -469,6 +378,7 @@ export const OwnerDashboardScreen = () => {
           {currentPath === ROUTES.OWNER_CALENDAR && (
             <OwnerCalendarTab
               devices={devices}
+              bookings={bookings}
               blockedDatesMap={blockedDatesMap}
               onToggleBlockedDate={handleToggleBlockedDate}
             />
@@ -479,15 +389,20 @@ export const OwnerDashboardScreen = () => {
             <OwnerAnalyticsTab
               recentBookings={bookings}
               kpi={kpi}
+              charts={charts}
+              utilization={utilization}
               onNavigate={handleNavigate}
             />
           )}
 
           {/* F. /owner/wallet */}
           {currentPath === ROUTES.OWNER_WALLET && (
-            <OwnerWalletTab />
+            <OwnerWalletTab
+              kpi={kpi}
+              bookings={bookings}
+            />
           )}
-        </div>
+        </section>
       </main>
     </div>
   );
