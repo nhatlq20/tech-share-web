@@ -1,4 +1,5 @@
 import api from './api.js';
+import { API_CONFIG, MAGIC_NUMBERS } from '../constants/config';
 
 /**
  * Normalizes category query parameter.
@@ -133,11 +134,29 @@ export const getNearbyDevices = async (params = {}) => {
   return response;
 };
 
+export const getRecommendedDevices = async (params = {}) => {
+  if (!Number.isFinite(params.lat) || Math.abs(params.lat) > 90 ||
+      !Number.isFinite(params.lng) || Math.abs(params.lng) > 180) {
+    throw new Error('Valid coordinates are required for recommendations');
+  }
+  const response = await api.get(API_CONFIG.ENDPOINTS.DEVICES_RECOMMENDED, {
+    params: {
+      lat: params.lat, lng: params.lng,
+      page: params.page ?? MAGIC_NUMBERS.HOME_RECOMMENDATIONS.INITIAL_PAGE,
+      limit: params.limit ?? MAGIC_NUMBERS.HOME_RECOMMENDATIONS.PAGE_SIZE,
+    },
+  });
+  if (!response || response.success === false || !Array.isArray(response.data)) {
+    throw new Error('Invalid recommended device list response');
+  }
+  return response;
+};
+
 export const deviceService = {
   getDevices,
   getDeviceById,
   getNearbyDevices,
+  getRecommendedDevices,
 };
 
 export default deviceService;
-

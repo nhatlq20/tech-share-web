@@ -18,6 +18,7 @@ import { deviceService } from '../services/deviceService.js';
 import { DeviceGrid } from '../components/device/DeviceGrid.jsx';
 import { HeroSection } from '../components/home/HeroSection';
 import { STRINGS } from '../constants/strings';
+import { MAGIC_NUMBERS } from '../constants/config';
 import './HomePage.css';
 import { useUserLocation } from '../hooks/useUserLocation';
 
@@ -67,13 +68,15 @@ export const HomePage = () => {
     if (location.loading || location.error || location.latitude == null || location.longitude == null) {
       return () => { active = false; };
     }
-    deviceService.getNearbyDevices({
-      lat: location.latitude, lng: location.longitude, radius: 10000, page: 1, limit: 12,
+    deviceService.getRecommendedDevices({
+      lat: location.latitude, lng: location.longitude,
+      page: MAGIC_NUMBERS.HOME_RECOMMENDATIONS.INITIAL_PAGE,
+      limit: MAGIC_NUMBERS.HOME_RECOMMENDATIONS.PAGE_SIZE,
     }).then((res) => {
-      if (!Array.isArray(res?.data) || res.data.length > 12) throw new Error('Invalid nearby response');
+      if (!Array.isArray(res?.data) || res.data.length > MAGIC_NUMBERS.HOME_RECOMMENDATIONS.PAGE_SIZE) throw new Error('Invalid recommendation response');
       if (active) setDevices(res.data);
     }).catch(() => {
-      if (active) setError(STRINGS.home.nearby.apiError);
+      if (active) setError(STRINGS.home.recommended.apiError);
     }).finally(() => {
       if (active) setLoading(false);
     });
@@ -151,18 +154,18 @@ export const HomePage = () => {
           <div className="home-devices-header">
             <div>
               <h2 id="devices-heading" className="home-devices-title">
-                {STRINGS.home.nearby.heading}
+                {STRINGS.home.recommended.heading}
               </h2>
               <p className="home-devices-subtitle">
-                {STRINGS.home.nearby.subtitle}
+                {STRINGS.home.recommended.subtitle}
               </p>
             </div>
           </div>
 
-          {busy && <p role="status">{location.loading ? STRINGS.home.nearby.locationLoading : STRINGS.home.nearby.apiLoading}</p>}
+          {busy && <p role="status">{location.loading ? STRINGS.home.recommended.locationLoading : STRINGS.home.recommended.apiLoading}</p>}
           {/* Loading State */}
           {busy && (
-            <div className="devices-loading-grid" aria-label={location.loading ? STRINGS.home.nearby.locationLoading : STRINGS.home.nearby.apiLoading}>
+            <div className="devices-loading-grid" aria-label={location.loading ? STRINGS.home.recommended.locationLoading : STRINGS.home.recommended.apiLoading}>
               {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
                 <div key={i} className="skeleton-card" aria-hidden="true">
                   <div className="skeleton-thumb" />
@@ -182,7 +185,7 @@ export const HomePage = () => {
               <div className="state-icon-circle state-error-icon">
                 <AlertCircle size={28} />
               </div>
-              <h3 className="state-title">{location.error ? STRINGS.home.nearby.locationError : STRINGS.home.nearby.apiError}</h3>
+              <h3 className="state-title">{location.error ? STRINGS.home.nearby.locationError : STRINGS.home.recommended.apiError}</h3>
               <p className="state-desc">{displayError}</p>
               <button
                 type="button"
@@ -200,7 +203,7 @@ export const HomePage = () => {
               <div className="state-icon-circle state-empty-icon">
                 <PackageOpen size={28} />
               </div>
-              <h3 className="state-title">{STRINGS.home.nearby.empty}</h3>
+              <h3 className="state-title">{STRINGS.home.recommended.empty}</h3>
             </div>
           )}
 

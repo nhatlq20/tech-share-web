@@ -1,6 +1,6 @@
 /**
  * TechShare Design System - System Config, API Endpoints & Business Thresholds (Pure JavaScript)
- * 
+ *
  * QUY CHUẨN CHỐNG HARDCODE (NO HARDCODING RULE):
  * Toàn bộ URL endpoint, timeouts, magic numbers, phân trang và ngưỡng logic.
  */
@@ -30,6 +30,7 @@ export const API_CONFIG = {
     OWNER_WALLET: '/wallet/me',
     AI_GENERATE_DESCRIPTION: '/ai/generate-description',
     DEVICES: '/devices',
+    DEVICES_RECOMMENDED: '/devices/recommended',
     DEVICE_BY_ID: (id) => `/devices/${id}`,
     DEVICE_AVAILABILITY: (id) => `/devices/${id}/availability`,
     BOOKINGS: '/bookings',
@@ -45,6 +46,7 @@ export const API_CONFIG = {
 };
 
 export const MAGIC_NUMBERS = {
+  HOME_RECOMMENDATIONS: { INITIAL_PAGE: 1, PAGE_SIZE: 12 },
   // Điểm tín nhiệm Escrow (Trust Score)
   TRUST_SCORE: {
     MAX: 100,
@@ -105,4 +107,3 @@ const CONFIG = {
 };
 
 export default CONFIG;
-
