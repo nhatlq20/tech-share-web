@@ -126,9 +126,127 @@
   border-radius: 8px;
   border: 1px solid #d1d5db;
   color: #4b5563;
-  transition: background-color 0.2s;
+  transition: all 0.2s;
+  background: #ffffff;
 }
 .navbar-btn-logout:hover {
-  background-color: #f3f4f6;
+  background-color: #fee2e2;
+  color: #dc2626;
+  border-color: #fca5a5;
 }
+
+/* User Profile Section in Navbar */
+.navbar-user-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.navbar-avatar-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 10px 4px 4px;
+  border-radius: 9999px;
+  text-decoration: none;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+.navbar-avatar-link:hover {
+  background-color: #e8f6f7;
+  border-color: #67BEC3;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(103, 190, 195, 0.18);
+}
+
+.navbar-avatar-wrapper {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.navbar-avatar-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #67BEC3;
+}
+
+.navbar-avatar-fallback {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #67BEC3 0%, #388E94 100%);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 15px;
+  border: 2px solid #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-avatar-status {
+  position: absolute;
+  bottom: 0px;
+  right: 0px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background-color: #10B981;
+  border: 2px solid #ffffff;
+}
+
+.navbar-user-meta {
+  display: none;
+  flex-direction: column;
+  line-height: 1.2;
+  text-align: left;
+}
+
+@media (min-width: 640px) {
+  .navbar-user-meta {
+    display: flex;
+  }
+}
+
+.navbar-user-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+  max-width: 140px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.navbar-user-role {
+  font-size: 11px;
+  font-weight: 600;
+  color: #388E94;
+}
+
+.navbar-btn-admin-link {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background-color: #f1f5f9;
+  color: #334155;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.navbar-btn-admin-link:hover {
+  background-color: #67BEC3;
+  color: #ffffff;
+}
+
 
