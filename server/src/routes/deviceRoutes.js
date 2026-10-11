@@ -3,8 +3,11 @@ import {
   getDevices,
   getNearbyDevices,
   getDeviceById,
+  createDevice
 } from '../controllers/deviceController.js';
 import { getDeviceAvailability } from '../controllers/bookingController.js';
+import { protect } from '../middlewares/authMiddleware.js';
+import { requireOwner } from '../middlewares/roleMiddleware.js';
 
 const router = express.Router();
 
@@ -20,7 +23,7 @@ router.get('/:id/availability', getDeviceAvailability);
 // Parameterized device detail route
 router.get('/:id', getDeviceById);
 
+router.post('/',protect, requireOwner,createDevice)
 
-router.post('/',au)
 export default router;
 

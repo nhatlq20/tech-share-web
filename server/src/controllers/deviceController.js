@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import Device from "../models/Device.js";
+import { uploadToCloudinary } from "../services/cloudinaryService.js";
 
 /**
  * Helper to get MongoDB collections safely if Mongoose connection is ready
@@ -232,7 +233,7 @@ export const getDeviceById = async (req, res, next) => {
   }
 };
 
-const createDevice = async (req, res) => {
+export const createDevice = async (req, res) => {
   try {
     const {
       name,
@@ -245,10 +246,12 @@ const createDevice = async (req, res) => {
       depositAmount,
       addressText,
       specs,
+      images,
     } = req.body;
-
-    const ownerId = req.auth.id;
+    const ownerId = req.user.userId;
     const year = Number(yearOfManufacture);
+    const price = Number(pricePerDay);
+    const deposit = Number(depositAmount);
 
     if (
       yearOfManufacture == null ||
@@ -275,8 +278,6 @@ const createDevice = async (req, res) => {
         message: "Please fill in all required fields",
       });
     }
-    const price = Number(pricePerDay);
-    const deposit = Number(depositAmount);
 
     if (
       pricePerDay == null ||
@@ -302,16 +303,69 @@ const createDevice = async (req, res) => {
       });
     }
 
+    if (!Array.isArray(images) || images.length < 2 || images.length > 3) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide between 2 and 3 device images",
+      });
+    }
+
+    const imageUrls = [];
+    for (const image of images) {
+      if (typeof image !== "string") {
+        return res.status(400).json({
+          success: false,
+          message: "Each device image must be a data URL or an HTTPS URL",
+        });
+      }
+
+      if (image.startsWith("https://")) {
+        imageUrls.push(image);
+        continue;
+      }
+
+      const imageMatch = image.match(/^data:image\/(jpeg|png|webp);base64,([A-Za-z0-9+/]+=*)$/);
+      if (!imageMatch) {
+        return res.status(400).json({
+          success: false,
+          message: "Device images must be JPG, PNG, or WEBP files",
+        });
+      }
+
+      const imageSize = Math.ceil((imageMatch[2].length * 3) / 4);
+      if (imageSize > 3 * 1024 * 1024) {
+        return res.status(400).json({
+          success: false,
+          message: "Each device image must be smaller than 3 MB after compression",
+        });
+      }
+
+      try {
+        const uploadedImage = await uploadToCloudinary(image, "techshare/devices");
+        imageUrls.push(uploadedImage.url);
+      } catch (uploadError) {
+        console.error("Device image upload error:", uploadError.message);
+        return res.status(502).json({
+          success: false,
+          message: "Could not upload device images. Please try again.",
+        });
+      }
+    }
+
     const device = await Device.create({
-      ownerId,
-      name,
+      owner: ownerId,
+      title: name,
       category,
       brand,
-      yearOfManufacture: Number(yearOfManufacture),
-      pricePerDay,
-      depositAmount,
+      yearOfManufacture: year,
+      condition,
       description,
+      dailyRate: price,
+      pricePerDay: price,
+      depositValue: deposit,
+      address: addressText,
       specs,
+      images: imageUrls,
     });
 
     return res.status(201).json({
@@ -320,7 +374,16 @@ const createDevice = async (req, res) => {
       device,
     });
   } catch (error) {
-    res.status(500).json({
+    console.error("Create Device Error:", error);
+
+    if (error.name === "ValidationError") {
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
+
+    return res.status(500).json({
       success: false,
       message: "Internal server error",
     });
@@ -331,5 +394,4 @@ export default {
   getDevices,
   getNearbyDevices,
   getDeviceById,
-  createDevice
 };

@@ -314,6 +314,18 @@ export const OwnerDashboardScreen = () => {
     );
   };
 
+  const handleDeviceCreated = (device) => {
+    const newDevice = {
+      ...device,
+      name: device.name || device.title,
+      dailyRate: device.dailyRate || device.pricePerDay,
+      depositAmount: device.depositAmount ?? device.depositValue ?? 0,
+    };
+
+    setDevices((prev) => [newDevice, ...prev]);
+    setKpi((prev) => ({ ...prev, totalDevices: prev.totalDevices + 1 }));
+  };
+
   // Actions: Toggle blocked dates on calendar
   const handleToggleBlockedDate = (deviceId, dateStr) => {
     setBlockedDatesMap((prev) => {
@@ -426,7 +438,10 @@ export const OwnerDashboardScreen = () => {
           )}
 
           {currentPath === ROUTES.OWNER_DEVICE_NEW && (
-            <PostDevicePage onBack={() => handleNavigate(ROUTES.OWNER_DEVICES)} />
+            <PostDevicePage
+              onBack={() => handleNavigate(ROUTES.OWNER_DEVICES)}
+              onDeviceCreated={handleDeviceCreated}
+            />
           )}
 
           {/* B. /owner/devices */}
