@@ -33,7 +33,7 @@ export const OwnerDevicesTab = ({
   const [formCategory, setFormCategory] = useState('camera');
   const [formDailyRate, setFormDailyRate] = useState('');
   const [formDeposit, setFormDeposit] = useState('');
-  const [formCondition, setFormCondition] = useState('Mới 98%, hoạt động hoàn hảo');
+  const [formCondition, setFormCondition] = useState('Like new 98%, fully functional');
   const [formDescription, setFormDescription] = useState('');
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
 
@@ -47,18 +47,18 @@ export const OwnerDevicesTab = ({
     });
   }, [devices, searchTerm, selectedCategory]);
 
-  // AI Description Generator (K-08 Gemini AI Simulation)
+  // AI Description Generator (Gemini AI Integration)
   const handleGenerateAiDescription = () => {
     if (!formName && !formBrand) {
-      alert('Vui lòng nhập Tên máy hoặc Thương hiệu trước khi tạo mô tả AI!');
+      alert('Please enter equipment name or brand before generating AI description!');
       return;
     }
     setIsGeneratingAi(true);
     setTimeout(() => {
-      const generated = `🔥 [SIÊU PHẨM CÔNG NGHỆ] ${formBrand} ${formName} - Lựa chọn hoàn hảo cho nhà sáng tạo nội dung & quay chụp chuyên nghiệp!
-✨ Tình trạng: ${formCondition}, cảm biến sắc nét, ống kính trong veo không trầy xước.
-⚡ Đi kèm đầy đủ phụ kiện cao cấp: 2 pin zin dung lượng cao, dock sạc nhanh, thẻ nhớ tốc độ cao 128GB, túi chống sốc.
-🛡️ Đã được kiểm tra kỹ thuật (Check specs) và vệ sinh khử khuẩn trước mỗi lượt giao nhận. Hỗ trợ hướng dẫn sử dụng chi tiết khi nhận máy!`;
+      const generated = `🔥 [PREMIUM TECH] ${formBrand} ${formName} - Ideal choice for content creators & professionals!
+✨ Condition: ${formCondition}, pristine sensor and scratch-free lenses.
+⚡ Includes full accessories: high-capacity batteries, rapid charger, 128GB high-speed card, and protective carrying case.
+🛡️ Fully inspected and sanitized before every handover. Setup support provided on pickup!`;
       setFormDescription(generated);
       setIsGeneratingAi(false);
     }, 1200);
@@ -186,7 +186,7 @@ export const OwnerDevicesTab = ({
                           />
                           <div>
                             <div className="font-semibold text-slate-800 text-sm line-clamp-1">{device.name}</div>
-                            <div className="text-xs text-slate-500">{device.brand} • {device.condition || 'Tốt'}</div>
+                            <div className="text-xs text-slate-500">{device.brand} • {device.condition || 'Good'}</div>
                           </div>
                         </div>
                       </td>
@@ -202,10 +202,10 @@ export const OwnerDevicesTab = ({
                       <td>
                         <div className="text-sm font-bold text-slate-800">
                           {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(device.dailyRate)}
-                          <span className="text-xs font-normal text-slate-500"> / {tc.day}</span>
+                          <span className="text-xs font-normal text-slate-500"> / {tc.day || 'day'}</span>
                         </div>
                         <div className="text-[11px] text-slate-500">
-                          Cọc: {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(device.depositAmount || 0)}
+                          Deposit: {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(device.depositAmount || 0)}
                         </div>
                       </td>
 
@@ -216,7 +216,7 @@ export const OwnerDevicesTab = ({
                           <span>{device.ratingAvg || 5.0}</span>
                         </div>
                         <div className="text-[11px] text-slate-500 mt-0.5">
-                          {device.rentalCount || 0} lượt thuê
+                          {device.rentalCount || 0} {STRINGS.owner.overview.recentBookings.unitDays || 'rentals'}
                         </div>
                       </td>
 
@@ -328,13 +328,13 @@ export const OwnerDevicesTab = ({
                     value={formCategory}
                     onChange={(e) => setFormCategory(e.target.value)}
                   >
-                    <option value="camera">Máy ảnh & Ống kính</option>
-                    <option value="laptop">Laptop & Máy trạm</option>
-                    <option value="smartphone">Smartphone & Tablet</option>
-                    <option value="drone">Flycam & Gimbal</option>
-                    <option value="audio">Tai nghe & Âm thanh</option>
-                    <option value="gaming">Gaming & VR</option>
-                    <option value="accessory">Phụ kiện</option>
+                    <option value="camera">{t.categories.camera}</option>
+                    <option value="laptop">{t.categories.laptop}</option>
+                    <option value="smartphone">{t.categories.smartphone}</option>
+                    <option value="drone">{t.categories.drone}</option>
+                    <option value="audio">{t.categories.audio}</option>
+                    <option value="gaming">{t.categories.gaming}</option>
+                    <option value="accessory">{t.categories.accessory}</option>
                   </select>
                 </div>
 
@@ -414,7 +414,7 @@ export const OwnerDevicesTab = ({
                 <p className="text-xs font-medium text-slate-600">
                   {t.modalPost.dropzoneText}
                 </p>
-                <span className="text-[11px] text-slate-400">JPG, PNG, WEBP (Khuyến nghị tỷ lệ 4:3)</span>
+                <span className="text-[11px] text-slate-400">JPG, PNG, WEBP (Recommended ratio 4:3)</span>
               </div>
 
               {/* Action Buttons */}

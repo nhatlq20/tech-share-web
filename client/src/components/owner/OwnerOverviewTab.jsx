@@ -59,47 +59,6 @@ const normalizeRentalItem = (item) => ({
   status: item.status === 'active' ? 'renting' : item.status || 'pending',
 });
 
-// Demo Data for Revenue Chart
-const REVENUE_DATA_BY_PERIOD = {
-  '7d': [
-    { name: 'Mon', revenue: 4500000, orders: 3 },
-    { name: 'Tue', revenue: 7200000, orders: 5 },
-    { name: 'Wed', revenue: 6400000, orders: 4 },
-    { name: 'Thu', revenue: 9600000, orders: 6 },
-    { name: 'Fri', revenue: 11500000, orders: 8 },
-    { name: 'Sat', revenue: 14800000, orders: 11 },
-    { name: 'Sun', revenue: 12200000, orders: 9 },
-  ],
-  month: [
-    { name: 'Week 1', revenue: 22000000, orders: 16 },
-    { name: 'Week 2', revenue: 31000000, orders: 22 },
-    { name: 'Week 3', revenue: 28500000, orders: 19 },
-    { name: 'Week 4', revenue: 38900000, orders: 27 },
-  ],
-  year: [
-    { name: 'Jan', revenue: 18000000, orders: 12 },
-    { name: 'Feb', revenue: 24000000, orders: 17 },
-    { name: 'Mar', revenue: 31000000, orders: 21 },
-    { name: 'Apr', revenue: 35000000, orders: 25 },
-    { name: 'May', revenue: 39000000, orders: 28 },
-    { name: 'Jun', revenue: 48000000, orders: 34 },
-    { name: 'Jul', revenue: 52000000, orders: 38 },
-    { name: 'Aug', revenue: 46000000, orders: 32 },
-    { name: 'Sep', revenue: 58000000, orders: 41 },
-    { name: 'Oct', revenue: 64000000, orders: 45 },
-    { name: 'Nov', revenue: 70000000, orders: 49 },
-    { name: 'Dec', revenue: 78000000, orders: 54 },
-  ],
-};
-
-// Top Devices Utilization Breakdown
-const TOP_DEVICES_DATA = [
-  { name: 'MacBook Pro 16 M3 Pro', percent: 45, color: '#67BEC3', count: 9 },
-  { name: 'Sony Alpha A7 IV Kit', percent: 30, color: '#38BDF8', count: 14 },
-  { name: 'DJI Mini 4 Pro Combo', percent: 18, color: '#818CF8', count: 22 },
-  { name: 'Sony WH-1000XM5 ANC', percent: 7, color: '#F472B6', count: 18 },
-];
-
 // Soft UI Tooltip for Recharts
 const CustomRevenueTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
@@ -163,6 +122,8 @@ const renderStatusBadge = (status) => {
 
 export const OwnerOverviewTab = ({
   kpi,
+  charts = {},
+  utilization = [],
   recentBookings = [],
   onNavigate,
   onOpenPostModal,
@@ -172,22 +133,26 @@ export const OwnerOverviewTab = ({
   const t = STRINGS.owner.overview;
   const [revenueTimeRange, setRevenueTimeRange] = useState('month');
 
-  // Safe fallback KPI values
+  // Safe fallback KPI values from live DB
   const safeKpi = {
-    totalDevices: kpi?.totalDevices ?? 8,
-    activeRentals: kpi?.activeRentals ?? 3,
-    pendingApprovals: kpi?.pendingApprovals ?? 2,
-    monthlyRevenue: kpi?.monthlyRevenue ?? 14850000,
+    totalDevices: kpi?.totalDevices ?? 0,
+    activeRentals: kpi?.activeRentals ?? 0,
+    pendingApprovals: kpi?.pendingApprovals ?? 0,
+    monthlyRevenue: kpi?.monthlyRevenue ?? 0,
     monthlyRevenueFormatted:
       kpi?.monthlyRevenueFormatted ||
-      formatVND(kpi?.monthlyRevenue ?? 14850000),
-    trustScore: kpi?.trustScore ?? 98,
-    ratingAvg: kpi?.ratingAvg ?? 4.9,
+      formatVND(kpi?.monthlyRevenue ?? 0),
+    trustScore: kpi?.trustScore ?? 100,
+    ratingAvg: kpi?.ratingAvg ?? 5.0,
+    utilizationRate: kpi?.utilizationRate ?? 0,
   };
 
   const normalizedBookings = recentBookings.map(normalizeRentalItem);
   const activeRevenueData =
-    REVENUE_DATA_BY_PERIOD[revenueTimeRange] || REVENUE_DATA_BY_PERIOD.month;
+    (charts && charts[revenueTimeRange]) ||
+    (charts && charts.month) ||
+    [];
+  const topDevices = Array.isArray(utilization) ? utilization : [];
 
   return (
     <div className="flex flex-col gap-6">
@@ -443,38 +408,44 @@ export const OwnerOverviewTab = ({
                 {t.utilizationInsight.title}
               </h2>
               <span className="inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full bg-[#EEF8F8] text-[#286E74] whitespace-nowrap shrink-0">
-                {t.utilizationInsight.rateBadge}
+                {safeKpi.utilizationRate}% {t.utilizationInsight.occupancySuffix || 'Occupancy'}
               </span>
             </div>
 
             <div className="flex flex-col">
-              {TOP_DEVICES_DATA.map((item, idx) => (
-                <div key={idx} className="flex flex-col gap-2 mb-4 last:mb-0">
-                  <div className="flex items-center justify-between text-sm font-medium text-slate-700">
-                    <span
-                      className="font-semibold text-slate-800 truncate max-w-[140px] sm:max-w-[190px]"
-                      title={item.name}
-                    >
-                      {item.name}
-                    </span>
-                    <span className="ml-auto text-xs text-slate-500 whitespace-nowrap shrink-0 pl-2">
-                      <strong className="text-slate-700 font-semibold">
-                        {item.count}
-                      </strong>{' '}
-                      {t.utilizationInsight.deviceUnit} ({item.percent}%)
-                    </span>
+              {topDevices.length > 0 ? (
+                topDevices.map((item, idx) => (
+                  <div key={item.id || idx} className="flex flex-col gap-2 mb-4 last:mb-0">
+                    <div className="flex items-center justify-between text-sm font-medium text-slate-700">
+                      <span
+                        className="font-semibold text-slate-800 truncate max-w-[140px] sm:max-w-[190px]"
+                        title={item.name}
+                      >
+                        {item.name}
+                      </span>
+                      <span className="ml-auto text-xs text-slate-500 whitespace-nowrap shrink-0 pl-2">
+                        <strong className="text-slate-700 font-semibold">
+                          {item.count}
+                        </strong>{' '}
+                        {t.utilizationInsight.deviceUnit} ({item.percent}%)
+                      </span>
+                    </div>
+                    <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden mt-1">
+                      <div
+                        className="h-full rounded-full transition-all duration-500"
+                        style={{
+                          width: `${item.percent}%`,
+                          backgroundColor: item.color || '#67BEC3',
+                        }}
+                      />
+                    </div>
                   </div>
-                  <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden mt-1">
-                    <div
-                      className="h-full rounded-full transition-all duration-500"
-                      style={{
-                        width: `${item.percent}%`,
-                        backgroundColor: item.color || '#67BEC3',
-                      }}
-                    />
-                  </div>
+                ))
+              ) : (
+                <div className="py-8 text-center text-xs text-slate-400">
+                  {STRINGS.admin?.devices?.table?.emptyMessage || 'No equipment utilization data yet.'}
                 </div>
-              ))}
+              )}
             </div>
           </div>
 

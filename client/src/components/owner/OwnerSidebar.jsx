@@ -19,6 +19,7 @@ export const OwnerSidebar = ({
   currentPath = ROUTES.OWNER_DASHBOARD, 
   onNavigate, 
   pendingCount = 0,
+  owner,
   onLogout 
 }) => {
   const t = STRINGS.owner.sidebar;
@@ -89,14 +90,15 @@ export const OwnerSidebar = ({
         {/* Profile Card */}
         <div className="owner-profile-badge-wrap">
           <img
-            src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop"
+            src={owner?.avatarUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop"}
             alt={t.avatarAlt}
             className="owner-profile-avatar"
+            style={{ objectFit: 'cover' }}
           />
           <div className="owner-profile-info">
-            <div className="owner-profile-name" title={t.ownerName}>{t.ownerName}</div>
+            <div className="owner-profile-name" title={owner?.name || t.ownerName}>{owner?.name || t.ownerName}</div>
             <div className="owner-profile-role">{t.ownerRole}</div>
-            <div className="owner-profile-email" title={t.ownerEmail}>{t.ownerEmail}</div>
+            <div className="owner-profile-email" title={owner?.email || t.ownerEmail}>{owner?.email || t.ownerEmail}</div>
           </div>
         </div>
       </div>
