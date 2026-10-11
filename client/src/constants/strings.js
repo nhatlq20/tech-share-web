@@ -780,7 +780,7 @@ export const STRINGS = {
       mustAgreeTerms: 'Please agree to Terms of Service and Equipment Commitment before proceeding.',
     },
   },
-} as const;
+};
 
 export default STRINGS;
 

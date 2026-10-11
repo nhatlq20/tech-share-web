@@ -9,7 +9,7 @@ import {
   Sparkles,
   AlertCircle,
 } from 'lucide-react';
-import { STRINGS } from '../../constants/strings.ts';
+import { STRINGS } from '../../constants/strings.js';
 import { formatPrice } from '../../utils/formatters.js';
 
 export const OrderSummaryCard = ({

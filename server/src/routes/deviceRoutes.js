@@ -10,7 +10,6 @@ import { protect } from '../middlewares/authMiddleware.js';
 
 import {
   getOwnerDevices,
-  createOwnerDevice,
   toggleDeviceStatus,
   toggleBlockedDate,
   getOwnerAnalytics,
@@ -22,9 +21,6 @@ const router = express.Router();
 router.get('/nearby', getNearbyDevices);
 router.get('/my-devices', getOwnerDevices);
 router.get('/owner/analytics', getOwnerAnalytics);
-
-// Create device
-router.post('/', createOwnerDevice);
 
 // Root devices listing with search, category, pagination & sorting
 router.get('/', getDevices);
@@ -43,4 +39,5 @@ router.get('/:id', getDeviceById);
 router.post('/', protect, createDevice);
 
 export default router;
+
 
