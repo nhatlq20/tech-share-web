@@ -6,18 +6,20 @@ import {
   Calendar, 
   BarChart3, 
   Wallet, 
-  Home, 
+  ExternalLink, 
   LogOut, 
-  BadgeCheck 
+  Sparkles 
 } from 'lucide-react';
 import { STRINGS } from '../../constants/strings';
 import { COLORS } from '../../constants/colors';
 import { ROUTES } from '../../routes/routes';
+import './OwnerWorkspace.css';
 
 export const OwnerSidebar = ({ 
   currentPath = ROUTES.OWNER_DASHBOARD, 
   onNavigate, 
   pendingCount = 0,
+  owner,
   onLogout 
 }) => {
   const t = STRINGS.owner.sidebar;
@@ -63,20 +65,53 @@ export const OwnerSidebar = ({
   ];
 
   return (
-    <aside className="owner-sidebar" aria-label="Owner Navigation">
-      {/* 1. Header & Brand */}
+    <aside className="owner-sidebar bg-white border-r border-slate-200" aria-label={t.brandSubtitle}>
+      {/* 1. Header Sidebar */}
       <div className="owner-sidebar-header">
-        <div className="owner-logo-icon">
-          TS
-        </div>
-        <div className="owner-brand-text">
-          <h2>{t.brandTitle}</h2>
-          <span>{t.brandSubtitle}</span>
+        <a
+          href={ROUTES.OWNER_DASHBOARD}
+          className="owner-logo-box"
+          onClick={(e) => {
+            e.preventDefault();
+            onNavigate(ROUTES.OWNER_DASHBOARD);
+          }}
+        >
+          <div className="owner-logo-icon">
+            <Sparkles size={20} />
+          </div>
+          <div className="owner-logo-text">
+            Tech<span>Share</span>{' '}
+            <span style={{ fontSize: '11px', fontWeight: 600, color: COLORS.neutral[500] }}>
+              OWNER
+            </span>
+          </div>
+        </a>
+
+        {/* Profile Card */}
+        <div className="owner-profile-badge-wrap">
+          <img
+            src={owner?.avatarUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop"}
+            alt={t.avatarAlt}
+            className="owner-profile-avatar"
+            style={{ objectFit: 'cover' }}
+          />
+          <div className="owner-profile-info">
+            <div className="owner-profile-name" title={owner?.name || t.ownerName}>{owner?.name || t.ownerName}</div>
+            <div className="owner-profile-role">{t.ownerRole}</div>
+            <div className="owner-profile-email" title={owner?.email || t.ownerEmail}>{owner?.email || t.ownerEmail}</div>
+          </div>
         </div>
       </div>
 
-      {/* 2. Navigation items */}
-      <nav className="owner-nav-list">
+      {/* A. Divider */}
+      <div className="owner-sidebar-divider" role="separator" />
+
+      {/* 2. Navigation Items */}
+      <nav className="owner-nav-list" role="navigation">
+        <div className="owner-nav-section-title">
+          {t.sectionTitle}
+        </div>
+
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
           const isActive = currentPath === item.path || 
@@ -89,55 +124,41 @@ export const OwnerSidebar = ({
               className={`owner-nav-item ${isActive ? 'active' : ''}`}
               onClick={() => onNavigate(item.path)}
             >
-              <div className="owner-nav-item-left">
-                <Icon size={18} color={isActive ? COLORS.primary.DEFAULT : COLORS.neutral[400]} />
-                <span>{item.label}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <Icon size={19} strokeWidth={isActive ? 2.5 : 2} />
+                <span style={{ fontSize: '13.5px', fontWeight: isActive ? 700 : 600 }}>
+                  {item.label}
+                </span>
               </div>
               {item.badge !== null && item.badge !== undefined && (
-                <span className="owner-badge-count">{item.badge}</span>
+                <span className="owner-badge-count" title={`${item.badge} pending requests`}>
+                  {item.badge}
+                </span>
               )}
             </button>
           );
         })}
       </nav>
 
-      {/* 3. Footer: Partner profile & portal actions */}
+      {/* 3. Footer Sidebar */}
       <div className="owner-sidebar-footer">
-        <div className="owner-user-card">
-          <img
-            src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80"
-            alt="Owner Avatar"
-            className="owner-user-avatar"
-          />
-          <div className="owner-user-meta">
-            <div className="owner-user-name flex items-center gap-1">
-              <span>{t.ownerName}</span>
-              <BadgeCheck size={14} color={COLORS.primary.DEFAULT} />
-            </div>
-            <div className="owner-user-role">{t.ownerRole}</div>
-          </div>
-        </div>
+        <button
+          type="button"
+          onClick={() => onNavigate(ROUTES.HOME)}
+          className="owner-footer-btn client-switch"
+        >
+          <ExternalLink size={15} />
+          <span>{t.switchClientBtn}</span>
+        </button>
 
-        <div className="owner-footer-btns">
-          <button
-            type="button"
-            className="owner-sub-btn"
-            onClick={() => onNavigate(ROUTES.HOME)}
-            title={t.switchClientBtn}
-          >
-            <Home size={14} />
-            <span>{t.switchClientBtn}</span>
-          </button>
-          <button
-            type="button"
-            className="owner-sub-btn"
-            onClick={onLogout}
-            title={t.logoutBtn}
-          >
-            <LogOut size={14} />
-            <span>{t.logoutBtn}</span>
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={onLogout}
+          className="owner-footer-btn logout"
+        >
+          <LogOut size={15} />
+          <span>{t.logoutBtn}</span>
+        </button>
       </div>
     </aside>
   );

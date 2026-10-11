@@ -118,7 +118,7 @@ export const OwnerDevicesTab = ({
                           />
                           <div>
                             <div className="font-semibold text-slate-800 text-sm line-clamp-1">{device.name}</div>
-                            <div className="text-xs text-slate-500">{device.brand} • {device.condition || 'Tốt'}</div>
+                            <div className="text-xs text-slate-500">{device.brand} • {device.condition || 'Good'}</div>
                           </div>
                         </div>
                       </td>
@@ -134,10 +134,10 @@ export const OwnerDevicesTab = ({
                       <td>
                         <div className="text-sm font-bold text-slate-800">
                           {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(device.dailyRate)}
-                          <span className="text-xs font-normal text-slate-500"> / {tc.day}</span>
+                          <span className="text-xs font-normal text-slate-500"> / {tc.day || 'day'}</span>
                         </div>
                         <div className="text-[11px] text-slate-500">
-                          Cọc: {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(device.depositAmount || 0)}
+                          Deposit: {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(device.depositAmount || 0)}
                         </div>
                       </td>
 
@@ -148,7 +148,7 @@ export const OwnerDevicesTab = ({
                           <span>{device.ratingAvg || 5.0}</span>
                         </div>
                         <div className="text-[11px] text-slate-500 mt-0.5">
-                          {device.rentalCount || 0} lượt thuê
+                          {device.rentalCount || 0} {STRINGS.owner.overview.recentBookings.unitDays || 'rentals'}
                         </div>
                       </td>
 
@@ -199,7 +199,6 @@ export const OwnerDevicesTab = ({
           </table>
         </div>
       </div>
-
     </div>
   );
 };

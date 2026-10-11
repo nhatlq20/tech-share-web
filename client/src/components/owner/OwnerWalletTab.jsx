@@ -3,48 +3,26 @@ import { Wallet, ArrowDownRight, ArrowUpRight, ShieldCheck, CheckCircle } from '
 import { STRINGS } from '../../constants/strings';
 import { COLORS } from '../../constants/colors';
 
-export const OwnerWalletTab = ({ walletData, transactions = [] }) => {
+export const OwnerWalletTab = ({ kpi, bookings = [], walletData, transactions = [] }) => {
   const t = STRINGS.owner.wallet;
 
-  const data = walletData || {
-    availableBalance: 12450000,
-    heldDeposit: 4500000,
-    totalEarned: 38900000
-  };
+  const availableBalance = walletData?.availableBalance ?? kpi?.monthlyRevenue ?? 0;
+  const heldDeposit = walletData?.heldDeposit ?? kpi?.escrowHolding ?? 0;
+  const totalEarned = walletData?.totalEarned ?? kpi?.monthlyRevenue ?? 0;
 
-  const defaultTx = transactions.length > 0 ? transactions : [
-    {
-      _id: 'tx_101',
-      type: 'rental_income',
-      amount: 1250000,
-      bookingCode: 'TS-2026-881',
-      createdAt: '2026-10-06 14:30',
-      status: 'success'
-    },
-    {
-      _id: 'tx_102',
-      type: 'deposit_hold',
-      amount: 2500000,
-      bookingCode: 'TS-2026-882',
-      createdAt: '2026-10-05 10:15',
-      status: 'pending'
-    },
-    {
-      _id: 'tx_103',
-      type: 'withdraw',
-      amount: 5000000,
-      createdAt: '2026-10-03 09:00',
-      status: 'success'
-    },
-    {
-      _id: 'tx_104',
-      type: 'rental_income',
-      amount: 850000,
-      bookingCode: 'TS-2026-764',
-      createdAt: '2026-10-01 16:45',
-      status: 'success'
-    }
-  ];
+  // Derive transactions from real bookings if custom transactions list is not provided
+  const txList = transactions.length > 0 ? transactions : bookings.map((b) => {
+    const isCompleted = b.status === 'completed';
+    const isActive = b.status === 'active' || b.status === 'approved';
+    return {
+      _id: b._id || b.id,
+      type: isCompleted ? 'rental_income' : isActive ? 'deposit_hold' : 'deposit_refund',
+      amount: isCompleted ? (b.totalPrice || b.totalRentalPrice || 0) : (b.depositAmount || 0),
+      bookingCode: b.bookingCode || b.id,
+      createdAt: (b.createdAt || '').split('T')[0] || '2026-10-08',
+      status: isCompleted ? 'success' : 'pending',
+    };
+  });
 
   return (
     <div className="owner-wallet-container">
@@ -58,14 +36,14 @@ export const OwnerWalletTab = ({ walletData, transactions = [] }) => {
           <button
             type="button"
             className="owner-btn-outline"
-            onClick={() => alert('Nạp tiền vào ví Escrow')}
+            onClick={() => alert('Escrow top-up request initiated.')}
           >
             {t.topupBtn}
           </button>
           <button
             type="button"
             className="owner-btn-primary"
-            onClick={() => alert('Đã gửi yêu cầu rút tiền về tài khoản ngân hàng liên kết!')}
+            onClick={() => alert('Withdrawal request submitted to linked bank account!')}
           >
             {t.withdrawBtn}
           </button>
@@ -78,10 +56,10 @@ export const OwnerWalletTab = ({ walletData, transactions = [] }) => {
           <div>
             <div className="owner-kpi-label">{t.availableBalance}</div>
             <div className="owner-kpi-value text-emerald-600">
-              {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(data.availableBalance)}
+              {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(availableBalance)}
             </div>
             <div className="owner-kpi-sub">
-              Sẵn sàng rút về tài khoản ngân hàng
+              Available for bank withdrawal
             </div>
           </div>
           <div className="owner-kpi-icon-wrap" style={{ background: COLORS.status.success.bg, color: COLORS.status.success.DEFAULT }}>
@@ -93,10 +71,10 @@ export const OwnerWalletTab = ({ walletData, transactions = [] }) => {
           <div>
             <div className="owner-kpi-label">{t.heldDeposit}</div>
             <div className="owner-kpi-value text-sky-600">
-              {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(data.heldDeposit)}
+              {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(heldDeposit)}
             </div>
             <div className="owner-kpi-sub">
-              Bảo vệ bởi hợp đồng Escrow TechShare
+              Protected by TechShare Escrow contract
             </div>
           </div>
           <div className="owner-kpi-icon-wrap" style={{ background: COLORS.status.info.bg, color: COLORS.status.info.DEFAULT }}>
@@ -108,10 +86,10 @@ export const OwnerWalletTab = ({ walletData, transactions = [] }) => {
           <div>
             <div className="owner-kpi-label">{t.totalEarned}</div>
             <div className="owner-kpi-value">
-              {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(data.totalEarned)}
+              {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalEarned)}
             </div>
             <div className="owner-kpi-sub">
-              Thu nhập tích lũy trọn đời
+              Total lifetime earned revenue
             </div>
           </div>
           <div className="owner-kpi-icon-wrap">
@@ -139,43 +117,51 @@ export const OwnerWalletTab = ({ walletData, transactions = [] }) => {
               </tr>
             </thead>
             <tbody>
-              {defaultTx.map((tx) => {
-                const isIncome = tx.type === 'rental_income';
-                const isWithdraw = tx.type === 'withdraw';
-                return (
-                  <tr key={tx._id}>
-                    <td>
-                      <span className="font-semibold text-xs text-slate-600">#{tx._id}</span>
-                    </td>
-                    <td>
-                      <div className="flex items-center gap-1.5 text-xs font-medium">
-                        {isIncome && <ArrowDownRight size={14} className="text-emerald-500" />}
-                        {isWithdraw && <ArrowUpRight size={14} className="text-rose-500" />}
-                        <span>{t.types[tx.type] || tx.type}</span>
-                      </div>
-                    </td>
-                    <td>
-                      <span className={`text-sm font-bold ${isIncome ? 'text-emerald-600' : isWithdraw ? 'text-rose-600' : 'text-slate-800'}`}>
-                        {isIncome ? '+' : isWithdraw ? '-' : ''}
-                        {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(tx.amount)}
-                      </span>
-                    </td>
-                    <td>
-                      <span className="text-xs text-slate-600">
-                        {tx.bookingCode ? `#${tx.bookingCode}` : '—'}
-                      </span>
-                    </td>
-                    <td>
-                      <span className="text-xs text-slate-500">{tx.createdAt}</span>
-                    </td>
-                    <td>
-                      <span className={`owner-badge ${tx.status === 'success' ? 'owner-badge-available' : 'owner-badge-pending'}`}>
-                        {tx.status === 'success' ? t.status.success : t.status.pending}
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
+              {txList.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="text-center py-10 text-slate-500">
+                    No transactions recorded in wallet yet.
+                  </td>
+                </tr>
+              ) : (
+                txList.map((tx) => {
+                  const isIncome = tx.type === 'rental_income';
+                  const isWithdraw = tx.type === 'withdraw';
+                  return (
+                    <tr key={tx._id}>
+                      <td>
+                        <span className="font-semibold text-xs text-slate-600">#{tx._id}</span>
+                      </td>
+                      <td>
+                        <div className="flex items-center gap-1.5 text-xs font-medium">
+                          {isIncome && <ArrowDownRight size={14} className="text-emerald-500" />}
+                          {isWithdraw && <ArrowUpRight size={14} className="text-rose-500" />}
+                          <span>{t.types[tx.type] || tx.type}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <span className={`text-sm font-bold ${isIncome ? 'text-emerald-600' : isWithdraw ? 'text-rose-600' : 'text-slate-800'}`}>
+                          {isIncome ? '+' : isWithdraw ? '-' : ''}
+                          {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(tx.amount)}
+                        </span>
+                      </td>
+                      <td>
+                        <span className="text-xs text-slate-600">
+                          {tx.bookingCode ? `#${tx.bookingCode}` : '—'}
+                        </span>
+                      </td>
+                      <td>
+                        <span className="text-xs text-slate-500">{tx.createdAt}</span>
+                      </td>
+                      <td>
+                        <span className={`owner-badge ${tx.status === 'success' ? 'owner-badge-available' : 'owner-badge-pending'}`}>
+                          {tx.status === 'success' ? t.status.success : t.status.pending}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
@@ -185,4 +171,3 @@ export const OwnerWalletTab = ({ walletData, transactions = [] }) => {
 };
 
 export default OwnerWalletTab;
-

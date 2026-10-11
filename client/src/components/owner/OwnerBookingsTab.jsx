@@ -176,12 +176,12 @@ export const OwnerBookingsTab = ({
                           <div className="flex items-center gap-1 font-semibold text-xs text-slate-800">
                             <span>{b.renter?.name}</span>
                             {b.renter?.isVerified && (
-                              <UserCheck size={13} color={COLORS.primary.DEFAULT} title="Đã eKYC CCCD" />
+                              <UserCheck size={13} color={COLORS.primary.DEFAULT} title="eKYC Verified" />
                             )}
                           </div>
                           <div className="text-[11px] text-slate-500 flex items-center gap-1">
                             <ShieldCheck size={12} color={COLORS.primary.dark} />
-                            <span>Tín nhiệm: <b>{b.renter?.trustScore}</b>/100</span>
+                            <span>Trust Score: <b>{b.renter?.trustScore}</b>/100</span>
                           </div>
                         </div>
                       </div>
@@ -193,7 +193,7 @@ export const OwnerBookingsTab = ({
                         {b.startDate} → {b.endDate}
                       </div>
                       <div className="text-[11px] text-slate-500">
-                        {b.totalDays} {tc.day} • {b.deliveryMethod === 'pickup' ? 'Nhận tại chỗ' : 'Giao hàng'}
+                        {b.totalDays} {tc.day || 'days'} • {b.deliveryMethod === 'pickup' ? 'Store Pickup' : 'Home Delivery'}
                       </div>
                     </td>
 
@@ -203,7 +203,7 @@ export const OwnerBookingsTab = ({
                         {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(b.totalRentalPrice)}
                       </div>
                       <div className="text-[11px] text-slate-500">
-                        Cọc: {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(b.depositAmount)}
+                        Deposit: {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(b.depositAmount)}
                       </div>
                     </td>
 
@@ -274,7 +274,7 @@ export const OwnerBookingsTab = ({
                           <button
                             type="button"
                             className="owner-btn-outline py-1 px-2.5 text-xs"
-                            onClick={() => alert(`Xem chi tiết đơn #${b.bookingCode}`)}
+                            onClick={() => alert(`View details for order #${b.bookingCode}`)}
                           >
                             <span>{tc.viewDetails}</span>
                           </button>
@@ -459,7 +459,7 @@ export const OwnerBookingsTab = ({
                 </span>
                 <div className="w-full h-32 rounded-xl border-2 border-dashed border-slate-300 flex flex-col items-center justify-center bg-slate-50">
                   <Camera size={24} className="text-slate-400 mb-1" />
-                  <span className="text-[11px] text-slate-500">Chụp webcam hoặc tải ảnh</span>
+                  <span className="text-[11px] text-slate-500">Capture with camera or upload</span>
                 </div>
               </div>
             </div>
@@ -469,7 +469,7 @@ export const OwnerBookingsTab = ({
                 type="button"
                 className="owner-btn-outline text-rose-600 hover:bg-rose-50 border-rose-200"
                 onClick={() => {
-                  alert('Chuyển hướng lập biên bản tranh chấp chuyển Admin TechShare xử lý.');
+                  alert('Dispute report initiated and sent to TechShare Admin for resolution.');
                   setReturnBooking(null);
                 }}
               >
