@@ -8,6 +8,7 @@ import { connectDB } from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
 import deviceRoutes from './routes/deviceRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
+import bookingRoutes from './routes/bookingRoutes.js';
 import { errorHandler, notFound } from './middlewares/errorMiddleware.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -27,7 +28,12 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (
+      !origin ||
+      allowedOrigins.includes(origin) ||
+      origin.startsWith('http://localhost:') ||
+      origin.startsWith('http://127.0.0.1:')
+    ) {
       callback(null, true);
     } else {
       callback(new Error('CORS policy: Origin not allowed'));
@@ -51,6 +57,7 @@ app.get('/api/health', (req, res) => {
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/devices', deviceRoutes);
+app.use('/api/bookings', bookingRoutes);
 app.use('/api/admin', adminRoutes);
 
 // Error handlers

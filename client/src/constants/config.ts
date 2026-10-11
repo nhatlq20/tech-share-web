@@ -31,6 +31,11 @@ export const API_CONFIG = {
     AI_GENERATE_DESCRIPTION: '/ai/generate-description',
     DEVICES: '/devices',
     DEVICE_BY_ID: (id: string) => `/devices/${id}`,
+    DEVICE_AVAILABILITY: (id: string) => `/devices/${id}/availability`,
+    BOOKINGS: '/bookings',
+    BOOKINGS_MY: '/bookings/my-bookings',
+    BOOKING_BY_ID: (id: string) => `/bookings/${id}`,
+    BOOKING_VALIDATE_PRICING: '/bookings/validate-pricing',
   },
 } as const;
 
@@ -56,6 +61,17 @@ export const MAGIC_NUMBERS = {
     AVATAR_MD_PX: 36,
     AVATAR_LG_PX: 56,
     TABLE_MIN_WIDTH_PX: 780,
+  },
+
+  // Đặt thuê & Chiết khấu
+  BOOKING: {
+    MIN_RENTAL_DAYS: 1,
+    LONG_RENTAL_TIER_1_DAYS: 3,
+    LONG_RENTAL_TIER_1_DISCOUNT_PERCENT: 10,
+    LONG_RENTAL_TIER_2_DAYS: 7,
+    LONG_RENTAL_TIER_2_DISCOUNT_PERCENT: 20,
+    VOUCHER_WELCOME50_DISCOUNT: 50000,
+    VOUCHER_WEEKEND10_PERCENT: 10,
   },
 
   // Biểu đồ SVG
