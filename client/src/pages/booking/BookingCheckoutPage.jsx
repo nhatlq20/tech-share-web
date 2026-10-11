@@ -51,7 +51,6 @@ export const BookingCheckoutPage = () => {
 
   // Voucher state
   const [appliedVoucher, setAppliedVoucher] = useState('');
-  const [voucherDiscount, setVoucherDiscount] = useState(0);
   const [voucherError, setVoucherError] = useState('');
   const [voucherSuccess, setVoucherSuccess] = useState('');
 
@@ -131,6 +130,18 @@ export const BookingCheckoutPage = () => {
     return { longRentalDiscount: 0, longRentalDiscountPercent: 0 };
   }, [totalDays, rentalFee]);
 
+  // Dynamic Voucher Discount Calculation
+  const voucherDiscount = useMemo(() => {
+    if (!appliedVoucher) return 0;
+    if (appliedVoucher === STRINGS.booking.voucher.codes.welcome50) {
+      return Math.min(MAGIC_NUMBERS.BOOKING.VOUCHER_WELCOME50_DISCOUNT, rentalFee);
+    }
+    if (appliedVoucher === STRINGS.booking.voucher.codes.weekend10) {
+      return Math.round(rentalFee * (MAGIC_NUMBERS.BOOKING.VOUCHER_WEEKEND10_PERCENT / 100));
+    }
+    return 0;
+  }, [appliedVoucher, rentalFee]);
+
   const depositValue = device?.depositValue || 0;
   const finalRentalFee = Math.max(0, rentalFee - longRentalDiscount - voucherDiscount);
   const totalAmount = finalRentalFee + depositValue;
@@ -144,7 +155,7 @@ export const BookingCheckoutPage = () => {
   }, []);
 
   // Handle Voucher Apply
-  const handleApplyVoucher = (code) => {
+  const handleApplyVoucher = async (code) => {
     setVoucherError('');
     setVoucherSuccess('');
     const cleanCode = (code || '').trim().toUpperCase();
@@ -154,25 +165,42 @@ export const BookingCheckoutPage = () => {
       return;
     }
 
-    if (cleanCode === STRINGS.booking.voucher.codes.welcome50) {
-      const discount = Math.min(MAGIC_NUMBERS.BOOKING.VOUCHER_WELCOME50_DISCOUNT, rentalFee);
-      setVoucherDiscount(discount);
-      setAppliedVoucher(cleanCode);
-      setVoucherSuccess(STRINGS.booking.voucher.success);
-    } else if (cleanCode === STRINGS.booking.voucher.codes.weekend10) {
-      const discount = Math.round(rentalFee * (MAGIC_NUMBERS.BOOKING.VOUCHER_WEEKEND10_PERCENT / 100));
-      setVoucherDiscount(discount);
-      setAppliedVoucher(cleanCode);
-      setVoucherSuccess(STRINGS.booking.voucher.success);
-    } else {
-      setVoucherError(STRINGS.booking.voucher.errors.invalid);
+    try {
+      if (startDate && endDate) {
+        const res = await api.post(API_CONFIG.ENDPOINTS.BOOKING_VALIDATE_PRICING, {
+          deviceId: currentDeviceId,
+          startDate,
+          endDate,
+          voucherCode: cleanCode,
+        });
+
+        if (res.success && res.data?.voucherValid) {
+          setAppliedVoucher(cleanCode);
+          setVoucherSuccess(res.data.voucherMessage || STRINGS.booking.voucher.success);
+        } else {
+          setVoucherError(res.data?.voucherMessage || STRINGS.booking.voucher.errors.invalid);
+        }
+      } else {
+        if (cleanCode === STRINGS.booking.voucher.codes.welcome50 || cleanCode === STRINGS.booking.voucher.codes.weekend10) {
+          setAppliedVoucher(cleanCode);
+          setVoucherSuccess(STRINGS.booking.voucher.success);
+        } else {
+          setVoucherError(STRINGS.booking.voucher.errors.invalid);
+        }
+      }
+    } catch {
+      if (cleanCode === STRINGS.booking.voucher.codes.welcome50 || cleanCode === STRINGS.booking.voucher.codes.weekend10) {
+        setAppliedVoucher(cleanCode);
+        setVoucherSuccess(STRINGS.booking.voucher.success);
+      } else {
+        setVoucherError(STRINGS.booking.voucher.errors.invalid);
+      }
     }
   };
 
   // Handle Voucher Remove
   const handleRemoveVoucher = () => {
     setAppliedVoucher('');
-    setVoucherDiscount(0);
     setVoucherError('');
     setVoucherSuccess('');
   };
@@ -196,26 +224,31 @@ export const BookingCheckoutPage = () => {
 
     if (!startDate || !endDate) {
       setFormError(STRINGS.booking.validation.noDatesSelected);
+      window.scrollTo({ top: 100, behavior: 'smooth' });
       return;
     }
 
     if (!recipientName.trim()) {
       setFormError(STRINGS.booking.validation.missingRecipientName);
+      window.scrollTo({ top: 350, behavior: 'smooth' });
       return;
     }
 
     if (!phone.trim() || phone.trim().length < 10) {
       setFormError(STRINGS.booking.validation.invalidPhone);
+      window.scrollTo({ top: 350, behavior: 'smooth' });
       return;
     }
 
     if (!address.trim()) {
       setFormError(STRINGS.booking.validation.missingAddress);
+      window.scrollTo({ top: 400, behavior: 'smooth' });
       return;
     }
 
     if (!agreedTerms || !pledgedCondition) {
       setFormError(STRINGS.booking.validation.mustAgreeTerms);
+      window.scrollTo({ top: 600, behavior: 'smooth' });
       return;
     }
 
@@ -637,6 +670,7 @@ export const BookingCheckoutPage = () => {
               totalAmount={totalAmount}
               isSubmitting={isSubmitting}
               canSubmit={canSubmit}
+              errorMessage={formError}
               onSubmit={handleSubmitBooking}
             />
           </div>

@@ -3,8 +3,10 @@ import {
   getDevices,
   getNearbyDevices,
   getDeviceById,
+  createDevice,
 } from '../controllers/deviceController.js';
 import { getDeviceAvailability } from '../controllers/bookingController.js';
+import { protect } from '../middlewares/authMiddleware.js';
 
 import {
   getOwnerDevices,
@@ -37,6 +39,8 @@ router.patch('/:id/blocked-dates', toggleBlockedDate);
 // Parameterized device detail route
 router.get('/:id', getDeviceById);
 
+// Create device route
+router.post('/', protect, createDevice);
 
 export default router;
 

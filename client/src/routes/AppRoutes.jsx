@@ -106,6 +106,7 @@ export const AppRoutes = () => {
         <Route path={ROUTES.EXPLORE}            element={<CatalogPage />} />
         <Route path={ROUTES.DEVICE_DETAIL}      element={<DeviceDetailPage />} />
         <Route path={ROUTES.DEVICE_DETAIL_LEGACY} element={<DeviceDetailPage />} />
+        <Route path={ROUTES.BOOKING_CHECKOUT}   element={<BookingCheckoutPage />} />
         <Route path={ROUTES.NEARBY}             element={<NearbyPage />} />
         <Route path={ROUTES.LOGIN}              element={<LoginPage />} />
         <Route path={ROUTES.REGISTER}           element={<RegisterPage />} />
