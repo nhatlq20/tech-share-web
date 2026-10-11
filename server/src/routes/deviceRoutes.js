@@ -21,6 +21,5 @@ router.get('/:id/availability', getDeviceAvailability);
 router.get('/:id', getDeviceById);
 
 
-router.post('/',au)
 export default router;
 

@@ -93,7 +93,7 @@ export interface Device {
  * Inherits all Device fields, with optional distance populated by $geoNear or calculated client-side.
  */
 export interface NearbyDevice extends Device {
-  distance?: number; // Distance in meters or km
+  distance?: number; // Distance in meters
   distanceMeters?: number; // Explicit distance in meters if populated by MongoDB $geoNear
 }
 
@@ -130,6 +130,7 @@ export interface DeviceDetailResponse {
  * API Response for GET /api/devices/nearby
  */
 export interface NearbyDeviceListResponse {
+  pagination?: PaginationMeta;
   success?: boolean;
   data: NearbyDevice[];
   message?: string;
@@ -151,6 +152,8 @@ export interface DeviceQueryParams {
  * Supported query parameters for GET /api/devices/nearby
  */
 export interface NearbyQueryParams {
+  page?: number;
+  limit?: number;
   lat: number;
   lng: number;
   latitude?: number; // Optional alias

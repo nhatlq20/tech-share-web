@@ -36,6 +36,20 @@ export const STRINGS = {
 
   // Home & Landing Page Module (English)
   home: {
+    nearby: {
+      heading: 'Nearby Devices',
+      subtitle: 'Devices within 10 km of your current location.',
+      locationLoading: 'Finding devices near you...',
+      apiLoading: 'Loading nearby devices...',
+      locationError: 'Unable to determine your location.',
+      permissionRequired: 'Location permission is blocked in your browser. Enable Location permission for this site and try again.',
+      locationUnavailable: 'Your browser could not determine your position (POSITION_UNAVAILABLE, code 2). Check your connection and device location settings, then try again.',
+      insecureContext: 'Location requires a secure connection. Open this site using HTTPS or localhost, then try again.',
+      locationTimeout: 'Location request timed out. Please try again.',
+      unsupported: 'Your browser does not support location access.',
+      apiError: 'Unable to load nearby devices.',
+      empty: 'No nearby devices found.',
+    },
     hero: {
       badge: '✨ #1 Tech Device Sharing Platform',
       title: 'Discover Devices',
