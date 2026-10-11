@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
 import { Account } from '../models/Account.js';
 import { User } from '../models/User.js';
-import { uploadToCloudinary } from '../services/cloudinaryService.js';
+import { uploadToCloudinary, deleteFromCloudinary } from '../services/cloudinaryService.js';
 
 /**
  * Tạo JSON Web Token (JWT) cho tài khoản đã xác thực
@@ -206,8 +206,10 @@ export const getCurrentUser = async (req, res) => {
 };
 
 /**
- * 4. POST /api/users/avatar hoặc POST /api/auth/avatar
- * Cập nhật ảnh đại diện người dùng, upload trực tiếp lên Cloudinary
+ * 4. POST /api/users/avatar hoặc PATCH /api/users/avatar
+ * Cập nhật ảnh đại diện người dùng – upload lên Cloudinary, lưu vào DB
+ *
+ * Body: { image: "<base64 data URI>" } hoặc { avatarUrl: "<URL công khai>" }
  */
 export const updateAvatar = async (req, res) => {
   try {
@@ -224,16 +226,22 @@ export const updateAvatar = async (req, res) => {
     if (!image && !avatarUrl) {
       return res.status(400).json({
         success: false,
-        message: 'Vui lòng cung cấp file ảnh đại diện hoặc URL ảnh.',
+        message: 'Vui lòng cung cấp file ảnh đại diện (base64) hoặc URL ảnh.',
       });
     }
 
-    let finalAvatarUrl = avatarUrl;
+    // Lấy thông tin người dùng hiện tại để có avatar cũ (nếu cần xoá sau)
+    const currentUser = await User.findById(userId).select('avatar').lean();
+    const oldAvatarUrl = currentUser?.avatar || null;
 
-    // Nếu gửi dữ liệu ảnh (base64 data URI), upload lên Cloudinary
+    let finalAvatarUrl = avatarUrl;
+    let newPublicId = null;
+
+    // Nếu gửi dữ liệu ảnh dạng base64 data URI → upload lên Cloudinary
     if (image) {
       const uploadRes = await uploadToCloudinary(image, 'techshare/avatars');
       finalAvatarUrl = uploadRes.url;
+      newPublicId = uploadRes.publicId;
     }
 
     // Cập nhật trường avatar trong collection users
@@ -250,6 +258,31 @@ export const updateAvatar = async (req, res) => {
         success: false,
         message: 'Không tìm thấy hồ sơ người dùng trong hệ thống.',
       });
+    }
+
+    // Sau khi đã lưu DB thành công → xoá ảnh cũ trên Cloudinary (nếu khác ảnh mới và có publicId)
+    // Chỉ xoá nếu ảnh cũ là URL Cloudinary (tránh xoá avatar placeholder bên ngoài)
+    if (
+      newPublicId &&
+      oldAvatarUrl &&
+      oldAvatarUrl !== finalAvatarUrl &&
+      oldAvatarUrl.includes('cloudinary.com')
+    ) {
+      try {
+        // Trích xuất publicId từ URL Cloudinary cũ
+        const urlParts = oldAvatarUrl.split('/');
+        const uploadIndex = urlParts.indexOf('upload');
+        if (uploadIndex !== -1) {
+          // Bỏ version (v1234...) nếu có
+          const afterUpload = urlParts.slice(uploadIndex + 1);
+          if (/^v\d+$/.test(afterUpload[0])) afterUpload.shift();
+          const oldPublicId = afterUpload.join('/').replace(/\.[^.]+$/, '');
+          await deleteFromCloudinary(oldPublicId);
+        }
+      } catch (deleteErr) {
+        // Lỗi xoá ảnh cũ không làm gián đoạn phản hồi
+        console.warn('[Cloudinary] Không thể xoá ảnh cũ:', deleteErr.message);
+      }
     }
 
     return res.status(200).json({
