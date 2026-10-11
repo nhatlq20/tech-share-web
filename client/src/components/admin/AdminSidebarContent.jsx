@@ -104,7 +104,7 @@ export const AdminSidebarContent = ({
         </button>
 
         <button type="button" onClick={onLogout || (() => {
-        window.location.href = '/login';
+        window.location.href = '/';
       })} className="admin-footer-btn logout">
           <LogOut size={15} />
           <span>Đăng xuất Quản trị</span>

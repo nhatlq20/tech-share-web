@@ -1,6 +1,15 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { User, Lock, Eye, EyeOff, Sparkles, ArrowRight, AlertCircle, CheckCircle2 } from 'lucide-react';
+import {
+  User,
+  Lock,
+  Eye,
+  EyeOff,
+  Sparkles,
+  ArrowRight,
+  AlertCircle,
+  CheckCircle2,
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { api } from '../services/api.js';
 import { ROUTES } from '../routes/routes.js';
@@ -14,12 +23,11 @@ export const LoginPage = () => {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
-  // Điểm quay lại sau khi đăng nhập thành công
+  // Trang đích sau khi đăng nhập (nếu bị redirect tới đây)
   const from = location.state?.from?.pathname || ROUTES.HOME;
 
   const handleSubmit = async (e) => {
@@ -31,7 +39,6 @@ export const LoginPage = () => {
       setErrorMessage('Vui lòng nhập tên đăng nhập hoặc email.');
       return;
     }
-
     if (!password) {
       setErrorMessage('Vui lòng nhập mật khẩu.');
       return;
@@ -45,7 +52,16 @@ export const LoginPage = () => {
       });
 
       if (res?.success) {
-        // Lưu thông tin đăng nhập vào context và localStorage
+        const role = res.user?.role;
+
+        // Tài khoản admin không được đăng nhập tại đây
+        if (role === 'admin') {
+          setErrorMessage(
+            'Tài khoản hoặc mật khẩu không chính xác.'
+          );
+          return;
+        }
+
         login({
           token: res.token,
           user: res.user,
@@ -53,8 +69,6 @@ export const LoginPage = () => {
         });
 
         setSuccessMessage('Đăng nhập thành công! Đang chuyển hướng...');
-
-        // Chuyển hướng về trang đích hoặc trang chủ
         setTimeout(() => {
           navigate(from, { replace: true });
         }, 600);
@@ -62,8 +76,10 @@ export const LoginPage = () => {
         setErrorMessage(res?.message || 'Đăng nhập không thành công.');
       }
     } catch (err) {
-      console.error('Lỗi đăng nhập:', err);
-      const msg = err.data?.message || err.message || 'Không thể kết nối đến máy chủ. Vui lòng thử lại sau.';
+      const msg =
+        err.data?.message ||
+        err.message ||
+        'Không thể kết nối đến máy chủ. Vui lòng thử lại sau.';
       setErrorMessage(msg);
     } finally {
       setIsLoading(false);
@@ -81,7 +97,7 @@ export const LoginPage = () => {
           </div>
           <h1 className="login-title">Chào mừng trở lại</h1>
           <p className="login-subtitle">
-            Đăng nhập để thuê thiết bị công nghệ & quản lý đơn hàng
+            Đăng nhập để thuê thiết bị công nghệ &amp; quản lý đơn hàng
           </p>
         </div>
 
@@ -123,9 +139,9 @@ export const LoginPage = () => {
           </div>
 
           <div className="login-form-group">
-            <div className="login-label">
-              <label htmlFor="login-password">Mật khẩu</label>
-            </div>
+            <label className="login-label" htmlFor="login-password">
+              Mật khẩu
+            </label>
             <div className="login-input-wrapper">
               <Lock size={18} className="login-input-icon" />
               <input
@@ -141,7 +157,7 @@ export const LoginPage = () => {
               <button
                 type="button"
                 className="login-password-toggle"
-                onClick={() => setShowPassword(!showPassword)}
+                onClick={() => setShowPassword((v) => !v)}
                 aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
               >
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -150,15 +166,14 @@ export const LoginPage = () => {
           </div>
 
           <div className="login-options-row">
-            <label className="login-remember">
-              <input
-                type="checkbox"
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-              />
-              <span>Ghi nhớ đăng nhập</span>
-            </label>
-            <a href="#forgot" onClick={(e) => { e.preventDefault(); alert('Vui lòng liên hệ quản trị viên để khôi phục mật khẩu.'); }} className="login-forgot-link">
+            <a
+              href="#forgot"
+              onClick={(e) => {
+                e.preventDefault();
+                alert('Vui lòng liên hệ quản trị viên để khôi phục mật khẩu.');
+              }}
+              className="login-forgot-link"
+            >
               Quên mật khẩu?
             </a>
           </div>
