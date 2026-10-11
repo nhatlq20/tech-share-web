@@ -2,7 +2,7 @@ import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { getToken, onMessage } from 'firebase/messaging';
 import { db, getFirebaseMessaging } from '../lib/firebase.js';
 import { api } from './api.js';
-import { STORAGE_KEYS, API_CONFIG } from '../constants/config.ts';
+import { STORAGE_KEYS, API_CONFIG } from '../constants/config.js';
 
 /**
  * Lấy Bearer Authorization headers từ localStorage

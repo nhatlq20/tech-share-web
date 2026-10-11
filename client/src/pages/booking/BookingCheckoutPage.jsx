@@ -12,8 +12,8 @@ import {
   Copy,
   ArrowLeft,
 } from 'lucide-react';
-import { STRINGS } from '../../constants/strings.ts';
-import { API_CONFIG, MAGIC_NUMBERS } from '../../constants/config.ts';
+import { STRINGS } from '../../constants/strings.js';
+import { API_CONFIG, MAGIC_NUMBERS } from '../../constants/config.js';
 import { ROUTES } from '../../routes/routes.js';
 import { api } from '../../services/api.js';
 import { useAuth } from '../../context/AuthContext.jsx';
