@@ -11,6 +11,7 @@ import { LoginPage } from '../pages/LoginPage.jsx';
 import { RegisterPage } from '../pages/RegisterPage.jsx';
 import { DashboardPage } from '../pages/DashboardPage.jsx';
 import { AdminPage } from '../pages/AdminPage.jsx';
+import { AdminLoginPage } from '../pages/AdminLoginPage.jsx';
 import { OwnerPage } from '../pages/OwnerPage.jsx';
 import { ProfilePage } from '../pages/ProfilePage.jsx';
 import { NotFoundPage } from '../pages/NotFoundPage.jsx';
@@ -18,6 +19,9 @@ import { NotFoundPage } from '../pages/NotFoundPage.jsx';
 export const AppRoutes = () => {
   return (
     <Routes>
+      {/* Admin Portal – không có Navbar/Footer, chỉ vào bằng URL trực tiếp */}
+      <Route path={ROUTES.ADMIN_LOGIN} element={<AdminLoginPage />} />
+
       {/* Phân hệ Owner Hub (Chủ thiết bị) - Dedicated Workspace Layout */}
       <Route path={ROUTES.OWNER} element={<OwnerPage />} />
       <Route path={ROUTES.OWNER_DASHBOARD} element={<OwnerPage />} />
