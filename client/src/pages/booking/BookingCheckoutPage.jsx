@@ -66,7 +66,7 @@ export const BookingCheckoutPage = () => {
     let isMounted = true;
     const fetchDeviceData = async () => {
       if (!currentDeviceId) {
-        setFetchError('Không tìm thấy mã thiết bị');
+        setFetchError('Device ID not found');
         setLoading(false);
         return;
       }
@@ -75,7 +75,7 @@ export const BookingCheckoutPage = () => {
         setLoading(true);
         setFetchError(null);
 
-        // 1. Fetch Device
+        // 1. Fetch Device details
         const deviceRes = await api.get(API_CONFIG.ENDPOINTS.DEVICE_BY_ID(currentDeviceId));
         const deviceData = deviceRes.data || deviceRes;
 
@@ -95,7 +95,7 @@ export const BookingCheckoutPage = () => {
         }
       } catch (err) {
         if (isMounted) {
-          setFetchError(err.message || 'Không thể tải thông tin thiết bị');
+          setFetchError(err.message || 'Unable to load device information');
         }
       } finally {
         if (isMounted) {
@@ -224,8 +224,10 @@ export const BookingCheckoutPage = () => {
 
       const payload = {
         deviceId: currentDeviceId,
+        renterId: user?._id || user?.id || null,
         startDate,
         endDate,
+        deliveryMethod: 'delivery',
         deliveryAddress: {
           recipientName: recipientName.trim(),
           phone: phone.trim(),
@@ -246,10 +248,10 @@ export const BookingCheckoutPage = () => {
       if (res.success && res.data) {
         setSuccessBooking(res.data);
       } else {
-        throw new Error(res.message || 'Đặt thuê không thành công');
+        throw new Error(res.message || 'Booking creation failed');
       }
     } catch (err) {
-      setFormError(err.message || 'Đã có lỗi xảy ra khi tạo đơn thuê. Vui lòng thử lại.');
+      setFormError(err.message || 'An error occurred while creating booking. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -281,16 +283,16 @@ export const BookingCheckoutPage = () => {
       <div className="min-h-[60vh] flex flex-col items-center justify-center p-6 text-center">
         <AlertCircle className="w-12 h-12 text-red-500 mb-3" />
         <h2 className="text-lg font-bold text-slate-800">
-          Không tìm thấy thiết bị
+          Device Not Found
         </h2>
         <p className="text-sm text-slate-500 max-w-md mt-1 mb-6">
-          {fetchError || 'Thiết bị bạn yêu cầu không tồn tại hoặc đã bị xóa.'}
+          {fetchError || 'The device you requested does not exist or has been removed.'}
         </p>
         <Link
           to={ROUTES.EXPLORE}
           className="px-5 py-2.5 rounded-xl bg-brand-500 text-white font-semibold text-sm hover:bg-brand-600 transition shadow-sm"
         >
-          &larr; Quay lại danh mục thiết bị
+          &larr; Back to Device Catalog
         </Link>
       </div>
     );
@@ -328,7 +330,7 @@ export const BookingCheckoutPage = () => {
               type="button"
               onClick={() => navigate(-1)}
               className="p-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:text-brand-600 hover:border-brand-200 transition"
-              aria-label="Quay lại"
+              aria-label="Back"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
@@ -689,7 +691,7 @@ export const BookingCheckoutPage = () => {
               <div className="flex justify-between">
                 <span>{STRINGS.booking.successModal.durationInfo}</span>
                 <span className="text-slate-800">
-                  {formatDate(startDate)} ➔ {formatDate(endDate)} ({totalDays} {STRINGS.common.day})
+                  {formatDate(startDate)} ➔ {formatDate(endDate)} ({totalDays} {totalDays === 1 ? 'day' : 'days'})
                 </span>
               </div>
               <div className="flex justify-between">
@@ -697,7 +699,7 @@ export const BookingCheckoutPage = () => {
                 <strong className="text-brand-700 font-bold">{formatPrice(totalAmount)}</strong>
               </div>
               <div className="flex justify-between pt-2 border-t border-slate-200">
-                <span className="text-slate-500">Trạng thái:</span>
+                <span className="text-slate-500">Status:</span>
                 <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-semibold text-[11px]">
                   {STRINGS.booking.successModal.statusPendingBadge}
                 </span>
