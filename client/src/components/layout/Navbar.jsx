@@ -1,11 +1,17 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../routes/routes.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import './Navbar.css';
 
 export const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
 
   return (
     <header className="app-navbar">
@@ -38,24 +44,63 @@ export const Navbar = () => {
           <Link to={ROUTES.COMPARE || '/compare'} className="navbar-link">
             Compare
           </Link>
+          {/* Chỉ hiện với Owner */}
+          {user?.role === 'owner' && (
+            <Link to={ROUTES.OWNER} className="navbar-link navbar-link-owner">
+              Owner
+            </Link>
+          )}
         </nav>
 
         {/* Auth Actions */}
         <div className="navbar-actions">
           {isAuthenticated ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div className="navbar-user-section">
+              {/* Avatar linking to Profile Page */}
               <Link
-                to={user?.role === 'admin' ? (ROUTES.ADMIN?.ROOT || ROUTES.ADMIN) : (ROUTES.DASHBOARD?.ROOT || ROUTES.DASHBOARD)}
-                className="navbar-link"
-                style={{ fontWeight: 600 }}
+                to={ROUTES.PROFILE}
+                className="navbar-avatar-link"
+                title={`Hồ sơ cá nhân: ${user?.name || user?.email || 'Xem Profile'}`}
               >
-                {user?.fullName || user?.name || 'Dashboard'}
+                <div className="navbar-avatar-wrapper">
+                  {user?.avatar ? (
+                    <img
+                      src={user.avatar}
+                      alt={user?.name || 'Avatar'}
+                      className="navbar-avatar-img"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        const fallback = e.currentTarget.parentElement.querySelector('.navbar-avatar-fallback');
+                        if (fallback) fallback.style.display = 'flex';
+                      }}
+                    />
+                  ) : null}
+                  <div
+                    className="navbar-avatar-fallback"
+                    style={{ display: user?.avatar ? 'none' : 'flex' }}
+                  >
+                    {(user?.name || user?.email || 'U').charAt(0).toUpperCase()}
+                  </div>
+                  <span className="navbar-avatar-status" title="Đang trực tuyến" />
+                </div>
+                <div className="navbar-user-meta">
+                  <span className="navbar-user-name">{user?.name || 'Người dùng'}</span>
+                  <span className="navbar-user-role">
+                    {user?.role === 'admin'
+                      ? 'Quản trị viên'
+                      : user?.role === 'owner'
+                      ? 'Chủ thiết bị'
+                      : 'Người thuê'}
+                  </span>
+                </div>
               </Link>
+
               <button
-                onClick={logout}
+                onClick={handleLogout}
                 className="navbar-btn-logout"
+                title="Đăng xuất"
               >
-                Log Out
+                Đăng xuất
               </button>
             </div>
           ) : (
