@@ -37,7 +37,6 @@ router.patch('/:id/blocked-dates', toggleBlockedDate);
 // Parameterized device detail route
 router.get('/:id', getDeviceById);
 
-
-router.post('/',au)
 export default router;
+
 
