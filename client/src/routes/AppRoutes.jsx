@@ -9,7 +9,6 @@ import { BookingCheckoutPage } from '../pages/booking/BookingCheckoutPage.jsx';
 import { NearbyPage } from '../pages/NearbyPage.jsx';
 import { LoginPage } from '../pages/LoginPage.jsx';
 import { RegisterPage } from '../pages/RegisterPage.jsx';
-import { DashboardPage } from '../pages/DashboardPage.jsx';
 import { AdminPage } from '../pages/AdminPage.jsx';
 import { AdminLoginPage } from '../pages/AdminLoginPage.jsx';
 import { OwnerPage } from '../pages/OwnerPage.jsx';
@@ -31,6 +30,10 @@ export const AppRoutes = () => {
       <Route path={ROUTES.OWNER_ANALYTICS} element={<OwnerPage />} />
       <Route path={ROUTES.OWNER_WALLET} element={<OwnerPage />} />
 
+      {/* Phân hệ Admin Hub (Quản trị viên) - Dedicated Workspace Layout */}
+      <Route path={ROUTES.ADMIN} element={<AdminPage />} />
+      <Route path={ROUTES.ADMIN_DASHBOARD} element={<AdminPage />} />
+
       {/* Tất cả route công khai dùng chung PublicLayout */}
       <Route element={<PublicLayout />}>
         <Route path={ROUTES.HOME} element={<HomePage />} />
@@ -42,8 +45,6 @@ export const AppRoutes = () => {
         <Route path={ROUTES.LOGIN} element={<LoginPage />} />
         <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
         <Route path={ROUTES.PROFILE} element={<ProfilePage />} />
-        <Route path={ROUTES.DASHBOARD} element={<DashboardPage />} />
-        <Route path={ROUTES.ADMIN} element={<AdminPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>

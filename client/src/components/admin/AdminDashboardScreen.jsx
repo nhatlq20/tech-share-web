@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Search, Bell, RefreshCw, CheckCircle2 } from 'lucide-react';
+import { Search, Bell, RefreshCw } from 'lucide-react';
 import { AdminSidebarContent } from './AdminSidebarContent';
 import { AdminOverviewTab } from './AdminOverviewTab';
 import { AdminUsersTab } from './AdminUsersTab';
 import { AdminDevicesTab } from './AdminDevicesTab';
 import { AdminEkycTab } from './AdminEkycTab';
+import { STRINGS } from '../../constants/strings';
 import './AdminWorkspace.css';
 
 // Initial default state (safe fallback)
@@ -19,145 +20,49 @@ const DEFAULT_KPI = {
   revenueFormatted: '48.750.000 ₫'
 };
 const DEFAULT_CHARTS = {
-  '7d': [{
-    name: 'T2',
-    revenue: 2100000,
-    orders: 3
-  }, {
-    name: 'T3',
-    revenue: 3800000,
-    orders: 5
-  }, {
-    name: 'T4',
-    revenue: 3200000,
-    orders: 4
-  }, {
-    name: 'T5',
-    revenue: 5400000,
-    orders: 7
-  }, {
-    name: 'T6',
-    revenue: 6900000,
-    orders: 9
-  }, {
-    name: 'T7',
-    revenue: 8500000,
-    orders: 12
-  }, {
-    name: 'CN',
-    revenue: 7800000,
-    orders: 11
-  }],
-  month: [{
-    name: 'Tuần 1',
-    revenue: 8500000,
-    orders: 12
-  }, {
-    name: 'Tuần 2',
-    revenue: 14200000,
-    orders: 19
-  }, {
-    name: 'Tuần 3',
-    revenue: 11800000,
-    orders: 15
-  }, {
-    name: 'Tuần 4',
-    revenue: 18900000,
-    orders: 24
-  }],
-  year: [{
-    name: 'T1',
-    revenue: 12000000,
-    orders: 18
-  }, {
-    name: 'T2',
-    revenue: 15400000,
-    orders: 22
-  }, {
-    name: 'T3',
-    revenue: 21000000,
-    orders: 31
-  }, {
-    name: 'T4',
-    revenue: 18500000,
-    orders: 26
-  }, {
-    name: 'T5',
-    revenue: 24200000,
-    orders: 35
-  }, {
-    name: 'T6',
-    revenue: 29800000,
-    orders: 42
-  }, {
-    name: 'T7',
-    revenue: 34500000,
-    orders: 48
-  }, {
-    name: 'T8',
-    revenue: 31200000,
-    orders: 44
-  }, {
-    name: 'T9',
-    revenue: 38900000,
-    orders: 55
-  }, {
-    name: 'T10',
-    revenue: 42100000,
-    orders: 60
-  }, {
-    name: 'T11',
-    revenue: 46800000,
-    orders: 65
-  }, {
-    name: 'T12',
-    revenue: 52400000,
-    orders: 72
-  }]
+  '7d': [
+    { name: 'Mon', revenue: 65000000, orders: 8 },
+    { name: 'Tue', revenue: 98000000, orders: 12 },
+    { name: 'Wed', revenue: 84000000, orders: 10 },
+    { name: 'Thu', revenue: 146000000, orders: 18 },
+    { name: 'Fri', revenue: 162000000, orders: 20 },
+    { name: 'Sat', revenue: 198000000, orders: 25 },
+    { name: 'Sun', revenue: 185381000, orders: 23 },
+  ],
+  month: [
+    { name: 'Week 1', revenue: 165000000, orders: 24 },
+    { name: 'Week 2', revenue: 210000000, orders: 32 },
+    { name: 'Week 3', revenue: 198000000, orders: 29 },
+    { name: 'Week 4', revenue: 265381000, orders: 41 },
+  ],
+  year: [
+    { name: 'Jan', revenue: 52000000, orders: 14 },
+    { name: 'Feb', revenue: 64000000, orders: 18 },
+    { name: 'Mar', revenue: 78000000, orders: 22 },
+    { name: 'Apr', revenue: 85000000, orders: 25 },
+    { name: 'May', revenue: 92000000, orders: 28 },
+    { name: 'Jun', revenue: 110000000, orders: 34 },
+    { name: 'Jul', revenue: 125000000, orders: 38 },
+    { name: 'Aug', revenue: 118000000, orders: 36 },
+    { name: 'Sep', revenue: 135000000, orders: 42 },
+    { name: 'Oct', revenue: 148000000, orders: 46 },
+    { name: 'Nov', revenue: 162000000, orders: 50 },
+    { name: 'Dec', revenue: 185000000, orders: 58 },
+  ],
 };
-const DEFAULT_CATEGORIES = [{
-  id: 'smartphone',
-  name: 'Smartphone & Tablet',
-  count: 14,
-  percent: 29,
-  color: '#67BEC3'
-}, {
-  id: 'laptop',
-  name: 'Laptop & Workstation',
-  count: 10,
-  percent: 21,
-  color: '#38BDF8'
-}, {
-  id: 'camera',
-  name: 'Máy ảnh & Ống kính',
-  count: 8,
-  percent: 17,
-  color: '#818CF8'
-}, {
-  id: 'drone',
-  name: 'Flycam & Gimbal',
-  count: 5,
-  percent: 11,
-  color: '#F472B6'
-}, {
-  id: 'audio',
-  name: 'Tai nghe & Âm thanh',
-  count: 6,
-  percent: 13,
-  color: '#FBBF24'
-}, {
-  id: 'gaming',
-  name: 'Máy chơi game & VR',
-  count: 4,
-  percent: 9,
-  color: '#34D399'
-}];
+const DEFAULT_CATEGORIES = [
+  { id: 'smartphone', name: 'Smartphone & Tablet', count: 36, percent: 37, color: '#67BEC3' },
+  { id: 'laptop', name: 'Laptop & Workstation', count: 24, percent: 25, color: '#38BDF8' },
+  { id: 'camera', name: 'Camera & Lenses', count: 18, percent: 18, color: '#818CF8' },
+  { id: 'drone', name: 'Drone & Gimbal', count: 10, percent: 10, color: '#F472B6' },
+  { id: 'audio', name: 'Headphones & Audio', count: 6, percent: 6, color: '#FBBF24' },
+  { id: 'gaming', name: 'Gaming & VR', count: 4, percent: 4, color: '#34D399' },
+];
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 export const AdminDashboardScreen = () => {
   const [currentTab, setCurrentTab] = useState('overview');
   const [globalSearch, setGlobalSearch] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [lastSynced, setLastSynced] = useState('Vừa xong');
 
   // State data
   const [kpi, setKpi] = useState(DEFAULT_KPI);
@@ -372,8 +277,6 @@ export const AdminDashboardScreen = () => {
         }
       });
       setUsers(Array.from(userMap.values()));
-      const now = new Date();
-      setLastSynced(`${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`);
     } catch (err) {
       console.warn('⚠️ Lấy dữ liệu từ Admin API gặp trục trặc, sử dụng chế độ dự phòng:', err);
     } finally {
@@ -511,66 +414,79 @@ export const AdminDashboardScreen = () => {
         <header className="admin-topbar">
           {/* Pill Search Bar */}
           <div className="admin-search-pill">
-            <Search size={16} style={{
-            color: '#67BEC3',
-            flexShrink: 0
-          }} />
-            <input type="text" placeholder="Tìm kiếm nhanh đơn hàng, người dùng, sản phẩm..." value={globalSearch} onChange={e => setGlobalSearch(e.target.value)} />
+            <Search size={16} style={{ color: '#67BEC3', flexShrink: 0 }} />
+            <input
+              type="text"
+              placeholder={STRINGS.admin.dashboard.searchPlaceholder}
+              value={globalSearch}
+              onChange={(e) => setGlobalSearch(e.target.value)}
+            />
           </div>
 
           {/* Topbar Right Actions */}
           <div className="admin-topbar-actions">
-            {/* Realtime Sync Tag */}
-            <div className="admin-sync-tag" title="Đồng bộ tự động MongoDB Atlas">
-              <CheckCircle2 size={14} style={{
-              color: '#286E74'
-            }} />
-              <span>Đã đồng bộ Atlas ({lastSynced})</span>
-            </div>
-
             {/* Refresh Button */}
-            <button type="button" onClick={fetchAllData} disabled={isLoading} className="admin-action-btn" title="Tải lại toàn bộ dữ liệu mới nhất">
-              <RefreshCw size={16} style={{
-              animation: isLoading ? 'spin 1s linear infinite' : 'none'
-            }} />
+            <button
+              type="button"
+              onClick={fetchAllData}
+              disabled={isLoading}
+              className="admin-action-btn"
+              title={STRINGS.admin.overview.refreshTooltip}
+            >
+              <RefreshCw
+                size={16}
+                style={{ animation: isLoading ? 'spin 1s linear infinite' : 'none' }}
+              />
             </button>
 
             {/* Notification Bell */}
-            <button type="button" className="admin-action-btn" title="Thông báo hệ thống" onClick={() => setCurrentTab('ekyc')}>
+            <button
+              type="button"
+              className="admin-action-btn"
+              title="Notifications"
+              onClick={() => setCurrentTab('ekyc')}
+            >
               <Bell size={16} />
               {pendingEkycCount > 0 && <span className="admin-notif-dot" />}
             </button>
 
             {/* Admin Header Chip */}
-            <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px',
-            paddingLeft: '8px'
-          }}>
-              <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop" alt="Admin" style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: '50%',
-              border: '2px solid #67BEC3'
-            }} />
-              <div style={{
-              display: 'flex',
-              flexDirection: 'column'
-            }}>
-                <span style={{
-                fontSize: '13px',
-                fontWeight: 700,
-                color: '#0F172A'
-              }}>
-                  Trần Nhật
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                paddingLeft: '8px',
+              }}
+            >
+              <img
+                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop"
+                alt={STRINGS.admin.dashboard.avatarAlt}
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '50%',
+                  border: '2px solid #67BEC3',
+                }}
+              />
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span
+                  style={{
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    color: '#0F172A',
+                  }}
+                >
+                  {STRINGS.admin.dashboard.adminName}
                 </span>
-                <span style={{
-                fontSize: '11px',
-                color: '#286E74',
-                fontWeight: 600
-              }}>
-                  System Admin
+                <span
+                  style={{
+                    fontSize: '11px',
+                    color: '#286E74',
+                    fontWeight: 600,
+                  }}
+                >
+                  {STRINGS.admin.dashboard.adminRole}
                 </span>
               </div>
             </div>
