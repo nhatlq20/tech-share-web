@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Search, PlusCircle, Bell, RefreshCw } from 'lucide-react';
+import { Search, PlusCircle, RefreshCw } from 'lucide-react';
 import { OwnerSidebar } from './OwnerSidebar';
 import { OwnerOverviewTab } from './OwnerOverviewTab';
 import { OwnerDevicesTab } from './OwnerDevicesTab';
@@ -9,6 +9,7 @@ import { OwnerCalendarTab } from './OwnerCalendarTab';
 import { OwnerAnalyticsTab } from './OwnerAnalyticsTab';
 import { OwnerWalletTab } from './OwnerWalletTab';
 import PostDevicePage from '../../pages/PostDevicePage';
+import { NotificationDropdown } from '../notifications/NotificationDropdown';
 import { ROUTES } from '../../routes/routes';
 import { STRINGS } from '../../constants/strings';
 import { API_CONFIG } from '../../constants/config';
@@ -284,16 +285,8 @@ export const OwnerDashboardScreen = () => {
               />
             </button>
 
-            {/* Notification Bell */}
-            <button
-              type="button"
-              className="owner-action-btn"
-              title="Rental Requests"
-              onClick={() => handleNavigate(ROUTES.OWNER_BOOKINGS)}
-            >
-              <Bell size={16} />
-              {pendingApprovalsCount > 0 && <span className="owner-notif-dot" />}
-            </button>
+            {/* Notification Bell Dropdown */}
+            <NotificationDropdown />
 
             {/* Partner Header Chip */}
             <div

@@ -13,8 +13,8 @@ import {
   Cpu,
 } from 'lucide-react';
 import { ROUTES } from '../routes/routes.js';
-import { API_CONFIG } from '../constants/config.ts';
-import { STRINGS } from '../constants/strings.ts';
+import { API_CONFIG } from '../constants/config.js';
+import { STRINGS } from '../constants/strings.js';
 import { api } from '../services/api.js';
 import { formatPrice } from '../utils/formatters.js';
 import { formatCategoryLabel, formatConditionLabel } from '../components/device/DeviceCard.jsx';

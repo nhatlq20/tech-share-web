@@ -14,7 +14,7 @@ import {
   RefreshCw,
   PackageOpen,
 } from 'lucide-react';
-import { deviceService } from '../services/deviceService.ts';
+import { deviceService } from '../services/deviceService.js';
 import { DeviceGrid } from '../components/device/DeviceGrid.jsx';
 import { HeroSection } from '../components/home/HeroSection';
 import { STRINGS } from '../constants/strings';
