@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import Device from "../models/Device.js";
+import { uploadToCloudinary } from "../services/cloudinaryService.js";
 
 /**
  * Helper to get MongoDB collections safely if Mongoose connection is ready
@@ -287,10 +288,10 @@ export const createDevice = async (req, res) => {
       specs,
       images,
     } = req.body;
-
-    const ownerId = req.user?.userId || req.user?._id || req.user?.id || req.user?.accountId || req.auth?.id;
-    const deviceName = (name || title || "").trim();
-    const year = yearOfManufacture ? Number(yearOfManufacture) : undefined;
+    const ownerId = req.user.userId;
+    const year = Number(yearOfManufacture);
+    const price = Number(pricePerDay);
+    const deposit = Number(depositAmount);
 
     if (
       yearOfManufacture != null &&
@@ -316,9 +317,6 @@ export const createDevice = async (req, res) => {
       });
     }
 
-    const price = Number(pricePerDay ?? dailyRate);
-    const deposit = Number(depositAmount ?? depositValue ?? 0);
-
     if (
       price == null ||
       !Number.isFinite(price) ||
@@ -340,24 +338,69 @@ export const createDevice = async (req, res) => {
       });
     }
 
+    if (!Array.isArray(images) || images.length < 2 || images.length > 3) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide between 2 and 3 device images",
+      });
+    }
+
+    const imageUrls = [];
+    for (const image of images) {
+      if (typeof image !== "string") {
+        return res.status(400).json({
+          success: false,
+          message: "Each device image must be a data URL or an HTTPS URL",
+        });
+      }
+
+      if (image.startsWith("https://")) {
+        imageUrls.push(image);
+        continue;
+      }
+
+      const imageMatch = image.match(/^data:image\/(jpeg|png|webp);base64,([A-Za-z0-9+/]+=*)$/);
+      if (!imageMatch) {
+        return res.status(400).json({
+          success: false,
+          message: "Device images must be JPG, PNG, or WEBP files",
+        });
+      }
+
+      const imageSize = Math.ceil((imageMatch[2].length * 3) / 4);
+      if (imageSize > 3 * 1024 * 1024) {
+        return res.status(400).json({
+          success: false,
+          message: "Each device image must be smaller than 3 MB after compression",
+        });
+      }
+
+      try {
+        const uploadedImage = await uploadToCloudinary(image, "techshare/devices");
+        imageUrls.push(uploadedImage.url);
+      } catch (uploadError) {
+        console.error("Device image upload error:", uploadError.message);
+        return res.status(502).json({
+          success: false,
+          message: "Could not upload device images. Please try again.",
+        });
+      }
+    }
+
     const device = await Device.create({
-      owner: ownerId || null,
-      ownerId: ownerId || null,
-      title: deviceName,
-      name: deviceName,
-      category: category.trim().toLowerCase(),
-      brand: brand.trim(),
+      owner: ownerId,
+      title: name,
+      category,
+      brand,
       yearOfManufacture: year,
-      condition: condition || "good",
+      condition,
+      description,
       dailyRate: price,
       pricePerDay: price,
       depositValue: deposit,
-      depositAmount: deposit,
-      address: (addressText || address || "Hà Nội, Việt Nam").trim(),
-      description: description?.trim() || "",
-      specs: specs || {},
-      images: Array.isArray(images) ? images : [],
-      status: "available",
+      address: addressText,
+      specs,
+      images: imageUrls,
     });
 
     return res.status(201).json({
@@ -367,7 +410,15 @@ export const createDevice = async (req, res) => {
       device,
     });
   } catch (error) {
-    console.error("Error creating device:", error);
+    console.error("Create Device Error:", error);
+
+    if (error.name === "ValidationError") {
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
+
     return res.status(500).json({
       success: false,
       message: error.message || "Internal server error",
@@ -379,5 +430,4 @@ export default {
   getDevices,
   getNearbyDevices,
   getDeviceById,
-  createDevice
 };

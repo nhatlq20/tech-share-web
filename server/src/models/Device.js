@@ -21,6 +21,11 @@ const deviceSchema = new mongoose.Schema(
       required: [true, 'Thương hiệu là bắt buộc'],
       trim: true,
     },
+    yearOfManufacture: {
+      type: Number,
+      min: 1990,
+      max: new Date().getFullYear(),
+    },
     category: {
       type: String,
       required: [true, 'Danh mục thiết bị là bắt buộc'],

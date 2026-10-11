@@ -4,17 +4,11 @@ import {
   getNearbyDevices,
   getRecommendedDevices,
   getDeviceById,
-  createDevice,
+  createDevice
 } from '../controllers/deviceController.js';
 import { getDeviceAvailability } from '../controllers/bookingController.js';
 import { protect } from '../middlewares/authMiddleware.js';
-
-import {
-  getOwnerDevices,
-  toggleDeviceStatus,
-  toggleBlockedDate,
-  getOwnerAnalytics,
-} from '../controllers/ownerController.js';
+import { requireOwner } from '../middlewares/roleMiddleware.js';
 
 const router = express.Router();
 
@@ -37,8 +31,7 @@ router.patch('/:id/blocked-dates', toggleBlockedDate);
 // Parameterized device detail route
 router.get('/:id', getDeviceById);
 
-// Create device route
-router.post('/', protect, createDevice);
+router.post('/',protect, requireOwner,createDevice)
 
 export default router;
 

@@ -3,6 +3,8 @@ import { ArrowLeft, ArrowRight, Check, LoaderCircle, PackagePlus, X } from 'luci
 import BasicDeviceForm from '../components/device/BasicDeviceForm';
 import RentalInfoForm from '../components/device/RentalInfoForm';
 import SpecsBuilderForm from '../components/device/SpecsBuilderForm';
+import api from '../services/api.js';
+import { compressImage } from '../services/uploadService.js';
 import './PostDevicePage.css';
 
 const steps = [
@@ -11,7 +13,14 @@ const steps = [
   { title: 'Thông số kỹ thuật', description: 'Chi tiết thiết bị' },
 ];
 
-const PostDevicePage = ({ onBack }) => {
+const convertBlobToDataUrl = (blob) => new Promise((resolve, reject) => {
+  const reader = new FileReader();
+  reader.onload = () => resolve(reader.result);
+  reader.onerror = () => reject(new Error('Không thể đọc ảnh đã chọn.'));
+  reader.readAsDataURL(blob);
+});
+
+const PostDevicePage = ({ onBack, onDeviceCreated }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     name: '',
@@ -20,6 +29,7 @@ const PostDevicePage = ({ onBack }) => {
     yearOfManufacture: '',
     condition: '',
     description: '',
+    images: [],
     pricePerDay: '',
     depositAmount: '',
     addressText: '',
@@ -28,6 +38,7 @@ const PostDevicePage = ({ onBack }) => {
   const [errors, setErrors] = useState({});
   const [showSpecValidation, setShowSpecValidation] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadMessage, setUploadMessage] = useState('');
   const [submissionModal, setSubmissionModal] = useState(null);
 
   const handleChange = (name, value) => {
@@ -42,6 +53,44 @@ const PostDevicePage = ({ onBack }) => {
     setSubmissionModal(null);
   };
 
+  const handleAddImages = (selectedImages) => {
+    const validImages = selectedImages.filter((image) =>
+      ['image/jpeg', 'image/png', 'image/webp'].includes(image.type) &&
+      image.size <= 10 * 1024 * 1024
+    );
+    const remainingSlots = 3 - formData.images.length;
+    const imagesToAdd = validImages.slice(0, remainingSlots);
+
+    setFormData((previousData) => ({
+      ...previousData,
+      images: [...previousData.images, ...imagesToAdd],
+    }));
+
+    let imageError = '';
+    if (validImages.length !== selectedImages.length) {
+      imageError = 'Chỉ hỗ trợ ảnh JPG, PNG, WEBP có dung lượng tối đa 10MB.';
+    } else if (validImages.length > remainingSlots) {
+      imageError = 'Bạn chỉ có thể chọn tối đa 3 ảnh.';
+    }
+
+    setErrors((previousErrors) => ({
+      ...previousErrors,
+      images: imageError,
+      imageUpload: '',
+    }));
+  };
+
+  const handleRemoveImage = (imageIndex) => {
+    setFormData((previousData) => ({
+      ...previousData,
+      images: previousData.images.filter((image, index) => index !== imageIndex),
+    }));
+    setErrors((previousErrors) => ({
+      ...previousErrors,
+      images: '',
+    }));
+  };
+
   const validateCurrentStep = () => {
     const nextErrors = {};
 
@@ -50,13 +99,18 @@ const PostDevicePage = ({ onBack }) => {
       if (!formData.category) nextErrors.category = 'Vui lòng chọn danh mục.';
       if (!formData.brand.trim()) nextErrors.brand = 'Vui lòng nhập thương hiệu.';
       if (!formData.description.trim()) nextErrors.description = 'Vui lòng nhập mô tả thiết bị.';
-
-      if (formData.yearOfManufacture) {
-        const year = Number(formData.yearOfManufacture);
-        if (year < 1900 || year > new Date().getFullYear()) {
-          nextErrors.yearOfManufacture = 'Vui lòng nhập năm hợp lệ.';
-        }
+      if (formData.images.length < 2) {
+        nextErrors.images = 'Vui lòng thêm ít nhất 2 ảnh thiết bị.';
       }
+
+      const year = Number(formData.yearOfManufacture);
+      if (!formData.yearOfManufacture) {
+        nextErrors.yearOfManufacture = 'Vui lòng nhập năm sản xuất.';
+      } else if (!Number.isInteger(year) || year < 1990 || year > new Date().getFullYear()) {
+        nextErrors.yearOfManufacture = 'Năm sản xuất phải từ 1990 đến hiện tại.';
+      }
+
+      if (!formData.condition) nextErrors.condition = 'Vui lòng chọn tình trạng thiết bị.';
     }
 
     if (currentStep === 2) {
@@ -114,21 +168,80 @@ const PostDevicePage = ({ onBack }) => {
     setCurrentStep((step) => Math.max(step - 1, 1));
   };
 
-  const handleSubmit = (event) => {
-    event.preventDefault();
-    if (isSubmitting || !validateCurrentStep()) return;
+  const handleSubmit = async () => {
+    if (isSubmitting || submissionModal?.isSuccess || !validateCurrentStep()) return;
 
     setIsSubmitting(true);
 
-    // TODO: Gọi API tạo thiết bị sau khi backend bổ sung endpoint POST đã xác thực.
-    window.requestAnimationFrame(() => {
+    const token = localStorage.getItem('techshare_token');
+    if (!token) {
       setSubmissionModal({
-        title: 'Chưa thể đăng thiết bị',
-        message: 'Thông tin đã hợp lệ nhưng backend hiện chưa có API tạo thiết bị nên chưa được lưu.',
+        title: 'Bạn chưa đăng nhập',
+        message: 'Vui lòng đăng nhập bằng tài khoản chủ thiết bị rồi thử đăng thiết bị lại.',
         isSuccess: false,
       });
       setIsSubmitting(false);
-    });
+      return;
+    }
+
+    try {
+      const imageData = [];
+      for (let index = 0; index < formData.images.length; index += 1) {
+        setUploadMessage(`Đang chuẩn bị ảnh ${index + 1}/${formData.images.length}...`);
+        const compressedImage = await compressImage(formData.images[index], {
+          maxWidth: 1600,
+          maxHeight: 1600,
+          quality: 0.85,
+        });
+        if (compressedImage.size > 3 * 1024 * 1024) {
+          throw new Error(`Ảnh ${index + 1} vẫn quá lớn sau khi nén. Vui lòng chọn ảnh khác.`);
+        }
+        imageData.push(await convertBlobToDataUrl(compressedImage));
+      }
+
+      const specifications = formData.specs.reduce((result, specification) => {
+        const name = specification.key.trim();
+        if (name) result[name] = specification.value.trim();
+        return result;
+      }, {});
+
+      setUploadMessage('Đang tải ảnh lên và lưu thông tin thiết bị...');
+      const response = await api.post('/devices', {
+        name: formData.name.trim(),
+        category: formData.category,
+        brand: formData.brand.trim(),
+        yearOfManufacture: Number(formData.yearOfManufacture),
+        condition: formData.condition,
+        description: formData.description.trim(),
+        pricePerDay: Number(formData.pricePerDay),
+        depositAmount: Number(formData.depositAmount),
+        addressText: formData.addressText.trim(),
+        specs: specifications,
+        images: imageData,
+      }, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.success || !response.device) {
+        throw new Error(response.message || 'Máy chủ chưa xác nhận thiết bị đã được tạo.');
+      }
+
+      onDeviceCreated(response.device);
+      setSubmissionModal({
+        title: 'Đăng thiết bị thành công',
+        message: 'Thiết bị và ảnh đã được lưu vào kho thiết bị.',
+        isSuccess: true,
+      });
+    } catch (error) {
+      setSubmissionModal({
+        title: 'Không thể đăng thiết bị',
+        message: error.message || 'Đã có lỗi xảy ra. Vui lòng thử lại.',
+        isSuccess: false,
+      });
+    } finally {
+      setUploadMessage('');
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -172,7 +285,7 @@ const PostDevicePage = ({ onBack }) => {
           })}
         </nav>
 
-        <form className="post-device-card" onSubmit={handleSubmit} noValidate>
+        <div className="post-device-card">
           <div className="post-device-card-heading">
             <span>BƯỚC {currentStep} / {steps.length}</span>
             <h2>{steps[currentStep - 1].title}</h2>
@@ -184,6 +297,8 @@ const PostDevicePage = ({ onBack }) => {
                 values={formData}
                 errors={errors}
                 onChange={handleChange}
+                onAddImages={handleAddImages}
+                onRemoveImage={handleRemoveImage}
               />
             )}
             {currentStep === 2 && (
@@ -205,6 +320,10 @@ const PostDevicePage = ({ onBack }) => {
             )}
           </div>
 
+          {uploadMessage && (
+            <p className="post-device-upload-message" role="status">{uploadMessage}</p>
+          )}
+
           <div className="post-device-form-actions">
             <button
               type="button"
@@ -222,13 +341,18 @@ const PostDevicePage = ({ onBack }) => {
                 <ArrowRight size={17} />
               </button>
             ) : (
-              <button type="submit" className="post-device-primary-button" disabled={isSubmitting}>
+              <button
+                type="button"
+                className="post-device-primary-button"
+                onClick={handleSubmit}
+                disabled={isSubmitting}
+              >
                 {isSubmitting ? <LoaderCircle className="post-device-spinner" size={17} /> : <Check size={17} />}
                 <span>{isSubmitting ? 'Đang gửi...' : 'Gửi thiết bị'}</span>
               </button>
             )}
           </div>
-        </form>
+        </div>
       </div>
 
       {submissionModal && (
@@ -247,8 +371,12 @@ const PostDevicePage = ({ onBack }) => {
             </div>
             <h2 id="post-device-result-title">{submissionModal.title}</h2>
             <p>{submissionModal.message}</p>
-            <button type="button" className="post-device-primary-button" onClick={() => setSubmissionModal(null)}>
-              Đã hiểu
+            <button
+              type="button"
+              className="post-device-primary-button"
+              onClick={() => submissionModal.isSuccess ? onBack() : setSubmissionModal(null)}
+            >
+              {submissionModal.isSuccess ? 'Về kho thiết bị' : 'Đã hiểu'}
             </button>
           </div>
         </div>

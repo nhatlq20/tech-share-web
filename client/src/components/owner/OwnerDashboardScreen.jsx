@@ -125,30 +125,28 @@ export const OwnerDashboardScreen = () => {
     }
   };
 
-  // Actions: Toggle blocked dates on calendar (Active MongoDB mutation)
-  const handleToggleBlockedDate = async (deviceId, dateStr) => {
-    const currentList = blockedDatesMap[deviceId] || [];
-    const exists = currentList.includes(dateStr);
-    const updated = exists
-      ? currentList.filter((d) => d !== dateStr)
-      : [...currentList, dateStr];
+  const handleDeviceCreated = (device) => {
+    const newDevice = {
+      ...device,
+      name: device.name || device.title,
+      dailyRate: device.dailyRate || device.pricePerDay,
+      depositAmount: device.depositAmount ?? device.depositValue ?? 0,
+    };
 
-    setBlockedDatesMap((prev) => ({ ...prev, [deviceId]: updated }));
+    setDevices((prev) => [newDevice, ...prev]);
+    setKpi((prev) => ({ ...prev, totalDevices: prev.totalDevices + 1 }));
+  };
 
-    try {
-      const token = localStorage.getItem('techshare_token');
-      const headers = {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      };
-      await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.OWNER_BLOCKED_DATES(deviceId)}`, {
-        method: 'PATCH',
-        headers,
-        body: JSON.stringify({ date: dateStr, blockedDates: updated }),
-      });
-    } catch (err) {
-      console.error('Failed to update blocked dates in DB:', err);
-    }
+  // Actions: Toggle blocked dates on calendar
+  const handleToggleBlockedDate = (deviceId, dateStr) => {
+    setBlockedDatesMap((prev) => {
+      const currentList = prev[deviceId] || [];
+      const exists = currentList.includes(dateStr);
+      const updated = exists
+        ? currentList.filter((d) => d !== dateStr)
+        : [...currentList, dateStr];
+      return { ...prev, [deviceId]: updated };
+    });
   };
 
   // Actions: Approve booking (Active MongoDB mutation)
@@ -349,7 +347,10 @@ export const OwnerDashboardScreen = () => {
           )}
 
           {currentPath === ROUTES.OWNER_DEVICE_NEW && (
-            <PostDevicePage onBack={() => handleNavigate(ROUTES.OWNER_DEVICES)} />
+            <PostDevicePage
+              onBack={() => handleNavigate(ROUTES.OWNER_DEVICES)}
+              onDeviceCreated={handleDeviceCreated}
+            />
           )}
 
           {/* B. /owner/devices */}

@@ -253,6 +253,111 @@
   font-weight: 400;
 }
 
+.post-device-image-field {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.post-device-image-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.post-device-image-heading b {
+  color: #dc5959;
+}
+
+.post-device-image-heading small {
+  display: block;
+  margin-top: 4px;
+  color: #8491a1;
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.post-device-image-count {
+  flex: 0 0 auto;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.post-device-image-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.post-device-image-preview {
+  position: relative;
+  width: 126px;
+  height: 100px;
+  overflow: hidden;
+  background: #f1f5f9;
+  border: 1px solid #dce3ea;
+  border-radius: 11px;
+}
+
+.post-device-image-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.post-device-image-preview button {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: grid;
+  place-items: center;
+  width: 29px;
+  height: 29px;
+  color: #fff;
+  background: rgba(30, 41, 59, 0.76);
+  border-radius: 8px;
+}
+
+.post-device-image-picker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: flex-start;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 13px;
+  color: #286e74;
+  background: #eff9f9;
+  border: 1px dashed #9bcfd2;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.post-device-image-picker:hover {
+  background: #e3f4f5;
+}
+
+.post-device-image-picker input {
+  display: none;
+}
+
+.post-device-upload-message {
+  padding: 11px 13px;
+  margin-top: 20px;
+  color: #286e74;
+  background: #eff9f9;
+  border: 1px solid #c5e8e9;
+  border-radius: 10px;
+  font-size: 12px;
+}
+
 .post-device-currency {
   display: flex;
   align-items: center;

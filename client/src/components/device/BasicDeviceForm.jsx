@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { ImagePlus, Trash2 } from "lucide-react";
 
 const categories = [
   { value: "smartphone", label: "Điện thoại" },
@@ -11,8 +12,29 @@ const categories = [
   { value: "other", label: "Khác" },
 ];
 
-const BasicDeviceForm = ({ values, errors, onChange }) => (
-  <div className="post-device-fields">
+const BasicDeviceForm = ({ values, errors, onChange, onAddImages, onRemoveImage }) => {
+  const [imagePreviews, setImagePreviews] = useState([]);
+
+  useEffect(() => {
+    const previews = values.images.map((file) => ({
+      file,
+      url: URL.createObjectURL(file),
+    }));
+
+    setImagePreviews(previews);
+
+    return () => {
+      previews.forEach((preview) => URL.revokeObjectURL(preview.url));
+    };
+  }, [values.images]);
+
+  const handleImageChange = (event) => {
+    onAddImages(Array.from(event.target.files || []));
+    event.target.value = "";
+  };
+
+  return (
+    <div className="post-device-fields">
     <label className="post-device-field post-device-field-wide">
       <span>
         Tên thiết bị <b>*</b>
@@ -68,10 +90,10 @@ const BasicDeviceForm = ({ values, errors, onChange }) => (
     </label>
 
     <label className="post-device-field">
-      <span>Năm sản xuất</span>
+      <span>Năm sản xuất <b>*</b></span>
       <input
         type="number"
-        min="1900"
+        min="1990"
         max={new Date().getFullYear()}
         value={values.yearOfManufacture}
         onChange={(event) => onChange("yearOfManufacture", event.target.value)}
@@ -83,10 +105,12 @@ const BasicDeviceForm = ({ values, errors, onChange }) => (
     </label>
 
     <label className="post-device-field">
-      <span>Tình trạng thiết bị</span>
+      <span>Tình trạng thiết bị <b>*</b></span>
       <select
+        className={errors.condition ? "has-error" : ""}
         value={values.condition}
         onChange={(event) => onChange("condition", event.target.value)}
+        aria-invalid={Boolean(errors.condition)}
       >
         <option value="">Chọn tình trạng</option>
         <option value="new">Mới</option>
@@ -94,6 +118,9 @@ const BasicDeviceForm = ({ values, errors, onChange }) => (
         <option value="good">Tốt</option>
         <option value="fair">Đã qua sử dụng</option>
       </select>
+      {errors.condition && (
+        <small className="post-device-error">{errors.condition}</small>
+      )}
     </label>
 
     <label className="post-device-field post-device-field-wide">
@@ -112,7 +139,52 @@ const BasicDeviceForm = ({ values, errors, onChange }) => (
         <small className="post-device-error">{errors.description}</small>
       )}
     </label>
-  </div>
-);
+
+    <div className="post-device-image-field post-device-field-wide">
+      <div className="post-device-image-heading">
+        <div>
+          <span>Ảnh thiết bị <b>*</b></span>
+          <small>Chọn từ 2 đến 3 ảnh, định dạng JPG, PNG hoặc WEBP.</small>
+        </div>
+        <span className="post-device-image-count">{values.images.length}/3 ảnh</span>
+      </div>
+
+      {imagePreviews.length > 0 && (
+        <div className="post-device-image-list">
+          {imagePreviews.map((preview, index) => (
+            <div className="post-device-image-preview" key={`${preview.file.name}-${index}`}>
+              <img src={preview.url} alt={`Ảnh thiết bị ${index + 1}`} />
+              <button
+                type="button"
+                onClick={() => onRemoveImage(index)}
+                aria-label={`Xóa ảnh ${index + 1}`}
+                title="Xóa ảnh"
+              >
+                <Trash2 size={15} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {values.images.length < 3 && (
+        <label className="post-device-image-picker">
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            multiple
+            onChange={handleImageChange}
+          />
+          <ImagePlus size={19} />
+          <span>{values.images.length ? "Chọn thêm ảnh" : "Chọn ảnh thiết bị"}</span>
+        </label>
+      )}
+
+      {errors.images && <small className="post-device-error">{errors.images}</small>}
+      {errors.imageUpload && <small className="post-device-error">{errors.imageUpload}</small>}
+    </div>
+    </div>
+  );
+};
 
 export default BasicDeviceForm;
