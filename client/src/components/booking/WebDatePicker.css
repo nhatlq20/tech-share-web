@@ -1,4 +1,4 @@
-/* TechShare Web Date Range Picker Styles */
+/* TechShare Web Date Range Picker Styles - Token-based */
 
 .ts-calendar-grid {
   display: grid;
@@ -19,37 +19,23 @@
 }
 
 .ts-calendar-cell-range-between {
-  background-color: #eef8f8; /* brand-50 token representation */
-  color: #286e74;
+  @apply bg-brand-50 text-brand-800;
 }
 
 .ts-calendar-cell-range-start {
-  background-color: #67bec3;
-  color: #ffffff;
-  border-top-left-radius: 9999px;
-  border-bottom-left-radius: 9999px;
+  @apply bg-brand-500 text-white rounded-l-full;
 }
 
 .ts-calendar-cell-range-end {
-  background-color: #67bec3;
-  color: #ffffff;
-  border-top-right-radius: 9999px;
-  border-bottom-right-radius: 9999px;
+  @apply bg-brand-500 text-white rounded-r-full;
 }
 
 .ts-calendar-cell-single {
-  background-color: #67bec3;
-  color: #ffffff;
-  border-radius: 9999px;
+  @apply bg-brand-500 text-white rounded-full;
 }
 
 .ts-calendar-cell-blocked {
-  background-color: #f1f5f9;
-  color: #94a3b8;
-  cursor: not-allowed;
-  position: relative;
-  text-decoration: line-through;
-  opacity: 0.65;
+  @apply bg-slate-100 text-slate-400 cursor-not-allowed line-through opacity-60 rounded-lg relative;
 }
 
 .ts-calendar-cell-blocked::after {
@@ -59,5 +45,5 @@
   width: 4px;
   height: 4px;
   border-radius: 9999px;
-  background-color: #ef4444;
+  @apply bg-red-500;
 }

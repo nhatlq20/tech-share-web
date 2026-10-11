@@ -59,6 +59,16 @@ const handleResponse = async (res) => {
   return res.json();
 };
 
+const getAuthHeaders = () => {
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem('techshare_token');
+    if (token) {
+      return { Authorization: `Bearer ${token}` };
+    }
+  }
+  return {};
+};
+
 export const api = {
   get: async (endpoint, options = {}) => {
     const url = buildUrl(endpoint, options.params);
@@ -66,6 +76,7 @@ export const api = {
       method: 'GET',
       headers: {
         Accept: 'application/json',
+        ...getAuthHeaders(),
         ...(options.headers || {}),
       },
       signal: options.signal,
@@ -80,7 +91,7 @@ export const api = {
       headers: {
         'Content-Type': 'application/json',
         Accept: 'application/json',
-        // Merge thêm headers từ caller (vd: Authorization) mà không ghi đè Content-Type
+        ...getAuthHeaders(),
         ...(options.headers || {}),
       },
       body: JSON.stringify(data),
@@ -96,6 +107,7 @@ export const api = {
       headers: {
         'Content-Type': 'application/json',
         Accept: 'application/json',
+        ...getAuthHeaders(),
         ...(options.headers || {}),
       },
       body: JSON.stringify(data),
@@ -111,6 +123,7 @@ export const api = {
       headers: {
         'Content-Type': 'application/json',
         Accept: 'application/json',
+        ...getAuthHeaders(),
         ...(options.headers || {}),
       },
       body: JSON.stringify(data),
@@ -125,6 +138,7 @@ export const api = {
       method: 'DELETE',
       headers: {
         Accept: 'application/json',
+        ...getAuthHeaders(),
         ...(options.headers || {}),
       },
       signal: options.signal,
