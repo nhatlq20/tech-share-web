@@ -3,11 +3,7 @@ import {
   Search, 
   PlusCircle, 
   Star, 
-  Sparkles, 
-  Upload, 
-  X, 
-  Calendar, 
-  Check
+  Calendar
 } from 'lucide-react';
 import { STRINGS } from '../../constants/strings';
 import { COLORS, PRIMARY } from '../../constants/colors';
@@ -15,10 +11,8 @@ import { COLORS, PRIMARY } from '../../constants/colors';
 export const OwnerDevicesTab = ({ 
   devices = [], 
   onToggleStatus, 
-  onAddDevice, 
-  onNavigateToCalendar,
-  isPostModalOpen,
-  setIsPostModalOpen
+  onPostDevice,
+  onNavigateToCalendar
 }) => {
   const t = STRINGS.owner.devices;
   const tc = STRINGS.common;
@@ -26,16 +20,6 @@ export const OwnerDevicesTab = ({
   // Filter states
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
-
-  // Form State for Adding Device
-  const [formName, setFormName] = useState('');
-  const [formBrand, setFormBrand] = useState('');
-  const [formCategory, setFormCategory] = useState('camera');
-  const [formDailyRate, setFormDailyRate] = useState('');
-  const [formDeposit, setFormDeposit] = useState('');
-  const [formCondition, setFormCondition] = useState('Mới 98%, hoạt động hoàn hảo');
-  const [formDescription, setFormDescription] = useState('');
-  const [isGeneratingAi, setIsGeneratingAi] = useState(false);
 
   // Filtered devices
   const filteredDevices = useMemo(() => {
@@ -46,58 +30,6 @@ export const OwnerDevicesTab = ({
       return matchSearch && matchCat;
     });
   }, [devices, searchTerm, selectedCategory]);
-
-  // AI Description Generator (K-08 Gemini AI Simulation)
-  const handleGenerateAiDescription = () => {
-    if (!formName && !formBrand) {
-      alert('Vui lòng nhập Tên máy hoặc Thương hiệu trước khi tạo mô tả AI!');
-      return;
-    }
-    setIsGeneratingAi(true);
-    setTimeout(() => {
-      const generated = `🔥 [SIÊU PHẨM CÔNG NGHỆ] ${formBrand} ${formName} - Lựa chọn hoàn hảo cho nhà sáng tạo nội dung & quay chụp chuyên nghiệp!
-✨ Tình trạng: ${formCondition}, cảm biến sắc nét, ống kính trong veo không trầy xước.
-⚡ Đi kèm đầy đủ phụ kiện cao cấp: 2 pin zin dung lượng cao, dock sạc nhanh, thẻ nhớ tốc độ cao 128GB, túi chống sốc.
-🛡️ Đã được kiểm tra kỹ thuật (Check specs) và vệ sinh khử khuẩn trước mỗi lượt giao nhận. Hỗ trợ hướng dẫn sử dụng chi tiết khi nhận máy!`;
-      setFormDescription(generated);
-      setIsGeneratingAi(false);
-    }, 1200);
-  };
-
-  // Submit Add Device
-  const handleSubmitDevice = (e) => {
-    e.preventDefault();
-    if (!formName || !formDailyRate) {
-      alert('Vui lòng điền đầy đủ Tên thiết bị và Giá thuê!');
-      return;
-    }
-    const newDevice = {
-      _id: `dev_${Date.now()}`,
-      name: formName,
-      brand: formBrand || 'TechShare Partner',
-      category: formCategory,
-      dailyRate: Number(formDailyRate),
-      depositAmount: Number(formDeposit) || Number(formDailyRate) * 5,
-      status: 'available',
-      images: [
-        'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=600&q=80'
-      ],
-      ratingAvg: 5.0,
-      rentalCount: 0,
-      condition: formCondition,
-      specs: {},
-      createdAt: new Date().toISOString()
-    };
-
-    onAddDevice(newDevice);
-    setIsPostModalOpen(false);
-    // Reset form
-    setFormName('');
-    setFormBrand('');
-    setFormDailyRate('');
-    setFormDeposit('');
-    setFormDescription('');
-  };
 
   return (
     <div className="owner-devices-container">
@@ -110,7 +42,7 @@ export const OwnerDevicesTab = ({
         <button 
           type="button" 
           className="owner-btn-primary"
-          onClick={() => setIsPostModalOpen(true)}
+          onClick={onPostDevice}
         >
           <PlusCircle size={16} />
           <span>{t.postBtn}</span>
@@ -268,179 +200,8 @@ export const OwnerDevicesTab = ({
         </div>
       </div>
 
-      {/* MODAL: Đăng thiết bị cho thuê mới (K-01, K-02, K-08) */}
-      {isPostModalOpen && (
-        <div className="owner-modal-overlay">
-          <div className="owner-modal-card">
-            <div className="owner-modal-header">
-              <h3 className="owner-modal-title flex items-center gap-2">
-                <PlusCircle size={20} color={COLORS.primary.DEFAULT} />
-                <span>{t.modalPost.title}</span>
-              </h3>
-              <button 
-                type="button" 
-                className="owner-close-btn"
-                onClick={() => setIsPostModalOpen(false)}
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmitDevice} className="flex flex-col gap-4">
-              <div className="grid grid-cols-2 gap-4">
-                {/* Tên máy */}
-                <div className="col-span-2">
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    {t.modalPost.nameLabel} *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-sm focus:border-brand-500 focus:outline-none"
-                    placeholder={t.modalPost.namePlaceholder}
-                    value={formName}
-                    onChange={(e) => setFormName(e.target.value)}
-                  />
-                </div>
-
-                {/* Hãng */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    {t.modalPost.brandLabel} *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-sm focus:border-brand-500 focus:outline-none"
-                    placeholder={t.modalPost.brandPlaceholder}
-                    value={formBrand}
-                    onChange={(e) => setFormBrand(e.target.value)}
-                  />
-                </div>
-
-                {/* Danh mục */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    {t.modalPost.categoryLabel} *
-                  </label>
-                  <select
-                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-sm focus:border-brand-500 focus:outline-none bg-white"
-                    value={formCategory}
-                    onChange={(e) => setFormCategory(e.target.value)}
-                  >
-                    <option value="camera">Máy ảnh & Ống kính</option>
-                    <option value="laptop">Laptop & Máy trạm</option>
-                    <option value="smartphone">Smartphone & Tablet</option>
-                    <option value="drone">Flycam & Gimbal</option>
-                    <option value="audio">Tai nghe & Âm thanh</option>
-                    <option value="gaming">Gaming & VR</option>
-                    <option value="accessory">Phụ kiện</option>
-                  </select>
-                </div>
-
-                {/* Giá thuê */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    {t.modalPost.dailyRateLabel} *
-                  </label>
-                  <input
-                    type="number"
-                    required
-                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-sm focus:border-brand-500 focus:outline-none"
-                    placeholder="250000"
-                    value={formDailyRate}
-                    onChange={(e) => setFormDailyRate(e.target.value)}
-                  />
-                </div>
-
-                {/* Tiền cọc */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    {t.modalPost.depositLabel}
-                  </label>
-                  <input
-                    type="number"
-                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-sm focus:border-brand-500 focus:outline-none"
-                    placeholder="1500000"
-                    value={formDeposit}
-                    onChange={(e) => setFormDeposit(e.target.value)}
-                  />
-                </div>
-
-                {/* Tình trạng */}
-                <div className="col-span-2">
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    {t.modalPost.conditionLabel}
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-sm focus:border-brand-500 focus:outline-none"
-                    placeholder={t.modalPost.conditionPlaceholder}
-                    value={formCondition}
-                    onChange={(e) => setFormCondition(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              {/* Mô tả & Trợ lý Gemini AI */}
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="text-xs font-semibold text-slate-700">
-                    {t.modalPost.descriptionLabel}
-                  </label>
-                  <button
-                    type="button"
-                    disabled={isGeneratingAi}
-                    className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full text-brand-700 bg-brand-50 border border-brand-200 hover:bg-brand-100 transition-all cursor-pointer"
-                    style={{ color: COLORS.primary.dark, background: COLORS.primary.surface }}
-                    onClick={handleGenerateAiDescription}
-                  >
-                    <Sparkles size={13} color={COLORS.primary.DEFAULT} />
-                    <span>{isGeneratingAi ? t.modalPost.aiGenerating : t.modalPost.aiPromptBtn}</span>
-                  </button>
-                </div>
-                <textarea
-                  rows={4}
-                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-sm focus:border-brand-500 focus:outline-none"
-                  placeholder={t.modalPost.descriptionPlaceholder}
-                  value={formDescription}
-                  onChange={(e) => setFormDescription(e.target.value)}
-                />
-              </div>
-
-              {/* Dropzone Kéo thả ảnh (K-02 Simulation) */}
-              <div className="border-2 border-dashed border-slate-200 rounded-xl p-5 text-center bg-slate-50 hover:bg-brand-50/50 transition-all">
-                <Upload size={24} className="mx-auto mb-2 text-slate-400" />
-                <p className="text-xs font-medium text-slate-600">
-                  {t.modalPost.dropzoneText}
-                </p>
-                <span className="text-[11px] text-slate-400">JPG, PNG, WEBP (Khuyến nghị tỷ lệ 4:3)</span>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
-                <button
-                  type="button"
-                  className="owner-btn-outline"
-                  onClick={() => setIsPostModalOpen(false)}
-                >
-                  {t.modalPost.cancelBtn}
-                </button>
-                <button
-                  type="submit"
-                  className="owner-btn-primary"
-                >
-                  <Check size={15} />
-                  <span>{t.modalPost.submitBtn}</span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
 
 export default OwnerDevicesTab;
-

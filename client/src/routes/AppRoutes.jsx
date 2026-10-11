@@ -20,6 +20,7 @@ export const AppRoutes = () => {
       <Route path={ROUTES.OWNER} element={<OwnerPage />} />
       <Route path={ROUTES.OWNER_DASHBOARD} element={<OwnerPage />} />
       <Route path={ROUTES.OWNER_DEVICES} element={<OwnerPage />} />
+      <Route path={ROUTES.OWNER_DEVICE_NEW} element={<OwnerPage />} />
       <Route path={ROUTES.OWNER_BOOKINGS} element={<OwnerPage />} />
       <Route path={ROUTES.OWNER_CALENDAR} element={<OwnerPage />} />
       <Route path={ROUTES.OWNER_ANALYTICS} element={<OwnerPage />} />

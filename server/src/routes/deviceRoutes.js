@@ -16,4 +16,6 @@ router.get('/', getDevices);
 // Parameterized device detail route
 router.get('/:id', getDeviceById);
 
+
+router.post('/',au)
 export default router;
