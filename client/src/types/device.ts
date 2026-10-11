@@ -105,6 +105,7 @@ export interface PaginationMeta {
   limit: number;
   total: number;
   totalPages: number;
+  hasNextPage?: boolean;
 }
 
 /**
@@ -162,3 +163,13 @@ export interface NearbyQueryParams {
   distance?: number; // Optional alias for radius
 }
 
+
+/** Home recommendations ranked by distance without a radius cutoff. */
+export interface RecommendedQueryParams {
+  lat: number;
+  lng: number;
+  page?: number;
+  limit?: number;
+}
+
+export interface RecommendedDeviceListResponse extends NearbyDeviceListResponse {}

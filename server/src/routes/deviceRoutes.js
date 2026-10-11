@@ -2,6 +2,7 @@ import express from 'express';
 import {
   getDevices,
   getNearbyDevices,
+  getRecommendedDevices,
   getDeviceById,
 } from '../controllers/deviceController.js';
 import { getDeviceAvailability } from '../controllers/bookingController.js';
@@ -18,6 +19,7 @@ const router = express.Router();
 
 // Specific routes before parameterized :id route
 router.get('/nearby', getNearbyDevices);
+router.get('/recommended', getRecommendedDevices);
 router.get('/my-devices', getOwnerDevices);
 router.get('/owner/analytics', getOwnerAnalytics);
 

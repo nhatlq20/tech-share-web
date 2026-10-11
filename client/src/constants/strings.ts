@@ -36,6 +36,14 @@ export const STRINGS = {
 
   // Home & Landing Page Module (English)
   home: {
+    recommended: {
+      heading: 'Recommended for You',
+      subtitle: 'Discover available devices, with the closest options first.',
+      locationLoading: 'Finding devices for you...',
+      apiLoading: 'Loading recommended devices...',
+      apiError: 'Unable to load recommended devices.',
+      empty: 'No recommended devices found.',
+    },
     nearby: {
       heading: 'Nearby Devices',
       subtitle: 'Devices within 10 km of your current location.',

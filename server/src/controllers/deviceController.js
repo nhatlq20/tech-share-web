@@ -12,6 +12,61 @@ const getDevicesCollection = () => {
   return db.collection("devices");
 };
 
+const RECOMMENDATION_DEFAULT_PAGE = 1;
+const RECOMMENDATION_PAGE_SIZE = 12;
+const HOME_RECOMMENDATION_MAX_DISTANCE_METERS = 100000;
+const MAX_LATITUDE = 90;
+const MAX_LONGITUDE = 180;
+
+const geoPaginationStages = (page, limit) => [
+  { $facet: {
+    data: [{ $skip: (page - 1) * limit }, { $limit: limit }],
+    totals: [{ $count: "total" }],
+  } },
+];
+
+/** Home discovery: exact distance first, with stable tie-breaks and a 100 km safety cap. */
+export const getRecommendedDevices = async (req, res, next) => {
+  try {
+    const { lat, lng, page = RECOMMENDATION_DEFAULT_PAGE, limit = RECOMMENDATION_PAGE_SIZE } = req.query;
+    const isNumber = (value) => typeof value === 'string' && value.trim() !== '' && Number.isFinite(Number(value));
+    const userLat = Number(lat);
+    const userLng = Number(lng);
+    const pageNum = Number(page);
+    const requestedLimit = Number(limit);
+    if (!isNumber(lat) || !isNumber(lng) || Math.abs(userLat) > MAX_LATITUDE || Math.abs(userLng) > MAX_LONGITUDE ||
+        !Number.isSafeInteger(pageNum) || pageNum < RECOMMENDATION_DEFAULT_PAGE ||
+        !Number.isSafeInteger(requestedLimit) || requestedLimit < RECOMMENDATION_DEFAULT_PAGE ||
+        !Number.isSafeInteger((pageNum - RECOMMENDATION_DEFAULT_PAGE) * Math.min(requestedLimit, RECOMMENDATION_PAGE_SIZE))) {
+      return res.status(400).json({ success: false, message: 'Valid lat, lng, page and limit are required.' });
+    }
+    const limitNum = Math.min(requestedLimit, RECOMMENDATION_PAGE_SIZE);
+    const [result] = await getDevicesCollection().aggregate([
+      { $geoNear: {
+        near: { type: 'Point', coordinates: [userLng, userLat] },
+        key: 'location', distanceField: 'distanceMeters', spherical: true,
+        maxDistance: HOME_RECOMMENDATION_MAX_DISTANCE_METERS,
+        query: {
+          status: 'available', isDeleted: { $ne: true },
+          'location.type': 'Point', 'location.coordinates': { $size: 2 },
+          'location.coordinates.0': { $type: 'number', $gte: -MAX_LONGITUDE, $lte: MAX_LONGITUDE },
+          'location.coordinates.1': { $type: 'number', $gte: -MAX_LATITUDE, $lte: MAX_LATITUDE },
+        },
+      } },
+      { $set: { _recommendationRating: { $ifNull: ['$rating', { $ifNull: ['$ratingAvg', 0] }] } } },
+      { $sort: { distanceMeters: 1, _recommendationRating: -1, createdAt: -1, _id: 1 } },
+      { $unset: '_recommendationRating' },
+      ...geoPaginationStages(pageNum, limitNum),
+    ]).toArray();
+    const total = result.totals[0]?.total || 0;
+    return res.status(200).json({
+      success: true, count: result.data.length, data: result.data,
+      pagination: { page: pageNum, limit: limitNum, total, totalPages: Math.ceil(total / limitNum) || 1,
+        hasNextPage: pageNum * limitNum < total },
+    });
+  } catch (error) { next(error); }
+};
+
 /**
  * 1. GET /api/devices
  * Fetches paginated devices with search (q/keyword), category, pagination (page, limit) and sorting.
@@ -163,10 +218,7 @@ export const getNearbyDevices = async (req, res, next) => {
         spherical: true,
         query: { isDeleted: { $ne: true } },
       } },
-      { $facet: {
-        data: [{ $skip: (pageNum - 1) * limitNum }, { $limit: limitNum }],
-        totals: [{ $count: "total" }],
-      } },
+      ...geoPaginationStages(pageNum, limitNum),
     ]).toArray();
     const devices = result.data;
     const total = result.totals[0]?.total || 0;

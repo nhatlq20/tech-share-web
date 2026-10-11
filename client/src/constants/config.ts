@@ -30,6 +30,7 @@ export const API_CONFIG = {
     OWNER_WALLET: '/wallet/me',
     AI_GENERATE_DESCRIPTION: '/ai/generate-description',
     DEVICES: '/devices',
+    DEVICES_RECOMMENDED: '/devices/recommended',
     DEVICE_BY_ID: (id: string) => `/devices/${id}`,
     DEVICE_AVAILABILITY: (id: string) => `/devices/${id}/availability`,
     BOOKINGS: '/bookings',
@@ -40,6 +41,7 @@ export const API_CONFIG = {
 } as const;
 
 export const MAGIC_NUMBERS = {
+  HOME_RECOMMENDATIONS: { INITIAL_PAGE: 1, PAGE_SIZE: 12 },
   // Điểm tín nhiệm Escrow (Trust Score)
   TRUST_SCORE: {
     MAX: 100,
