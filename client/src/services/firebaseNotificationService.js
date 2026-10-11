@@ -1,14 +1,13 @@
-import { collection, query, where, onSnapshot, Unsubscribe } from 'firebase/firestore';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { getToken, onMessage } from 'firebase/messaging';
-import { db, getFirebaseMessaging } from '../lib/firebase';
-import { api } from './api';
-import { STORAGE_KEYS, API_CONFIG } from '../constants/config';
-import type { Notification } from '../types/notification';
+import { db, getFirebaseMessaging } from '../lib/firebase.js';
+import { api } from './api.js';
+import { STORAGE_KEYS, API_CONFIG } from '../constants/config.ts';
 
 /**
  * Lấy Bearer Authorization headers từ localStorage
  */
-const getAuthHeaders = (): Record<string, string> => {
+const getAuthHeaders = () => {
   const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
@@ -16,7 +15,7 @@ const getAuthHeaders = (): Record<string, string> => {
 /**
  * Xin quyền thông báo từ trình duyệt & Đăng ký FCM Token lên Server
  */
-export const requestNotificationPermission = async (): Promise<string | null> => {
+export const requestNotificationPermission = async () => {
   if (typeof window === 'undefined' || !('Notification' in window)) {
     console.warn('⚠️ Notifications are not supported in this browser.');
     return null;
@@ -33,7 +32,7 @@ export const requestNotificationPermission = async (): Promise<string | null> =>
     if (!messaging) return null;
 
     // Đăng ký Service Worker
-    let swRegistration: ServiceWorkerRegistration | undefined;
+    let swRegistration;
     if ('serviceWorker' in navigator) {
       try {
         swRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
@@ -77,11 +76,7 @@ export const requestNotificationPermission = async (): Promise<string | null> =>
  * Lắng nghe Real-time thông báo qua Firestore onSnapshot
  * Đồng bộ ngay lập tức khi backend ghi document vào collection 'notifications'
  */
-export const subscribeUserNotifications = (
-  userId: string,
-  callback: (notifications: Notification[]) => void,
-  onError?: (err: Error) => void
-): Unsubscribe => {
+export const subscribeUserNotifications = (userId, callback, onError) => {
   if (!userId) {
     callback([]);
     return () => {};
@@ -94,7 +89,7 @@ export const subscribeUserNotifications = (
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
-        const notifications: Notification[] = [];
+        const notifications = [];
         snapshot.forEach((doc) => {
           const data = doc.data();
           notifications.push({
@@ -125,7 +120,7 @@ export const subscribeUserNotifications = (
     return unsubscribe;
   } catch (error) {
     console.error('❌ Failed to establish Firestore onSnapshot listener:', error);
-    if (onError && error instanceof Error) onError(error);
+    if (onError) onError(error);
     return () => {};
   }
 };
@@ -133,9 +128,7 @@ export const subscribeUserNotifications = (
 /**
  * Lắng nghe thông báo khi ứng dụng đang mở ở Foreground
  */
-export const onForegroundMessage = async (
-  callback: (payload: { title?: string; body?: string; data?: any }) => void
-): Promise<(() => void) | null> => {
+export const onForegroundMessage = async (callback) => {
   const messaging = await getFirebaseMessaging();
   if (!messaging) return null;
 
@@ -151,16 +144,11 @@ export const onForegroundMessage = async (
 /**
  * REST API: Lấy danh sách thông báo từ MongoDB
  */
-export const fetchNotificationsApi = async (type?: string) => {
-  const params: Record<string, string> = {};
+export const fetchNotificationsApi = async (type) => {
+  const params = {};
   if (type && type !== 'all') params.type = type;
 
-  return api.get<{
-    success: boolean;
-    data: Notification[];
-    unreadCount: number;
-    total: number;
-  }>(API_CONFIG.ENDPOINTS.NOTIFICATIONS, {
+  return api.get(API_CONFIG.ENDPOINTS.NOTIFICATIONS, {
     params,
     headers: getAuthHeaders(),
   });
@@ -169,7 +157,7 @@ export const fetchNotificationsApi = async (type?: string) => {
 /**
  * REST API: Đánh dấu một thông báo là đã đọc
  */
-export const markAsReadApi = async (notificationId: string) => {
+export const markAsReadApi = async (notificationId) => {
   return api.patch(API_CONFIG.ENDPOINTS.NOTIFICATIONS_READ(notificationId), {}, {
     headers: getAuthHeaders(),
   });
@@ -187,12 +175,7 @@ export const markAllAsReadApi = async () => {
 /**
  * REST API: Gửi thông báo test để kiểm tra real-time
  */
-export const sendTestNotificationApi = async (payload: {
-  title?: string;
-  body?: string;
-  type?: string;
-  relatedId?: string;
-}) => {
+export const sendTestNotificationApi = async (payload) => {
   return api.post(API_CONFIG.ENDPOINTS.NOTIFICATIONS_TEST, payload, {
     headers: getAuthHeaders(),
   });

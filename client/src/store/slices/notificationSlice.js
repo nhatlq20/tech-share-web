@@ -1,7 +1,6 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import type { Notification, NotificationFilter, NotificationState } from '../../types/notification';
+import { createSlice } from '@reduxjs/toolkit';
 
-const initialState: NotificationState = {
+const initialState = {
   items: [],
   unreadCount: 0,
   filter: 'all',
@@ -15,12 +14,12 @@ export const notificationSlice = createSlice({
   name: 'notification',
   initialState,
   reducers: {
-    setNotifications: (state, action: PayloadAction<Notification[]>) => {
+    setNotifications: (state, action) => {
       state.items = action.payload;
       state.unreadCount = action.payload.filter((n) => !n.isRead).length;
       state.loading = false;
     },
-    addNotification: (state, action: PayloadAction<Notification>) => {
+    addNotification: (state, action) => {
       const exists = state.items.some((item) => item._id === action.payload._id);
       if (!exists) {
         state.items.unshift(action.payload);
@@ -29,7 +28,7 @@ export const notificationSlice = createSlice({
         }
       }
     },
-    markNotificationAsRead: (state, action: PayloadAction<string>) => {
+    markNotificationAsRead: (state, action) => {
       const item = state.items.find((n) => n._id === action.payload);
       if (item && !item.isRead) {
         item.isRead = true;
@@ -42,19 +41,19 @@ export const notificationSlice = createSlice({
       });
       state.unreadCount = 0;
     },
-    setFilter: (state, action: PayloadAction<NotificationFilter>) => {
+    setFilter: (state, action) => {
       state.filter = action.payload;
     },
-    setFcmToken: (state, action: PayloadAction<string | null>) => {
+    setFcmToken: (state, action) => {
       state.fcmToken = action.payload;
     },
-    setPermission: (state, action: PayloadAction<NotificationPermission | 'default'>) => {
+    setPermission: (state, action) => {
       state.permission = action.payload;
     },
-    setLoading: (state, action: PayloadAction<boolean>) => {
+    setLoading: (state, action) => {
       state.loading = action.payload;
     },
-    setError: (state, action: PayloadAction<string | null>) => {
+    setError: (state, action) => {
       state.error = action.payload;
       state.loading = false;
     },
