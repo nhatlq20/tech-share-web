@@ -8,6 +8,7 @@ import { OwnerBookingsTab } from './OwnerBookingsTab';
 import { OwnerCalendarTab } from './OwnerCalendarTab';
 import { OwnerAnalyticsTab } from './OwnerAnalyticsTab';
 import { OwnerWalletTab } from './OwnerWalletTab';
+import PostDevicePage from '../../pages/PostDevicePage';
 import { ROUTES } from '../../routes/routes';
 import { STRINGS } from '../../constants/strings';
 import { COLORS } from '../../constants/colors';
@@ -264,7 +265,6 @@ export const OwnerDashboardScreen = () => {
     dev_1: ['2026-10-12', '2026-10-13'],
     dev_2: ['2026-10-20']
   });
-  const [isPostModalOpen, setIsPostModalOpen] = useState(false);
   const [globalSearch, setGlobalSearch] = useState('');
 
   // Determine current active path
@@ -312,12 +312,6 @@ export const OwnerDashboardScreen = () => {
     setDevices((prev) =>
       prev.map((d) => (d._id === deviceId ? { ...d, status: newStatus } : d))
     );
-  };
-
-  // Actions: Add new device
-  const handleAddDevice = (newDevice) => {
-    setDevices((prev) => [newDevice, ...prev]);
-    setKpi((prev) => ({ ...prev, totalDevices: prev.totalDevices + 1 }));
   };
 
   // Actions: Toggle blocked dates on calendar
@@ -412,7 +406,7 @@ export const OwnerDashboardScreen = () => {
             <button
               type="button"
               className="owner-top-action-btn"
-              onClick={() => setIsPostModalOpen(true)}
+              onClick={() => handleNavigate(ROUTES.OWNER_DEVICE_NEW)}
             >
               <PlusCircle size={15} />
               <span>{STRINGS.owner.devices.postBtn}</span>
@@ -428,8 +422,11 @@ export const OwnerDashboardScreen = () => {
               kpi={kpi}
               recentBookings={bookings}
               onNavigate={handleNavigate}
-              onOpenPostModal={() => setIsPostModalOpen(true)}
             />
+          )}
+
+          {currentPath === ROUTES.OWNER_DEVICE_NEW && (
+            <PostDevicePage onBack={() => handleNavigate(ROUTES.OWNER_DEVICES)} />
           )}
 
           {/* B. /owner/devices */}
@@ -437,10 +434,8 @@ export const OwnerDashboardScreen = () => {
             <OwnerDevicesTab
               devices={devices}
               onToggleStatus={handleToggleDeviceStatus}
-              onAddDevice={handleAddDevice}
+              onPostDevice={() => handleNavigate(ROUTES.OWNER_DEVICE_NEW)}
               onNavigateToCalendar={(devId) => handleNavigate(ROUTES.OWNER_CALENDAR)}
-              isPostModalOpen={isPostModalOpen}
-              setIsPostModalOpen={setIsPostModalOpen}
             />
           )}
 
@@ -484,4 +479,3 @@ export const OwnerDashboardScreen = () => {
 };
 
 export default OwnerDashboardScreen;
-

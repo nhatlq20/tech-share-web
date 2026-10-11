@@ -26,6 +26,17 @@ import { OwnerPage } from '../pages/OwnerPage.jsx';
 export const AppRoutes = () => {
   return (
     <Routes>
+      {/* Phân hệ Owner Hub (Chủ thiết bị) - Dedicated Workspace Layout */}
+      <Route path={ROUTES.OWNER} element={<OwnerPage />} />
+      <Route path={ROUTES.OWNER_DASHBOARD} element={<OwnerPage />} />
+      <Route path={ROUTES.OWNER_DEVICES} element={<OwnerPage />} />
+      <Route path={ROUTES.OWNER_DEVICE_NEW} element={<OwnerPage />} />
+      <Route path={ROUTES.OWNER_BOOKINGS} element={<OwnerPage />} />
+      <Route path={ROUTES.OWNER_CALENDAR} element={<OwnerPage />} />
+      <Route path={ROUTES.OWNER_ANALYTICS} element={<OwnerPage />} />
+      <Route path={ROUTES.OWNER_WALLET} element={<OwnerPage />} />
+
+      {/* Tất cả route công khai dùng chung PublicLayout */}
       {/* ── Admin Portal ──────────────────────────────────────────────────
           Không có Navbar/Footer, chỉ vào bằng gõ URL trực tiếp          */}
       <Route path={ROUTES.ADMIN_LOGIN} element={<AdminLoginPage />} />

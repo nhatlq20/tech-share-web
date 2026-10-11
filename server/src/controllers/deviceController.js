@@ -1,5 +1,5 @@
-import mongoose from 'mongoose';
-import Device from '../models/Device.js';
+import mongoose from "mongoose";
+import Device from "../models/Device.js";
 
 /**
  * Helper to get MongoDB collections safely if Mongoose connection is ready
@@ -7,9 +7,9 @@ import Device from '../models/Device.js';
 const getDevicesCollection = () => {
   const db = mongoose.connection.db;
   if (!db) {
-    throw new Error('Database connection is not initialized yet.');
+    throw new Error("Database connection is not initialized yet.");
   }
-  return db.collection('devices');
+  return db.collection("devices");
 };
 
 /**
@@ -30,14 +30,18 @@ export const getDevices = async (req, res, next) => {
     };
 
     // Category filter (ignore 'all' or empty)
-    if (category && typeof category === 'string' && category.trim().toLowerCase() !== 'all') {
+    if (
+      category &&
+      typeof category === "string" &&
+      category.trim().toLowerCase() !== "all"
+    ) {
       filter.category = category.trim().toLowerCase();
     }
 
     // Search query (keyword or q)
-    const searchTerm = (q || keyword || '').toString().trim();
+    const searchTerm = (q || keyword || "").toString().trim();
     if (searchTerm) {
-      const regex = new RegExp(searchTerm, 'i');
+      const regex = new RegExp(searchTerm, "i");
       filter.$or = [
         { title: regex },
         { name: regex },
@@ -48,17 +52,20 @@ export const getDevices = async (req, res, next) => {
 
     // Build sort options
     let sortOptions = { createdAt: -1 };
-    if (sort && typeof sort === 'string') {
+    if (sort && typeof sort === "string") {
       const trimmedSort = sort.trim();
-      if (trimmedSort === 'dailyRate' || trimmedSort === 'pricePerDay') {
+      if (trimmedSort === "dailyRate" || trimmedSort === "pricePerDay") {
         sortOptions = { dailyRate: 1 };
-      } else if (trimmedSort === '-dailyRate' || trimmedSort === '-pricePerDay') {
+      } else if (
+        trimmedSort === "-dailyRate" ||
+        trimmedSort === "-pricePerDay"
+      ) {
         sortOptions = { dailyRate: -1 };
-      } else if (trimmedSort === 'rating' || trimmedSort === 'ratingAvg') {
+      } else if (trimmedSort === "rating" || trimmedSort === "ratingAvg") {
         sortOptions = { rating: -1 };
-      } else if (trimmedSort === 'oldest') {
+      } else if (trimmedSort === "oldest") {
         sortOptions = { createdAt: 1 };
-      } else if (trimmedSort === 'newest') {
+      } else if (trimmedSort === "newest") {
         sortOptions = { createdAt: -1 };
       }
     }
@@ -88,12 +95,12 @@ export const getDevices = async (req, res, next) => {
 
     // Normalize output fields
     const normalizedDevices = devices.map((d) => ({
-      _id: d._id ? d._id.toString() : '',
-      title: d.title || d.name || 'Untitled Device',
-      name: d.name || d.title || 'Untitled Device',
-      brand: d.brand || '',
-      category: d.category || 'other',
-      condition: d.condition || 'good',
+      _id: d._id ? d._id.toString() : "",
+      title: d.title || d.name || "Untitled Device",
+      name: d.name || d.title || "Untitled Device",
+      brand: d.brand || "",
+      category: d.category || "other",
+      condition: d.condition || "good",
       dailyRate: d.dailyRate ?? d.pricePerDay ?? 0,
       pricePerDay: d.pricePerDay ?? d.dailyRate ?? 0,
       depositValue: d.depositValue || 0,
@@ -101,9 +108,12 @@ export const getDevices = async (req, res, next) => {
       ratingAvg: d.ratingAvg ?? d.rating ?? 5.0,
       reviewCount: d.reviewCount || 0,
       images: Array.isArray(d.images) ? d.images : [],
-      location: d.location || { type: 'Point', coordinates: [105.7826, 21.0285] },
-      address: d.address || '',
-      status: d.status || 'available',
+      location: d.location || {
+        type: "Point",
+        coordinates: [105.7826, 21.0285],
+      },
+      address: d.address || "",
+      status: d.status || "available",
       createdAt: d.createdAt || new Date(),
     }));
 
@@ -138,7 +148,7 @@ export const getNearbyDevices = async (req, res, next) => {
     if (isNaN(userLat) || isNaN(userLng)) {
       return res.status(400).json({
         success: false,
-        message: 'Valid coordinates (lat, lng) are required.',
+        message: "Valid coordinates (lat, lng) are required.",
       });
     }
 
@@ -147,7 +157,7 @@ export const getNearbyDevices = async (req, res, next) => {
       location: {
         $nearSphere: {
           $geometry: {
-            type: 'Point',
+            type: "Point",
             coordinates: [userLng, userLat],
           },
           $maxDistance: maxDistance,
@@ -171,7 +181,9 @@ export const getNearbyDevices = async (req, res, next) => {
   } catch (error) {
     // If geospatial index is not created yet, fallback to find without $nearSphere
     try {
-      const devices = await Device.find({ isDeleted: { $ne: true } }).limit(20).lean({ virtuals: true });
+      const devices = await Device.find({ isDeleted: { $ne: true } })
+        .limit(20)
+        .lean({ virtuals: true });
       return res.status(200).json({
         success: true,
         count: devices.length,
@@ -191,19 +203,23 @@ export const getDeviceById = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    if (!id || id === 'nearby' || id === 'owner') {
-      return res.status(400).json({ success: false, message: 'Invalid device ID' });
+    if (!id || id === "nearby" || id === "owner") {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid device ID" });
     }
 
     let device = null;
     if (mongoose.isValidObjectId(id)) {
-      device = await Device.findOne({ _id: id, isDeleted: { $ne: true } }).lean({ virtuals: true });
+      device = await Device.findOne({ _id: id, isDeleted: { $ne: true } }).lean(
+        { virtuals: true },
+      );
     }
 
     if (!device) {
       return res.status(404).json({
         success: false,
-        message: 'Device not found',
+        message: "Device not found",
       });
     }
 
@@ -216,8 +232,104 @@ export const getDeviceById = async (req, res, next) => {
   }
 };
 
+const createDevice = async (req, res) => {
+  try {
+    const {
+      name,
+      category,
+      brand,
+      yearOfManufacture,
+      condition,
+      description,
+      pricePerDay,
+      depositAmount,
+      addressText,
+      specs,
+    } = req.body;
+
+    const ownerId = req.auth.id;
+    const year = Number(yearOfManufacture);
+
+    if (
+      yearOfManufacture == null ||
+      yearOfManufacture === "" ||
+      !Number.isInteger(year) ||
+      year < 1990 ||
+      year > new Date().getFullYear()
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid year of manufacture",
+      });
+    }
+    if (
+      !name?.trim() ||
+      !category?.trim() ||
+      !brand?.trim() ||
+      !description?.trim() ||
+      !condition ||
+      !addressText?.trim()
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Please fill in all required fields",
+      });
+    }
+    const price = Number(pricePerDay);
+    const deposit = Number(depositAmount);
+
+    if (
+      pricePerDay == null ||
+      pricePerDay === "" ||
+      !Number.isFinite(price) ||
+      price <= 0
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid rental price",
+      });
+    }
+
+    if (
+      depositAmount == null ||
+      depositAmount === "" ||
+      !Number.isFinite(deposit) ||
+      deposit < 0
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid deposit amount",
+      });
+    }
+
+    const device = await Device.create({
+      ownerId,
+      name,
+      category,
+      brand,
+      yearOfManufacture: Number(yearOfManufacture),
+      pricePerDay,
+      depositAmount,
+      description,
+      specs,
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: "Device created successfully",
+      device,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
 export default {
   getDevices,
   getNearbyDevices,
   getDeviceById,
+  createDevice
 };
