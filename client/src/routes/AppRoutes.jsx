@@ -8,6 +8,7 @@ import { PublicLayout } from '../layouts/PublicLayout.jsx';
 import { HomePage } from '../pages/HomePage.jsx';
 import { CatalogPage } from '../pages/CatalogPage.jsx';
 import { DeviceDetailPage } from '../pages/DeviceDetailPage.jsx';
+// eslint-disable-next-line no-unused-vars
 import { BookingCheckoutPage } from '../pages/booking/BookingCheckoutPage.jsx';
 import { NearbyPage } from '../pages/NearbyPage.jsx';
 import { LoginPage } from '../pages/LoginPage.jsx';

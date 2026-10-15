@@ -33,7 +33,7 @@ const formatVND = (amount = 0) => {
 
 export const ProfilePage = () => {
   const navigate = useNavigate();
-  const { user: authUser, account: authAccount, token, isAuthenticated, logout, login, refreshProfile } = useAuth();
+  const { user: authUser, account: authAccount, token, isAuthenticated, logout, login } = useAuth();
 
   const [userData, setUserData] = useState(authUser);
   const [accountData, setAccountData] = useState(authAccount);
