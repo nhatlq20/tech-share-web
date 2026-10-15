@@ -9,6 +9,8 @@ import { HomePage } from '../pages/HomePage.jsx';
 import { CatalogPage } from '../pages/CatalogPage.jsx';
 import { DeviceDetailPage } from '../pages/DeviceDetailPage.jsx';
 import { BookingCheckoutPage } from '../pages/booking/BookingCheckoutPage.jsx';
+import { MyBookingsPage } from '../pages/booking/MyBookingsPage.jsx';
+import { BookingDetailPage } from '../pages/booking/BookingDetailPage.jsx';
 import { NearbyPage } from '../pages/NearbyPage.jsx';
 import { LoginPage } from '../pages/LoginPage.jsx';
 import { RegisterPage } from '../pages/RegisterPage.jsx';
@@ -109,6 +111,22 @@ export const AppRoutes = () => {
         <Route path={ROUTES.REGISTER}           element={<RegisterPage />} />
 
         {/* Cần đăng nhập (bất kỳ role) */}
+        <Route
+          path={ROUTES.MY_BOOKINGS}
+          element={
+            <ProtectedRoute roles={['renter', 'owner', 'admin']}>
+              <MyBookingsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={ROUTES.BOOKING_DETAIL}
+          element={
+            <ProtectedRoute roles={['renter', 'owner', 'admin']}>
+              <BookingDetailPage />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path={ROUTES.PROFILE}
           element={

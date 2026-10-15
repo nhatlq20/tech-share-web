@@ -44,6 +44,11 @@ export const Navbar = () => {
           <Link to={ROUTES.COMPARE || '/compare'} className="navbar-link">
             Compare
           </Link>
+          {isAuthenticated && (
+            <Link to={ROUTES.MY_BOOKINGS} className="navbar-link">
+              My Bookings
+            </Link>
+          )}
           {/* Chỉ hiện với Owner */}
           {user?.role === 'owner' && (
             <Link to={ROUTES.OWNER} className="navbar-link navbar-link-owner">

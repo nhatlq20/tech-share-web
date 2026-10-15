@@ -755,10 +755,10 @@ export const BookingCheckoutPage = () => {
               </button>
               <button
                 type="button"
-                onClick={() => navigate(ROUTES.HOME)}
+                onClick={() => navigate(successBooking?.bookingCode ? ROUTES.BOOKING_DETAIL_PATH(successBooking.bookingCode) : ROUTES.MY_BOOKINGS)}
                 className="flex-1 py-3 px-4 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-bold text-xs shadow-md transition"
               >
-                {STRINGS.booking.checkout.breadcrumbHome}
+                {STRINGS.booking.successModal.viewMyBookingsBtn}
               </button>
             </div>
           </div>
