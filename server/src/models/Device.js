@@ -6,6 +6,13 @@ const deviceSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: false,
+      index: true,
+    },
+    ownerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: false,
+      index: true,
     },
     title: {
       type: String,
@@ -46,6 +53,10 @@ const deviceSchema = new mongoose.Schema(
       min: 0,
     },
     depositValue: {
+      type: Number,
+      default: 0,
+    },
+    depositAmount: {
       type: Number,
       default: 0,
     },

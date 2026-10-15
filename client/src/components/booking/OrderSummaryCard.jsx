@@ -19,8 +19,6 @@ export const OrderSummaryCard = ({
   rentalFee = 0,
   longRentalDiscount = 0,
   longRentalDiscountPercent = 0,
-  voucherDiscount = 0,
-  appliedVoucher = '',
   depositValue = 0,
   totalAmount = 0,
   isSubmitting = false,
@@ -114,15 +112,6 @@ export const OrderSummaryCard = ({
           </div>
         )}
 
-        {/* Voucher Discount */}
-        {voucherDiscount > 0 && (
-          <div className="flex items-center justify-between text-emerald-600 bg-emerald-50/60 p-2 rounded-lg">
-            <span>
-              {STRINGS.booking.summary.voucherDiscount} (<code>{appliedVoucher}</code>)
-            </span>
-            <span className="font-bold">-{formatPrice(voucherDiscount)}</span>
-          </div>
-        )}
 
         {/* Deposit Value */}
         <div className="flex items-center justify-between text-slate-600 pt-2 border-t border-slate-100">
