@@ -1,14 +1,15 @@
 import React from 'react';
 import { 
-  LayoutDashboard, 
-  Layers, 
-  ClipboardCheck, 
-  Calendar, 
   BarChart3, 
+  TrendingUp, 
+  Receipt, 
+  MessageSquare, 
+  Package, 
+  PlusCircle, 
   Wallet, 
+  Sparkles,
   ExternalLink, 
   LogOut, 
-  Sparkles 
 } from 'lucide-react';
 import { STRINGS } from '../../constants/strings';
 import { COLORS } from '../../constants/colors';
@@ -19,6 +20,7 @@ export const OwnerSidebar = ({
   currentPath = ROUTES.OWNER_DASHBOARD, 
   onNavigate, 
   pendingCount = 0,
+  unreadMessagesCount = 0,
   owner,
   onLogout 
 }) => {
@@ -27,40 +29,53 @@ export const OwnerSidebar = ({
   const NAV_ITEMS = [
     {
       id: 'dashboard',
-      label: t.overviewTab,
+      label: 'Dashboard & KPIs',
       path: ROUTES.OWNER_DASHBOARD,
-      icon: LayoutDashboard,
-    },
-    {
-      id: 'devices',
-      label: t.devicesTab,
-      path: ROUTES.OWNER_DEVICES,
-      icon: Layers,
-    },
-    {
-      id: 'bookings',
-      label: t.bookingsTab,
-      path: ROUTES.OWNER_BOOKINGS,
-      icon: ClipboardCheck,
-      badge: pendingCount > 0 ? pendingCount : null,
-    },
-    {
-      id: 'calendar',
-      label: t.calendarTab,
-      path: ROUTES.OWNER_CALENDAR,
-      icon: Calendar,
-    },
-    {
-      id: 'analytics',
-      label: t.analyticsTab,
-      path: ROUTES.OWNER_ANALYTICS,
       icon: BarChart3,
     },
     {
+      id: 'analytics',
+      label: 'Revenue & Analytics',
+      path: ROUTES.OWNER_ANALYTICS,
+      icon: TrendingUp,
+    },
+    {
+      id: 'bookings',
+      label: 'Pending Bookings',
+      path: ROUTES.OWNER_BOOKINGS,
+      icon: Receipt,
+      badge: pendingCount > 0 ? (pendingCount > 99 ? '99+' : pendingCount) : null,
+    },
+    {
+      id: 'messages',
+      label: 'Customer Messages',
+      path: ROUTES.OWNER_MESSAGES,
+      icon: MessageSquare,
+      badge: unreadMessagesCount > 0 ? (unreadMessagesCount > 99 ? '99+' : unreadMessagesCount) : null,
+    },
+    {
+      id: 'devices',
+      label: 'My Device Inventory',
+      path: ROUTES.OWNER_DEVICES,
+      icon: Package,
+    },
+    {
+      id: 'new_device',
+      label: 'List New Devices',
+      path: ROUTES.OWNER_DEVICE_NEW,
+      icon: PlusCircle,
+    },
+    {
       id: 'wallet',
-      label: t.walletTab,
+      label: 'Revenue & Deposit Wallet',
       path: ROUTES.OWNER_WALLET,
       icon: Wallet,
+    },
+    {
+      id: 'ai_assistant',
+      label: 'AI Assistant',
+      path: ROUTES.OWNER_AI_ASSISTANT,
+      icon: Sparkles,
     },
   ];
 
@@ -109,13 +124,15 @@ export const OwnerSidebar = ({
       {/* 2. Navigation Items */}
       <nav className="owner-nav-list" role="navigation">
         <div className="owner-nav-section-title">
-          {t.sectionTitle}
+          OWNER MENU
         </div>
 
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
-          const isActive = currentPath === item.path || 
-            (item.path === ROUTES.OWNER_DASHBOARD && currentPath === ROUTES.OWNER);
+          const isActive =
+            currentPath === item.path ||
+            (item.path === ROUTES.OWNER_DASHBOARD && currentPath === ROUTES.OWNER) ||
+            (item.path === ROUTES.OWNER_MESSAGES && currentPath.startsWith(ROUTES.OWNER_MESSAGES));
 
           return (
             <button
@@ -124,14 +141,25 @@ export const OwnerSidebar = ({
               className={`owner-nav-item ${isActive ? 'active' : ''}`}
               onClick={() => onNavigate(item.path)}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <Icon size={19} strokeWidth={isActive ? 2.5 : 2} />
-                <span style={{ fontSize: '13.5px', fontWeight: isActive ? 700 : 600 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '11px', minWidth: 0 }}>
+                <Icon size={18} strokeWidth={isActive ? 2.5 : 2} style={{ flexShrink: 0 }} />
+                <span
+                  style={{
+                    fontSize: '12.5px',
+                    fontWeight: isActive ? 700 : 600,
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}
+                >
                   {item.label}
                 </span>
               </div>
               {item.badge !== null && item.badge !== undefined && (
-                <span className="owner-badge-count" title={`${item.badge} pending requests`}>
+                <span
+                  className="owner-badge-count"
+                  title={`${item.badge} mục cần xử lý`}
+                >
                   {item.badge}
                 </span>
               )}

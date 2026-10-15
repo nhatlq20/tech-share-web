@@ -10,6 +10,8 @@ import adminRoutes from './routes/adminRoutes.js';
 import bookingRoutes from './routes/bookingRoutes.js';
 import ownerRoutes from './routes/ownerRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
+import chatRoutes from './routes/chatRoutes.js';
+import { initSocket } from './socket.js';
 import { errorHandler, notFound } from './middlewares/errorMiddleware.js';
 
 const app = express();
@@ -39,6 +41,7 @@ app.use('/api/bookings', bookingRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/owner', ownerRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/chats', chatRoutes);
 
 // Error handlers
 app.use(notFound);
@@ -48,8 +51,11 @@ app.use(errorHandler);
 const startServer = async () => {
   await connectDB();
 
-  app.listen(PORT, () => {
-    console.log(`🚀 TechShare Server running on http://localhost:${PORT}`);
+  const httpServer = http.createServer(app);
+  initSocket(httpServer);
+
+  httpServer.listen(PORT, () => {
+    console.log(`🚀 TechShare Server running on http://localhost:${PORT} (Socket.IO enabled)`);
   });
 };
 

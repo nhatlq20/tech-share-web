@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   Copy,
   ArrowLeft,
+  MessageSquare,
 } from 'lucide-react';
 import { STRINGS } from '../../constants/strings.js';
 import { API_CONFIG, MAGIC_NUMBERS } from '../../constants/config.js';
@@ -18,7 +19,6 @@ import { ROUTES } from '../../routes/routes.js';
 import { api } from '../../services/api.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { WebDatePicker } from '../../components/booking/WebDatePicker.jsx';
-import { VoucherField } from '../../components/booking/VoucherField.jsx';
 import { OrderSummaryCard } from '../../components/booking/OrderSummaryCard.jsx';
 import { formatPrice, formatDate } from '../../utils/formatters.js';
 
@@ -48,11 +48,6 @@ export const BookingCheckoutPage = () => {
 
   const [agreedTerms, setAgreedTerms] = useState(true);
   const [pledgedCondition, setPledgedCondition] = useState(true);
-
-  // Voucher state
-  const [appliedVoucher, setAppliedVoucher] = useState('');
-  const [voucherError, setVoucherError] = useState('');
-  const [voucherSuccess, setVoucherSuccess] = useState('');
 
   // Submit & Modal state
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -130,20 +125,8 @@ export const BookingCheckoutPage = () => {
     return { longRentalDiscount: 0, longRentalDiscountPercent: 0 };
   }, [totalDays, rentalFee]);
 
-  // Dynamic Voucher Discount Calculation
-  const voucherDiscount = useMemo(() => {
-    if (!appliedVoucher) return 0;
-    if (appliedVoucher === STRINGS.booking.voucher.codes.welcome50) {
-      return Math.min(MAGIC_NUMBERS.BOOKING.VOUCHER_WELCOME50_DISCOUNT, rentalFee);
-    }
-    if (appliedVoucher === STRINGS.booking.voucher.codes.weekend10) {
-      return Math.round(rentalFee * (MAGIC_NUMBERS.BOOKING.VOUCHER_WEEKEND10_PERCENT / 100));
-    }
-    return 0;
-  }, [appliedVoucher, rentalFee]);
-
-  const depositValue = device?.depositValue || 0;
-  const finalRentalFee = Math.max(0, rentalFee - longRentalDiscount - voucherDiscount);
+  const depositValue = device?.depositValue ?? device?.depositAmount ?? 0;
+  const finalRentalFee = Math.max(0, rentalFee - longRentalDiscount);
   const totalAmount = finalRentalFee + depositValue;
 
   // Handle Date Selection Change
@@ -153,57 +136,6 @@ export const BookingCheckoutPage = () => {
     setTotalDays(days || 1);
     setFormError(null);
   }, []);
-
-  // Handle Voucher Apply
-  const handleApplyVoucher = async (code) => {
-    setVoucherError('');
-    setVoucherSuccess('');
-    const cleanCode = (code || '').trim().toUpperCase();
-
-    if (!cleanCode) {
-      setVoucherError(STRINGS.booking.voucher.errors.empty);
-      return;
-    }
-
-    try {
-      if (startDate && endDate) {
-        const res = await api.post(API_CONFIG.ENDPOINTS.BOOKING_VALIDATE_PRICING, {
-          deviceId: currentDeviceId,
-          startDate,
-          endDate,
-          voucherCode: cleanCode,
-        });
-
-        if (res.success && res.data?.voucherValid) {
-          setAppliedVoucher(cleanCode);
-          setVoucherSuccess(res.data.voucherMessage || STRINGS.booking.voucher.success);
-        } else {
-          setVoucherError(res.data?.voucherMessage || STRINGS.booking.voucher.errors.invalid);
-        }
-      } else {
-        if (cleanCode === STRINGS.booking.voucher.codes.welcome50 || cleanCode === STRINGS.booking.voucher.codes.weekend10) {
-          setAppliedVoucher(cleanCode);
-          setVoucherSuccess(STRINGS.booking.voucher.success);
-        } else {
-          setVoucherError(STRINGS.booking.voucher.errors.invalid);
-        }
-      }
-    } catch {
-      if (cleanCode === STRINGS.booking.voucher.codes.welcome50 || cleanCode === STRINGS.booking.voucher.codes.weekend10) {
-        setAppliedVoucher(cleanCode);
-        setVoucherSuccess(STRINGS.booking.voucher.success);
-      } else {
-        setVoucherError(STRINGS.booking.voucher.errors.invalid);
-      }
-    }
-  };
-
-  // Handle Voucher Remove
-  const handleRemoveVoucher = () => {
-    setAppliedVoucher('');
-    setVoucherError('');
-    setVoucherSuccess('');
-  };
 
   // Form Validation
   const canSubmit = useMemo(() => {
@@ -271,7 +203,7 @@ export const BookingCheckoutPage = () => {
           phone: phone.trim(),
           email: user?.email || '',
         },
-        voucherCode: appliedVoucher,
+        voucherCode: '',
         note: note.trim(),
         paymentMethod,
       };
@@ -647,16 +579,8 @@ export const BookingCheckoutPage = () => {
             )}
           </div>
 
-          {/* Right Column: Order Summary & Voucher (5 cols) */}
+          {/* Right Column: Order Summary (5 cols) */}
           <div className="lg:col-span-5 flex flex-col gap-6">
-            <VoucherField
-              appliedVoucher={appliedVoucher}
-              onApply={handleApplyVoucher}
-              onRemove={handleRemoveVoucher}
-              feedbackError={voucherError}
-              feedbackSuccess={voucherSuccess}
-            />
-
             <OrderSummaryCard
               device={device}
               totalDays={totalDays}
@@ -664,8 +588,6 @@ export const BookingCheckoutPage = () => {
               rentalFee={rentalFee}
               longRentalDiscount={longRentalDiscount}
               longRentalDiscountPercent={longRentalDiscountPercent}
-              voucherDiscount={voucherDiscount}
-              appliedVoucher={appliedVoucher}
               depositValue={depositValue}
               totalAmount={totalAmount}
               isSubmitting={isSubmitting}
@@ -748,6 +670,20 @@ export const BookingCheckoutPage = () => {
             <div className="flex flex-col sm:flex-row gap-3 w-full">
               <button
                 type="button"
+                onClick={() =>
+                  navigate(
+                    ROUTES.MESSAGES_PATH(
+                      successBooking._id || successBooking.id || successBooking.bookingId
+                    )
+                  )
+                }
+                className="flex-1 py-3 px-4 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-1.5"
+              >
+                <MessageSquare className="w-4 h-4" />
+                <span>Nhắn tin với Chủ máy</span>
+              </button>
+              <button
+                type="button"
                 onClick={() => navigate(ROUTES.EXPLORE)}
                 className="flex-1 py-3 px-4 rounded-xl border border-slate-200 text-slate-700 font-bold text-xs hover:bg-slate-100 transition"
               >
@@ -756,7 +692,7 @@ export const BookingCheckoutPage = () => {
               <button
                 type="button"
                 onClick={() => navigate(successBooking?.bookingCode ? ROUTES.BOOKING_DETAIL_PATH(successBooking.bookingCode) : ROUTES.MY_BOOKINGS)}
-                className="flex-1 py-3 px-4 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-bold text-xs shadow-md transition"
+                className="flex-1 py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs shadow-md transition"
               >
                 {STRINGS.booking.successModal.viewMyBookingsBtn}
               </button>

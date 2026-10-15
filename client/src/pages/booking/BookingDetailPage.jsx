@@ -19,6 +19,7 @@ import {
 import { STRINGS } from '../../constants/strings.js';
 import { ROUTES } from '../../routes/routes.js';
 import { fetchBookingById, cancelBooking } from '../../services/bookingService.js';
+import { useAuth } from '../../context/AuthContext.jsx';
 import { BookingStatusBadge } from '../../components/booking/BookingStatusBadge.jsx';
 import { OrderTimelineStepper, OrderActivityHistory } from '../../components/booking/OrderTimelineStepper.jsx';
 import { CancelBookingModal } from '../../components/booking/CancelBookingModal.jsx';
@@ -29,6 +30,7 @@ const T = STRINGS.booking.detail;
 export const BookingDetailPage = () => {
   const { bookingId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [booking, setBooking] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -122,6 +124,22 @@ export const BookingDetailPage = () => {
 
   const device = booking.device || booking.deviceId || {};
   const owner = booking.owner || booking.ownerId || {};
+  const renter = booking.renter || booking.renterId || {};
+  const isCurrentOwner = Boolean(
+    user && owner?._id && String(user._id || user.id) === String(owner._id || owner.id)
+  );
+
+  const partyTitle = isCurrentOwner ? 'Renter Information' : T.sections.owner;
+  const party = isCurrentOwner
+    ? {
+        name: booking.renterInfo?.name || renter.name || 'Renter',
+        email: booking.renterInfo?.email || renter.email,
+        phone: booking.renterInfo?.phone || renter.phone,
+        avatar: renter.avatar,
+        isVerified: renter.isVerified,
+      }
+    : owner;
+
   const deliveryAddress = typeof booking.deliveryAddress === 'object' && booking.deliveryAddress !== null
     ? booking.deliveryAddress.address || ''
     : (booking.deliveryAddress || '');
@@ -311,60 +329,60 @@ export const BookingDetailPage = () => {
               </div>
             </div>
 
-            {/* Device Owner Info */}
+            {/* Counterparty Information (Owner for Renter, Renter for Owner) */}
             <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
               <h2 className="text-base font-bold text-slate-800 pb-4 border-b border-slate-100 mb-4 flex items-center gap-2">
                 <User className="w-5 h-5 text-brand-500" />
-                {T.sections.owner}
+                {partyTitle}
               </h2>
 
-              {owner && (owner.name || owner.email) ? (
+              {party && (party.name || party.email) ? (
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center font-bold text-base overflow-hidden">
-                      {owner.avatar ? (
-                        <img src={owner.avatar} alt={owner.name} className="w-full h-full object-cover" />
+                      {party.avatar ? (
+                        <img src={party.avatar} alt={party.name} className="w-full h-full object-cover" />
                       ) : (
-                        (owner.name || 'O').charAt(0).toUpperCase()
+                        (party.name || 'U').charAt(0).toUpperCase()
                       )}
                     </div>
                     <div>
                       <div className="flex items-center gap-1.5">
-                        <span className="text-sm font-bold text-slate-900">{owner.name || 'Owner'}</span>
-                        {owner.isVerified && (
+                        <span className="text-sm font-bold text-slate-900">{party.name || (isCurrentOwner ? 'Renter' : 'Owner')}</span>
+                        {party.isVerified && (
                           <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
                             <ShieldCheck className="w-3 h-3" />
                             {T.ownerVerified}
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-slate-400 mt-0.5">{owner.email}</p>
+                      <p className="text-xs text-slate-400 mt-0.5">{party.email}</p>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2">
-                    {owner.phone && (
+                    {party.phone && (
                       <a
-                        href={`tel:${owner.phone}`}
+                        href={`tel:${party.phone}`}
                         className="px-3 py-1.5 rounded-full bg-brand-50 text-brand-700 hover:bg-brand-100 font-semibold text-xs transition flex items-center gap-1"
                       >
                         <Phone className="w-3 h-3" />
-                        {T.callOwnerBtn}
+                        {isCurrentOwner ? 'Call Renter' : T.callOwnerBtn}
                       </a>
                     )}
-                    {owner.email && (
+                    {party.email && (
                       <a
-                        href={`mailto:${owner.email}`}
+                        href={`mailto:${party.email}`}
                         className="px-3 py-1.5 rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200 font-semibold text-xs transition flex items-center gap-1"
                       >
                         <Mail className="w-3 h-3" />
-                        {T.emailOwnerBtn}
+                        {isCurrentOwner ? 'Email Renter' : T.emailOwnerBtn}
                       </a>
                     )}
                   </div>
                 </div>
               ) : (
-                <p className="text-xs text-slate-400 italic">{T.ownerUnavailable}</p>
+                <p className="text-xs text-slate-400 italic">{isCurrentOwner ? 'Renter information unavailable' : T.ownerUnavailable}</p>
               )}
             </div>
 
@@ -429,17 +447,16 @@ export const BookingDetailPage = () => {
                   </span>
                 </div>
 
+                {/* Discount (if any) */}
                 {booking.discountAmount > 0 && (
                   <div className="flex justify-between text-emerald-600">
-                    <span>{T.fields.discount}</span>
-                    <span className="font-bold">-{formatPrice(booking.discountAmount)}</span>
-                  </div>
-                )}
-
-                {booking.voucherCode && (
-                  <div className="flex justify-between text-brand-700">
-                    <span>{T.fields.voucher} ({booking.voucherCode})</span>
-                    <span className="font-bold">-{formatPrice(booking.voucherDiscount || 0)}</span>
+                    <span>
+                      {T.fields.discount}
+                      {booking.discountPercent ? ` (${booking.discountPercent}%)` : ''}
+                    </span>
+                    <span className="font-bold">
+                      -{formatPrice(booking.discountAmount)}
+                    </span>
                   </div>
                 )}
 

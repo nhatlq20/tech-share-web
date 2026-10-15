@@ -14,7 +14,8 @@ const getBaseUrl = () => {
     // Ignore in environments without import.meta support
   }
   if (typeof window !== 'undefined') {
-    if (window.location.hostname === 'localhost' && window.location.port === '3000') {
+    // Tự động kết nối trực tiếp backend Express local (bỏ qua proxy CRA tránh bottleneck)
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
       return 'http://localhost:5000/api';
     }
     return '/api';
@@ -69,10 +70,34 @@ const getAuthHeaders = () => {
   return {};
 };
 
+/**
+ * Fetch kèm cơ chế timeout (15s) và tự động thử lại 1 lần nếu gặp lỗi mạng (Failed to fetch)
+ */
+const fetchWithRetry = async (url, fetchOptions = {}, retries = 1) => {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+      const res = await fetch(url, {
+        ...fetchOptions,
+        signal: fetchOptions.signal || controller.signal,
+      });
+      clearTimeout(timeoutId);
+      return res;
+    } catch (err) {
+      if (attempt === retries) {
+        throw err;
+      }
+      // Chờ 350ms rồi thử lại
+      await new Promise((resolve) => setTimeout(resolve, 350));
+    }
+  }
+};
+
 export const api = {
   get: async (endpoint, options = {}) => {
     const url = buildUrl(endpoint, options.params);
-    const res = await fetch(url, {
+    const res = await fetchWithRetry(url, {
       method: 'GET',
       headers: {
         Accept: 'application/json',
@@ -86,7 +111,7 @@ export const api = {
 
   post: async (endpoint, data, options = {}) => {
     const url = buildUrl(endpoint, options.params);
-    const res = await fetch(url, {
+    const res = await fetchWithRetry(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -102,7 +127,7 @@ export const api = {
 
   patch: async (endpoint, data, options = {}) => {
     const url = buildUrl(endpoint, options.params);
-    const res = await fetch(url, {
+    const res = await fetchWithRetry(url, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
@@ -118,7 +143,7 @@ export const api = {
 
   put: async (endpoint, data, options = {}) => {
     const url = buildUrl(endpoint, options.params);
-    const res = await fetch(url, {
+    const res = await fetchWithRetry(url, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -134,7 +159,7 @@ export const api = {
 
   delete: async (endpoint, options = {}) => {
     const url = buildUrl(endpoint, options.params);
-    const res = await fetch(url, {
+    const res = await fetchWithRetry(url, {
       method: 'DELETE',
       headers: {
         Accept: 'application/json',
