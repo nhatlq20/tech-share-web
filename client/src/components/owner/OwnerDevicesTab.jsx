@@ -1,32 +1,29 @@
-import React, { useState, useMemo } from 'react';
-import { 
-  Search, 
-  PlusCircle, 
-  Star, 
-  Calendar
-} from 'lucide-react';
-import { STRINGS } from '../../constants/strings';
-import { COLORS, PRIMARY } from '../../constants/colors';
+import React, { useState, useMemo } from "react";
+import { Search, PlusCircle, Star, Calendar } from "lucide-react";
+import { STRINGS } from "../../constants/strings";
+import { COLORS, PRIMARY } from "../../constants/colors";
 
-export const OwnerDevicesTab = ({ 
-  devices = [], 
-  onToggleStatus, 
+export const OwnerDevicesTab = ({
+  devices = [],
+  onToggleStatus,
   onPostDevice,
-  onNavigateToCalendar
+  onNavigateToCalendar,
 }) => {
   const t = STRINGS.owner.devices;
   const tc = STRINGS.common;
 
   // Filter states
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
 
   // Filtered devices
   const filteredDevices = useMemo(() => {
     return devices.filter((d) => {
-      const matchSearch = d.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      const matchSearch =
+        d.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (d.brand && d.brand.toLowerCase().includes(searchTerm.toLowerCase()));
-      const matchCat = selectedCategory === 'all' || d.category === selectedCategory;
+      const matchCat =
+        selectedCategory === "all" || d.category === selectedCategory;
       return matchSearch && matchCat;
     });
   }, [devices, searchTerm, selectedCategory]);
@@ -39,8 +36,8 @@ export const OwnerDevicesTab = ({
           <h1 className="owner-page-title">{t.title}</h1>
           <p className="owner-page-subtitle">{t.subtitle}</p>
         </div>
-        <button 
-          type="button" 
+        <button
+          type="button"
           className="owner-btn-primary"
           onClick={onPostDevice}
         >
@@ -51,11 +48,11 @@ export const OwnerDevicesTab = ({
 
       {/* Filter and Search Bar */}
       <div className="owner-card flex flex-wrap items-center justify-between gap-4 p-4 mb-5">
-        <div className="owner-search-pill" style={{ width: '320px' }}>
+        <div className="owner-search-pill" style={{ width: "320px" }}>
           <Search size={15} color={COLORS.primary.DEFAULT} />
-          <input 
-            type="text" 
-            placeholder={t.searchPlaceholder} 
+          <input
+            type="text"
+            placeholder={t.searchPlaceholder}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -67,12 +64,12 @@ export const OwnerDevicesTab = ({
               key={key}
               type="button"
               className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                selectedCategory === key 
-                  ? 'bg-brand-500 text-white shadow-sm' 
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                selectedCategory === key
+                  ? "bg-brand-500 text-white shadow-sm"
+                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
               }`}
               style={{
-                backgroundColor: selectedCategory === key ? PRIMARY : undefined
+                backgroundColor: selectedCategory === key ? PRIMARY : undefined,
               }}
               onClick={() => setSelectedCategory(key)}
             >
@@ -93,7 +90,7 @@ export const OwnerDevicesTab = ({
                 <th>{t.table.colPrice}</th>
                 <th>{t.table.colRentals}</th>
                 <th>{t.table.colStatus}</th>
-                <th style={{ textAlign: 'right' }}>{t.table.colActions}</th>
+                <th style={{ textAlign: "right" }}>{t.table.colActions}</th>
               </tr>
             </thead>
             <tbody>
@@ -105,20 +102,27 @@ export const OwnerDevicesTab = ({
                 </tr>
               ) : (
                 filteredDevices.map((device) => {
-                  const isAvailable = device.status === 'available';
+                  const isAvailable = device.status === "available";
                   return (
                     <tr key={device._id}>
                       {/* Device name & image */}
                       <td>
                         <div className="flex items-center gap-3">
-                          <img 
-                            src={device.images?.[0] || 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=150&q=80'} 
+                          <img
+                            src={
+                              device.images?.[0] ||
+                              "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=150&q=80"
+                            }
                             alt={device.name}
                             className="w-12 h-12 rounded-xl object-cover border border-slate-200"
                           />
                           <div>
-                            <div className="font-semibold text-slate-800 text-sm line-clamp-1">{device.name}</div>
-                            <div className="text-xs text-slate-500">{device.brand} • {device.condition || 'Good'}</div>
+                            <div className="font-semibold text-slate-800 text-sm line-clamp-1">
+                              {device.name}
+                            </div>
+                            <div className="text-xs text-slate-500">
+                              {device.brand} • {device.condition || "Good"}
+                            </div>
                           </div>
                         </div>
                       </td>
@@ -133,11 +137,21 @@ export const OwnerDevicesTab = ({
                       {/* Pricing */}
                       <td>
                         <div className="text-sm font-bold text-slate-800">
-                          {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(device.dailyRate)}
-                          <span className="text-xs font-normal text-slate-500"> / {tc.day || 'day'}</span>
+                          {new Intl.NumberFormat("vi-VN", {
+                            style: "currency",
+                            currency: "VND",
+                          }).format(device.dailyRate)}
+                          <span className="text-xs font-normal text-slate-500">
+                            {" "}
+                            / {tc.day || "day"}
+                          </span>
                         </div>
                         <div className="text-[11px] text-slate-500">
-                          Deposit: {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(device.depositAmount || 0)}
+                          Deposit:{" "}
+                          {new Intl.NumberFormat("vi-VN", {
+                            style: "currency",
+                            currency: "VND",
+                          }).format(device.depositAmount || 0)}
                         </div>
                       </td>
 
@@ -148,37 +162,50 @@ export const OwnerDevicesTab = ({
                           <span>{device.ratingAvg || 5.0}</span>
                         </div>
                         <div className="text-[11px] text-slate-500 mt-0.5">
-                          {device.rentalCount || 0} {STRINGS.owner.overview.recentBookings.unitDays || 'rentals'}
+                          {device.rentalCount || 0}{" "}
+                          {STRINGS.owner.overview.recentBookings.unitDays ||
+                            "rentals"}
                         </div>
                       </td>
 
                       {/* Status & Quick Toggle */}
                       <td>
                         <div className="flex items-center gap-2">
-                          <span className={`owner-badge owner-badge-${device.status}`}>
-                            {device.status === 'available' ? t.status.available :
-                             device.status === 'rented' ? t.status.rented :
-                             device.status === 'maintenance' ? t.status.maintenance : t.status.hidden}
+                          <span
+                            className={`owner-badge owner-badge-${device.status}`}
+                          >
+                            {device.status === "available"
+                              ? t.status.available
+                              : device.status === "rented"
+                                ? t.status.rented
+                                : device.status === "maintenance"
+                                  ? t.status.maintenance
+                                  : t.status.hidden}
                           </span>
                           <button
                             type="button"
                             title={t.actions.statusToggle}
                             className={`w-7 h-4 rounded-full transition-colors relative cursor-pointer ${
-                              isAvailable ? 'bg-emerald-500' : 'bg-slate-300'
+                              isAvailable ? "bg-emerald-500" : "bg-slate-300"
                             }`}
-                            onClick={() => onToggleStatus(device._id, isAvailable ? 'hidden' : 'available')}
+                            onClick={() =>
+                              onToggleStatus(
+                                device._id,
+                                isAvailable ? "hidden" : "available",
+                              )
+                            }
                           >
-                            <span 
+                            <span
                               className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-transform ${
-                                isAvailable ? 'left-3.5' : 'left-0.5'
-                              }`} 
+                                isAvailable ? "left-3.5" : "left-0.5"
+                              }`}
                             />
                           </button>
                         </div>
                       </td>
 
                       {/* Actions */}
-                      <td style={{ textAlign: 'right' }}>
+                      <td style={{ textAlign: "right" }}>
                         <div className="flex items-center justify-end gap-2">
                           <button
                             type="button"
@@ -186,7 +213,10 @@ export const OwnerDevicesTab = ({
                             onClick={() => onNavigateToCalendar(device._id)}
                             title={t.actions.calendar}
                           >
-                            <Calendar size={13} color={COLORS.primary.DEFAULT} />
+                            <Calendar
+                              size={13}
+                              color={COLORS.primary.DEFAULT}
+                            />
                             <span>{t.actions.calendar}</span>
                           </button>
                         </div>

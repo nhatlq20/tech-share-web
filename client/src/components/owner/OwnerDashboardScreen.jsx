@@ -1,20 +1,20 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { Search, PlusCircle, RefreshCw } from 'lucide-react';
-import { OwnerSidebar } from './OwnerSidebar';
-import { OwnerOverviewTab } from './OwnerOverviewTab';
-import { OwnerDevicesTab } from './OwnerDevicesTab';
-import { OwnerBookingsTab } from './OwnerBookingsTab';
-import { OwnerCalendarTab } from './OwnerCalendarTab';
-import { OwnerAnalyticsTab } from './OwnerAnalyticsTab';
-import { OwnerWalletTab } from './OwnerWalletTab';
-import PostDevicePage from '../../pages/PostDevicePage';
-import { NotificationDropdown } from '../notifications/NotificationDropdown';
-import { ROUTES } from '../../routes/routes';
-import { STRINGS } from '../../constants/strings';
-import { API_CONFIG } from '../../constants/config';
-import { useAuth } from '../../context/AuthContext.jsx';
-import './OwnerWorkspace.css';
+import React, { useState, useEffect, useCallback } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { Search, PlusCircle, RefreshCw } from "lucide-react";
+import { OwnerSidebar } from "./OwnerSidebar";
+import { OwnerOverviewTab } from "./OwnerOverviewTab";
+import { OwnerBookingsTab } from "./OwnerBookingsTab";
+import { OwnerCalendarTab } from "./OwnerCalendarTab";
+import { OwnerAnalyticsTab } from "./OwnerAnalyticsTab";
+import { OwnerWalletTab } from "./OwnerWalletTab";
+import PostDevicePage from "../../pages/PostDevicePage";
+import MyDevicesPage from "../../pages/owner/MyDevicesPage";
+import { NotificationDropdown } from "../notifications/NotificationDropdown";
+import { ROUTES } from "../../routes/routes";
+import { STRINGS } from "../../constants/strings";
+import { API_CONFIG } from "../../constants/config";
+import { useAuth } from "../../context/AuthContext.jsx";
+import "./OwnerWorkspace.css";
 
 export const OwnerDashboardScreen = () => {
   const { logout } = useAuth();
@@ -27,9 +27,9 @@ export const OwnerDashboardScreen = () => {
     activeRentals: 0,
     pendingApprovals: 0,
     monthlyRevenue: 0,
-    monthlyRevenueFormatted: '0 ₫',
+    monthlyRevenueFormatted: "0 ₫",
     escrowHolding: 0,
-    escrowHoldingFormatted: '0 ₫',
+    escrowHoldingFormatted: "0 ₫",
     utilizationRate: 0,
     trustScore: 100,
     ratingAvg: 5.0,
@@ -37,10 +37,10 @@ export const OwnerDashboardScreen = () => {
   });
   const [devices, setDevices] = useState([]);
   const [bookings, setBookings] = useState([]);
-  const [charts, setCharts] = useState({ '7d': [], month: [], year: [] });
+  const [charts, setCharts] = useState({ "7d": [], month: [], year: [] });
   const [utilization, setUtilization] = useState([]);
   const [blockedDatesMap, setBlockedDatesMap] = useState({});
-  const [globalSearch, setGlobalSearch] = useState('');
+  const [globalSearch, setGlobalSearch] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   // Determine current active path
@@ -55,22 +55,28 @@ export const OwnerDashboardScreen = () => {
   const fetchOwnerData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const token = localStorage.getItem('techshare_token');
+      const token = localStorage.getItem("techshare_token");
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
       // 1. Fetch overview, KPI & charts
-      const resOverview = await fetch(`${API_CONFIG.BASE_URL}/owner/overview`, { headers });
+      const resOverview = await fetch(`${API_CONFIG.BASE_URL}/owner/overview`, {
+        headers,
+      });
       if (resOverview.ok) {
         const jsonOverview = await resOverview.json();
         if (jsonOverview.success && jsonOverview.data) {
           if (jsonOverview.data.kpi) setKpi(jsonOverview.data.kpi);
           if (jsonOverview.data.charts) setCharts(jsonOverview.data.charts);
-          if (jsonOverview.data.utilization) setUtilization(jsonOverview.data.utilization);
+          if (jsonOverview.data.utilization)
+            setUtilization(jsonOverview.data.utilization);
         }
       }
 
       // 2. Fetch owner equipment/devices
-      const resDev = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.OWNER_DEVICES}`, { headers });
+      const resDev = await fetch(
+        `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.OWNER_DEVICES}`,
+        { headers },
+      );
       if (resDev.ok) {
         const jsonDev = await resDev.json();
         if (jsonDev.success && Array.isArray(jsonDev.data)) {
@@ -87,7 +93,10 @@ export const OwnerDashboardScreen = () => {
       }
 
       // 3. Fetch owner bookings
-      const resBook = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.OWNER_BOOKINGS}`, { headers });
+      const resBook = await fetch(
+        `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.OWNER_BOOKINGS}`,
+        { headers },
+      );
       if (resBook.ok) {
         const jsonBook = await resBook.json();
         if (jsonBook.success && Array.isArray(jsonBook.data)) {
@@ -95,7 +104,7 @@ export const OwnerDashboardScreen = () => {
         }
       }
     } catch (err) {
-      console.error('Failed to fetch live owner data from DB:', err);
+      console.error("Failed to fetch live owner data from DB:", err);
     } finally {
       setIsLoading(false);
     }
@@ -108,22 +117,25 @@ export const OwnerDashboardScreen = () => {
   // Actions: Toggle device status (Active MongoDB mutation)
   const handleToggleDeviceStatus = async (deviceId, newStatus) => {
     setDevices((prev) =>
-      prev.map((d) => (d._id === deviceId ? { ...d, status: newStatus } : d))
+      prev.map((d) => (d._id === deviceId ? { ...d, status: newStatus } : d)),
     );
     try {
-      const token = localStorage.getItem('techshare_token');
+      const token = localStorage.getItem("techshare_token");
       const headers = {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       };
-      await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.OWNER_TOGGLE_DEVICE(deviceId)}`, {
-        method: 'PATCH',
-        headers,
-        body: JSON.stringify({ status: newStatus }),
-      });
+      await fetch(
+        `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.OWNER_TOGGLE_DEVICE(deviceId)}`,
+        {
+          method: "PATCH",
+          headers,
+          body: JSON.stringify({ status: newStatus }),
+        },
+      );
       fetchOwnerData();
     } catch (err) {
-      console.error('Failed to toggle device status in DB:', err);
+      console.error("Failed to toggle device status in DB:", err);
     }
   };
 
@@ -154,18 +166,21 @@ export const OwnerDashboardScreen = () => {
   // Actions: Approve booking (Active MongoDB mutation)
   const handleApproveBooking = async (bookingId) => {
     setBookings((prev) =>
-      prev.map((b) => (b._id === bookingId ? { ...b, status: 'approved' } : b))
+      prev.map((b) => (b._id === bookingId ? { ...b, status: "approved" } : b)),
     );
     try {
-      const token = localStorage.getItem('techshare_token');
+      const token = localStorage.getItem("techshare_token");
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.OWNER_APPROVE_BOOKING(bookingId)}`, {
-        method: 'PATCH',
-        headers,
-      });
+      await fetch(
+        `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.OWNER_APPROVE_BOOKING(bookingId)}`,
+        {
+          method: "PATCH",
+          headers,
+        },
+      );
       fetchOwnerData();
     } catch (err) {
-      console.error('Failed to approve booking in DB:', err);
+      console.error("Failed to approve booking in DB:", err);
     }
   };
 
@@ -173,64 +188,79 @@ export const OwnerDashboardScreen = () => {
   const handleRejectBooking = async (bookingId, reason) => {
     setBookings((prev) =>
       prev.map((b) =>
-        b._id === bookingId ? { ...b, status: 'rejected', rejectReason: reason } : b
-      )
+        b._id === bookingId
+          ? { ...b, status: "rejected", rejectReason: reason }
+          : b,
+      ),
     );
     try {
-      const token = localStorage.getItem('techshare_token');
+      const token = localStorage.getItem("techshare_token");
       const headers = {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       };
-      await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.OWNER_REJECT_BOOKING(bookingId)}`, {
-        method: 'PATCH',
-        headers,
-        body: JSON.stringify({ reason }),
-      });
+      await fetch(
+        `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.OWNER_REJECT_BOOKING(bookingId)}`,
+        {
+          method: "PATCH",
+          headers,
+          body: JSON.stringify({ reason }),
+        },
+      );
       fetchOwnerData();
     } catch (err) {
-      console.error('Failed to reject booking in DB:', err);
+      console.error("Failed to reject booking in DB:", err);
     }
   };
 
   // Actions: QR Handover -> active (Active MongoDB mutation)
   const handleHandover = async (bookingId) => {
     setBookings((prev) =>
-      prev.map((b) => (b._id === bookingId ? { ...b, status: 'active' } : b))
+      prev.map((b) => (b._id === bookingId ? { ...b, status: "active" } : b)),
     );
     try {
-      const token = localStorage.getItem('techshare_token');
+      const token = localStorage.getItem("techshare_token");
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.OWNER_HANDOVER_QR(bookingId)}`, {
-        method: 'PATCH',
-        headers,
-      });
+      await fetch(
+        `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.OWNER_HANDOVER_QR(bookingId)}`,
+        {
+          method: "PATCH",
+          headers,
+        },
+      );
       fetchOwnerData();
     } catch (err) {
-      console.error('Failed to handover booking in DB:', err);
+      console.error("Failed to handover booking in DB:", err);
     }
   };
 
   // Actions: Complete return -> completed (Active MongoDB mutation)
   const handleCompleteReturn = async (bookingId) => {
     setBookings((prev) =>
-      prev.map((b) => (b._id === bookingId ? { ...b, status: 'completed' } : b))
+      prev.map((b) =>
+        b._id === bookingId ? { ...b, status: "completed" } : b,
+      ),
     );
     try {
-      const token = localStorage.getItem('techshare_token');
+      const token = localStorage.getItem("techshare_token");
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.OWNER_COMPLETE_BOOKING(bookingId)}`, {
-        method: 'PATCH',
-        headers,
-      });
+      await fetch(
+        `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.OWNER_COMPLETE_BOOKING(bookingId)}`,
+        {
+          method: "PATCH",
+          headers,
+        },
+      );
       fetchOwnerData();
     } catch (err) {
-      console.error('Failed to complete booking in DB:', err);
+      console.error("Failed to complete booking in DB:", err);
     }
   };
 
   // Pending count for sidebar badge
-  const pendingApprovalsCount = bookings.filter((b) => b.status === 'pending').length;
+  const pendingApprovalsCount = bookings.filter(
+    (b) => b.status === "pending",
+  ).length;
 
   return (
     <div className="owner-hub-wrapper">
@@ -248,7 +278,7 @@ export const OwnerDashboardScreen = () => {
         {/* Topbar */}
         <header className="owner-topbar">
           <div className="owner-search-pill">
-            <Search size={16} style={{ color: '#67BEC3', flexShrink: 0 }} />
+            <Search size={16} style={{ color: "#67BEC3", flexShrink: 0 }} />
             <input
               type="text"
               placeholder={STRINGS.admin.dashboard.searchPlaceholder}
@@ -278,7 +308,9 @@ export const OwnerDashboardScreen = () => {
             >
               <RefreshCw
                 size={16}
-                style={{ animation: isLoading ? 'spin 1s linear infinite' : 'none' }}
+                style={{
+                  animation: isLoading ? "spin 1s linear infinite" : "none",
+                }}
               />
             </button>
 
@@ -288,37 +320,40 @@ export const OwnerDashboardScreen = () => {
             {/* Partner Header Chip */}
             <div
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                paddingLeft: '8px',
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                paddingLeft: "8px",
               }}
             >
               <img
-                src={kpi?.owner?.avatarUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop"}
+                src={
+                  kpi?.owner?.avatarUrl ||
+                  "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop"
+                }
                 alt={STRINGS.owner.sidebar.avatarAlt}
                 style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: '50%',
-                  border: '2px solid #67BEC3',
-                  objectFit: 'cover',
+                  width: "36px",
+                  height: "36px",
+                  borderRadius: "50%",
+                  border: "2px solid #67BEC3",
+                  objectFit: "cover",
                 }}
               />
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <div style={{ display: "flex", flexDirection: "column" }}>
                 <span
                   style={{
-                    fontSize: '13px',
+                    fontSize: "13px",
                     fontWeight: 700,
-                    color: '#0F172A',
+                    color: "#0F172A",
                   }}
                 >
                   {kpi?.owner?.name || STRINGS.owner.sidebar.ownerName}
                 </span>
                 <span
                   style={{
-                    fontSize: '11px',
-                    color: '#286E74',
+                    fontSize: "11px",
+                    color: "#286E74",
                     fontWeight: 600,
                   }}
                 >
@@ -332,7 +367,8 @@ export const OwnerDashboardScreen = () => {
         {/* Content Body Based on URL Route */}
         <section className="owner-content-body">
           {/* A. /owner/dashboard or /owner */}
-          {(currentPath === ROUTES.OWNER_DASHBOARD || currentPath === ROUTES.OWNER) && (
+          {(currentPath === ROUTES.OWNER_DASHBOARD ||
+            currentPath === ROUTES.OWNER) && (
             <OwnerOverviewTab
               kpi={kpi}
               charts={charts}
@@ -354,12 +390,7 @@ export const OwnerDashboardScreen = () => {
 
           {/* B. /owner/devices */}
           {currentPath === ROUTES.OWNER_DEVICES && (
-            <OwnerDevicesTab
-              devices={devices}
-              onToggleStatus={handleToggleDeviceStatus}
-              onPostDevice={() => handleNavigate(ROUTES.OWNER_DEVICE_NEW)}
-              onNavigateToCalendar={(devId) => handleNavigate(ROUTES.OWNER_CALENDAR)}
-            />
+            <MyDevicesPage />
           )}
 
           {/* C. /owner/bookings */}
@@ -396,10 +427,7 @@ export const OwnerDashboardScreen = () => {
 
           {/* F. /owner/wallet */}
           {currentPath === ROUTES.OWNER_WALLET && (
-            <OwnerWalletTab
-              kpi={kpi}
-              bookings={bookings}
-            />
+            <OwnerWalletTab kpi={kpi} bookings={bookings} />
           )}
         </section>
       </main>

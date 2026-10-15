@@ -29,6 +29,7 @@ export const ROUTES = {
   OWNER_CALENDAR: '/owner/calendar',
   OWNER_ANALYTICS: '/owner/analytics',
   OWNER_WALLET: '/owner/wallet',
+
 };
 
 export default ROUTES;

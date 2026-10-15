@@ -526,6 +526,35 @@ export const createDevice = async (req, res) => {
   }
 };
 
+export const myDevices = async (req, res) => {
+  try {
+    const ownerId = req.user.userId;
+
+    const devices = await Device.find({
+      owner: ownerId,
+      isDeleted: { $ne: true },
+    });
+
+    if (devices.length === 0) {
+      return res.status(200).json({
+        success: true,
+        message: "Bạn chưa có thiết bị nào",
+        devices: [],
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Lấy danh sách thiết bị thành công",
+      devices,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Internal server error",
+    });
+  }
+};
 export default {
   getDevices,
   getNearbyDevices,
