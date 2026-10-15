@@ -43,9 +43,12 @@ export const AdminSidebarContent = ({
   pendingEkycCount = 0,
   onLogout,
   onSwitchToClient,
+  admin,
+  user,
 }) => {
   const t = STRINGS.admin.dashboard;
   const navItems = getNavItems(t);
+  const currentAdmin = admin || user;
 
   return (
     <aside className="admin-sidebar bg-white border-r border-slate-200" aria-label={t.brandSubtitle}>
@@ -70,17 +73,24 @@ export const AdminSidebarContent = ({
           </div>
         </a>
 
-        {/* Profile Card */}
+        {/* Profile Card synced from Database */}
         <div className="admin-profile-badge-wrap">
           <img
-            src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop"
-            alt={t.avatarAlt}
+            src={currentAdmin?.avatar || currentAdmin?.avatarUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop"}
+            alt={currentAdmin?.name || t.avatarAlt}
             className="admin-profile-avatar"
+            style={{ objectFit: 'cover' }}
           />
           <div className="admin-profile-info">
-            <div className="admin-profile-name" title={t.adminName}>{t.adminName}</div>
-            <div className="admin-profile-role">{t.adminRole}</div>
-            <div className="admin-profile-email" title={t.adminEmail}>{t.adminEmail}</div>
+            <div className="admin-profile-name" title={currentAdmin?.name || ''}>
+              {currentAdmin?.name || 'Đang đồng bộ...'}
+            </div>
+            <div className="admin-profile-role">
+              {currentAdmin?.role === 'admin' ? 'Quản trị viên hệ thống' : (currentAdmin?.role || t.adminRole)}
+            </div>
+            <div className="admin-profile-email" title={currentAdmin?.email || ''}>
+              {currentAdmin?.email || ''}
+            </div>
           </div>
         </div>
       </div>

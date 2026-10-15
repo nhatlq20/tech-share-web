@@ -7,13 +7,16 @@ import { OwnerBookingsTab } from "./OwnerBookingsTab";
 import { OwnerCalendarTab } from "./OwnerCalendarTab";
 import { OwnerAnalyticsTab } from "./OwnerAnalyticsTab";
 import { OwnerWalletTab } from "./OwnerWalletTab";
+import { OwnerAIAssistantTab } from "./OwnerAIAssistantTab";
 import PostDevicePage from "../../pages/PostDevicePage";
 import MyDevicesPage from "../../pages/owner/MyDevicesPage";
+import MessagesPage from "../../pages/MessagesPage";
 import { NotificationDropdown } from "../notifications/NotificationDropdown";
 import { ROUTES } from "../../routes/routes";
 import { STRINGS } from "../../constants/strings";
 import { API_CONFIG } from "../../constants/config";
 import { useAuth } from "../../context/AuthContext.jsx";
+import { useChat } from "../../context/ChatContext.jsx";
 import "./OwnerWorkspace.css";
 
 export const OwnerDashboardScreen = () => {
@@ -116,6 +119,7 @@ export const OwnerDashboardScreen = () => {
   }, [fetchOwnerData]);
 
   // Actions: Toggle device status (Active MongoDB mutation)
+  // eslint-disable-next-line no-unused-vars
   const handleToggleDeviceStatus = async (deviceId, newStatus) => {
     setDevices((prev) =>
       prev.map((d) => (d._id === deviceId ? { ...d, status: newStatus } : d)),

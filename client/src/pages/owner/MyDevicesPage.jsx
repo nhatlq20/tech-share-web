@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import "./MyDevicesPage.css";
 import { getMyDevices } from "../../services/deviceService";
-import { MdBuild } from "react-icons/md";
+import { Wrench } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ROUTES from "../../routes/routes";
 function DeviceIcon() {
@@ -73,7 +73,7 @@ function MyDevicesPage() {
             <span className="my-devices-stat-caption">On your account</span>
           </article>
           <article className="my-devices-stat-card">
-            <MdBuild size={20} color="#f59e0b" />
+            <Wrench size={20} color="#f59e0b" />
             <div>
               <p>Maintenance Devices</p>
               <strong>{maintenance}</strong>
