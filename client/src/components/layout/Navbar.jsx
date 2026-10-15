@@ -1,13 +1,15 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import { MessageSquare } from 'lucide-react';
 import { ROUTES } from '../../routes/routes.js';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { useChat } from '../../context/ChatContext.jsx';
 import { NotificationDropdown } from '../notifications/NotificationDropdown.jsx';
 import './Navbar.css';
 
 export const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuth();
-  const navigate = useNavigate();
+  const { unreadMessagesCount } = useChat();
 
   const handleLogout = () => {
     logout();
@@ -44,6 +46,11 @@ export const Navbar = () => {
           <Link to={ROUTES.COMPARE || '/compare'} className="navbar-link">
             Compare
           </Link>
+          {isAuthenticated && (
+            <Link to={ROUTES.MY_BOOKINGS} className="navbar-link">
+              My Bookings
+            </Link>
+          )}
           {/* Chỉ hiện với Owner */}
           {user?.role === 'owner' && (
             <Link to={ROUTES.OWNER} className="navbar-link navbar-link-owner">
@@ -56,6 +63,24 @@ export const Navbar = () => {
         <div className="navbar-actions">
           {isAuthenticated ? (
             <div className="navbar-user-section">
+              {/* Messages Chat Link */}
+              <Link
+                to={ROUTES.MESSAGES}
+                className="notification-bell-btn relative"
+                title="Tin nhắn trao đổi thiết bị"
+                aria-label="Tin nhắn"
+              >
+                <MessageSquare size={19} />
+                {unreadMessagesCount > 0 && (
+                  <span
+                    className="bg-red-500 text-white text-[11px] font-bold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center absolute -top-1 -right-1 shadow-xs leading-none"
+                    aria-label={`${unreadMessagesCount} tin nhắn chưa đọc`}
+                  >
+                    {unreadMessagesCount > 99 ? '99+' : unreadMessagesCount}
+                  </span>
+                )}
+              </Link>
+
               {/* Notification Bell Dropdown */}
               <NotificationDropdown />
 

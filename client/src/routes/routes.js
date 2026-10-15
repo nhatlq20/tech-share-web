@@ -10,6 +10,9 @@ export const ROUTES = {
   BOOKING_CHECKOUT: '/booking/:deviceId',
   BOOKING_CHECKOUT_PATH: (deviceId) => `/booking/${deviceId}`,
   MY_BOOKINGS: '/my-bookings',
+  MY_BOOKINGS_TAB_PATH: (status) => `/my-bookings?status=${encodeURIComponent(status)}`,
+  BOOKING_DETAIL: '/my-bookings/:bookingId',
+  BOOKING_DETAIL_PATH: (bookingId) => `/my-bookings/${encodeURIComponent(bookingId)}`,
   NEARBY: '/nearby',
   LOGIN: '/login',
   REGISTER: '/register',
@@ -19,6 +22,9 @@ export const ROUTES = {
   DASHBOARD: '/admin/dashboard',
   ADMIN_LOGIN: '/admin/login',
   PROFILE: '/profile',
+  MESSAGES: '/messages',
+  MESSAGES_CHAT: '/messages/:bookingId',
+  MESSAGES_PATH: (bookingId) => `/messages/${bookingId}`,
 
   // Owner Hub Routes
   OWNER: '/owner',

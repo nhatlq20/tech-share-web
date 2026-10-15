@@ -20,6 +20,7 @@ export const OwnerDashboardScreen = () => {
   const { logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const { unreadMessagesCount } = useChat();
 
   // State initialized with clean DB empty states (No seed data)
   const [kpi, setKpi] = useState({
@@ -269,6 +270,7 @@ export const OwnerDashboardScreen = () => {
         currentPath={currentPath}
         onNavigate={handleNavigate}
         pendingCount={pendingApprovalsCount}
+        unreadMessagesCount={unreadMessagesCount}
         owner={kpi?.owner}
         onLogout={logout}
       />
@@ -365,7 +367,13 @@ export const OwnerDashboardScreen = () => {
         </header>
 
         {/* Content Body Based on URL Route */}
-        <section className="owner-content-body">
+        <section
+          className={`owner-content-body ${
+            currentPath.startsWith(ROUTES.OWNER_MESSAGES)
+              ? '!p-0 !gap-0 h-[calc(100vh-69px)] overflow-hidden'
+              : ''
+          }`}
+        >
           {/* A. /owner/dashboard or /owner */}
           {(currentPath === ROUTES.OWNER_DASHBOARD ||
             currentPath === ROUTES.OWNER) && (
@@ -428,6 +436,16 @@ export const OwnerDashboardScreen = () => {
           {/* F. /owner/wallet */}
           {currentPath === ROUTES.OWNER_WALLET && (
             <OwnerWalletTab kpi={kpi} bookings={bookings} />
+          )}
+
+          {/* G. /owner/ai-assistant */}
+          {currentPath === ROUTES.OWNER_AI_ASSISTANT && (
+            <OwnerAIAssistantTab />
+          )}
+
+          {/* H. /owner/messages & /owner/messages/:bookingId */}
+          {currentPath.startsWith(ROUTES.OWNER_MESSAGES) && (
+            <MessagesPage />
           )}
         </section>
       </main>

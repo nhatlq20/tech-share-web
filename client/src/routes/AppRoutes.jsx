@@ -8,15 +8,19 @@ import { PublicLayout } from '../layouts/PublicLayout.jsx';
 import { HomePage } from '../pages/HomePage.jsx';
 import { CatalogPage } from '../pages/CatalogPage.jsx';
 import { DeviceDetailPage } from '../pages/DeviceDetailPage.jsx';
+// eslint-disable-next-line no-unused-vars
 import { BookingCheckoutPage } from '../pages/booking/BookingCheckoutPage.jsx';
+import { MyBookingsPage } from '../pages/booking/MyBookingsPage.jsx';
+import { BookingDetailPage } from '../pages/booking/BookingDetailPage.jsx';
 import { NearbyPage } from '../pages/NearbyPage.jsx';
 import { LoginPage } from '../pages/LoginPage.jsx';
-import { RegisterPage } from '../pages/RegisterPage.jsx';
+import { RegisterPage } from '../pages/RegisterPage.tsx';
 import { NotFoundPage } from '../pages/NotFoundPage.jsx';
 
 // Auth-required pages
 import { ProfilePage } from '../pages/ProfilePage.jsx';
 import { DashboardPage } from '../pages/DashboardPage.jsx';
+import { MessagesPage } from '../pages/MessagesPage.jsx';
 
 // Role-specific pages
 import { AdminPage } from '../pages/AdminPage.jsx';
@@ -95,6 +99,30 @@ export const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
+      <Route
+        path={ROUTES.OWNER_AI_ASSISTANT}
+        element={
+          <ProtectedRoute roles={['owner', 'admin']}>
+            <OwnerPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path={ROUTES.OWNER_MESSAGES}
+        element={
+          <ProtectedRoute roles={['owner', 'admin']}>
+            <OwnerPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path={ROUTES.OWNER_MESSAGES_CHAT}
+        element={
+          <ProtectedRoute roles={['owner', 'admin']}>
+            <OwnerPage />
+          </ProtectedRoute>
+        }
+      />
 
       {/* ── Public Layout (có Navbar + Footer) ───────────────────────── */}
       <Route element={<PublicLayout />}>
@@ -110,6 +138,22 @@ export const AppRoutes = () => {
 
         {/* Cần đăng nhập (bất kỳ role) */}
         <Route
+          path={ROUTES.MY_BOOKINGS}
+          element={
+            <ProtectedRoute roles={['renter', 'owner', 'admin']}>
+              <MyBookingsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={ROUTES.BOOKING_DETAIL}
+          element={
+            <ProtectedRoute roles={['renter', 'owner', 'admin']}>
+              <BookingDetailPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path={ROUTES.PROFILE}
           element={
             <ProtectedRoute roles={['renter', 'owner', 'admin']}>
@@ -122,6 +166,22 @@ export const AppRoutes = () => {
           element={
             <ProtectedRoute roles={['renter', 'owner', 'admin']}>
               <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={ROUTES.MESSAGES}
+          element={
+            <ProtectedRoute roles={['renter', 'owner', 'admin']}>
+              <MessagesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={ROUTES.MESSAGES_CHAT}
+          element={
+            <ProtectedRoute roles={['renter', 'owner', 'admin']}>
+              <MessagesPage />
             </ProtectedRoute>
           }
         />

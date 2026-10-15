@@ -1,6 +1,77 @@
 import mongoose from 'mongoose';
 import Device from '../models/Device.js';
 import Booking from '../models/Booking.js';
+import '../models/User.js';
+
+/**
+ * My Bookings hub tabs. Each tab maps to one or more persisted booking statuses.
+ * The "cancelled" tab also groups owner-rejected bookings.
+ */
+const MY_BOOKING_TAB_STATUSES = {
+  pending: ['pending'],
+  approved: ['approved'],
+  active: ['active'],
+  completed: ['completed'],
+  cancelled: ['cancelled', 'rejected'],
+};
+
+const MY_BOOKINGS_DEFAULT_LIMIT = 10;
+const MY_BOOKINGS_MAX_LIMIT = 50;
+const CANCEL_REASON_MAX_LENGTH = 300;
+const CANCELLABLE_STATUS = 'pending';
+
+const BOOKING_DEVICE_LIST_FIELDS =
+  'title name brand category images dailyRate pricePerDay depositValue address';
+const BOOKING_DEVICE_DETAIL_FIELDS =
+  'title name brand category images dailyRate pricePerDay depositValue address specs condition';
+const BOOKING_PARTY_FIELDS = 'name email phone avatar rating totalReviews isVerified';
+
+/**
+ * Resolve the authenticated user's ObjectId from the JWT payload set by `protect`.
+ */
+const getAuthUserObjectId = (req) => {
+  const rawId = req.user?.userId || req.user?._id || req.user?.id;
+  return rawId && mongoose.isValidObjectId(rawId)
+    ? new mongoose.Types.ObjectId(String(rawId))
+    : null;
+};
+
+/**
+ * Build a query that matches bookings by ObjectId or bookingCode.
+ */
+const buildBookingLookup = (id) => (
+  mongoose.isValidObjectId(id)
+    ? { $or: [{ _id: id }, { bookingCode: id }] }
+    : { bookingCode: id }
+);
+
+const isSameId = (a, b) => Boolean(a && b) && String(a._id || a) === String(b._id || b);
+
+/**
+ * Normalize alias fields (device/deviceId, renter/renterId, owner/ownerId) on lean documents.
+ */
+const normalizeBookingAliases = (booking) => {
+  if (!booking) return booking;
+  const device = booking.device || booking.deviceId || null;
+  const resolveParty = (a, b) => {
+    if (a && typeof a === 'object' && (a.name || a.email || a._id)) return a;
+    if (b && typeof b === 'object' && (b.name || b.email || b._id)) return b;
+    return a || b || null;
+  };
+  const owner = resolveParty(booking.owner, booking.ownerId);
+  const renter = resolveParty(booking.renter, booking.renterId);
+  return {
+    ...booking,
+    device,
+    deviceId: device,
+    owner,
+    ownerId: owner,
+    renter,
+    renterId: renter,
+    pricePerDayAtBooking: booking.pricePerDayAtBooking ?? booking.dailyRate ?? 0,
+    depositFee: booking.depositFee ?? booking.depositValue ?? booking.depositAmount ?? 0,
+  };
+};
 
 /**
  * Format Date to YYYY-MM-DD in local string
@@ -262,17 +333,8 @@ export const createBooking = async (req, res, next) => {
       longRentalDiscount = Math.round(rentalFee * 0.1);
     }
 
-    // Voucher discount
-    let voucherDiscount = 0;
-    const cleanVoucher = (voucherCode || '').toString().trim().toUpperCase();
-    if (cleanVoucher === 'WELCOME50') {
-      voucherDiscount = Math.min(50000, rentalFee);
-    } else if (cleanVoucher === 'WEEKEND10') {
-      voucherDiscount = Math.round(rentalFee * 0.1);
-    }
-
-    const discountAmount = longRentalDiscount + voucherDiscount;
-    const depositFee = device.depositValue || 0;
+    const discountAmount = longRentalDiscount;
+    const depositFee = device.depositValue ?? device.depositAmount ?? 0;
     const finalRentalFee = Math.max(0, rentalFee - discountAmount);
     const totalAmount = finalRentalFee + depositFee;
 
@@ -285,11 +347,12 @@ export const createBooking = async (req, res, next) => {
       ? new mongoose.Types.ObjectId(renterId)
       : (req.user?._id || null);
 
-    const effectiveOwnerId = device.owner && mongoose.isValidObjectId(device.owner)
-      ? new mongoose.Types.ObjectId(device.owner)
+    const rawOwnerId = device.ownerId || device.owner || device._doc?.ownerId || device._doc?.owner;
+    const effectiveOwnerId = rawOwnerId && mongoose.isValidObjectId(rawOwnerId)
+      ? new mongoose.Types.ObjectId(String(rawOwnerId._id || rawOwnerId))
       : null;
 
-    // Create Booking instance with 100% Atlas-synchronized fields
+    // Create Booking instance with 100% Atlas B303349941 field ordering
     const newBooking = new Booking({
       bookingCode,
       qrToken,
@@ -297,13 +360,13 @@ export const createBooking = async (req, res, next) => {
       device: device._id,
       renterId: effectiveRenterId,
       renter: effectiveRenterId,
-      ownerId: effectiveOwnerId,
-      owner: effectiveOwnerId,
       renterInfo: renterInfo || {
         name: recipientName || 'Renter',
         phone: phone || '',
         email: req.user?.email || '',
       },
+      ownerId: effectiveOwnerId,
+      owner: effectiveOwnerId,
       startDate: start,
       endDate: end,
       totalDays,
@@ -312,19 +375,19 @@ export const createBooking = async (req, res, next) => {
       rentalFee,
       discountPercent,
       discountAmount,
-      voucherCode: cleanVoucher,
-      voucherDiscount,
+      voucherCode: '',
+      voucherDiscount: 0,
       depositFee,
       depositValue: depositFee,
       totalAmount,
       deliveryMethod: deliveryMethod || 'delivery',
       deliveryAddress: formattedDeliveryAddress,
+      note: (note || '').trim(),
       status: 'pending',
       paymentStatus: 'unpaid',
       paymentMethod,
       rejectReason: '',
       cancelReason: '',
-      note: (note || '').trim(),
       handoverPhotos: {
         beforeRental: [],
         afterRental: [],
@@ -375,41 +438,80 @@ export const createBooking = async (req, res, next) => {
 };
 
 /**
- * 3. GET /api/bookings/my-bookings
- * Retrieve bookings list with pagination and device population
+ * 3. GET /api/bookings/my-bookings?status=pending|approved|active|completed|cancelled
+ * Retrieve the authenticated renter's bookings for one tab, with pagination
+ * and per-tab badge counts in a single round trip.
  */
 export const getMyBookings = async (req, res, next) => {
   try {
-    const { status, limit = 20, page = 1 } = req.query;
-    const filter = {};
+    const renterObjId = getAuthUserObjectId(req);
+    if (!renterObjId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Unable to identify the current user. Please log in again.',
+      });
+    }
+
+    const { status, limit = MY_BOOKINGS_DEFAULT_LIMIT, page = 1 } = req.query;
+    const ownershipFilter = { $or: [{ renterId: renterObjId }, { renter: renterObjId }] };
+    const filter = { ...ownershipFilter };
 
     if (status && status !== 'all') {
-      filter.status = status;
+      const tabStatuses = MY_BOOKING_TAB_STATUSES[status];
+      if (!tabStatuses) {
+        return res.status(400).json({
+          success: false,
+          message: `Invalid status. Allowed values: ${Object.keys(MY_BOOKING_TAB_STATUSES).join(', ')}.`,
+        });
+      }
+      filter.status = { $in: tabStatuses };
     }
 
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
-    const limitNum = Math.max(1, Math.min(50, parseInt(limit, 10) || 20));
+    const limitNum = Math.max(
+      1,
+      Math.min(MY_BOOKINGS_MAX_LIMIT, parseInt(limit, 10) || MY_BOOKINGS_DEFAULT_LIMIT)
+    );
     const skip = (pageNum - 1) * limitNum;
 
-    const total = await Booking.countDocuments(filter);
-    const bookings = await Booking.find(filter)
-      .populate('device', 'title name brand category images dailyRate pricePerDayAtBooking depositValue depositFee location address')
-      .populate('deviceId', 'title name brand category images dailyRate pricePerDayAtBooking depositValue depositFee location address')
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limitNum)
-      .lean();
+    const [total, bookings, statusGroups] = await Promise.all([
+      Booking.countDocuments(filter),
+      Booking.find(filter)
+        .select('-digitalSignature -handoverPhotos -qrToken')
+        .populate('device', BOOKING_DEVICE_LIST_FIELDS)
+        .populate('deviceId', BOOKING_DEVICE_LIST_FIELDS)
+        .populate('ownerId', BOOKING_PARTY_FIELDS)
+        .populate('owner', BOOKING_PARTY_FIELDS)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limitNum)
+        .lean(),
+      Booking.aggregate([
+        { $match: ownershipFilter },
+        { $group: { _id: '$status', count: { $sum: 1 } } },
+      ]),
+    ]);
+
+    const counts = Object.fromEntries(
+      Object.entries(MY_BOOKING_TAB_STATUSES).map(([tab, statuses]) => [
+        tab,
+        statusGroups
+          .filter((group) => statuses.includes(group._id))
+          .reduce((sum, group) => sum + group.count, 0),
+      ])
+    );
 
     return res.status(200).json({
       success: true,
       count: bookings.length,
+      counts,
       pagination: {
         page: pageNum,
         limit: limitNum,
         total,
         totalPages: Math.ceil(total / limitNum) || 1,
       },
-      data: bookings,
+      data: bookings.map(normalizeBookingAliases),
     });
   } catch (error) {
     next(error);
@@ -418,20 +520,22 @@ export const getMyBookings = async (req, res, next) => {
 
 /**
  * 4. GET /api/bookings/:id
- * Retrieve booking details by ID or bookingCode (supports both TS-... and B...)
+ * Retrieve booking details by ID or bookingCode.
+ * Only the renter, the device owner, or an admin may view a booking.
  */
 export const getBookingById = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const userObjId = getAuthUserObjectId(req);
 
-    let query = { bookingCode: id };
-    if (mongoose.isValidObjectId(id)) {
-      query = { $or: [{ _id: id }, { bookingCode: id }] };
-    }
-
-    const booking = await Booking.findOne(query)
-      .populate('device', 'title name brand category images dailyRate pricePerDayAtBooking depositValue depositFee location address specs condition')
-      .populate('deviceId', 'title name brand category images dailyRate pricePerDayAtBooking depositValue depositFee location address specs condition')
+    const booking = await Booking.findOne(buildBookingLookup(id))
+      .select('-digitalSignature')
+      .populate('device', BOOKING_DEVICE_DETAIL_FIELDS)
+      .populate('deviceId', BOOKING_DEVICE_DETAIL_FIELDS)
+      .populate('ownerId', BOOKING_PARTY_FIELDS)
+      .populate('owner', BOOKING_PARTY_FIELDS)
+      .populate('renterId', BOOKING_PARTY_FIELDS)
+      .populate('renter', BOOKING_PARTY_FIELDS)
       .lean();
 
     if (!booking) {
@@ -441,9 +545,117 @@ export const getBookingById = async (req, res, next) => {
       });
     }
 
+    const isRenter = isSameId(booking.renterId, userObjId) || isSameId(booking.renter, userObjId);
+    const isOwner = isSameId(booking.ownerId, userObjId) || isSameId(booking.owner, userObjId);
+    const isAdmin = req.user?.role === 'admin';
+
+    if (!isRenter && !isOwner && !isAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: 'You do not have permission to view this booking.',
+      });
+    }
+
+    // Handover QR token is only meaningful for the renter once the booking is approved
+    if (!isRenter || booking.status === CANCELLABLE_STATUS) {
+      delete booking.qrToken;
+    }
+
     return res.status(200).json({
       success: true,
-      data: booking,
+      data: {
+        ...normalizeBookingAliases(booking),
+        canCancel: isRenter && booking.status === CANCELLABLE_STATUS,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * 5. PATCH /api/bookings/:id/cancel
+ * Renter cancels their own booking while it is still pending.
+ * Uses an atomic conditional update so a concurrent owner approval cannot be overwritten.
+ */
+export const cancelBooking = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const userObjId = getAuthUserObjectId(req);
+
+    if (!userObjId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Unable to identify the current user. Please log in again.',
+      });
+    }
+
+    const reason = (req.body?.reason || '').toString().trim();
+    if (reason.length > CANCEL_REASON_MAX_LENGTH) {
+      return res.status(400).json({
+        success: false,
+        message: `Cancellation reason must not exceed ${CANCEL_REASON_MAX_LENGTH} characters.`,
+      });
+    }
+
+    const existing = await Booking.findOne(buildBookingLookup(id))
+      .select('_id status renterId renter')
+      .lean();
+
+    if (!existing) {
+      return res.status(404).json({
+        success: false,
+        message: 'Booking not found.',
+      });
+    }
+
+    const isRenter = isSameId(existing.renterId, userObjId) || isSameId(existing.renter, userObjId);
+    if (!isRenter) {
+      return res.status(403).json({
+        success: false,
+        message: 'Only the renter who created this booking can cancel it.',
+      });
+    }
+
+    if (existing.status !== CANCELLABLE_STATUS) {
+      return res.status(409).json({
+        success: false,
+        message: `This booking can no longer be cancelled (current status: ${existing.status}).`,
+      });
+    }
+
+    const now = new Date();
+    const timelineNote = reason ? `Cancelled by renter: ${reason}` : 'Cancelled by renter';
+
+    const updated = await Booking.findOneAndUpdate(
+      { _id: existing._id, status: CANCELLABLE_STATUS },
+      {
+        $set: { status: 'cancelled', cancelReason: reason },
+        $push: {
+          timeline: { status: 'cancelled', note: timelineNote, timestamp: now, updatedAt: now },
+        },
+      },
+      { new: true }
+    )
+      .select('-digitalSignature -qrToken')
+      .populate('device', BOOKING_DEVICE_DETAIL_FIELDS)
+      .populate('deviceId', BOOKING_DEVICE_DETAIL_FIELDS)
+      .populate('ownerId', BOOKING_PARTY_FIELDS)
+      .populate('owner', BOOKING_PARTY_FIELDS)
+      .lean();
+
+    // Status changed between the read and the conditional write (e.g. owner just approved)
+    if (!updated) {
+      return res.status(409).json({
+        success: false,
+        message: 'This booking was just updated by the owner and can no longer be cancelled.',
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Booking cancelled successfully.',
+      data: { ...normalizeBookingAliases(updated), canCancel: false },
     });
   } catch (error) {
     next(error);
@@ -488,25 +700,8 @@ export const validatePricing = async (req, res, next) => {
       longRentalDiscount = Math.round(rentalFee * 0.1);
     }
 
-    let voucherDiscount = 0;
-    let voucherValid = false;
-    let voucherMessage = '';
-    const cleanVoucher = (voucherCode || '').toString().trim().toUpperCase();
-
-    if (cleanVoucher === 'WELCOME50') {
-      voucherDiscount = Math.min(50000, rentalFee);
-      voucherValid = true;
-      voucherMessage = 'Applied voucher WELCOME50 (-50,000 VND)';
-    } else if (cleanVoucher === 'WEEKEND10') {
-      voucherDiscount = Math.round(rentalFee * 0.1);
-      voucherValid = true;
-      voucherMessage = 'Applied voucher WEEKEND10 (-10%)';
-    } else if (cleanVoucher) {
-      voucherMessage = 'Invalid or expired voucher code';
-    }
-
-    const discountAmount = longRentalDiscount + voucherDiscount;
-    const depositFee = device.depositValue || 0;
+    const discountAmount = longRentalDiscount;
+    const depositFee = device.depositValue ?? device.depositAmount ?? 0;
     const finalRentalFee = Math.max(0, rentalFee - discountAmount);
     const totalAmount = finalRentalFee + depositFee;
 
@@ -540,5 +735,6 @@ export default {
   createBooking,
   getMyBookings,
   getBookingById,
+  cancelBooking,
   validatePricing,
 };

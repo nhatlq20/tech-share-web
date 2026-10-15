@@ -36,12 +36,19 @@ export const API_CONFIG = {
     BOOKINGS: '/bookings',
     BOOKINGS_MY: '/bookings/my-bookings',
     BOOKING_BY_ID: (id) => `/bookings/${id}`,
+    BOOKING_CANCEL: (id) => `/bookings/${id}/cancel`,
     BOOKING_VALIDATE_PRICING: '/bookings/validate-pricing',
     NOTIFICATIONS: '/notifications',
     NOTIFICATIONS_READ_ALL: '/notifications/read-all',
     NOTIFICATIONS_READ: (id) => `/notifications/${id}/read`,
     NOTIFICATIONS_FCM_TOKEN: '/notifications/fcm-token',
     NOTIFICATIONS_TEST: '/notifications/test',
+    CHATS_CONVERSATIONS: '/chats/conversations',
+    CHATS_UNREAD_COUNT: '/chats/unread-count',
+    CHATS_MESSAGES: (bookingId) => `/chats/${bookingId}`,
+    CHATS_SEND: (bookingId) => `/chats/${bookingId}/messages`,
+    CHATS_READ: (bookingId) => `/chats/${bookingId}/read`,
+    CHATS_UPLOAD: '/chats/upload-image',
   },
 };
 
@@ -79,6 +86,9 @@ export const MAGIC_NUMBERS = {
     LONG_RENTAL_TIER_2_DISCOUNT_PERCENT: 20,
     VOUCHER_WELCOME50_DISCOUNT: 50000,
     VOUCHER_WEEKEND10_PERCENT: 10,
+    MY_BOOKINGS_PAGE_SIZE: 10,
+    CANCEL_REASON_MAX_LENGTH: 300,
+    TABLE_SKELETON_ROWS: 4,
   },
 
   // Biểu đồ SVG
@@ -100,10 +110,46 @@ export const STORAGE_KEYS = {
   THEME_MODE: 'techshare_theme',
 };
 
+/**
+ * Booking lifecycle configuration (mirrors server enum in models/Booking.js)
+ */
+export const BOOKING_STATUS = {
+  PENDING: 'pending',
+  APPROVED: 'approved',
+  ACTIVE: 'active',
+  COMPLETED: 'completed',
+  CANCELLED: 'cancelled',
+  REJECTED: 'rejected',
+};
+
+/** Tabs of the My Bookings hub, in display order (key = `status` query param). */
+export const MY_BOOKING_TABS = [
+  BOOKING_STATUS.PENDING,
+  BOOKING_STATUS.APPROVED,
+  BOOKING_STATUS.ACTIVE,
+  BOOKING_STATUS.COMPLETED,
+  BOOKING_STATUS.CANCELLED,
+];
+
+/** Happy-path progression rendered by the order timeline stepper. */
+export const BOOKING_TIMELINE_STEPS = [
+  BOOKING_STATUS.PENDING,
+  BOOKING_STATUS.APPROVED,
+  BOOKING_STATUS.ACTIVE,
+  BOOKING_STATUS.COMPLETED,
+];
+
+/** Terminal statuses that interrupt the happy path. */
+export const BOOKING_TERMINAL_STATUSES = [
+  BOOKING_STATUS.CANCELLED,
+  BOOKING_STATUS.REJECTED,
+];
+
 const CONFIG = {
   API_CONFIG,
   MAGIC_NUMBERS,
   STORAGE_KEYS,
+  BOOKING_STATUS,
 };
 
 export default CONFIG;

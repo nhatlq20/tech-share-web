@@ -11,6 +11,7 @@ import {
   Calendar,
   AlertCircle,
   Cpu,
+  MessageSquare,
 } from 'lucide-react';
 import { ROUTES } from '../routes/routes.js';
 import { API_CONFIG } from '../constants/config.js';
@@ -237,6 +238,15 @@ export const DeviceDetailPage = () => {
                 <Calendar className="w-4 h-4" />
                 <span>Rent This Device Now</span>
                 <ArrowRight className="w-4 h-4" />
+              </Link>
+
+              {/* Message Owner CTA */}
+              <Link
+                to={ROUTES.MESSAGES}
+                className="w-full py-2.5 px-4 rounded-xl font-semibold text-xs border border-slate-200 text-slate-700 hover:bg-slate-50 transition flex items-center justify-center gap-1.5"
+              >
+                <MessageSquare className="w-3.5 h-3.5 text-teal-600" />
+                <span>Nhắn tin trao đổi với Chủ thiết bị</span>
               </Link>
 
               {/* Escrow Guarantee */}

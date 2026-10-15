@@ -105,10 +105,20 @@ export const AdminSidebarContent = ({
               onClick={() => onSelectTab(item.id)}
               className={`admin-nav-item ${isActive ? 'active' : ''}`}
             >
-              <Icon size={19} strokeWidth={isActive ? 2.5 : 2} />
-              <span style={{ fontSize: '13.5px', fontWeight: isActive ? 700 : 600 }}>
-                {item.label}
-              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '11px', minWidth: 0, flex: 1 }}>
+                <Icon size={18} strokeWidth={isActive ? 2.5 : 2} style={{ flexShrink: 0 }} />
+                <span
+                  style={{
+                    fontSize: '12.5px',
+                    fontWeight: isActive ? 700 : 600,
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}
+                >
+                  {item.label}
+                </span>
+              </div>
               {item.showBadge && pendingEkycCount > 0 && (
                 <span className="admin-nav-badge" title={t.pendingBadgeTitle(pendingEkycCount)}>
                   {pendingEkycCount}
@@ -130,9 +140,11 @@ export const AdminSidebarContent = ({
           <span>{t.switchToClient}</span>
         </button>
 
-        <button type="button" onClick={onLogout || (() => {
-        window.location.href = '/';
-      })} className="admin-footer-btn logout">
+        <button
+          type="button"
+          onClick={onLogout || (() => { window.location.href = '/'; })}
+          className="admin-footer-btn logout"
+        >
           <LogOut size={15} />
           <span>{t.logout}</span>
         </button>

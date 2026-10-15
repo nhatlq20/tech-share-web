@@ -41,12 +41,14 @@
   position: sticky;
   top: 0;
   height: 100vh;
+  max-height: 100vh;
   z-index: 40;
   box-shadow: 2px 0 12px rgba(0, 0, 0, 0.02);
+  overflow: hidden;
 }
 
 .admin-sidebar-header {
-  padding: 20px 16px 14px;
+  padding: 18px 16px 10px;
 }
 
 .admin-logo-box {
@@ -54,7 +56,7 @@
   align-items: center;
   gap: 10px;
   text-decoration: none;
-  margin-bottom: 18px;
+  margin-bottom: 14px;
 }
 
 .admin-logo-icon {
@@ -84,7 +86,7 @@
 .admin-profile-badge-wrap {
   background-color: #F8FAFC;
   border: 1px solid #E2E8F0;
-  border-radius: 14px;
+  border-radius: 16px;
   padding: 10px 12px;
   display: flex;
   align-items: center;
@@ -94,9 +96,9 @@
 }
 
 .admin-profile-avatar {
-  width: 40px;
-  height: 40px;
-  min-width: 40px;
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
   flex-shrink: 0;
   border-radius: 50%;
   border: 2px solid #67BEC3;
@@ -131,7 +133,7 @@
   padding: 1.5px 7px;
   border-radius: 9999px;
   margin-top: 2px;
-  max-width: 100%;
+  max-width: fit-content;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -151,38 +153,45 @@
 .admin-sidebar-divider {
   height: 1px;
   background-color: #E2E8F0;
-  margin: 12px 16px;
+  margin: 10px 16px;
 }
 
 /* Nav Menu */
 .admin-nav-list {
-  padding: 12px 12px;
+  padding: 4px 12px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 3px;
   flex: 1;
   overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.admin-nav-list::-webkit-scrollbar {
+  display: none;
 }
 
 .admin-nav-section-title {
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 11px;
+  font-weight: 700;
   color: #64748B;
-  padding: 4px 10px 8px;
-  letter-spacing: 0.01em;
-  text-transform: none;
+  padding: 4px 14px 8px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
 .admin-nav-item {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
-  padding: 11px 16px;
-  border-radius: 12px;
-  font-size: 13.5px;
+  padding: 8.5px 14px;
+  border-radius: 14px;
+  font-size: 12.5px;
   font-weight: 600;
-  color: #64748B;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  color: #334155;
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
   border: none;
   background: none;
@@ -193,37 +202,44 @@
 .admin-nav-item:hover {
   background-color: #F8FAFC;
   color: #0F172A;
-  transform: translateX(2px);
 }
 
 .admin-nav-item.active {
-  background-color: #E8F6F7;
-  color: #286E74;
+  background-color: #E6F7F8;
+  color: #0D9488;
   font-weight: 700;
-  border-left: 3px solid #67BEC3;
+  border-left: 3.5px solid #0D9488;
 }
 
 .admin-nav-item.active svg {
-  color: #67BEC3;
+  color: #0D9488;
 }
 
 .admin-nav-badge {
   margin-left: auto;
   font-size: 11px;
   font-weight: 700;
-  padding: 2px 7px;
+  min-width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 9999px;
   background-color: #EF4444;
   color: #FFFFFF;
+  line-height: 1;
+  padding: 0 6px;
+  box-shadow: 0 1px 3px rgba(239, 68, 68, 0.3);
 }
 
 /* Sidebar Footer */
 .admin-sidebar-footer {
-  padding: 16px;
-  border-top: 1px solid #F8FAFC;
+  padding: 12px 14px;
+  border-top: 1px solid #F1F5F9;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  background-color: #FFFFFF;
 }
 
 .admin-footer-btn {
@@ -232,16 +248,18 @@
   justify-content: center;
   gap: 8px;
   padding: 10px 14px;
-  border-radius: 10px;
-  font-size: 13px;
+  border-radius: 12px;
+  font-size: 12.5px;
   font-weight: 600;
   transition: all 0.2s;
   cursor: pointer;
+  border: none;
+  width: 100%;
 }
 
 .admin-footer-btn.client-switch {
   background-color: #F8FAFC;
-  color: #475569;
+  color: #334155;
   border: 1px solid #E2E8F0;
 }
 
@@ -252,9 +270,9 @@
 }
 
 .admin-footer-btn.logout {
-  background-color: #FEF2F2;
+  background-color: #FFF1F2;
   color: #DC2626;
-  border: 1px solid #FEE2E2;
+  border: 1px solid #FFE4E6;
 }
 
 .admin-footer-btn.logout:hover {
