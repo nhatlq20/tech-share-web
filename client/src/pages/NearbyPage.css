@@ -1,0 +1,27 @@
+.nearby-page { max-width: 1280px; margin: auto; padding: 28px 20px 48px; color: #193047; }
+.nearby-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
+.nearby-header h1 { margin: 0 0 5px; font-size: 28px; }
+.nearby-header p { margin: 0; color: #718096; }
+.nearby-page button, .nearby-preview a { border: 1px solid #b9dfe2; background: #f0fbfb; color: #168b95; border-radius: 9px; padding: 10px 14px; cursor: pointer; font: inherit; font-size: 13px; }
+.nearby-page button:disabled { opacity: .55; cursor: wait; }
+.nearby-page button:focus-visible, .nearby-preview a:focus-visible { outline: 2px solid #178c98; outline-offset: 3px; }
+.nearby-layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 20px; }
+.nearby-map-wrap { position: relative; isolation: isolate; z-index: 0; border-radius: 16px; overflow: hidden; border: 1px solid #e1ebef; min-width: 0; }
+.nearby-map { height: 580px; background: #eef3f4; }
+.nearby-recenter { position: absolute; top: 12px; right: 12px; z-index: 1000; box-shadow: 0 3px 12px #152e3b16; }
+.nearby-tile-warning { position: absolute; bottom: 28px; left: 12px; right: 12px; z-index: 1000; background: #fff9e8; color: #73551e; border-radius: 8px; padding: 10px; font-size: 12px; }
+.nearby-sidebar { min-width: 0; max-height: 580px; overflow-y: auto; padding: 16px; background: white; border: 1px solid #e1ebef; border-radius: 16px; }
+.nearby-preview { border-bottom: 1px solid #e7eef2; padding-bottom: 20px; margin-bottom: 15px; }
+.nearby-preview img { width: 100%; max-height: 170px; object-fit: contain; border-radius: 10px; background: #f7fafb; }
+.nearby-preview h2 { font-size: 17px; overflow-wrap: anywhere; }
+.nearby-preview p { font-size: 13px; color: #67788c; }
+.nearby-preview a { display: inline-block; text-decoration: none; }
+.nearby-device-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+.nearby-device-list button { display: block; width: 100%; text-align: left; background: white; border-color: #e6edf1; }
+.nearby-device-list button[aria-pressed='true'] { border-color: #26aeb9; background: #edfafa; }
+.nearby-device-list strong { display: block; color: #273a4c; font-size: 12px; overflow-wrap: anywhere; }
+.nearby-device-list span { display: block; font-size: 11px; margin-top: 5px; color: #788b9c; }
+.nearby-device-marker span { display: block; box-sizing: border-box; width: 26px; height: 26px; background: #22a8b2; border: 3px solid white; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); box-shadow: 0 2px 7px #173b4959; }
+.nearby-device-marker.is-selected span { background: #f59e0b; border-color: #fff2c4; }
+.nearby-user-marker span { display: block; box-sizing: border-box; width: 22px; height: 22px; background: #2879e8; border: 4px solid white; border-radius: 50%; box-shadow: 0 0 0 5px #2879e826; }
+@media (max-width: 800px) { .nearby-layout { grid-template-columns: minmax(0, 1fr); } .nearby-map { height: 420px; } .nearby-sidebar { max-height: 450px; } .nearby-header { align-items: flex-start; flex-wrap: wrap; } }
