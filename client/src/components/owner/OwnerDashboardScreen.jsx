@@ -14,6 +14,9 @@ import { ROUTES } from "../../routes/routes";
 import { STRINGS } from "../../constants/strings";
 import { API_CONFIG } from "../../constants/config";
 import { useAuth } from "../../context/AuthContext.jsx";
+import { useChat } from "../../context/ChatContext.jsx";
+import { OwnerAIAssistantTab } from "./OwnerAIAssistantTab";
+import MessagesPage from "../../pages/MessagesPage.jsx";
 import "./OwnerWorkspace.css";
 
 export const OwnerDashboardScreen = () => {
@@ -114,31 +117,6 @@ export const OwnerDashboardScreen = () => {
   useEffect(() => {
     fetchOwnerData();
   }, [fetchOwnerData]);
-
-  // Actions: Toggle device status (Active MongoDB mutation)
-  const handleToggleDeviceStatus = async (deviceId, newStatus) => {
-    setDevices((prev) =>
-      prev.map((d) => (d._id === deviceId ? { ...d, status: newStatus } : d)),
-    );
-    try {
-      const token = localStorage.getItem("techshare_token");
-      const headers = {
-        "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      };
-      await fetch(
-        `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.OWNER_TOGGLE_DEVICE(deviceId)}`,
-        {
-          method: "PATCH",
-          headers,
-          body: JSON.stringify({ status: newStatus }),
-        },
-      );
-      fetchOwnerData();
-    } catch (err) {
-      console.error("Failed to toggle device status in DB:", err);
-    }
-  };
 
   const handleDeviceCreated = (device) => {
     const newDevice = {
