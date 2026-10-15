@@ -35,6 +35,7 @@ export const API_CONFIG = {
     BOOKINGS: '/bookings',
     BOOKINGS_MY: '/bookings/my-bookings',
     BOOKING_BY_ID: (id: string) => `/bookings/${id}`,
+    BOOKING_CANCEL: (id: string) => `/bookings/${id}/cancel`,
     BOOKING_VALIDATE_PRICING: '/bookings/validate-pricing',
   },
 } as const;
@@ -72,6 +73,9 @@ export const MAGIC_NUMBERS = {
     LONG_RENTAL_TIER_2_DISCOUNT_PERCENT: 20,
     VOUCHER_WELCOME50_DISCOUNT: 50000,
     VOUCHER_WEEKEND10_PERCENT: 10,
+    MY_BOOKINGS_PAGE_SIZE: 10,
+    CANCEL_REASON_MAX_LENGTH: 300,
+    TABLE_SKELETON_ROWS: 4,
   },
 
   // Biểu đồ SVG
@@ -93,10 +97,46 @@ export const STORAGE_KEYS = {
   THEME_MODE: 'techshare_theme',
 } as const;
 
+/**
+ * Booking lifecycle configuration (mirrors server enum in models/Booking.js)
+ */
+export const BOOKING_STATUS = {
+  PENDING: 'pending',
+  APPROVED: 'approved',
+  ACTIVE: 'active',
+  COMPLETED: 'completed',
+  CANCELLED: 'cancelled',
+  REJECTED: 'rejected',
+} as const;
+
+/** Tabs of the My Bookings hub, in display order (key = `status` query param). */
+export const MY_BOOKING_TABS = [
+  BOOKING_STATUS.PENDING,
+  BOOKING_STATUS.APPROVED,
+  BOOKING_STATUS.ACTIVE,
+  BOOKING_STATUS.COMPLETED,
+  BOOKING_STATUS.CANCELLED,
+] as const;
+
+/** Happy-path progression rendered by the order timeline stepper. */
+export const BOOKING_TIMELINE_STEPS = [
+  BOOKING_STATUS.PENDING,
+  BOOKING_STATUS.APPROVED,
+  BOOKING_STATUS.ACTIVE,
+  BOOKING_STATUS.COMPLETED,
+] as const;
+
+/** Terminal statuses that interrupt the happy path. */
+export const BOOKING_TERMINAL_STATUSES = [
+  BOOKING_STATUS.CANCELLED,
+  BOOKING_STATUS.REJECTED,
+] as const;
+
 const CONFIG = {
   API_CONFIG,
   MAGIC_NUMBERS,
   STORAGE_KEYS,
+  BOOKING_STATUS,
 };
 
 export default CONFIG;
