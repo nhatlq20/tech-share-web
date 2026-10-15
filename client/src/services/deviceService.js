@@ -111,11 +111,11 @@ export const getNearbyDevices = async (params = {}) => {
   const lat = params.lat ?? params.latitude;
   const lng = params.lng ?? params.longitude;
 
-  if (typeof lat !== "number" || Number.isNaN(lat)) {
+  if (!Number.isFinite(lat) || Math.abs(lat) > 90) {
     throw new Error("Valid latitude is required for nearby devices query");
   }
 
-  if (typeof lng !== "number" || Number.isNaN(lng)) {
+  if (!Number.isFinite(lng) || Math.abs(lng) > 180) {
     throw new Error("Valid longitude is required for nearby devices query");
   }
 

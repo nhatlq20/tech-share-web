@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useLocation, Link } from 'react-router-dom';
 import {
   Star,
   ShieldCheck,
@@ -32,6 +32,8 @@ const formatSpecLabel = (key) => String(key)
 export const DeviceDetailPage = () => {
   const { deviceId, id } = useParams();
   const currentDeviceId = deviceId || id;
+  const location = useLocation();
+  const openedFromMap = location.state?.from === ROUTES.NEARBY;
 
   const [device, setDevice] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -86,10 +88,10 @@ export const DeviceDetailPage = () => {
           {error || 'The device you are looking for does not exist or has been hidden.'}
         </p>
         <Link
-          to={ROUTES.EXPLORE}
+          to={openedFromMap ? ROUTES.NEARBY : ROUTES.EXPLORE}
           className="px-5 py-2.5 rounded-xl bg-brand-500 text-white font-semibold text-sm hover:bg-brand-600 transition shadow-sm"
         >
-          &larr; Back to Device Catalog
+          &larr; {openedFromMap ? 'Back to Map' : 'Back to Device Catalog'}
         </Link>
       </div>
     );
@@ -112,11 +114,11 @@ export const DeviceDetailPage = () => {
         {/* Back Link */}
         <div className="mb-6">
           <Link
-            to={ROUTES.OWNER_DEVICES}
+            to={openedFromMap ? ROUTES.NEARBY : ROUTES.OWNER_DEVICES}
             className="inline-flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-brand-600 transition"
           >
             <ChevronLeft className="w-4 h-4" />
-            Back to Catalog
+            {openedFromMap ? 'Back to Map' : 'Back to Catalog'}
           </Link>
         </div>
 

@@ -16,6 +16,7 @@ const getDevicesCollection = () => {
 const RECOMMENDATION_DEFAULT_PAGE = 1;
 const RECOMMENDATION_PAGE_SIZE = 12;
 const HOME_RECOMMENDATION_MAX_DISTANCE_METERS = 100000;
+const NEARBY_MAX_DISTANCE_METERS = 10000;
 const MAX_LATITUDE = 90;
 const MAX_LONGITUDE = 180;
 
@@ -273,22 +274,25 @@ export const getNearbyDevices = async (req, res, next) => {
     } = req.query;
     const userLat = Number(lat ?? latitude);
     const userLng = Number(lng ?? longitude);
-    const maxDistance = Number(radius);
+    const requestedRadius = Number(radius);
+    const maxDistance = Math.min(requestedRadius, NEARBY_MAX_DISTANCE_METERS);
     const pageNum = Number(page);
-    const limitNum = Math.min(100, Number(limit));
+    const requestedLimit = Number(limit);
+    const limitNum = Math.min(100, requestedLimit);
     if (
-      (lat == null && latitude == null) ||
-      (lng == null && longitude == null) ||
+      !isNumericQueryValue(lat ?? latitude) ||
+      !isNumericQueryValue(lng ?? longitude) ||
       !Number.isFinite(userLat) ||
       Math.abs(userLat) > 90 ||
       !Number.isFinite(userLng) ||
       Math.abs(userLng) > 180 ||
-      !Number.isFinite(maxDistance) ||
+      !Number.isFinite(requestedRadius) ||
       maxDistance <= 0 ||
-      !Number.isInteger(pageNum) ||
+      !Number.isSafeInteger(pageNum) ||
       pageNum < 1 ||
-      !Number.isInteger(limitNum) ||
-      limitNum < 1
+      !Number.isSafeInteger(requestedLimit) ||
+      requestedLimit < 1 ||
+      !Number.isSafeInteger((pageNum - 1) * limitNum)
     ) {
       return res.status(400).json({
         success: false,
@@ -305,9 +309,17 @@ export const getNearbyDevices = async (req, res, next) => {
             distanceField: "distanceMeters",
             maxDistance,
             spherical: true,
-            query: { isDeleted: { $ne: true } },
+            query: {
+              status: "available",
+              isDeleted: { $ne: true },
+              "location.type": "Point",
+              "location.coordinates": { $size: 2 },
+              "location.coordinates.0": { $type: "number", $gte: -180, $lte: 180 },
+              "location.coordinates.1": { $type: "number", $gte: -90, $lte: 90 },
+            },
           },
         },
+        { $sort: { distanceMeters: 1, _id: 1 } },
         ...geoPaginationStages(pageNum, limitNum),
       ])
       .toArray();
