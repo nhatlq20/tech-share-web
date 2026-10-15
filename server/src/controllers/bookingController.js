@@ -53,17 +53,23 @@ const isSameId = (a, b) => Boolean(a && b) && String(a._id || a) === String(b._i
 const normalizeBookingAliases = (booking) => {
   if (!booking) return booking;
   const device = booking.device || booking.deviceId || null;
-  const owner = (booking.owner && typeof booking.owner === 'object' && booking.owner.name)
-    ? booking.owner
-    : (booking.ownerId || booking.owner || null);
+  const resolveParty = (a, b) => {
+    if (a && typeof a === 'object' && (a.name || a.email || a._id)) return a;
+    if (b && typeof b === 'object' && (b.name || b.email || b._id)) return b;
+    return a || b || null;
+  };
+  const owner = resolveParty(booking.owner, booking.ownerId);
+  const renter = resolveParty(booking.renter, booking.renterId);
   return {
     ...booking,
     device,
     deviceId: device,
     owner,
     ownerId: owner,
+    renter,
+    renterId: renter,
     pricePerDayAtBooking: booking.pricePerDayAtBooking ?? booking.dailyRate ?? 0,
-    depositFee: booking.depositFee ?? booking.depositValue ?? 0,
+    depositFee: booking.depositFee ?? booking.depositValue ?? booking.depositAmount ?? 0,
   };
 };
 
@@ -327,17 +333,8 @@ export const createBooking = async (req, res, next) => {
       longRentalDiscount = Math.round(rentalFee * 0.1);
     }
 
-    // Voucher discount
-    let voucherDiscount = 0;
-    const cleanVoucher = (voucherCode || '').toString().trim().toUpperCase();
-    if (cleanVoucher === 'WELCOME50') {
-      voucherDiscount = Math.min(50000, rentalFee);
-    } else if (cleanVoucher === 'WEEKEND10') {
-      voucherDiscount = Math.round(rentalFee * 0.1);
-    }
-
-    const discountAmount = longRentalDiscount + voucherDiscount;
-    const depositFee = device.depositValue || 0;
+    const discountAmount = longRentalDiscount;
+    const depositFee = device.depositValue ?? device.depositAmount ?? 0;
     const finalRentalFee = Math.max(0, rentalFee - discountAmount);
     const totalAmount = finalRentalFee + depositFee;
 
@@ -350,11 +347,12 @@ export const createBooking = async (req, res, next) => {
       ? new mongoose.Types.ObjectId(renterId)
       : (req.user?._id || null);
 
-    const effectiveOwnerId = device.owner && mongoose.isValidObjectId(device.owner)
-      ? new mongoose.Types.ObjectId(device.owner)
+    const rawOwnerId = device.ownerId || device.owner || device._doc?.ownerId || device._doc?.owner;
+    const effectiveOwnerId = rawOwnerId && mongoose.isValidObjectId(rawOwnerId)
+      ? new mongoose.Types.ObjectId(String(rawOwnerId._id || rawOwnerId))
       : null;
 
-    // Create Booking instance with 100% Atlas-synchronized fields
+    // Create Booking instance with 100% Atlas B303349941 field ordering
     const newBooking = new Booking({
       bookingCode,
       qrToken,
@@ -362,13 +360,13 @@ export const createBooking = async (req, res, next) => {
       device: device._id,
       renterId: effectiveRenterId,
       renter: effectiveRenterId,
-      ownerId: effectiveOwnerId,
-      owner: effectiveOwnerId,
       renterInfo: renterInfo || {
         name: recipientName || 'Renter',
         phone: phone || '',
         email: req.user?.email || '',
       },
+      ownerId: effectiveOwnerId,
+      owner: effectiveOwnerId,
       startDate: start,
       endDate: end,
       totalDays,
@@ -377,19 +375,19 @@ export const createBooking = async (req, res, next) => {
       rentalFee,
       discountPercent,
       discountAmount,
-      voucherCode: cleanVoucher,
-      voucherDiscount,
+      voucherCode: '',
+      voucherDiscount: 0,
       depositFee,
       depositValue: depositFee,
       totalAmount,
       deliveryMethod: deliveryMethod || 'delivery',
       deliveryAddress: formattedDeliveryAddress,
+      note: (note || '').trim(),
       status: 'pending',
       paymentStatus: 'unpaid',
       paymentMethod,
       rejectReason: '',
       cancelReason: '',
-      note: (note || '').trim(),
       handoverPhotos: {
         beforeRental: [],
         afterRental: [],
@@ -482,6 +480,8 @@ export const getMyBookings = async (req, res, next) => {
         .select('-digitalSignature -handoverPhotos -qrToken')
         .populate('device', BOOKING_DEVICE_LIST_FIELDS)
         .populate('deviceId', BOOKING_DEVICE_LIST_FIELDS)
+        .populate('ownerId', BOOKING_PARTY_FIELDS)
+        .populate('owner', BOOKING_PARTY_FIELDS)
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limitNum)
@@ -534,6 +534,8 @@ export const getBookingById = async (req, res, next) => {
       .populate('deviceId', BOOKING_DEVICE_DETAIL_FIELDS)
       .populate('ownerId', BOOKING_PARTY_FIELDS)
       .populate('owner', BOOKING_PARTY_FIELDS)
+      .populate('renterId', BOOKING_PARTY_FIELDS)
+      .populate('renter', BOOKING_PARTY_FIELDS)
       .lean();
 
     if (!booking) {
@@ -698,25 +700,8 @@ export const validatePricing = async (req, res, next) => {
       longRentalDiscount = Math.round(rentalFee * 0.1);
     }
 
-    let voucherDiscount = 0;
-    let voucherValid = false;
-    let voucherMessage = '';
-    const cleanVoucher = (voucherCode || '').toString().trim().toUpperCase();
-
-    if (cleanVoucher === 'WELCOME50') {
-      voucherDiscount = Math.min(50000, rentalFee);
-      voucherValid = true;
-      voucherMessage = 'Applied voucher WELCOME50 (-50,000 VND)';
-    } else if (cleanVoucher === 'WEEKEND10') {
-      voucherDiscount = Math.round(rentalFee * 0.1);
-      voucherValid = true;
-      voucherMessage = 'Applied voucher WEEKEND10 (-10%)';
-    } else if (cleanVoucher) {
-      voucherMessage = 'Invalid or expired voucher code';
-    }
-
-    const discountAmount = longRentalDiscount + voucherDiscount;
-    const depositFee = device.depositValue || 0;
+    const discountAmount = longRentalDiscount;
+    const depositFee = device.depositValue ?? device.depositAmount ?? 0;
     const finalRentalFee = Math.max(0, rentalFee - discountAmount);
     const totalAmount = finalRentalFee + depositFee;
 
