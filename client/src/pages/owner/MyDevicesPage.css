@@ -403,6 +403,118 @@
   font-size: 13px;
 }
 
+.delete-device-modal-backdrop {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.52);
+  animation: delete-device-fade-in 140ms ease-out;
+}
+
+.delete-device-modal {
+  width: min(100%, 420px);
+  padding: 28px;
+  border: 1px solid #e8edf1;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.22);
+  animation: delete-device-pop-in 160ms ease-out;
+}
+
+.delete-device-modal-icon {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  margin-bottom: 18px;
+  border-radius: 14px;
+  background: #fff1f0;
+  color: #dc5555;
+}
+
+.delete-device-modal-icon svg {
+  width: 24px;
+  height: 24px;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.delete-device-modal h2 {
+  margin: 0;
+  color: #1e293b;
+  font-size: 19px;
+  font-weight: 750;
+}
+
+.delete-device-modal p {
+  margin: 9px 0 24px;
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.delete-device-modal p strong {
+  color: #334155;
+  font-weight: 700;
+}
+
+.delete-device-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.delete-device-modal-actions button {
+  min-height: 40px;
+  padding: 0 15px;
+  border: 1px solid #e2e8f0;
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 650;
+  transition: background 150ms ease, border-color 150ms ease;
+}
+
+.delete-device-cancel-button {
+  background: #fff;
+  color: #475569;
+}
+
+.delete-device-cancel-button:hover:not(:disabled) {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+}
+
+.delete-device-confirm-button {
+  border-color: #dc5555 !important;
+  background: #dc5555;
+  color: #fff;
+}
+
+.delete-device-confirm-button:hover:not(:disabled) {
+  border-color: #c63e3e !important;
+  background: #c63e3e;
+}
+
+.delete-device-modal-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+@keyframes delete-device-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes delete-device-pop-in {
+  from { opacity: 0; transform: translateY(6px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
 .my-devices-empty-state {
   display: flex;
   min-height: 330px;
