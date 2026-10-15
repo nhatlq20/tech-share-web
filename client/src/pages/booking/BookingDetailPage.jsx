@@ -3,7 +3,6 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft,
   Calendar,
-  Clock,
   MapPin,
   User,
   Phone,
@@ -15,8 +14,6 @@ import {
   Package,
   ExternalLink,
   ChevronRight,
-  RefreshCw,
-  QrCode,
   FileText,
 } from 'lucide-react';
 import { STRINGS } from '../../constants/strings.js';

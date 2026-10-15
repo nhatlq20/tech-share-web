@@ -1,6 +1,4 @@
-import dotenv from 'dotenv';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import './config/env.js';
 import express from 'express';
 import cors from 'cors';
 import mongoose from 'mongoose';
@@ -13,12 +11,6 @@ import bookingRoutes from './routes/bookingRoutes.js';
 import ownerRoutes from './routes/ownerRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import { errorHandler, notFound } from './middlewares/errorMiddleware.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-dotenv.config({ path: path.resolve(__dirname, '../.env') });
-
-
 
 const app = express();
 const PORT = Number(process.env.PORT) || 5000;
@@ -54,16 +46,14 @@ app.use(errorHandler);
 
 // Start server
 const startServer = async () => {
-  const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI;
-  if (mongoUri) {
-    await connectDB();
-  } else {
-    console.log('⚠️ MONGODB_URI chưa được cấu hình trong .env, server chạy ở chế độ standalone.');
-  }
+  await connectDB();
 
   app.listen(PORT, () => {
     console.log(`🚀 TechShare Server running on http://localhost:${PORT}`);
   });
 };
 
-startServer();
+startServer().catch(() => {
+  console.error('Backend startup aborted; Device API is not ready.');
+  process.exitCode = 1;
+});

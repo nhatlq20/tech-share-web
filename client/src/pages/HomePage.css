@@ -201,32 +201,6 @@
   margin: 0;
 }
 
-.category-scroll-arrows {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.category-scroll-btn {
-  width: 32px;
-  height: 32px;
-  border-radius: 9999px;
-  border: 1px solid var(--border-subtle);
-  background-color: #ffffff;
-  color: var(--text-muted);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.category-scroll-btn:hover {
-  background-color: #f1f5f9;
-  color: var(--text-main);
-  border-color: #cbd5e1;
-}
-
 .home-category-list {
   display: flex;
   align-items: center;
@@ -462,4 +436,57 @@
   100% {
     background-position: -200% 0;
   }
+}
+
+.home-pagination {
+  margin-top: 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.home-pagination-summary {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.home-pagination-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.home-pagination-controls button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 40px;
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 1px solid var(--border-subtle, #e2e8f0);
+  border-radius: 10px;
+  background: var(--bg-card, #fff);
+  color: var(--text-main);
+  font: inherit;
+  cursor: pointer;
+}
+
+.home-pagination-controls button[aria-current='page'] {
+  background: var(--text-main, #0f172a);
+  color: var(--bg-card, #fff);
+}
+
+.home-pagination-controls button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.home-pagination-controls button:focus-visible {
+  outline: 2px solid var(--text-main, #0f172a);
+  outline-offset: 3px;
 }
