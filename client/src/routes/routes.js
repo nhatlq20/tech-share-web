@@ -35,10 +35,7 @@ export const ROUTES = {
   OWNER_CALENDAR: '/owner/calendar',
   OWNER_ANALYTICS: '/owner/analytics',
   OWNER_WALLET: '/owner/wallet',
-  OWNER_AI_ASSISTANT: '/owner/ai-assistant',
-  OWNER_MESSAGES: '/owner/messages',
-  OWNER_MESSAGES_CHAT: '/owner/messages/:bookingId',
-  OWNER_MESSAGES_PATH: (bookingId) => `/owner/messages/${bookingId}`,
+
 };
 
 export default ROUTES;

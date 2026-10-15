@@ -103,7 +103,7 @@ export const DeviceDetailPage = () => {
         {/* Back Link */}
         <div className="mb-6">
           <Link
-            to={ROUTES.EXPLORE}
+            to={ROUTES.OWNER_DEVICES}
             className="inline-flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-brand-600 transition"
           >
             <ChevronLeft className="w-4 h-4" />

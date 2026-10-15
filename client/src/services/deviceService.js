@@ -151,12 +151,18 @@ export const getRecommendedDevices = async (params = {}) => {
   }
   return response;
 };
+export const getMyDevices = async () => {
+  const response = await api.get(API_CONFIG.ENDPOINTS.OWNER_DEVICES);
+console.log(response)
+  return response;
+};
 
 export const deviceService = {
   getDevices,
   getDeviceById,
   getNearbyDevices,
   getRecommendedDevices,
+  getMyDevices,
 };
 
 export default deviceService;

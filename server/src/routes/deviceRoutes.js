@@ -4,7 +4,8 @@ import {
   getNearbyDevices,
   getRecommendedDevices,
   getDeviceById,
-  createDevice
+  createDevice,
+  myDevices
 } from '../controllers/deviceController.js';
 import { getDeviceAvailability } from '../controllers/bookingController.js';
 import { protect } from '../middlewares/authMiddleware.js';
@@ -23,7 +24,7 @@ router.get('/', getDevices);
 
 // Device availability for calendar & booking range picker
 router.get('/:id/availability', getDeviceAvailability);
-
+router.get("/my-devices", protect,requireOwner,myDevices)
 // Device mutations
 // router.patch('/:id/status', toggleDeviceStatus);
 // router.patch('/:id/blocked-dates', toggleBlockedDate);
