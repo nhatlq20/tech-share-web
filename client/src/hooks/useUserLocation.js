@@ -59,6 +59,7 @@ export const useUserLocation = () => {
     let active = true;
     let settled = false;
     let timer;
+    let permissionTimer;
     const hasLocation = () => current.current.latitude != null && current.current.longitude != null;
     const fail = (message, code, browserMessage) => {
       if (!active || settled) return;
@@ -80,12 +81,13 @@ export const useUserLocation = () => {
         fail(STRINGS.home.nearby.insecureContext, null, 'Secure context required'); return;
       }
       debug('background refresh', hasLocation());
+      let triedCoarsePosition = false;
       setState(previous => ({ ...previous, loading: !hasLocation(), refreshing: hasLocation(),
         error: null, warning: null }));
       timer = setTimeout(() => fail(STRINGS.home.nearby.locationTimeout, null,
         'Application deadline exceeded after 20000 ms'), 20000);
       try {
-        navigator.geolocation.getCurrentPosition(({ coords, timestamp }) => {
+        const success = ({ coords, timestamp }) => {
           if (!active || settled) return;
           const next = { latitude: coords.latitude, longitude: coords.longitude,
             timestamp: Number.isFinite(timestamp) ? timestamp : Date.now(),
@@ -112,10 +114,26 @@ export const useUserLocation = () => {
             errorCode: null, errorMessage: null, permissionState: 'granted',
             revision: value.revision + (refetch ? 1 : 0),
           }));
-        }, error => fail(error.code === 1 ? STRINGS.home.nearby.permissionRequired :
+        };
+        const failure = error => {
+          if (!active || settled) return;
+          // Desktop browsers can fail high-accuracy GPS while network positioning works.
+          if (!triedCoarsePosition && (error.code === 2 || error.code === 3)) {
+            triedCoarsePosition = true;
+            debug('background refresh', 'retrying browser network positioning');
+            try {
+              navigator.geolocation.getCurrentPosition(success, failure, {
+                enableHighAccuracy: false, timeout: 5000, maximumAge: 300000,
+              });
+            } catch (exception) { fail(STRINGS.home.nearby.locationError, null, exception.message); }
+            return;
+          }
+          fail(error.code === 1 ? STRINGS.home.nearby.permissionRequired :
           error.code === 2 ? STRINGS.home.nearby.locationUnavailable :
           error.code === 3 ? STRINGS.home.nearby.locationTimeout : STRINGS.home.nearby.locationError,
-          error.code, error.message), GEOLOCATION_OPTIONS);
+          error.code, error.message);
+        };
+        navigator.geolocation.getCurrentPosition(success, failure, GEOLOCATION_OPTIONS);
       } catch (error) { fail(STRINGS.home.nearby.locationError, null, error.message); }
     };
     const start = async () => {
@@ -127,9 +145,16 @@ export const useUserLocation = () => {
       let permission = 'unknown';
       try {
         if (navigator.permissions?.query) {
-          permission = (await navigator.permissions.query({ name: 'geolocation' })).state;
+          const result = await Promise.race([
+            navigator.permissions.query({ name: 'geolocation' }),
+            new Promise(resolve => {
+              permissionTimer = setTimeout(() => resolve({ state: 'unknown' }), 1500);
+            }),
+          ]);
+          permission = result.state;
         }
       } catch { /* With cache, unknown permission must never trigger a prompt. */ }
+      finally { clearTimeout(permissionTimer); }
       if (!active) return;
       debug('permission state', permission);
       setState(previous => ({ ...previous, permissionState: permission }));
@@ -141,7 +166,7 @@ export const useUserLocation = () => {
     };
     // React StrictMode cleans up its probe effect before this microtask starts.
     Promise.resolve().then(() => { if (active) start(); });
-    return () => { active = false; clearTimeout(timer); };
+    return () => { active = false; clearTimeout(timer); clearTimeout(permissionTimer); };
   }, [attempt]);
 
   return { ...state, refreshLocation, retry: refreshLocation };
