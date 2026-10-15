@@ -18,27 +18,36 @@ const getNavItems = (t) => [
     id: 'overview',
     label: t.overviewTab,
     icon: LayoutDashboard,
+    path: ROUTES.ADMIN_DASHBOARD,
+    aliases: [ROUTES.ADMIN],
   },
   {
     id: 'users',
     label: t.usersTab,
     icon: Users,
+    path: ROUTES.ADMIN_USER_MANAGER,
+    aliases: [ROUTES.ADMIN_USERS],
   },
   {
     id: 'devices',
     label: t.devicesTab,
     icon: Cpu,
+    path: ROUTES.ADMIN_DEVICE_MANAGER,
+    aliases: [ROUTES.ADMIN_DEVICES],
   },
   {
     id: 'ekyc',
     label: t.ekycTab,
     icon: ShieldCheck,
     showBadge: true,
+    path: ROUTES.ADMIN_EKYC_VERIFICATION,
+    aliases: [ROUTES.ADMIN_EKYC],
   },
 ];
 
 export const AdminSidebarContent = ({
   currentTab,
+  currentPath = '',
   onSelectTab,
   pendingEkycCount = 0,
   onLogout,
@@ -59,7 +68,7 @@ export const AdminSidebarContent = ({
           className="admin-logo-box"
           onClick={(e) => {
             e.preventDefault();
-            onSelectTab('overview');
+            onSelectTab('overview', ROUTES.ADMIN_DASHBOARD);
           }}
         >
           <div className="admin-logo-icon">
@@ -106,13 +115,15 @@ export const AdminSidebarContent = ({
 
         {navItems.map((item) => {
           const Icon = item.icon;
-          const isActive = currentTab === item.id;
+          const isActive =
+            currentTab === item.id ||
+            (currentPath && (currentPath === item.path || item.aliases?.includes(currentPath)));
 
           return (
             <button
               key={item.id}
               type="button"
-              onClick={() => onSelectTab(item.id)}
+              onClick={() => onSelectTab(item.id, item.path)}
               className={`admin-nav-item ${isActive ? 'active' : ''}`}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '11px', minWidth: 0, flex: 1 }}>

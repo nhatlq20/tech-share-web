@@ -20,6 +20,13 @@ export const ROUTES = {
   ADMIN: '/admin',
   ADMIN_DASHBOARD: '/admin/dashboard',
   DASHBOARD: '/admin/dashboard',
+  ADMIN_USERS: '/admin/users',
+  ADMIN_USER_MANAGER: '/admin/user-manager',
+  ADMIN_DEVICES: '/admin/devices',
+  ADMIN_DEVICE_MANAGER: '/admin/device-manager',
+  ADMIN_EKYC: '/admin/ekyc',
+  ADMIN_EKYC_VERIFICATION: '/admin/ekyc-verification',
+  ADMIN_SETTINGS: '/admin/settings',
   ADMIN_LOGIN: '/admin/login',
   PROFILE: '/profile',
   MESSAGES: '/messages',
@@ -35,7 +42,10 @@ export const ROUTES = {
   OWNER_CALENDAR: '/owner/calendar',
   OWNER_ANALYTICS: '/owner/analytics',
   OWNER_WALLET: '/owner/wallet',
-
+  OWNER_AI_ASSISTANT: '/owner/ai-assistant',
+  OWNER_MESSAGES: '/owner/messages',
+  OWNER_MESSAGES_CHAT: '/owner/messages/:bookingId',
+  OWNER_MESSAGES_PATH: (bookingId) => `/owner/messages/${bookingId}`,
 };
 
 export default ROUTES;

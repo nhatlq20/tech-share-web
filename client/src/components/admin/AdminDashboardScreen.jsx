@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Search, RefreshCw } from 'lucide-react';
 import { AdminSidebarContent } from './AdminSidebarContent';
 import { AdminOverviewTab } from './AdminOverviewTab';
@@ -7,6 +8,7 @@ import { AdminDevicesTab } from './AdminDevicesTab';
 import { AdminEkycTab } from './AdminEkycTab';
 import { NotificationDropdown } from '../notifications/NotificationDropdown';
 import { STRINGS } from '../../constants/strings';
+import { ROUTES } from '../../routes/routes';
 import { useAuth } from '../../context/AuthContext.jsx';
 import './AdminWorkspace.css';
 
@@ -63,10 +65,40 @@ const DEFAULT_CATEGORIES = [
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 export const AdminDashboardScreen = () => {
   const { user, logout } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const getTabFromPath = useCallback((pathname) => {
+    if (pathname === ROUTES.ADMIN_USER_MANAGER || pathname === ROUTES.ADMIN_USERS) return 'users';
+    if (pathname === ROUTES.ADMIN_DEVICE_MANAGER || pathname === ROUTES.ADMIN_DEVICES) return 'devices';
+    if (pathname === ROUTES.ADMIN_EKYC_VERIFICATION || pathname === ROUTES.ADMIN_EKYC) return 'ekyc';
+    if (pathname === ROUTES.ADMIN_SETTINGS) return 'settings';
+    return 'overview';
+  }, []);
+
+  const [currentTab, setCurrentTab] = useState(() => getTabFromPath(location.pathname));
   const [adminProfile, setAdminProfile] = useState(() => user || null);
-  const [currentTab, setCurrentTab] = useState('overview');
   const [globalSearch, setGlobalSearch] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  // Sync tab when browser URL changes (e.g. forward/back/direct link)
+  useEffect(() => {
+    const matchedTab = getTabFromPath(location.pathname);
+    setCurrentTab(matchedTab);
+  }, [location.pathname, getTabFromPath]);
+
+  const handleSelectTab = (tabId, targetPath) => {
+    setCurrentTab(tabId);
+    if (targetPath) {
+      navigate(targetPath);
+    } else {
+      if (tabId === 'users') navigate(ROUTES.ADMIN_USER_MANAGER);
+      else if (tabId === 'devices') navigate(ROUTES.ADMIN_DEVICE_MANAGER);
+      else if (tabId === 'ekyc') navigate(ROUTES.ADMIN_EKYC_VERIFICATION);
+      else if (tabId === 'settings') navigate(ROUTES.ADMIN_SETTINGS);
+      else navigate(ROUTES.ADMIN_DASHBOARD);
+    }
+  };
 
   // State data
   const [kpi, setKpi] = useState(DEFAULT_KPI);
@@ -423,7 +455,8 @@ export const AdminDashboardScreen = () => {
       {/* A. Fixed Left Sidebar */}
       <AdminSidebarContent
         currentTab={currentTab}
-        onSelectTab={setCurrentTab}
+        currentPath={location.pathname}
+        onSelectTab={handleSelectTab}
         pendingEkycCount={pendingEkycCount}
         onLogout={logout}
         admin={adminProfile || user}

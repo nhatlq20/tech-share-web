@@ -52,6 +52,7 @@ export const OwnerDashboardScreen = () => {
 
   // Sync route navigation
   const handleNavigate = (path) => {
+    if (!path) return;
     navigate(path);
   };
 
