@@ -417,3 +417,62 @@ test('permission inspection timeout with cache still never triggers a browser pr
   expect(navigator.geolocation.getCurrentPosition).not.toHaveBeenCalled();
   expect(deviceService.getRecommendedDevices).toHaveBeenCalledTimes(1);
 });
+
+test('Cameras filters recommendations and resets pagination without fetching GPS again', async () => {
+  save(); deviceService.getRecommendedDevices.mockResolvedValue(pagedResult(1));
+  await mount(); await goToPage(2);
+  deviceService.getRecommendedDevices.mockResolvedValue({ ...pagedResult(1, 1), data: [{ _id: 'camera', name: 'Camera result' }] });
+  await click('Cameras');
+  expect(deviceService.getRecommendedDevices).toHaveBeenLastCalledWith({ lat: 21.0285, lng: 105.8542, category: 'camera', page: 1, limit: 12 });
+  expect(deviceService.getRecommendedDevices).toHaveBeenCalledTimes(3);
+  expect(navigator.geolocation.getCurrentPosition).not.toHaveBeenCalled();
+  expect(container.querySelectorAll('article')).toHaveLength(1);
+  expect(container.querySelector('article').textContent).toContain('Camera result');
+  expect([...container.querySelectorAll('button')].find(b => b.textContent === 'Cameras').getAttribute('aria-pressed')).toBe('true');
+});
+
+test('All clears the category and clicking the selected category makes no duplicate request', async () => {
+  save(); await mount(); await click('Cameras');
+  expect(deviceService.getRecommendedDevices).toHaveBeenCalledTimes(2);
+  await click('Cameras');
+  expect(deviceService.getRecommendedDevices).toHaveBeenCalledTimes(2);
+  const all = [...container.querySelectorAll('button')].find(b => b.textContent === 'All');
+  await act(async () => all.click());
+  expect(deviceService.getRecommendedDevices).toHaveBeenLastCalledWith({ lat: 21.0285, lng: 105.8542, page: 1, limit: 12 });
+});
+
+test('rapid category changes ignore older category responses', async () => {
+  save(); let resolveCamera;
+  deviceService.getRecommendedDevices.mockResolvedValueOnce(result())
+    .mockImplementationOnce(() => new Promise(resolve => { resolveCamera = resolve; }))
+    .mockResolvedValueOnce(result('Laptop result'));
+  await mount(); await click('Cameras'); await click('Laptops');
+  await act(async () => resolveCamera(result('Old camera result')));
+  expect(container.querySelector('article').textContent).toContain('Laptop result');
+  expect(container.textContent).not.toContain('Old camera result');
+});
+
+test('pagination and location refresh retain selected category', async () => {
+  save(); deviceService.getRecommendedDevices.mockImplementation(({ page }) => Promise.resolve(pagedResult(page)));
+  await mount(); await click('Cameras'); await goToPage(2);
+  expect(deviceService.getRecommendedDevices).toHaveBeenLastCalledWith({ lat: 21.0285, lng: 105.8542, category: 'camera', page: 2, limit: 12 });
+  await click('Update location'); await allow({ latitude: 10.0452, longitude: 105.7469 });
+  expect(deviceService.getRecommendedDevices).toHaveBeenLastCalledWith({ lat: 10.0452, lng: 105.7469, category: 'camera', page: 1, limit: 12 });
+});
+
+test('category selected before GPS success is used for the first request', async () => {
+  await mount(); await click('Cameras');
+  expect(deviceService.getRecommendedDevices).not.toHaveBeenCalled();
+  await allow();
+  expect(deviceService.getRecommendedDevices).toHaveBeenCalledTimes(1);
+  expect(deviceService.getRecommendedDevices).toHaveBeenCalledWith({ lat: 21.0285, lng: 105.8542, category: 'camera', page: 1, limit: 12 });
+});
+
+test('category errors can retry and empty category results use the existing empty state', async () => {
+  save(); deviceService.getRecommendedDevices.mockResolvedValueOnce(result())
+    .mockRejectedValueOnce(new Error('API error')).mockResolvedValueOnce({ data: [], pagination: { total: 0 } });
+  await mount(); await click('Cameras'); await click('Try Again');
+  expect(deviceService.getRecommendedDevices).toHaveBeenLastCalledWith({ lat: 21.0285, lng: 105.8542, category: 'camera', page: 1, limit: 12 });
+  expect(container.textContent).toContain('No recommended devices found.');
+  expect(container.querySelectorAll('article')).toHaveLength(0);
+});

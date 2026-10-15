@@ -154,12 +154,14 @@ export const getRecommendedDevices = async (params = {}) => {
   ) {
     throw new Error("Valid coordinates are required for recommendations");
   }
+  const category = normalizeCategory(params.category);
   const response = await api.get(API_CONFIG.ENDPOINTS.DEVICES_RECOMMENDED, {
     params: {
       lat: params.lat,
       lng: params.lng,
       page: params.page ?? MAGIC_NUMBERS.HOME_RECOMMENDATIONS.INITIAL_PAGE,
       limit: params.limit ?? MAGIC_NUMBERS.HOME_RECOMMENDATIONS.PAGE_SIZE,
+      ...(category ? { category } : {}),
     },
   });
   if (
