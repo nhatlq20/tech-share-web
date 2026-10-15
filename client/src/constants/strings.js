@@ -37,6 +37,15 @@ export const STRINGS = {
   // Home & Landing Page Module (English)
   home: {
     recommended: {
+      paginationLabel: 'Recommended devices pagination',
+      pageLabel: 'Page',
+      devicesLabel: 'devices',
+      previousPage: 'Previous',
+      nextPage: 'Next',
+      lastKnownLocation: 'Using your last known location.',
+      staleLocation: 'Using your last known location. It may be out of date.',
+      updateLocation: 'Update location',
+      updatingLocation: 'Updating location...',
       heading: 'Recommended for You',
       subtitle: 'Discover available devices, with the closest options first.',
       locationLoading: 'Finding devices for you...',
