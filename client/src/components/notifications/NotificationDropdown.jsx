@@ -185,7 +185,7 @@ export const NotificationDropdown = ({ className = '' }) => {
       {/* Nút Chuông */}
       <button
         type="button"
-        className={`notification-bell-btn ${isOpen ? 'active' : ''}`}
+        className={`notification-bell-btn relative ${isOpen ? 'active' : ''}`}
         onClick={() => setIsOpen(!isOpen)}
         title="Thông báo"
         aria-label="Thông báo"
@@ -193,7 +193,10 @@ export const NotificationDropdown = ({ className = '' }) => {
       >
         <Bell size={19} />
         {unreadCount > 0 && (
-          <span className="notification-badge" aria-label={`${unreadCount} thông báo chưa đọc`}>
+          <span
+            className="bg-red-500 text-white text-[11px] font-bold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center absolute -top-1 -right-1 shadow-xs leading-none"
+            aria-label={`${unreadCount} thông báo chưa đọc`}
+          >
             {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}

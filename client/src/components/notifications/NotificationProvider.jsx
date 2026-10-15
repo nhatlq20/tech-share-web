@@ -8,6 +8,7 @@ import {
   setNotifications,
   addNotification,
   markNotificationAsRead,
+  markAllAsRead,
 } from '../../store/slices/notificationSlice';
 import {
   subscribeUserNotifications,
@@ -16,6 +17,7 @@ import {
   markAsReadApi,
   fetchNotificationsApi,
 } from '../../services/firebaseNotificationService';
+import { connectSocket } from '../../services/socketService.js';
 
 /**
  * Toast Banner hiển thị thông báo thời gian thực nổi ở góc phải
@@ -188,12 +190,58 @@ export const NotificationProvider = ({ children }) => {
       unsubscribeForeground = unsub;
     });
 
+    // 5. Kết nối Socket.IO lắng nghe thông báo thời gian thực
+    const socket = connectSocket();
+    const handleSocketNewNotification = (data) => {
+      if (!data) return;
+      const notifId = data._id || data.notificationId || `notif_${Date.now()}`;
+      if (!knownIdsRef.current.has(notifId)) {
+        const newNotif = {
+          _id: notifId,
+          userId: String(currentUserId),
+          title: data.title || 'Thông báo mới',
+          body: data.body || '',
+          type: data.type || 'system',
+          relatedId: data.relatedId || data.metadata?.bookingId,
+          isRead: false,
+          createdAt: data.createdAt || new Date().toISOString(),
+        };
+        knownIdsRef.current.add(notifId);
+        dispatch(addNotification(newNotif));
+        // Nếu không phải dạng tin nhắn chat thuần (đã có InAppNotificationBanner lo)
+        if (data.type !== 'chat') {
+          renderCustomToast(newNotif, navigate, dispatch);
+        }
+      }
+    };
+
+    const handleSocketNotificationRead = (payload) => {
+      if (payload?.id) {
+        dispatch(markNotificationAsRead(payload.id));
+      }
+    };
+
+    const handleSocketNotificationsReadAll = () => {
+      dispatch(markAllAsRead());
+    };
+
+    if (socket) {
+      socket.on('new_notification', handleSocketNewNotification);
+      socket.on('notification_read', handleSocketNotificationRead);
+      socket.on('notifications_read_all', handleSocketNotificationsReadAll);
+    }
+
     return () => {
       if (typeof unsubscribeSnapshot === 'function') {
         unsubscribeSnapshot();
       }
       if (typeof unsubscribeForeground === 'function') {
         unsubscribeForeground();
+      }
+      if (socket) {
+        socket.off('new_notification', handleSocketNewNotification);
+        socket.off('notification_read', handleSocketNotificationRead);
+        socket.off('notifications_read_all', handleSocketNotificationsReadAll);
       }
     };
   }, [isAuthenticated, user?._id, user?.id, dispatch, navigate]);

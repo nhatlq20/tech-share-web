@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import Notification from '../models/Notification.js';
 import User from '../models/User.js';
 import { getAdminMessaging, getAdminFirestore } from '../config/firebaseAdmin.js';
+import { getIO } from '../socket.js';
 
 /**
  * Kiểm tra xem token có phải là Expo Push Token không
@@ -176,6 +177,25 @@ export const createAndSendNotification = async ({
     console.warn('⚠️ Push notification dispatch warning:', pushErr.message);
   }
 
+  // 4. Phát sự kiện Socket.IO đến room user để cập nhật Badge quả chuông tức thì
+  try {
+    const io = getIO();
+    if (io) {
+      io.to(`user_${userId}`).emit('new_notification', {
+        _id: notification._id.toString(),
+        userId: notification.userId.toString(),
+        title: notification.title,
+        body: notification.body,
+        type: notification.type,
+        relatedId: notification.relatedId || null,
+        isRead: false,
+        createdAt: notification.createdAt ? notification.createdAt.toISOString() : new Date().toISOString(),
+      });
+    }
+  } catch (ioErr) {
+    console.warn('⚠️ Socket notification emit warning:', ioErr.message);
+  }
+
   return notification;
 };
 
@@ -234,6 +254,14 @@ export const markAsRead = async (notificationId, userId) => {
         console.warn('⚠️ Firestore update warning:', err.message);
       }
     }
+
+    // Phát sự kiện Socket thông báo đã đọc
+    try {
+      const io = getIO();
+      if (io) {
+        io.to(`user_${userId}`).emit('notification_read', { id: notificationId });
+      }
+    } catch (e) {}
   }
 
   return notification;
@@ -269,6 +297,14 @@ export const markAllAsRead = async (userId) => {
       console.warn('⚠️ Firestore batch update warning:', err.message);
     }
   }
+
+  // Phát sự kiện Socket thông báo đã đọc tất cả
+  try {
+    const io = getIO();
+    if (io) {
+      io.to(`user_${userId}`).emit('notifications_read_all');
+    }
+  } catch (e) {}
 
   return result;
 };

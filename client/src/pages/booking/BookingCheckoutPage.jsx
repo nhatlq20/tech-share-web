@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   Copy,
   ArrowLeft,
+  MessageSquare,
 } from 'lucide-react';
 import { STRINGS } from '../../constants/strings.js';
 import { API_CONFIG, MAGIC_NUMBERS } from '../../constants/config.js';
@@ -748,6 +749,20 @@ export const BookingCheckoutPage = () => {
             <div className="flex flex-col sm:flex-row gap-3 w-full">
               <button
                 type="button"
+                onClick={() =>
+                  navigate(
+                    ROUTES.MESSAGES_PATH(
+                      successBooking._id || successBooking.id || successBooking.bookingId
+                    )
+                  )
+                }
+                className="flex-1 py-3 px-4 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-1.5"
+              >
+                <MessageSquare className="w-4 h-4" />
+                <span>Nhắn tin với Chủ máy</span>
+              </button>
+              <button
+                type="button"
                 onClick={() => navigate(ROUTES.EXPLORE)}
                 className="flex-1 py-3 px-4 rounded-xl border border-slate-200 text-slate-700 font-bold text-xs hover:bg-slate-100 transition"
               >
@@ -756,7 +771,7 @@ export const BookingCheckoutPage = () => {
               <button
                 type="button"
                 onClick={() => navigate(successBooking?.bookingCode ? ROUTES.BOOKING_DETAIL_PATH(successBooking.bookingCode) : ROUTES.MY_BOOKINGS)}
-                className="flex-1 py-3 px-4 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-bold text-xs shadow-md transition"
+                className="flex-1 py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs shadow-md transition"
               >
                 {STRINGS.booking.successModal.viewMyBookingsBtn}
               </button>
