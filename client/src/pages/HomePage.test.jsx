@@ -318,11 +318,13 @@ test('automatic API recovery is bounded and manual retry still works afterwards'
   jest.useFakeTimers(); save();
   deviceService.getRecommendedDevices.mockRejectedValue(new TypeError('Failed to fetch'));
   await mount();
-  for (const delay of [1000, 2000, 4000, 8000]) await act(async () => jest.advanceTimersByTime(delay));
-  expect(deviceService.getRecommendedDevices).toHaveBeenCalledTimes(5);
+  for (const delay of [1000, 2000, 4000, 8000, 15000, 15000, 15000, 15000, 15000, 15000]) {
+    await act(async () => jest.advanceTimersByTime(delay));
+  }
+  expect(deviceService.getRecommendedDevices).toHaveBeenCalledTimes(11);
   expect(container.textContent).not.toContain('Reconnecting automatically...');
   await act(async () => jest.advanceTimersByTime(60000));
-  expect(deviceService.getRecommendedDevices).toHaveBeenCalledTimes(5);
+  expect(deviceService.getRecommendedDevices).toHaveBeenCalledTimes(11);
   deviceService.getRecommendedDevices.mockResolvedValue(result());
   await click('Try Again');
   expect(container.querySelectorAll('article')).toHaveLength(1);
@@ -351,10 +353,10 @@ test('invalid API requests do not loop automatically', async () => {
   expect(deviceService.getRecommendedDevices).toHaveBeenCalledTimes(1);
 });
 
-test('high accuracy failure retries real browser network positioning and persists success', async () => {
+test('fast browser positioning failure retries a fresh high accuracy fix and persists success', async () => {
   await mount(); await reject(2);
   expect(navigator.geolocation.getCurrentPosition).toHaveBeenCalledTimes(2);
-  expect(navigator.geolocation.getCurrentPosition.mock.calls[1][2]).toEqual({ enableHighAccuracy: false, timeout: 5000, maximumAge: 300000 });
+  expect(navigator.geolocation.getCurrentPosition.mock.calls[1][2]).toEqual({ enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
   await allow();
   expect(localStorage.getItem(LOCATION_CACHE_KEY)).not.toBeNull();
   expect(container.querySelectorAll('article')).toHaveLength(1);
@@ -475,4 +477,54 @@ test('category errors can retry and empty category results use the existing empt
   expect(deviceService.getRecommendedDevices).toHaveBeenLastCalledWith({ lat: 21.0285, lng: 105.8542, category: 'camera', page: 1, limit: 12 });
   expect(container.textContent).toContain('No recommended devices found.');
   expect(container.querySelectorAll('article')).toHaveLength(0);
+});
+
+test('slow backend startup recovers after the old retry window without asking for location again', async () => {
+  jest.useFakeTimers(); save();
+  deviceService.getRecommendedDevices.mockRejectedValue(new TypeError('Failed to fetch'));
+  await mount();
+  for (const delay of [1000, 2000, 4000, 8000, 15000, 15000, 15000]) {
+    await act(async () => jest.advanceTimersByTime(delay));
+  }
+  expect(container.querySelectorAll('article')).toHaveLength(0);
+  expect(container.textContent).toContain('Reconnecting automatically...');
+  deviceService.getRecommendedDevices.mockResolvedValue(result());
+  await act(async () => jest.advanceTimersByTime(15000));
+  expect(container.querySelectorAll('article')).toHaveLength(1);
+  expect(navigator.geolocation.getCurrentPosition).not.toHaveBeenCalled();
+  expect(localStorage.getItem(LOCATION_CACHE_KEY)).not.toBeNull();
+});
+
+test('late browser success after the UI timeout still loads devices', async () => {
+  jest.useFakeTimers(); await mount();
+  await act(async () => jest.advanceTimersByTime(20000));
+  expect(container.textContent).toContain('Location request timed out.');
+  await allow();
+  expect(container.querySelectorAll('article')).toHaveLength(1);
+  expect(localStorage.getItem(LOCATION_CACHE_KEY)).not.toBeNull();
+});
+
+test('granting browser permission after denial automatically retries location', async () => {
+  const status = { state: 'denied', addEventListener: jest.fn(), removeEventListener: jest.fn() };
+  navigator.permissions.query.mockResolvedValue(status);
+  await mount();
+  expect(container.textContent).toContain('Location permission is blocked');
+  const change = status.addEventListener.mock.calls[0][1];
+  status.state = 'granted';
+  await act(async () => change());
+  expect(navigator.geolocation.getCurrentPosition).toHaveBeenCalledTimes(1);
+  await allow();
+  expect(container.querySelectorAll('article')).toHaveLength(1);
+  expect(status.removeEventListener).toHaveBeenCalled();
+});
+
+test('Allow after permission prompt does not duplicate a pending location request', async () => {
+  const status = { state: 'prompt', addEventListener: jest.fn(), removeEventListener: jest.fn() };
+  navigator.permissions.query.mockResolvedValue(status);
+  await mount();
+  expect(navigator.geolocation.getCurrentPosition.mock.calls[0][2]).toEqual({ enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 });
+  const change = status.addEventListener.mock.calls[0][1];
+  status.state = 'granted'; await act(async () => change());
+  expect(navigator.geolocation.getCurrentPosition).toHaveBeenCalledTimes(1);
+  await allow(); expect(container.querySelectorAll('article')).toHaveLength(1);
 });

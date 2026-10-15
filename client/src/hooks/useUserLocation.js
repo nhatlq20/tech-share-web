@@ -5,7 +5,7 @@ export const LOCATION_CACHE_KEY = 'techshare:last-user-location';
 export const LOCATION_FRESH_MS = 30 * 60 * 1000;
 export const LOCATION_MOVEMENT_METERS = 150;
 export const GEOLOCATION_OPTIONS = {
-  enableHighAccuracy: true, timeout: 15000, maximumAge: 60000,
+  enableHighAccuracy: false, timeout: 8000, maximumAge: 60000,
 };
 const debug = (label, value) => {
   if (process.env.NODE_ENV === 'development') console.info(`[WEB LOCATION] ${label}:`, value);
@@ -67,10 +67,19 @@ export const useUserLocation = () => {
     let settled = false;
     let timer;
     let permissionTimer;
+    let permissionStatus;
+    let positionPending = false;
+    const handlePermissionChange = () => {
+      if (!active) return;
+      const permission = permissionStatus.state;
+      setState(previous => ({ ...previous, permissionState: permission }));
+      if (permission === 'granted' && !positionPending) refreshLocation();
+    };
     const hasLocation = () => current.current.latitude != null && current.current.longitude != null;
-    const handleLocationError = (message, code, browserMessage) => {
+    const handleLocationError = (message, code, browserMessage, acceptLatePosition = false) => {
       if (!active || settled) return;
-      settled = true;
+      settled = !acceptLatePosition;
+      positionPending = false;
       clearTimeout(timer);
       debug('background refresh', hasLocation() ? 'failed; preserving location' : 'unavailable');
       setState(previous => ({ ...previous, loading: false, refreshing: false,
@@ -88,11 +97,12 @@ export const useUserLocation = () => {
         handleLocationError(STRINGS.home.nearby.insecureContext, null, 'Secure context required'); return;
       }
       debug('background refresh', hasLocation());
-      let triedCoarsePosition = false;
+      positionPending = true;
+      let triedHighAccuracy = false;
       setState(previous => ({ ...previous, loading: !hasLocation(), refreshing: hasLocation(),
         error: null, warning: null }));
       timer = setTimeout(() => handleLocationError(STRINGS.home.nearby.locationTimeout, null,
-        'Application deadline exceeded after 20000 ms'), 20000);
+        'Application deadline exceeded after 20000 ms', true), 20000);
       try {
         const handlePositionSuccess = ({ coords, timestamp }) => {
           if (!active || settled) return;
@@ -104,6 +114,7 @@ export const useUserLocation = () => {
             handleLocationError(STRINGS.home.nearby.locationError, null, 'Invalid browser coordinates'); return;
           }
           settled = true;
+          positionPending = false;
           clearTimeout(timer);
           saveLocation(next);
           const previous = current.current;
@@ -124,13 +135,13 @@ export const useUserLocation = () => {
         };
         const handlePositionError = error => {
           if (!active || settled) return;
-          // Desktop browsers can fail high-accuracy GPS while network positioning works.
-          if (!triedCoarsePosition && (error.code === 2 || error.code === 3)) {
-            triedCoarsePosition = true;
-            debug('background refresh', 'retrying browser network positioning');
+          // Try a more accurate fresh fix only if the fast browser request fails.
+          if (!triedHighAccuracy && (error.code === 2 || error.code === 3)) {
+            triedHighAccuracy = true;
+            debug('background refresh', 'retrying browser high accuracy positioning');
             try {
               navigator.geolocation.getCurrentPosition(handlePositionSuccess, handlePositionError, {
-                enableHighAccuracy: false, timeout: 5000, maximumAge: 300000,
+                enableHighAccuracy: true, timeout: 10000, maximumAge: 0,
               });
             } catch (exception) { handleLocationError(STRINGS.home.nearby.locationError, null, exception.message); }
             return;
@@ -159,6 +170,8 @@ export const useUserLocation = () => {
             }),
           ]);
           permission = result.state;
+          permissionStatus = result;
+          permissionStatus.addEventListener?.('change', handlePermissionChange);
         }
       } catch { /* With cache, unknown permission must never trigger a prompt. */ }
       finally { clearTimeout(permissionTimer); }
@@ -173,8 +186,13 @@ export const useUserLocation = () => {
     };
     // React StrictMode cleans up its probe effect before this microtask starts.
     Promise.resolve().then(() => { if (active) initializeLocation(); });
-    return () => { active = false; clearTimeout(timer); clearTimeout(permissionTimer); };
-  }, [attempt]);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+      clearTimeout(permissionTimer);
+      permissionStatus?.removeEventListener?.('change', handlePermissionChange);
+    };
+  }, [attempt, refreshLocation]);
 
   return { ...state, refreshLocation, retry: refreshLocation };
 };

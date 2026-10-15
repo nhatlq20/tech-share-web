@@ -24,6 +24,9 @@ import { MAGIC_NUMBERS } from '../constants/config';
 import './HomePage.css';
 import { useUserLocation } from '../hooks/useUserLocation';
 
+const MAX_RECOMMENDATION_RETRIES = 10;
+const MAX_RETRY_DELAY_MS = 15000;
+
 const getCategories = () => [
   { id: 'all', label: STRINGS.home.categories.all, icon: Sparkles },
   { id: 'smartphone', label: STRINGS.home.categories.smartphone, icon: Smartphone },
@@ -120,8 +123,9 @@ export const HomePage = () => {
         const isConnectionError = requestError instanceof TypeError || requestError?.name === 'AbortError' ||
           [502, 503, 504].includes(requestError?.status);
         setError(isConnectionError ? STRINGS.home.recommended.connectionError : STRINGS.home.recommended.apiError);
-        if (isConnectionError && recovery.current.failures < 4) {
-          const delay = 1000 * (2 ** recovery.current.failures);
+        if (isConnectionError && recovery.current.failures < MAX_RECOMMENDATION_RETRIES) {
+          // Atlas may need longer to reconnect than the first few startup requests.
+          const delay = Math.min(1000 * (2 ** recovery.current.failures), MAX_RETRY_DELAY_MS);
           recovery.current.failures += 1;
           setRetrying(true);
           retryTimer = setTimeout(() => {
