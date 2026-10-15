@@ -15,7 +15,7 @@ const validLocation = (value) => value && Number.isFinite(value.latitude) &&
   Math.abs(value.longitude) <= 180 && Number.isFinite(value.timestamp) && value.timestamp >= 0 &&
   (value.accuracy === undefined || (Number.isFinite(value.accuracy) && value.accuracy >= 0));
 
-export const readLastLocation = () => {
+export const getSavedLocation = () => {
   try {
     const raw = window.localStorage.getItem(LOCATION_CACHE_KEY);
     if (!raw) return null;
@@ -30,6 +30,13 @@ export const readLastLocation = () => {
   }
   return null;
 };
+// Keep browser positioning usable even when storage is blocked.
+const saveLocation = (location) => {
+  try { window.localStorage.setItem(LOCATION_CACHE_KEY, JSON.stringify(location)); } catch { /* Keep location in memory. */ }
+};
+
+export { getSavedLocation as readLastLocation };
+
 const distanceMeters = (a, b) => {
   const rad = (degrees) => degrees * Math.PI / 180;
   const h = Math.sin(rad(b.latitude - a.latitude) / 2) ** 2 +
@@ -37,8 +44,8 @@ const distanceMeters = (a, b) => {
     Math.sin(rad(b.longitude - a.longitude) / 2) ** 2;
   return 6371000 * 2 * Math.asin(Math.sqrt(Math.min(1, h)));
 };
-const initialState = () => {
-  const cache = readLastLocation();
+const getInitialLocationState = () => {
+  const cache = getSavedLocation();
   return {
     latitude: null, longitude: null, ...cache,
     source: cache ? 'CACHE' : 'NONE',
@@ -49,7 +56,7 @@ const initialState = () => {
 };
 
 export const useUserLocation = () => {
-  const [state, setState] = useState(initialState);
+  const [state, setState] = useState(getInitialLocationState);
   const current = useRef(state);
   current.current = state;
   const [attempt, setAttempt] = useState(0);
@@ -61,7 +68,7 @@ export const useUserLocation = () => {
     let timer;
     let permissionTimer;
     const hasLocation = () => current.current.latitude != null && current.current.longitude != null;
-    const fail = (message, code, browserMessage) => {
+    const handleLocationError = (message, code, browserMessage) => {
       if (!active || settled) return;
       settled = true;
       clearTimeout(timer);
@@ -72,33 +79,33 @@ export const useUserLocation = () => {
         permissionState: code === 1 ? 'denied' : previous.permissionState,
       }));
     };
-    const request = () => {
+    const getCurrentLocation = () => {
       if (!active) return;
       if (!navigator.geolocation) {
-        fail(STRINGS.home.nearby.unsupported, null, 'Geolocation API unavailable'); return;
+        handleLocationError(STRINGS.home.nearby.unsupported, null, 'Geolocation API unavailable'); return;
       }
       if (window.isSecureContext === false) {
-        fail(STRINGS.home.nearby.insecureContext, null, 'Secure context required'); return;
+        handleLocationError(STRINGS.home.nearby.insecureContext, null, 'Secure context required'); return;
       }
       debug('background refresh', hasLocation());
       let triedCoarsePosition = false;
       setState(previous => ({ ...previous, loading: !hasLocation(), refreshing: hasLocation(),
         error: null, warning: null }));
-      timer = setTimeout(() => fail(STRINGS.home.nearby.locationTimeout, null,
+      timer = setTimeout(() => handleLocationError(STRINGS.home.nearby.locationTimeout, null,
         'Application deadline exceeded after 20000 ms'), 20000);
       try {
-        const success = ({ coords, timestamp }) => {
+        const handlePositionSuccess = ({ coords, timestamp }) => {
           if (!active || settled) return;
           const next = { latitude: coords.latitude, longitude: coords.longitude,
             timestamp: Number.isFinite(timestamp) ? timestamp : Date.now(),
             ...(Number.isFinite(coords.accuracy) ? { accuracy: coords.accuracy } : {}),
           };
           if (!validLocation(next)) {
-            fail(STRINGS.home.nearby.locationError, null, 'Invalid browser coordinates'); return;
+            handleLocationError(STRINGS.home.nearby.locationError, null, 'Invalid browser coordinates'); return;
           }
           settled = true;
           clearTimeout(timer);
-          try { window.localStorage.setItem(LOCATION_CACHE_KEY, JSON.stringify(next)); } catch { /* Keep browser location. */ }
+          saveLocation(next);
           const previous = current.current;
           const movement = hasLocation() ? distanceMeters(previous, next) : Infinity;
           const refetch = attempt > 0 || movement >= LOCATION_MOVEMENT_METERS;
@@ -115,33 +122,33 @@ export const useUserLocation = () => {
             revision: value.revision + (refetch ? 1 : 0),
           }));
         };
-        const failure = error => {
+        const handlePositionError = error => {
           if (!active || settled) return;
           // Desktop browsers can fail high-accuracy GPS while network positioning works.
           if (!triedCoarsePosition && (error.code === 2 || error.code === 3)) {
             triedCoarsePosition = true;
             debug('background refresh', 'retrying browser network positioning');
             try {
-              navigator.geolocation.getCurrentPosition(success, failure, {
+              navigator.geolocation.getCurrentPosition(handlePositionSuccess, handlePositionError, {
                 enableHighAccuracy: false, timeout: 5000, maximumAge: 300000,
               });
-            } catch (exception) { fail(STRINGS.home.nearby.locationError, null, exception.message); }
+            } catch (exception) { handleLocationError(STRINGS.home.nearby.locationError, null, exception.message); }
             return;
           }
-          fail(error.code === 1 ? STRINGS.home.nearby.permissionRequired :
+          handleLocationError(error.code === 1 ? STRINGS.home.nearby.permissionRequired :
           error.code === 2 ? STRINGS.home.nearby.locationUnavailable :
           error.code === 3 ? STRINGS.home.nearby.locationTimeout : STRINGS.home.nearby.locationError,
           error.code, error.message);
         };
-        navigator.geolocation.getCurrentPosition(success, failure, GEOLOCATION_OPTIONS);
-      } catch (error) { fail(STRINGS.home.nearby.locationError, null, error.message); }
+        navigator.geolocation.getCurrentPosition(handlePositionSuccess, handlePositionError, GEOLOCATION_OPTIONS);
+      } catch (error) { handleLocationError(STRINGS.home.nearby.locationError, null, error.message); }
     };
-    const start = async () => {
+    const initializeLocation = async () => {
       debug('source', current.current.source);
       debug('cache age', current.current.timestamp == null ? null : Date.now() - current.current.timestamp);
       debug('stale', current.current.isStale);
       // Explicit user action may prompt, even when the Permissions API is unavailable.
-      if (attempt > 0) { request(); return; }
+      if (attempt > 0) { getCurrentLocation(); return; }
       let permission = 'unknown';
       try {
         if (navigator.permissions?.query) {
@@ -159,13 +166,13 @@ export const useUserLocation = () => {
       debug('permission state', permission);
       setState(previous => ({ ...previous, permissionState: permission }));
       if (hasLocation()) {
-        if (permission === 'granted') request();
+        if (permission === 'granted') getCurrentLocation();
       } else if (permission === 'denied') {
-        fail(STRINGS.home.nearby.permissionRequired, 1, 'Location permission denied');
-      } else request();
+        handleLocationError(STRINGS.home.nearby.permissionRequired, 1, 'Location permission denied');
+      } else getCurrentLocation();
     };
     // React StrictMode cleans up its probe effect before this microtask starts.
-    Promise.resolve().then(() => { if (active) start(); });
+    Promise.resolve().then(() => { if (active) initializeLocation(); });
     return () => { active = false; clearTimeout(timer); clearTimeout(permissionTimer); };
   }, [attempt]);
 
