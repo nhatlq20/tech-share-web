@@ -1,11 +1,24 @@
 import express from 'express';
-import { login, getProfile, getCurrentUser, updateAvatar } from '../controllers/authController.js';
+import {
+  login,
+  getProfile,
+  getCurrentUser,
+  updateAvatar,
+  registerInit,
+  registerVerifyOtp,
+  resendRegisterOtp,
+} from '../controllers/authController.js';
 import { protect } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
 // Đăng nhập
 router.post('/login', login);
+
+// Đăng ký tài khoản (Luồng xác thực OTP Email)
+router.post('/register-init', registerInit);
+router.post('/register-verify-otp', registerVerifyOtp);
+router.post('/resend-otp', resendRegisterOtp);
 
 // Lấy thông tin user hiện tại (cần Token)
 router.get('/me', protect, getCurrentUser);

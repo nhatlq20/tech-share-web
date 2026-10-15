@@ -11,7 +11,7 @@ import { DeviceDetailPage } from '../pages/DeviceDetailPage.jsx';
 import { BookingCheckoutPage } from '../pages/booking/BookingCheckoutPage.jsx';
 import { NearbyPage } from '../pages/NearbyPage.jsx';
 import { LoginPage } from '../pages/LoginPage.jsx';
-import { RegisterPage } from '../pages/RegisterPage.jsx';
+import { RegisterPage } from '../pages/RegisterPage.tsx';
 import { NotFoundPage } from '../pages/NotFoundPage.jsx';
 
 // Auth-required pages

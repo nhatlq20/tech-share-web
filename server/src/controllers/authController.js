@@ -3,6 +3,8 @@ import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
 import { Account } from '../models/Account.js';
 import { User } from '../models/User.js';
+import { Otp } from '../models/Otp.js';
+import { sendOtpEmail } from '../services/emailService.js';
 import { uploadToCloudinary, deleteFromCloudinary } from '../services/cloudinaryService.js';
 
 /**
@@ -299,4 +301,353 @@ export const updateAvatar = async (req, res) => {
     });
   }
 };
+
+/**
+ * 5. POST /api/auth/register-init
+ * Tiếp nhận thông tin đăng ký: username, name, phone, email, password
+ * Kiểm tra trùng lặp trong DB và gửi mã OTP 6 số qua Gmail App Password
+ */
+export const registerInit = async (req, res) => {
+  try {
+    const { username, name, phone, email, password } = req.body;
+
+    const cleanUsername = (username || '').trim().toLowerCase();
+    const cleanName = (name || '').trim();
+    const cleanPhone = (phone || '').trim();
+    const cleanEmail = (email || '').trim().toLowerCase();
+
+    // 1. Check required fields
+    if (!cleanUsername || !cleanName || !cleanPhone || !cleanEmail || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please fill in all required fields: username, full name, phone number, email, and password.',
+      });
+    }
+
+    if (cleanUsername.length < 3) {
+      return res.status(400).json({
+        success: false,
+        message: 'Username must be at least 3 characters long.',
+      });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(cleanEmail)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid email address format.',
+      });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 6 characters long.',
+      });
+    }
+
+    // 2. Check duplicates in accounts collection
+    const existingAccount = await Account.findOne({
+      $or: [
+        { username: cleanUsername },
+        { email: cleanEmail },
+      ],
+    }).lean();
+
+    if (existingAccount) {
+      if (existingAccount.username.toLowerCase() === cleanUsername) {
+        return res.status(400).json({
+          success: false,
+          message: 'This username is already taken. Please choose another one.',
+        });
+      }
+      if (existingAccount.email.toLowerCase() === cleanEmail) {
+        return res.status(400).json({
+          success: false,
+          message: 'This email is already registered. Please use another email or sign in.',
+        });
+      }
+    }
+
+    // 3. Check duplicates in users collection (email or phone)
+    const existingUser = await User.findOne({
+      $or: [
+        { email: cleanEmail },
+        { phone: cleanPhone },
+      ],
+    }).lean();
+
+    if (existingUser) {
+      if (existingUser.email && existingUser.email.toLowerCase() === cleanEmail) {
+        return res.status(400).json({
+          success: false,
+          message: 'This email is already registered.',
+        });
+      }
+      if (existingUser.phone && existingUser.phone === cleanPhone) {
+        return res.status(400).json({
+          success: false,
+          message: 'This phone number is already registered to another account.',
+        });
+      }
+    }
+
+    // 4. Generate random 6-digit OTP
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // 5. Hash password
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(password, salt);
+
+    // 6. Save or update OTP in otps collection (5-minute expiry)
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+    await Otp.findOneAndUpdate(
+      { email: cleanEmail, type: 'register' },
+      {
+        email: cleanEmail,
+        otp: otpCode,
+        type: 'register',
+        payload: {
+          username: cleanUsername,
+          name: cleanName,
+          phone: cleanPhone,
+          email: cleanEmail,
+          passwordHash,
+        },
+        expiresAt,
+      },
+      { upsert: true, new: true }
+    );
+
+    // 7. Send OTP via Gmail App Password
+    await sendOtpEmail(cleanEmail, otpCode, cleanName);
+
+    return res.status(200).json({
+      success: true,
+      message: `Verification code sent to ${cleanEmail}. Please check your inbox or spam folder.`,
+      email: cleanEmail,
+    });
+  } catch (error) {
+    console.error('Error in registerInit:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Unable to send OTP verification code. Please check your email or try again later.',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * 6. POST /api/auth/register-verify-otp
+ * Verify OTP code, create account in accounts collection first,
+ * then create full profile in users collection with role 'renter'
+ */
+export const registerVerifyOtp = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    const cleanEmail = (email || '').trim().toLowerCase();
+    const cleanOtp = (otp || '').trim();
+
+    if (!cleanEmail || !cleanOtp) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide both email and 6-digit OTP code.',
+      });
+    }
+
+    // 1. Verify OTP record in otps collection
+    const otpRecord = await Otp.findOne({
+      email: cleanEmail,
+      type: 'register',
+    });
+
+    if (!otpRecord) {
+      return res.status(400).json({
+        success: false,
+        message: 'Verification code does not exist or has expired. Please register again.',
+      });
+    }
+
+    if (new Date() > new Date(otpRecord.expiresAt)) {
+      await Otp.deleteOne({ _id: otpRecord._id });
+      return res.status(400).json({
+        success: false,
+        message: 'OTP code has expired (exceeded 5 minutes). Please request a new code.',
+      });
+    }
+
+    if (otpRecord.otp !== cleanOtp) {
+      return res.status(400).json({
+        success: false,
+        message: 'Incorrect OTP code. Please check and try again.',
+      });
+    }
+
+    const payload = otpRecord.payload;
+    if (!payload || !payload.username || !payload.email || !payload.passwordHash) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid registration payload. Please start over.',
+      });
+    }
+
+    // 2. Final duplicate check
+    const doubleCheck = await Account.findOne({
+      $or: [{ username: payload.username }, { email: payload.email }],
+    });
+    if (doubleCheck) {
+      return res.status(400).json({
+        success: false,
+        message: 'This account has already been created. Please log in.',
+      });
+    }
+
+    // 3. Find roleId for role 'renter'
+    let roleId = null;
+    try {
+      const renterRole = await mongoose.connection.db
+        .collection('roles')
+        .findOne({ code: 'renter' });
+      if (renterRole) {
+        roleId = renterRole._id;
+      }
+    } catch (e) {
+      console.warn('Cannot find renter role in roles collection:', e.message);
+    }
+
+    if (!roleId) {
+      roleId = new mongoose.Types.ObjectId('64e0a12f9b1c2b001a888883');
+    }
+
+    // 4. Create ObjectIds for both collections
+    const accountId = new mongoose.Types.ObjectId();
+    const userId = new mongoose.Types.ObjectId();
+
+    // 5. Save to accounts collection
+    const newAccount = new Account({
+      _id: accountId,
+      username: payload.username,
+      email: payload.email,
+      passwordHash: payload.passwordHash,
+      roleId: roleId,
+      userId: userId,
+      isActive: true,
+    });
+    await newAccount.save();
+
+    // 6. Save to users collection
+    const newUser = new User({
+      _id: userId,
+      name: payload.name,
+      email: payload.email,
+      phone: payload.phone,
+      address: null,
+      avatar: null,
+      role: 'renter',
+      isVerified: true,
+      trustScore: 100,
+      badges: [],
+      referralCode: '',
+      referredBy: null,
+      wishlist: [],
+      walletBalance: 0,
+      walletEscrowBalance: 0,
+      expoPushToken: '',
+      pushTokens: [],
+      fcmTokens: [],
+      biometricEnabled: false,
+      location: null,
+      rating: 5,
+      totalReviews: 0,
+      isActive: true,
+      accountId: accountId,
+    });
+    await newUser.save();
+
+    // 7. Delete verified OTP
+    await Otp.deleteOne({ _id: otpRecord._id });
+
+    // 8. Generate JWT Token
+    const token = generateToken({
+      accountId: newAccount._id,
+      userId: newUser._id,
+      username: newAccount.username,
+      email: newAccount.email,
+      role: 'renter',
+    });
+
+    const safeAccount = {
+      _id: newAccount._id,
+      username: newAccount.username,
+      email: newAccount.email,
+      roleId: newAccount.roleId,
+      userId: newAccount.userId,
+      isActive: newAccount.isActive,
+      createdAt: newAccount.createdAt,
+    };
+
+    const { passwordHash: _, ...safeUser } = newUser.toObject();
+
+    return res.status(201).json({
+      success: true,
+      message: 'Congratulations! Your TechShare account has been successfully created.',
+      token,
+      account: safeAccount,
+      user: safeUser,
+    });
+  } catch (error) {
+    console.error('Error in registerVerifyOtp:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'A server error occurred while activating your account.',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * 7. POST /api/auth/resend-otp
+ * Resend a new OTP verification code
+ */
+export const resendRegisterOtp = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const cleanEmail = (email || '').trim().toLowerCase();
+
+    if (!cleanEmail) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide an email address.',
+      });
+    }
+
+    const otpRecord = await Otp.findOne({ email: cleanEmail, type: 'register' });
+    if (!otpRecord || !otpRecord.payload) {
+      return res.status(400).json({
+        success: false,
+        message: 'No pending registration found for this email. Please fill out the registration form again.',
+      });
+    }
+
+    const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    otpRecord.otp = newOtp;
+    otpRecord.expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+    await otpRecord.save();
+
+    await sendOtpEmail(cleanEmail, newOtp, otpRecord.payload.name || '');
+
+    return res.status(200).json({
+      success: true,
+      message: `A new OTP code has been sent to ${cleanEmail}.`,
+    });
+  } catch (error) {
+    console.error('Error in resendRegisterOtp:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Unable to resend OTP code. Please try again later.',
+      error: error.message,
+    });
+  }
+};
+
 
