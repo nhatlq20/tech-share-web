@@ -1,11 +1,11 @@
 import React, { useMemo } from 'react';
 import { Check, X, Ban, Loader2 } from 'lucide-react';
-import { STRINGS } from '../../constants/strings.ts';
+import { STRINGS } from '../../constants/strings.js';
 import {
   BOOKING_STATUS,
   BOOKING_TIMELINE_STEPS,
   BOOKING_TERMINAL_STATUSES,
-} from '../../constants/config.ts';
+} from '../../constants/config.js';
 import { formatDateTime } from '../../utils/formatters.js';
 import { getBookingStatusStyle } from './BookingStatusBadge.jsx';
 

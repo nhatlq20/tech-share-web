@@ -3,7 +3,7 @@
  * All requests go through the shared `api` client (JWT header + base URL handled there).
  */
 import { api } from './api.js';
-import { API_CONFIG, MAGIC_NUMBERS } from '../constants/config.ts';
+import { API_CONFIG, MAGIC_NUMBERS } from '../constants/config.js';
 
 /**
  * GET /api/bookings/my-bookings

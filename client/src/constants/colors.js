@@ -1,5 +1,5 @@
 /**
- * TechShare Design System - Colors & Theme Constants
+ * TechShare Design System - Colors & Theme Constants (Pure JavaScript)
  * 
  * Centralized color palette for the entire TechShare application.
  * All components should import colors from here instead of hardcoding hex values.
@@ -77,7 +77,7 @@ export const COLORS = {
     accessory: '#A78BFA',
     default: '#67BEC3',
   },
-} as const;
+};
 
 // Convenient flat shorthands for rapid styling
 export const PRIMARY = COLORS.primary.DEFAULT;
@@ -94,7 +94,7 @@ export const DANGER = COLORS.status.danger.DEFAULT;
 export const INFO = COLORS.status.info.DEFAULT;
 
 // Category colors map
-export const CATEGORY_COLORS: Record<string, string> = {
+export const CATEGORY_COLORS = {
   smartphone: COLORS.categories.smartphone,
   laptop: COLORS.categories.laptop,
   camera: COLORS.categories.camera,
@@ -106,3 +106,4 @@ export const CATEGORY_COLORS: Record<string, string> = {
 };
 
 export default COLORS;
+

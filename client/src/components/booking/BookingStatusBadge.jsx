@@ -1,7 +1,7 @@
 import React from 'react';
 import { Clock, CheckCircle2, PackageCheck, BadgeCheck, XCircle, Ban, HelpCircle } from 'lucide-react';
-import { STRINGS } from '../../constants/strings.ts';
-import { BOOKING_STATUS } from '../../constants/config.ts';
+import { STRINGS } from '../../constants/strings.js';
+import { BOOKING_STATUS } from '../../constants/config.js';
 
 /**
  * Status → visual tokens (Tailwind design tokens only, no hex values).

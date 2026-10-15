@@ -1,6 +1,6 @@
 /**
- * TechShare Design System - System Config, API Endpoints & Business Thresholds
- * 
+ * TechShare Design System - System Config, API Endpoints & Business Thresholds (Pure JavaScript)
+ *
  * QUY CHUẨN CHỐNG HARDCODE (NO HARDCODING RULE):
  * Toàn bộ URL endpoint, timeouts, magic numbers, phân trang và ngưỡng logic.
  */
@@ -13,34 +13,41 @@ export const API_CONFIG = {
     ADMIN_DEVICES: '/admin/devices',
     ADMIN_USERS: '/admin/users',
     ADMIN_EKYC: '/admin/ekyc',
-    ADMIN_TOGGLE_USER: (userId: string) => `/admin/users/${userId}/status`,
-    ADMIN_DELETE_DEVICE: (deviceId: string) => `/admin/devices/${deviceId}`,
-    ADMIN_APPROVE_EKYC: (requestId: string) => `/admin/ekyc/${requestId}/approve`,
-    ADMIN_REJECT_EKYC: (requestId: string) => `/admin/ekyc/${requestId}/reject`,
+    ADMIN_TOGGLE_USER: (userId) => `/admin/users/${userId}/status`,
+    ADMIN_DELETE_DEVICE: (deviceId) => `/admin/devices/${deviceId}`,
+    ADMIN_APPROVE_EKYC: (requestId) => `/admin/ekyc/${requestId}/approve`,
+    ADMIN_REJECT_EKYC: (requestId) => `/admin/ekyc/${requestId}/reject`,
     OWNER_KPI: '/owner/kpi',
     OWNER_DEVICES: '/devices/my-devices',
-    OWNER_TOGGLE_DEVICE: (deviceId: string) => `/devices/${deviceId}/status`,
-    OWNER_BLOCKED_DATES: (deviceId: string) => `/devices/${deviceId}/blocked-dates`,
+    OWNER_TOGGLE_DEVICE: (deviceId) => `/devices/${deviceId}/status`,
+    OWNER_BLOCKED_DATES: (deviceId) => `/devices/${deviceId}/blocked-dates`,
     OWNER_BOOKINGS: '/bookings/owner',
-    OWNER_APPROVE_BOOKING: (bookingId: string) => `/bookings/${bookingId}/approve`,
-    OWNER_REJECT_BOOKING: (bookingId: string) => `/bookings/${bookingId}/reject`,
-    OWNER_HANDOVER_QR: (bookingId: string) => `/bookings/${bookingId}/handover`,
-    OWNER_COMPLETE_BOOKING: (bookingId: string) => `/bookings/${bookingId}/complete`,
+    OWNER_APPROVE_BOOKING: (bookingId) => `/bookings/${bookingId}/approve`,
+    OWNER_REJECT_BOOKING: (bookingId) => `/bookings/${bookingId}/reject`,
+    OWNER_HANDOVER_QR: (bookingId) => `/bookings/${bookingId}/handover`,
+    OWNER_COMPLETE_BOOKING: (bookingId) => `/bookings/${bookingId}/complete`,
     OWNER_ANALYTICS: '/devices/owner/analytics',
     OWNER_WALLET: '/wallet/me',
     AI_GENERATE_DESCRIPTION: '/ai/generate-description',
     DEVICES: '/devices',
-    DEVICE_BY_ID: (id: string) => `/devices/${id}`,
-    DEVICE_AVAILABILITY: (id: string) => `/devices/${id}/availability`,
+    DEVICES_RECOMMENDED: '/devices/recommended',
+    DEVICE_BY_ID: (id) => `/devices/${id}`,
+    DEVICE_AVAILABILITY: (id) => `/devices/${id}/availability`,
     BOOKINGS: '/bookings',
     BOOKINGS_MY: '/bookings/my-bookings',
-    BOOKING_BY_ID: (id: string) => `/bookings/${id}`,
-    BOOKING_CANCEL: (id: string) => `/bookings/${id}/cancel`,
+    BOOKING_BY_ID: (id) => `/bookings/${id}`,
+    BOOKING_CANCEL: (id) => `/bookings/${id}/cancel`,
     BOOKING_VALIDATE_PRICING: '/bookings/validate-pricing',
+    NOTIFICATIONS: '/notifications',
+    NOTIFICATIONS_READ_ALL: '/notifications/read-all',
+    NOTIFICATIONS_READ: (id) => `/notifications/${id}/read`,
+    NOTIFICATIONS_FCM_TOKEN: '/notifications/fcm-token',
+    NOTIFICATIONS_TEST: '/notifications/test',
   },
-} as const;
+};
 
 export const MAGIC_NUMBERS = {
+  HOME_RECOMMENDATIONS: { INITIAL_PAGE: 1, PAGE_SIZE: 12 },
   // Điểm tín nhiệm Escrow (Trust Score)
   TRUST_SCORE: {
     MAX: 100,
@@ -89,13 +96,13 @@ export const MAGIC_NUMBERS = {
 
   // Tỷ lệ tiền cọc mặc định
   DEPOSIT_RATIO_DEFAULT: 0.7,
-} as const;
+};
 
 export const STORAGE_KEYS = {
   AUTH_TOKEN: 'techshare_token',
   USER_DATA: 'techshare_user',
   THEME_MODE: 'techshare_theme',
-} as const;
+};
 
 /**
  * Booking lifecycle configuration (mirrors server enum in models/Booking.js)
@@ -107,7 +114,7 @@ export const BOOKING_STATUS = {
   COMPLETED: 'completed',
   CANCELLED: 'cancelled',
   REJECTED: 'rejected',
-} as const;
+};
 
 /** Tabs of the My Bookings hub, in display order (key = `status` query param). */
 export const MY_BOOKING_TABS = [
@@ -116,7 +123,7 @@ export const MY_BOOKING_TABS = [
   BOOKING_STATUS.ACTIVE,
   BOOKING_STATUS.COMPLETED,
   BOOKING_STATUS.CANCELLED,
-] as const;
+];
 
 /** Happy-path progression rendered by the order timeline stepper. */
 export const BOOKING_TIMELINE_STEPS = [
@@ -124,13 +131,13 @@ export const BOOKING_TIMELINE_STEPS = [
   BOOKING_STATUS.APPROVED,
   BOOKING_STATUS.ACTIVE,
   BOOKING_STATUS.COMPLETED,
-] as const;
+];
 
 /** Terminal statuses that interrupt the happy path. */
 export const BOOKING_TERMINAL_STATUSES = [
   BOOKING_STATUS.CANCELLED,
   BOOKING_STATUS.REJECTED,
-] as const;
+];
 
 const CONFIG = {
   API_CONFIG,
@@ -140,4 +147,3 @@ const CONFIG = {
 };
 
 export default CONFIG;
-

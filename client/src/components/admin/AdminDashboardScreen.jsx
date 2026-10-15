@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Search, Bell, RefreshCw } from 'lucide-react';
+import { Search, RefreshCw } from 'lucide-react';
 import { AdminSidebarContent } from './AdminSidebarContent';
 import { AdminOverviewTab } from './AdminOverviewTab';
 import { AdminUsersTab } from './AdminUsersTab';
 import { AdminDevicesTab } from './AdminDevicesTab';
 import { AdminEkycTab } from './AdminEkycTab';
+import { NotificationDropdown } from '../notifications/NotificationDropdown';
 import { STRINGS } from '../../constants/strings';
+import { useAuth } from '../../context/AuthContext.jsx';
 import './AdminWorkspace.css';
 
 // Initial default state (safe fallback)
@@ -60,6 +62,7 @@ const DEFAULT_CATEGORIES = [
 ];
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 export const AdminDashboardScreen = () => {
+  const { logout } = useAuth();
   const [currentTab, setCurrentTab] = useState('overview');
   const [globalSearch, setGlobalSearch] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -401,12 +404,15 @@ export const AdminDashboardScreen = () => {
   const pendingEkycCount = ekycRequests.filter(r => r.status === 'pending').length;
   return <div className="admin-hub-wrapper">
       {/* A. Fixed Left Sidebar */}
-      <AdminSidebarContent currentTab={currentTab} onSelectTab={setCurrentTab} pendingEkycCount={pendingEkycCount} onLogout={() => {
-      localStorage.clear();
-      window.location.href = '/';
-    }} onSwitchToClient={() => {
-      window.location.href = '/';
-    }} />
+      <AdminSidebarContent
+        currentTab={currentTab}
+        onSelectTab={setCurrentTab}
+        pendingEkycCount={pendingEkycCount}
+        onLogout={logout}
+        onSwitchToClient={() => {
+          window.location.href = '/';
+        }}
+      />
 
       {/* B. Main Content Area */}
       <main className="admin-main-wrap" role="main">
@@ -439,16 +445,8 @@ export const AdminDashboardScreen = () => {
               />
             </button>
 
-            {/* Notification Bell */}
-            <button
-              type="button"
-              className="admin-action-btn"
-              title="Notifications"
-              onClick={() => setCurrentTab('ekyc')}
-            >
-              <Bell size={16} />
-              {pendingEkycCount > 0 && <span className="admin-notif-dot" />}
-            </button>
+            {/* Notification Bell Dropdown */}
+            <NotificationDropdown />
 
             {/* Admin Header Chip */}
             <div

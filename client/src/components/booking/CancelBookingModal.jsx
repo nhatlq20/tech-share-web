@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { AlertTriangle, AlertCircle, Loader2, X } from 'lucide-react';
-import { STRINGS } from '../../constants/strings.ts';
-import { MAGIC_NUMBERS } from '../../constants/config.ts';
+import { STRINGS } from '../../constants/strings.js';
+import { MAGIC_NUMBERS } from '../../constants/config.js';
 
 const T = STRINGS.booking.cancel;
 const MAX_REASON = MAGIC_NUMBERS.BOOKING.CANCEL_REASON_MAX_LENGTH;

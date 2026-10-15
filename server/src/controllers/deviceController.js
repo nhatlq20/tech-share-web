@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import Device from "../models/Device.js";
+import { uploadToCloudinary } from "../services/cloudinaryService.js";
 
 /**
  * Helper to get MongoDB collections safely if Mongoose connection is ready
@@ -10,6 +11,122 @@ const getDevicesCollection = () => {
     throw new Error("Database connection is not initialized yet.");
   }
   return db.collection("devices");
+};
+
+const RECOMMENDATION_DEFAULT_PAGE = 1;
+const RECOMMENDATION_PAGE_SIZE = 12;
+const HOME_RECOMMENDATION_MAX_DISTANCE_METERS = 100000;
+const MAX_LATITUDE = 90;
+const MAX_LONGITUDE = 180;
+
+const geoPaginationStages = (page, limit) => [
+  {
+    $facet: {
+      data: [{ $skip: (page - 1) * limit }, { $limit: limit }],
+      totals: [{ $count: "total" }],
+    },
+  },
+];
+
+/** Home discovery: exact distance first, with stable tie-breaks and a 100 km safety cap. */
+export const getRecommendedDevices = async (req, res, next) => {
+  try {
+    const {
+      lat,
+      lng,
+      page = RECOMMENDATION_DEFAULT_PAGE,
+      limit = RECOMMENDATION_PAGE_SIZE,
+    } = req.query;
+    const isNumber = (value) =>
+      typeof value === "string" &&
+      value.trim() !== "" &&
+      Number.isFinite(Number(value));
+    const userLat = Number(lat);
+    const userLng = Number(lng);
+    const pageNum = Number(page);
+    const requestedLimit = Number(limit);
+    if (
+      !isNumber(lat) ||
+      !isNumber(lng) ||
+      Math.abs(userLat) > MAX_LATITUDE ||
+      Math.abs(userLng) > MAX_LONGITUDE ||
+      !Number.isSafeInteger(pageNum) ||
+      pageNum < RECOMMENDATION_DEFAULT_PAGE ||
+      !Number.isSafeInteger(requestedLimit) ||
+      requestedLimit < RECOMMENDATION_DEFAULT_PAGE ||
+      !Number.isSafeInteger(
+        (pageNum - RECOMMENDATION_DEFAULT_PAGE) *
+          Math.min(requestedLimit, RECOMMENDATION_PAGE_SIZE),
+      )
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Valid lat, lng, page and limit are required.",
+      });
+    }
+    const limitNum = Math.min(requestedLimit, RECOMMENDATION_PAGE_SIZE);
+    const [result] = await getDevicesCollection()
+      .aggregate([
+        {
+          $geoNear: {
+            near: { type: "Point", coordinates: [userLng, userLat] },
+            key: "location",
+            distanceField: "distanceMeters",
+            spherical: true,
+            maxDistance: HOME_RECOMMENDATION_MAX_DISTANCE_METERS,
+            query: {
+              status: "available",
+              isDeleted: { $ne: true },
+              "location.type": "Point",
+              "location.coordinates": { $size: 2 },
+              "location.coordinates.0": {
+                $type: "number",
+                $gte: -MAX_LONGITUDE,
+                $lte: MAX_LONGITUDE,
+              },
+              "location.coordinates.1": {
+                $type: "number",
+                $gte: -MAX_LATITUDE,
+                $lte: MAX_LATITUDE,
+              },
+            },
+          },
+        },
+        {
+          $set: {
+            _recommendationRating: {
+              $ifNull: ["$rating", { $ifNull: ["$ratingAvg", 0] }],
+            },
+          },
+        },
+        {
+          $sort: {
+            distanceMeters: 1,
+            _recommendationRating: -1,
+            createdAt: -1,
+            _id: 1,
+          },
+        },
+        { $unset: "_recommendationRating" },
+        ...geoPaginationStages(pageNum, limitNum),
+      ])
+      .toArray();
+    const total = result.totals[0]?.total || 0;
+    return res.status(200).json({
+      success: true,
+      count: result.data.length,
+      data: result.data,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        totalPages: Math.ceil(total / limitNum) || 1,
+        hasNextPage: pageNum * limitNum < total,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
 /**
@@ -139,40 +256,67 @@ export const getDevices = async (req, res, next) => {
  */
 export const getNearbyDevices = async (req, res, next) => {
   try {
-    const { lat, lng, latitude, longitude, radius = 10000, page = 1, limit = 12 } = req.query;
+    const {
+      lat,
+      lng,
+      latitude,
+      longitude,
+      radius = 10000,
+      page = 1,
+      limit = 12,
+    } = req.query;
     const userLat = Number(lat ?? latitude);
     const userLng = Number(lng ?? longitude);
     const maxDistance = Number(radius);
     const pageNum = Number(page);
     const limitNum = Math.min(100, Number(limit));
-    if (lat == null && latitude == null || lng == null && longitude == null ||
-        !Number.isFinite(userLat) || Math.abs(userLat) > 90 ||
-        !Number.isFinite(userLng) || Math.abs(userLng) > 180 ||
-        !Number.isFinite(maxDistance) || maxDistance <= 0 ||
-        !Number.isInteger(pageNum) || pageNum < 1 ||
-        !Number.isInteger(limitNum) || limitNum < 1) {
-      return res.status(400).json({ success: false, message: "Valid coordinates, radius, page and limit are required." });
+    if (
+      (lat == null && latitude == null) ||
+      (lng == null && longitude == null) ||
+      !Number.isFinite(userLat) ||
+      Math.abs(userLat) > 90 ||
+      !Number.isFinite(userLng) ||
+      Math.abs(userLng) > 180 ||
+      !Number.isFinite(maxDistance) ||
+      maxDistance <= 0 ||
+      !Number.isInteger(pageNum) ||
+      pageNum < 1 ||
+      !Number.isInteger(limitNum) ||
+      limitNum < 1
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Valid coordinates, radius, page and limit are required.",
+      });
     }
     const collection = getDevicesCollection();
-    const [result] = await collection.aggregate([
-      { $geoNear: {
-        near: { type: "Point", coordinates: [userLng, userLat] },
-        key: "location",
-        distanceField: "distanceMeters",
-        maxDistance,
-        spherical: true,
-        query: { isDeleted: { $ne: true } },
-      } },
-      { $facet: {
-        data: [{ $skip: (pageNum - 1) * limitNum }, { $limit: limitNum }],
-        totals: [{ $count: "total" }],
-      } },
-    ]).toArray();
+    const [result] = await collection
+      .aggregate([
+        {
+          $geoNear: {
+            near: { type: "Point", coordinates: [userLng, userLat] },
+            key: "location",
+            distanceField: "distanceMeters",
+            maxDistance,
+            spherical: true,
+            query: { isDeleted: { $ne: true } },
+          },
+        },
+        ...geoPaginationStages(pageNum, limitNum),
+      ])
+      .toArray();
     const devices = result.data;
     const total = result.totals[0]?.total || 0;
     return res.status(200).json({
-      success: true, count: devices.length, data: devices,
-      pagination: { page: pageNum, limit: limitNum, total, totalPages: Math.ceil(total / limitNum) || 1 },
+      success: true,
+      count: devices.length,
+      data: devices,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        totalPages: Math.ceil(total / limitNum) || 1,
+      },
     });
   } catch (error) {
     next(error);
@@ -231,14 +375,13 @@ export const createDevice = async (req, res) => {
       depositAmount,
       depositValue,
       addressText,
-      address,
       specs,
       images,
     } = req.body;
-
-    const ownerId = req.user?.userId || req.user?._id || req.user?.id || req.user?.accountId || req.auth?.id;
-    const deviceName = (name || title || "").trim();
-    const year = yearOfManufacture ? Number(yearOfManufacture) : undefined;
+    const ownerId = req.user.userId;
+    const year = Number(yearOfManufacture);
+    const price = Number(pricePerDay ?? dailyRate);
+    const deposit = Number(depositAmount ?? depositValue);
 
     if (
       yearOfManufacture != null &&
@@ -254,7 +397,8 @@ export const createDevice = async (req, res) => {
     }
 
     if (
-      !deviceName ||
+      !title?.trim() ||
+      !name?.trim() ||
       !category?.trim() ||
       !brand?.trim()
     ) {
@@ -264,58 +408,117 @@ export const createDevice = async (req, res) => {
       });
     }
 
-    const price = Number(pricePerDay ?? dailyRate);
-    const deposit = Number(depositAmount ?? depositValue ?? 0);
-
-    if (
-      price == null ||
-      !Number.isFinite(price) ||
-      price <= 0
-    ) {
+    if (price == null || !Number.isFinite(price) || price <= 0) {
       return res.status(400).json({
         success: false,
         message: "Invalid rental price",
       });
     }
 
-    if (
-      !Number.isFinite(deposit) ||
-      deposit < 0
-    ) {
+    if (!Number.isFinite(deposit) || deposit < 0) {
       return res.status(400).json({
         success: false,
         message: "Invalid deposit amount",
       });
     }
+    let parsedSpecs = specs;
+
+    if (typeof specs === "string") {
+      try {
+        parsedSpecs = JSON.parse(specs);
+      } catch (error) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid specs JSON format",
+        });
+      }
+    }
+    if (!Array.isArray(images) || images.length < 2 || images.length > 3) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide between 2 and 3 device images",
+      });
+    }
+
+    const imageUrls = [];
+    for (const image of images) {
+      if (typeof image !== "string") {
+        return res.status(400).json({
+          success: false,
+          message: "Each device image must be a data URL or an HTTPS URL",
+        });
+      }
+
+      if (image.startsWith("https://")) {
+        imageUrls.push(image);
+        continue;
+      }
+
+      const imageMatch = image.match(
+        /^data:image\/(jpeg|png|webp);base64,([A-Za-z0-9+/]+=*)$/,
+      );
+      if (!imageMatch) {
+        return res.status(400).json({
+          success: false,
+          message: "Device images must be JPG, PNG, or WEBP files",
+        });
+      }
+
+      const imageSize = Math.ceil((imageMatch[2].length * 3) / 4);
+      if (imageSize > 3 * 1024 * 1024) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Each device image must be smaller than 3 MB after compression",
+        });
+      }
+
+      try {
+        const uploadedImage = await uploadToCloudinary(
+          image,
+          "techshare/devices",
+        );
+        imageUrls.push(uploadedImage.url);
+      } catch (uploadError) {
+        console.error("Device image upload error:", uploadError.message);
+        return res.status(502).json({
+          success: false,
+          message: "Could not upload device images. Please try again.",
+        });
+      }
+    }
 
     const device = await Device.create({
-      owner: ownerId || null,
-      ownerId: ownerId || null,
-      title: deviceName,
-      name: deviceName,
-      category: category.trim().toLowerCase(),
-      brand: brand.trim(),
-      yearOfManufacture: year,
-      condition: condition || "good",
+      owner: ownerId,
+      name,
+      title,
+      category,
+      brand,
+      yearOfManufacture: yearOfManufacture ? year : undefined,
+      condition,
+      description,
       dailyRate: price,
       pricePerDay: price,
       depositValue: deposit,
-      depositAmount: deposit,
-      address: (addressText || address || "Hà Nội, Việt Nam").trim(),
-      description: description?.trim() || "",
-      specs: specs || {},
-      images: Array.isArray(images) ? images : [],
-      status: "available",
+      address: addressText ?? address,
+      specs: parsedSpecs,
+      images: imageUrls,
     });
-
     return res.status(201).json({
       success: true,
       message: "Device created successfully",
       data: device,
-      device,
     });
   } catch (error) {
-    console.error("Error creating device:", error);
+    console.error("Create Device Error:", error);
+
+    if (error.name === "ValidationError") {
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
+
     return res.status(500).json({
       success: false,
       message: error.message || "Internal server error",
@@ -327,5 +530,4 @@ export default {
   getDevices,
   getNearbyDevices,
   getDeviceById,
-  createDevice
 };

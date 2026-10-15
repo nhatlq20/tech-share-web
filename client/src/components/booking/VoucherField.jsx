@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Tag, Check, X, Sparkles, AlertCircle } from 'lucide-react';
-import { STRINGS } from '../../constants/strings.ts';
+import { STRINGS } from '../../constants/strings.js';
 
 export const VoucherField = ({
   appliedVoucher = '',

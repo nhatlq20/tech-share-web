@@ -36,6 +36,14 @@ export const STRINGS = {
 
   // Home & Landing Page Module (English)
   home: {
+    recommended: {
+      heading: 'Recommended for You',
+      subtitle: 'Discover available devices, with the closest options first.',
+      locationLoading: 'Finding devices for you...',
+      apiLoading: 'Loading recommended devices...',
+      apiError: 'Unable to load recommended devices.',
+      empty: 'No recommended devices found.',
+    },
     nearby: {
       heading: 'Nearby Devices',
       subtitle: 'Devices within 10 km of your current location.',
@@ -813,7 +821,7 @@ export const STRINGS = {
       },
       bookingCodePrefix: 'Code',
       createdAtPrefix: 'Booked on',
-      daysSuffix: (days: number) => `${days} ${days === 1 ? 'day' : 'days'}`,
+      daysSuffix: (days) => `${days} ${days === 1 ? 'day' : 'days'}`,
       viewDetailBtn: 'View Details',
       untitledDevice: 'Untitled Device',
       empty: {
@@ -830,7 +838,7 @@ export const STRINGS = {
       pagination: {
         prev: 'Previous',
         next: 'Next',
-        pageOf: (page: number, total: number) => `Page ${page} of ${total}`,
+        pageOf: (page, total) => `Page ${page} of ${total}`,
       },
     },
 
@@ -916,7 +924,7 @@ export const STRINGS = {
       modalDesc: 'The owner will be notified and the reserved dates will be released. This action cannot be undone.',
       reasonLabel: 'Reason (optional)',
       reasonPlaceholder: 'e.g. My plans changed, I found another device...',
-      reasonCounter: (length: number, max: number) => `${length}/${max}`,
+      reasonCounter: (length, max) => `${length}/${max}`,
       keepBtn: 'Keep Booking',
       confirmBtn: 'Yes, Cancel Booking',
       submitting: 'Cancelling...',
@@ -924,7 +932,7 @@ export const STRINGS = {
       errorFallback: 'Unable to cancel this booking. Please try again.',
     },
   },
-} as const;
+};
 
 export default STRINGS;
 

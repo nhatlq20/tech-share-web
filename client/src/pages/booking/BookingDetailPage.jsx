@@ -19,7 +19,7 @@ import {
   QrCode,
   FileText,
 } from 'lucide-react';
-import { STRINGS } from '../../constants/strings.ts';
+import { STRINGS } from '../../constants/strings.js';
 import { ROUTES } from '../../routes/routes.js';
 import { fetchBookingById, cancelBooking } from '../../services/bookingService.js';
 import { BookingStatusBadge } from '../../components/booking/BookingStatusBadge.jsx';

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { CalendarDays, ChevronRight, Package } from 'lucide-react';
-import { STRINGS } from '../../constants/strings.ts';
+import { STRINGS } from '../../constants/strings.js';
 import { ROUTES } from '../../routes/routes.js';
 import { formatPrice, formatDate } from '../../utils/formatters.js';
 import { BookingStatusBadge } from './BookingStatusBadge.jsx';

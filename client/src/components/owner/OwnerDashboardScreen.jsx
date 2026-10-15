@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Search, PlusCircle, Bell, RefreshCw } from 'lucide-react';
+import { Search, PlusCircle, RefreshCw } from 'lucide-react';
 import { OwnerSidebar } from './OwnerSidebar';
 import { OwnerOverviewTab } from './OwnerOverviewTab';
 import { OwnerDevicesTab } from './OwnerDevicesTab';
@@ -9,12 +9,15 @@ import { OwnerCalendarTab } from './OwnerCalendarTab';
 import { OwnerAnalyticsTab } from './OwnerAnalyticsTab';
 import { OwnerWalletTab } from './OwnerWalletTab';
 import PostDevicePage from '../../pages/PostDevicePage';
+import { NotificationDropdown } from '../notifications/NotificationDropdown';
 import { ROUTES } from '../../routes/routes';
 import { STRINGS } from '../../constants/strings';
 import { API_CONFIG } from '../../constants/config';
+import { useAuth } from '../../context/AuthContext.jsx';
 import './OwnerWorkspace.css';
 
 export const OwnerDashboardScreen = () => {
+  const { logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -124,30 +127,28 @@ export const OwnerDashboardScreen = () => {
     }
   };
 
-  // Actions: Toggle blocked dates on calendar (Active MongoDB mutation)
-  const handleToggleBlockedDate = async (deviceId, dateStr) => {
-    const currentList = blockedDatesMap[deviceId] || [];
-    const exists = currentList.includes(dateStr);
-    const updated = exists
-      ? currentList.filter((d) => d !== dateStr)
-      : [...currentList, dateStr];
+  const handleDeviceCreated = (device) => {
+    const newDevice = {
+      ...device,
+      name: device.name || device.title,
+      dailyRate: device.dailyRate || device.pricePerDay,
+      depositAmount: device.depositAmount ?? device.depositValue ?? 0,
+    };
 
-    setBlockedDatesMap((prev) => ({ ...prev, [deviceId]: updated }));
+    setDevices((prev) => [newDevice, ...prev]);
+    setKpi((prev) => ({ ...prev, totalDevices: prev.totalDevices + 1 }));
+  };
 
-    try {
-      const token = localStorage.getItem('techshare_token');
-      const headers = {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      };
-      await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.OWNER_BLOCKED_DATES(deviceId)}`, {
-        method: 'PATCH',
-        headers,
-        body: JSON.stringify({ date: dateStr, blockedDates: updated }),
-      });
-    } catch (err) {
-      console.error('Failed to update blocked dates in DB:', err);
-    }
+  // Actions: Toggle blocked dates on calendar
+  const handleToggleBlockedDate = (deviceId, dateStr) => {
+    setBlockedDatesMap((prev) => {
+      const currentList = prev[deviceId] || [];
+      const exists = currentList.includes(dateStr);
+      const updated = exists
+        ? currentList.filter((d) => d !== dateStr)
+        : [...currentList, dateStr];
+      return { ...prev, [deviceId]: updated };
+    });
   };
 
   // Actions: Approve booking (Active MongoDB mutation)
@@ -239,10 +240,7 @@ export const OwnerDashboardScreen = () => {
         onNavigate={handleNavigate}
         pendingCount={pendingApprovalsCount}
         owner={kpi?.owner}
-        onLogout={() => {
-          localStorage.removeItem('techshare_token');
-          window.location.href = ROUTES.HOME;
-        }}
+        onLogout={logout}
       />
 
       {/* 2. Main Workspace */}
@@ -284,16 +282,8 @@ export const OwnerDashboardScreen = () => {
               />
             </button>
 
-            {/* Notification Bell */}
-            <button
-              type="button"
-              className="owner-action-btn"
-              title="Rental Requests"
-              onClick={() => handleNavigate(ROUTES.OWNER_BOOKINGS)}
-            >
-              <Bell size={16} />
-              {pendingApprovalsCount > 0 && <span className="owner-notif-dot" />}
-            </button>
+            {/* Notification Bell Dropdown */}
+            <NotificationDropdown />
 
             {/* Partner Header Chip */}
             <div
@@ -356,7 +346,10 @@ export const OwnerDashboardScreen = () => {
           )}
 
           {currentPath === ROUTES.OWNER_DEVICE_NEW && (
-            <PostDevicePage onBack={() => handleNavigate(ROUTES.OWNER_DEVICES)} />
+            <PostDevicePage
+              onBack={() => handleNavigate(ROUTES.OWNER_DEVICES)}
+              onDeviceCreated={handleDeviceCreated}
+            />
           )}
 
           {/* B. /owner/devices */}

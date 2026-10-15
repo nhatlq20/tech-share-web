@@ -2,29 +2,21 @@ import express from 'express';
 import {
   getDevices,
   getNearbyDevices,
+  getRecommendedDevices,
   getDeviceById,
-  createDevice,
+  createDevice
 } from '../controllers/deviceController.js';
 import { getDeviceAvailability } from '../controllers/bookingController.js';
 import { protect } from '../middlewares/authMiddleware.js';
-
-import {
-  getOwnerDevices,
-  createOwnerDevice,
-  toggleDeviceStatus,
-  toggleBlockedDate,
-  getOwnerAnalytics,
-} from '../controllers/ownerController.js';
+import { requireOwner } from '../middlewares/roleMiddleware.js';
 
 const router = express.Router();
 
 // Specific routes before parameterized :id route
 router.get('/nearby', getNearbyDevices);
-router.get('/my-devices', getOwnerDevices);
-router.get('/owner/analytics', getOwnerAnalytics);
-
-// Create device
-router.post('/', createOwnerDevice);
+router.get('/recommended', getRecommendedDevices);
+// router.get('/my-devices', getOwnerDevices);
+// router.get('/owner/analytics', getOwnerAnalytics);
 
 // Root devices listing with search, category, pagination & sorting
 router.get('/', getDevices);
@@ -33,14 +25,14 @@ router.get('/', getDevices);
 router.get('/:id/availability', getDeviceAvailability);
 
 // Device mutations
-router.patch('/:id/status', toggleDeviceStatus);
-router.patch('/:id/blocked-dates', toggleBlockedDate);
+// router.patch('/:id/status', toggleDeviceStatus);
+// router.patch('/:id/blocked-dates', toggleBlockedDate);
 
 // Parameterized device detail route
 router.get('/:id', getDeviceById);
 
-// Create device route
-router.post('/', protect, createDevice);
+router.post('/',protect, requireOwner,createDevice)
 
 export default router;
+
 

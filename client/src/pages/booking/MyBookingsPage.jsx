@@ -8,8 +8,8 @@ import {
   Inbox,
   Compass,
 } from 'lucide-react';
-import { STRINGS } from '../../constants/strings.ts';
-import { MAGIC_NUMBERS, MY_BOOKING_TABS, BOOKING_STATUS } from '../../constants/config.ts';
+import { STRINGS } from '../../constants/strings.js';
+import { MAGIC_NUMBERS, MY_BOOKING_TABS, BOOKING_STATUS } from '../../constants/config.js';
 import { ROUTES } from '../../routes/routes.js';
 import { fetchMyBookings } from '../../services/bookingService.js';
 import { BookingTableRow, BookingMobileCard } from '../../components/booking/BookingTableRow.jsx';
