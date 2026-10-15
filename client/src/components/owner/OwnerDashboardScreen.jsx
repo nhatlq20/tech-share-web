@@ -13,9 +13,11 @@ import { NotificationDropdown } from '../notifications/NotificationDropdown';
 import { ROUTES } from '../../routes/routes';
 import { STRINGS } from '../../constants/strings';
 import { API_CONFIG } from '../../constants/config';
+import { useAuth } from '../../context/AuthContext.jsx';
 import './OwnerWorkspace.css';
 
 export const OwnerDashboardScreen = () => {
+  const { logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -238,10 +240,7 @@ export const OwnerDashboardScreen = () => {
         onNavigate={handleNavigate}
         pendingCount={pendingApprovalsCount}
         owner={kpi?.owner}
-        onLogout={() => {
-          localStorage.removeItem('techshare_token');
-          window.location.href = ROUTES.HOME;
-        }}
+        onLogout={logout}
       />
 
       {/* 2. Main Workspace */}

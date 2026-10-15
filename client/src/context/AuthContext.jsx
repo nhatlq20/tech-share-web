@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { api } from '../services/api.js';
 import { STORAGE_KEYS } from '../constants/config.js';
+import { ROUTES } from '../routes/routes.js';
 
 const AuthContext = createContext(null);
 
@@ -47,7 +48,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Đăng xuất và dọn dẹp LocalStorage
+  // Đăng xuất và dọn dẹp LocalStorage, tất cả các role đều trở về trang Home
   const logout = () => {
     setToken(null);
     setUser(null);
@@ -55,6 +56,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
     localStorage.removeItem(STORAGE_KEYS.USER_DATA);
     localStorage.removeItem('techshare_account');
+    window.location.href = ROUTES.HOME;
   };
 
   // Tải lại dữ liệu profile mới nhất từ backend collection users

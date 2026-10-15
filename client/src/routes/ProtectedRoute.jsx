@@ -48,12 +48,12 @@ export const ProtectedRoute = ({ children, roles, redirectTo }) => {
 
   // 1. Chưa đăng nhập → về trang login phù hợp
   if (!isAuthenticated) {
-    // Nếu route yêu cầu role admin → về Admin Login Portal
-    const needsAdmin = Array.isArray(roles)
-      ? roles.includes('admin')
+    // Chỉ khi route dành riêng duy nhất cho Admin → về Admin Login Portal
+    const isAdminOnly = Array.isArray(roles)
+      ? roles.length === 1 && roles[0] === 'admin'
       : roles === 'admin';
 
-    if (needsAdmin) {
+    if (isAdminOnly) {
       return <Navigate to={ROUTES.ADMIN_LOGIN} replace />;
     }
 
