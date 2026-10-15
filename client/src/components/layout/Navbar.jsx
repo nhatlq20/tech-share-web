@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { ROUTES } from '../../routes/routes.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { NotificationDropdown } from '../notifications/NotificationDropdown.jsx';
@@ -7,7 +7,6 @@ import './Navbar.css';
 
 export const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuth();
-  const navigate = useNavigate();
 
   const handleLogout = () => {
     logout();

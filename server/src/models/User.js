@@ -102,6 +102,11 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    accountId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Account',
+      default: null,
+    },
   },
   {
     timestamps: true,
