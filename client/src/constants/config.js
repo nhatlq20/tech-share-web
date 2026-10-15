@@ -42,6 +42,12 @@ export const API_CONFIG = {
     NOTIFICATIONS_READ: (id) => `/notifications/${id}/read`,
     NOTIFICATIONS_FCM_TOKEN: '/notifications/fcm-token',
     NOTIFICATIONS_TEST: '/notifications/test',
+    CHATS_CONVERSATIONS: '/chats/conversations',
+    CHATS_UNREAD_COUNT: '/chats/unread-count',
+    CHATS_MESSAGES: (bookingId) => `/chats/${bookingId}`,
+    CHATS_SEND: (bookingId) => `/chats/${bookingId}/messages`,
+    CHATS_READ: (bookingId) => `/chats/${bookingId}/read`,
+    CHATS_UPLOAD: '/chats/upload-image',
   },
 };
 

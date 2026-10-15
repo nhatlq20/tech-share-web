@@ -18,6 +18,7 @@ import { NotFoundPage } from '../pages/NotFoundPage.jsx';
 // Auth-required pages
 import { ProfilePage } from '../pages/ProfilePage.jsx';
 import { DashboardPage } from '../pages/DashboardPage.jsx';
+import { MessagesPage } from '../pages/MessagesPage.jsx';
 
 // Role-specific pages
 import { AdminPage } from '../pages/AdminPage.jsx';
@@ -36,6 +37,9 @@ export const AppRoutes = () => {
       <Route path={ROUTES.OWNER_CALENDAR} element={<OwnerPage />} />
       <Route path={ROUTES.OWNER_ANALYTICS} element={<OwnerPage />} />
       <Route path={ROUTES.OWNER_WALLET} element={<OwnerPage />} />
+      <Route path={ROUTES.OWNER_AI_ASSISTANT} element={<OwnerPage />} />
+      <Route path={ROUTES.OWNER_MESSAGES} element={<OwnerPage />} />
+      <Route path={ROUTES.OWNER_MESSAGES_CHAT} element={<OwnerPage />} />
 
       {/* Tất cả route công khai dùng chung PublicLayout */}
       {/* ── Admin Portal ──────────────────────────────────────────────────
@@ -99,6 +103,30 @@ export const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
+      <Route
+        path={ROUTES.OWNER_AI_ASSISTANT}
+        element={
+          <ProtectedRoute roles={['owner', 'admin']}>
+            <OwnerPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path={ROUTES.OWNER_MESSAGES}
+        element={
+          <ProtectedRoute roles={['owner', 'admin']}>
+            <OwnerPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path={ROUTES.OWNER_MESSAGES_CHAT}
+        element={
+          <ProtectedRoute roles={['owner', 'admin']}>
+            <OwnerPage />
+          </ProtectedRoute>
+        }
+      />
 
       {/* ── Public Layout (có Navbar + Footer) ───────────────────────── */}
       <Route element={<PublicLayout />}>
@@ -126,6 +154,22 @@ export const AppRoutes = () => {
           element={
             <ProtectedRoute roles={['renter', 'owner', 'admin']}>
               <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={ROUTES.MESSAGES}
+          element={
+            <ProtectedRoute roles={['renter', 'owner', 'admin']}>
+              <MessagesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={ROUTES.MESSAGES_CHAT}
+          element={
+            <ProtectedRoute roles={['renter', 'owner', 'admin']}>
+              <MessagesPage />
             </ProtectedRoute>
           }
         />

@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Search, 
   Check, 
@@ -7,10 +8,12 @@ import {
   ShieldCheck, 
   AlertTriangle, 
   Camera, 
-  UserCheck
+  UserCheck,
+  MessageSquare,
 } from 'lucide-react';
 import { STRINGS } from '../../constants/strings';
 import { COLORS } from '../../constants/colors';
+import { ROUTES } from '../../routes/routes.js';
 
 export const OwnerBookingsTab = ({ 
   bookings = [], 
@@ -21,6 +24,7 @@ export const OwnerBookingsTab = ({
 }) => {
   const t = STRINGS.owner.bookings;
   const tc = STRINGS.common;
+  const navigate = useNavigate();
 
   // Tabs: 'all' | 'pending' | 'approved' | 'active' | 'completed' | 'rejected'
   const [activeTab, setActiveTab] = useState('pending');
@@ -269,16 +273,16 @@ export const OwnerBookingsTab = ({
                           </button>
                         )}
 
-                        {/* Completed or Rejected -> Detail */}
-                        {(b.status === 'completed' || b.status === 'rejected') && (
-                          <button
-                            type="button"
-                            className="owner-btn-outline py-1 px-2.5 text-xs"
-                            onClick={() => alert(`View details for order #${b.bookingCode}`)}
-                          >
-                            <span>{tc.viewDetails}</span>
-                          </button>
-                        )}
+                        {/* Nhắn tin với Người thuê */}
+                        <button
+                          type="button"
+                          className="owner-btn-outline py-1 px-2.5 text-xs text-teal-700 bg-teal-50 border-teal-200 hover:bg-teal-100 flex items-center gap-1"
+                          onClick={() => navigate(ROUTES.MESSAGES_PATH(b._id || b.id))}
+                          title="Nhắn tin với người thuê"
+                        >
+                          <MessageSquare size={13} className="text-teal-600" />
+                          <span>Nhắn tin</span>
+                        </button>
                       </div>
                     </td>
                   </tr>

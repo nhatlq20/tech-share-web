@@ -8,8 +8,11 @@ import { OwnerBookingsTab } from './OwnerBookingsTab';
 import { OwnerCalendarTab } from './OwnerCalendarTab';
 import { OwnerAnalyticsTab } from './OwnerAnalyticsTab';
 import { OwnerWalletTab } from './OwnerWalletTab';
+import { OwnerAIAssistantTab } from './OwnerAIAssistantTab';
 import PostDevicePage from '../../pages/PostDevicePage';
 import { NotificationDropdown } from '../notifications/NotificationDropdown';
+import { MessagesPage } from '../../pages/MessagesPage.jsx';
+import { useChat } from '../../context/ChatContext.jsx';
 import { ROUTES } from '../../routes/routes';
 import { STRINGS } from '../../constants/strings';
 import { API_CONFIG } from '../../constants/config';
@@ -18,6 +21,7 @@ import './OwnerWorkspace.css';
 export const OwnerDashboardScreen = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { unreadMessagesCount } = useChat();
 
   // State initialized with clean DB empty states (No seed data)
   const [kpi, setKpi] = useState({
@@ -237,6 +241,7 @@ export const OwnerDashboardScreen = () => {
         currentPath={currentPath}
         onNavigate={handleNavigate}
         pendingCount={pendingApprovalsCount}
+        unreadMessagesCount={unreadMessagesCount}
         owner={kpi?.owner}
         onLogout={() => {
           localStorage.removeItem('techshare_token');
@@ -331,7 +336,13 @@ export const OwnerDashboardScreen = () => {
         </header>
 
         {/* Content Body Based on URL Route */}
-        <section className="owner-content-body">
+        <section
+          className={`owner-content-body ${
+            currentPath.startsWith(ROUTES.OWNER_MESSAGES)
+              ? '!p-0 !gap-0 h-[calc(100vh-69px)] overflow-hidden'
+              : ''
+          }`}
+        >
           {/* A. /owner/dashboard or /owner */}
           {(currentPath === ROUTES.OWNER_DASHBOARD || currentPath === ROUTES.OWNER) && (
             <OwnerOverviewTab
@@ -401,6 +412,16 @@ export const OwnerDashboardScreen = () => {
               kpi={kpi}
               bookings={bookings}
             />
+          )}
+
+          {/* G. /owner/ai-assistant */}
+          {currentPath === ROUTES.OWNER_AI_ASSISTANT && (
+            <OwnerAIAssistantTab />
+          )}
+
+          {/* H. /owner/messages & /owner/messages/:bookingId */}
+          {currentPath.startsWith(ROUTES.OWNER_MESSAGES) && (
+            <MessagesPage />
           )}
         </section>
       </main>
