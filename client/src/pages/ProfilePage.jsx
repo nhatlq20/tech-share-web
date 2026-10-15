@@ -16,6 +16,9 @@ import {
   Calendar,
   Camera,
   AlertCircle,
+  Edit3,
+  X,
+  Save,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { api } from '../services/api.js';
@@ -44,6 +47,66 @@ export const ProfilePage = () => {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0); // 0–100
   const [feedbackMsg, setFeedbackMsg] = useState(null);
+
+  // Trạng thái Modal Edit Profile (Cập nhật địa chỉ & thông tin cá nhân)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editForm, setEditForm] = useState({ name: '', phone: '', address: '' });
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [editError, setEditError] = useState(null);
+
+  const openEditModal = () => {
+    const curProfile = userData || authUser || {};
+    setEditForm({
+      name: curProfile.name || '',
+      phone: curProfile.phone || '',
+      address: curProfile.address || '',
+    });
+    setEditError(null);
+    setIsEditModalOpen(true);
+  };
+
+  const handleSaveProfile = async (e) => {
+    e.preventDefault();
+    try {
+      setSavingProfile(true);
+      setEditError(null);
+
+      const res = await api.patch(
+        '/users/profile',
+        {
+          name: editForm.name,
+          phone: editForm.phone,
+          address: editForm.address,
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (res?.success && res?.user) {
+        setUserData(res.user);
+
+        // Đồng bộ AuthContext & localStorage để Navbar tự cập nhật
+        login({
+          token,
+          user: res.user,
+          account: accountData || authAccount,
+        });
+
+        setIsEditModalOpen(false);
+        setFeedbackMsg({
+          type: 'success',
+          text: 'Cập nhật địa chỉ và thông tin hồ sơ thành công!',
+        });
+        setTimeout(() => setFeedbackMsg(null), 4000);
+      } else {
+        setEditError(res?.message || 'Không thể lưu thay đổi.');
+      }
+    } catch (err) {
+      console.error('Lỗi cập nhật profile:', err);
+      setEditError(err.data?.message || err.message || 'Lỗi khi cập nhật hồ sơ.');
+    } finally {
+      setSavingProfile(false);
+    }
+  };
 
   useEffect(() => {
     // Nếu chưa đăng nhập, chuyển hướng sang trang Login
@@ -81,7 +144,6 @@ export const ProfilePage = () => {
 
   const handleLogout = () => {
     logout();
-    navigate(ROUTES.HOME);
   };
 
   /**
@@ -296,6 +358,15 @@ export const ProfilePage = () => {
               <div className="profile-hero-actions">
                 <button
                   type="button"
+                  onClick={openEditModal}
+                  className="profile-btn-action profile-btn-edit"
+                  title="Chỉnh sửa thông tin cá nhân & địa chỉ"
+                >
+                  <Edit3 size={15} />
+                  Edit Profile
+                </button>
+                <button
+                  type="button"
                   onClick={handleLogout}
                   className="profile-btn-action profile-btn-logout"
                 >
@@ -399,11 +470,20 @@ export const ProfilePage = () => {
         <div className="profile-details-grid">
           {/* Card 1: Thông tin cá nhân */}
           <div className="profile-section-card">
-            <div className="profile-section-header">
+            <div className="profile-section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h2 className="profile-section-title">
                 <User size={18} style={{ color: '#67BEC3' }} />
                 Thông tin cá nhân
               </h2>
+              <button
+                type="button"
+                onClick={openEditModal}
+                className="profile-btn-edit-inline"
+                title="Chỉnh sửa địa chỉ & thông tin cá nhân"
+              >
+                <Edit3 size={14} />
+                <span>Edit</span>
+              </button>
             </div>
 
             <div className="profile-data-list">
@@ -421,11 +501,9 @@ export const ProfilePage = () => {
               </div>
               <div className="profile-data-row">
                 <span className="profile-data-label">Địa chỉ:</span>
-                <span className="profile-data-value">{profile.address || 'Chưa cập nhật'}</span>
-              </div>
-              <div className="profile-data-row">
-                <span className="profile-data-label">Mã giới thiệu:</span>
-                <span className="profile-code-box">{profile.referralCode || 'Không có'}</span>
+                <span className="profile-data-value" style={{ color: profile.address ? '#0f172a' : '#94a3b8' }}>
+                  {profile.address || 'Chưa cập nhật địa chỉ'}
+                </span>
               </div>
               <div className="profile-data-row">
                 <span className="profile-data-label">Danh hiệu:</span>
@@ -488,6 +566,120 @@ export const ProfilePage = () => {
             </div>
           </div>
         </div>
+
+        {/* Modal Chỉnh sửa hồ sơ (Cập nhật địa chỉ) */}
+        {isEditModalOpen && (
+          <div className="profile-modal-backdrop" onClick={() => setIsEditModalOpen(false)}>
+            <div className="profile-modal-card" onClick={(e) => e.stopPropagation()}>
+              <div className="profile-modal-header">
+                <div className="profile-modal-title-wrap">
+                  <div className="profile-modal-icon">
+                    <Edit3 size={20} />
+                  </div>
+                  <div>
+                    <h3 className="profile-modal-title">Chỉnh sửa thông tin hồ sơ</h3>
+                    <p className="profile-modal-subtitle">Cập nhật họ tên, số điện thoại và địa chỉ nhận thiết bị</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="profile-modal-close-btn"
+                  onClick={() => setIsEditModalOpen(false)}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {editError && (
+                <div className="profile-modal-error">
+                  <AlertCircle size={16} />
+                  <span>{editError}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleSaveProfile} className="profile-modal-form">
+                <div className="profile-modal-form-group">
+                  <label className="profile-modal-label">Họ và tên</label>
+                  <div className="profile-modal-input-wrap">
+                    <User size={16} className="profile-modal-input-icon" />
+                    <input
+                      type="text"
+                      className="profile-modal-input"
+                      value={editForm.name}
+                      onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                      placeholder="Nhập họ và tên..."
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="profile-modal-form-group">
+                  <label className="profile-modal-label">Số điện thoại</label>
+                  <div className="profile-modal-input-wrap">
+                    <Phone size={16} className="profile-modal-input-icon" />
+                    <input
+                      type="tel"
+                      className="profile-modal-input"
+                      value={editForm.phone}
+                      onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                      placeholder="Nhập số điện thoại..."
+                    />
+                  </div>
+                </div>
+
+                <div className="profile-modal-form-group">
+                  <label className="profile-modal-label">
+                    <span>Địa chỉ liên hệ &amp; giao nhận thiết bị</span>
+                    <span style={{ fontSize: '11px', color: '#286E74', background: '#e8f6f7', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>
+                      Quan trọng
+                    </span>
+                  </label>
+                  <div className="profile-modal-input-wrap">
+                    <MapPin size={16} className="profile-modal-input-icon" />
+                    <input
+                      type="text"
+                      className="profile-modal-input"
+                      value={editForm.address}
+                      onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
+                      placeholder="Ví dụ: 600, Long Tuyen, Binh Thuy, Can Tho..."
+                    />
+                  </div>
+                  <span className="profile-modal-hint">
+                    Địa chỉ này được lưu vào hồ sơ để tự động điền khi đặt thuê và hỗ trợ chủ thiết bị giao nhận máy.
+                  </span>
+                </div>
+
+                <div className="profile-modal-actions">
+                  <button
+                    type="button"
+                    className="profile-modal-btn-cancel"
+                    onClick={() => setIsEditModalOpen(false)}
+                    disabled={savingProfile}
+                  >
+                    Hủy bỏ
+                  </button>
+                  <button
+                    type="submit"
+                    className="profile-modal-btn-save"
+                    disabled={savingProfile}
+                  >
+                    {savingProfile ? (
+                      <>
+                        <div className="profile-spinner-sm" style={{ width: 16, height: 16 }} />
+                        <span>Đang lưu...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Save size={16} />
+                        <span>Lưu thay đổi</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

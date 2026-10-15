@@ -10,9 +10,11 @@ import { CatalogPage } from '../pages/CatalogPage.jsx';
 import { DeviceDetailPage } from '../pages/DeviceDetailPage.jsx';
 // eslint-disable-next-line no-unused-vars
 import { BookingCheckoutPage } from '../pages/booking/BookingCheckoutPage.jsx';
+import { MyBookingsPage } from '../pages/booking/MyBookingsPage.jsx';
+import { BookingDetailPage } from '../pages/booking/BookingDetailPage.jsx';
 import { NearbyPage } from '../pages/NearbyPage.jsx';
 import { LoginPage } from '../pages/LoginPage.jsx';
-import { RegisterPage } from '../pages/RegisterPage.jsx';
+import { RegisterPage } from '../pages/RegisterPage.tsx';
 import { NotFoundPage } from '../pages/NotFoundPage.jsx';
 
 // Auth-required pages
@@ -28,25 +30,11 @@ import { OwnerPage } from '../pages/OwnerPage.jsx';
 export const AppRoutes = () => {
   return (
     <Routes>
-      {/* Phân hệ Owner Hub (Chủ thiết bị) - Dedicated Workspace Layout */}
-      <Route path={ROUTES.OWNER} element={<OwnerPage />} />
-      <Route path={ROUTES.OWNER_DASHBOARD} element={<OwnerPage />} />
-      <Route path={ROUTES.OWNER_DEVICES} element={<OwnerPage />} />
-      <Route path={ROUTES.OWNER_DEVICE_NEW} element={<OwnerPage />} />
-      <Route path={ROUTES.OWNER_BOOKINGS} element={<OwnerPage />} />
-      <Route path={ROUTES.OWNER_CALENDAR} element={<OwnerPage />} />
-      <Route path={ROUTES.OWNER_ANALYTICS} element={<OwnerPage />} />
-      <Route path={ROUTES.OWNER_WALLET} element={<OwnerPage />} />
-      <Route path={ROUTES.OWNER_AI_ASSISTANT} element={<OwnerPage />} />
-      <Route path={ROUTES.OWNER_MESSAGES} element={<OwnerPage />} />
-      <Route path={ROUTES.OWNER_MESSAGES_CHAT} element={<OwnerPage />} />
-
-      {/* Tất cả route công khai dùng chung PublicLayout */}
       {/* ── Admin Portal ──────────────────────────────────────────────────
           Không có Navbar/Footer, chỉ vào bằng gõ URL trực tiếp          */}
       <Route path={ROUTES.ADMIN_LOGIN} element={<AdminLoginPage />} />
 
-      {/* ── Owner Hub (Chủ thiết bị) ──────────────────────────────────── */}
+      {/* ── Owner Hub (Chủ thiết bị) - Dedicated Workspace Layout ─────── */}
       <Route
         path={ROUTES.OWNER}
         element={
@@ -65,6 +53,14 @@ export const AppRoutes = () => {
       />
       <Route
         path={ROUTES.OWNER_DEVICES}
+        element={
+          <ProtectedRoute roles={['owner']}>
+            <OwnerPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path={ROUTES.OWNER_DEVICE_NEW}
         element={
           <ProtectedRoute roles={['owner']}>
             <OwnerPage />
@@ -141,6 +137,22 @@ export const AppRoutes = () => {
         <Route path={ROUTES.REGISTER}           element={<RegisterPage />} />
 
         {/* Cần đăng nhập (bất kỳ role) */}
+        <Route
+          path={ROUTES.MY_BOOKINGS}
+          element={
+            <ProtectedRoute roles={['renter', 'owner', 'admin']}>
+              <MyBookingsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={ROUTES.BOOKING_DETAIL}
+          element={
+            <ProtectedRoute roles={['renter', 'owner', 'admin']}>
+              <BookingDetailPage />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path={ROUTES.PROFILE}
           element={

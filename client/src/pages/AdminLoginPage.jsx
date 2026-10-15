@@ -39,11 +39,11 @@ export const AdminLoginPage = () => {
     setSuccessMessage('');
 
     if (!identifier.trim()) {
-      setErrorMessage('Vui lòng nhập tên đăng nhập hoặc email.');
+      setErrorMessage('Please enter your username or email.');
       return;
     }
     if (!password) {
-      setErrorMessage('Vui lòng nhập mật khẩu.');
+      setErrorMessage('Please enter your password.');
       return;
     }
 
@@ -55,9 +55,9 @@ export const AdminLoginPage = () => {
       });
 
       if (res?.success) {
-        // Chỉ cho phép admin đăng nhập tại đây
+        // Only allow admin role here
         if (res.user?.role !== 'admin') {
-          setErrorMessage('Tài khoản hoặc mật khẩu không chính xác.');
+          setErrorMessage('Invalid username or password.');
           return;
         }
 
@@ -67,18 +67,18 @@ export const AdminLoginPage = () => {
           account: res.account,
         });
 
-        setSuccessMessage('Đăng nhập thành công! Đang chuyển hướng...');
+        setSuccessMessage('Login successful! Redirecting to admin portal...');
         setTimeout(() => {
           navigate(ROUTES.ADMIN, { replace: true });
         }, 600);
       } else {
-        setErrorMessage(res?.message || 'Đăng nhập không thành công.');
+        setErrorMessage(res?.message || 'Login failed. Please check your credentials.');
       }
     } catch (err) {
       const msg =
         err.data?.message ||
         err.message ||
-        'Không thể kết nối đến máy chủ. Vui lòng thử lại sau.';
+        'Unable to connect to server. Please try again later.';
       setErrorMessage(msg);
     } finally {
       setIsLoading(false);
@@ -94,13 +94,13 @@ export const AdminLoginPage = () => {
             <ShieldCheck size={14} />
             Admin Portal
           </div>
-          <h1 className="login-title">Đăng nhập quản trị</h1>
+          <h1 className="login-title">Admin Sign In</h1>
           <p className="login-subtitle">
-            Khu vực dành riêng cho quản trị viên hệ thống TechShare
+            Dedicated portal for TechShare system administrators
           </p>
         </div>
 
-        {/* Thông báo lỗi */}
+        {/* Error Alert */}
         {errorMessage && (
           <div className="login-alert-error" role="alert">
             <AlertCircle size={18} style={{ flexShrink: 0, marginTop: 2 }} />
@@ -108,7 +108,7 @@ export const AdminLoginPage = () => {
           </div>
         )}
 
-        {/* Thông báo thành công */}
+        {/* Success Alert */}
         {successMessage && (
           <div className="login-alert-success" role="status">
             <CheckCircle2 size={18} />
@@ -120,7 +120,7 @@ export const AdminLoginPage = () => {
         <form onSubmit={handleSubmit} className="login-form">
           <div className="login-form-group">
             <label className="login-label" htmlFor="admin-identifier">
-              Tên đăng nhập hoặc Email
+              Username or Email
             </label>
             <div className="login-input-wrapper">
               <User size={18} className="login-input-icon" />
@@ -128,7 +128,7 @@ export const AdminLoginPage = () => {
                 id="admin-identifier"
                 type="text"
                 className="login-input"
-                placeholder="Nhập tên đăng nhập hoặc email..."
+                placeholder="Enter username or email..."
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
                 autoComplete="username"
@@ -139,7 +139,7 @@ export const AdminLoginPage = () => {
 
           <div className="login-form-group">
             <label className="login-label" htmlFor="admin-password">
-              Mật khẩu
+              Password
             </label>
             <div className="login-input-wrapper">
               <Lock size={18} className="login-input-icon" />
@@ -147,7 +147,7 @@ export const AdminLoginPage = () => {
                 id="admin-password"
                 type={showPassword ? 'text' : 'password'}
                 className="login-input login-input-password"
-                placeholder="Nhập mật khẩu..."
+                placeholder="Enter password..."
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete="current-password"
@@ -157,7 +157,7 @@ export const AdminLoginPage = () => {
                 type="button"
                 className="login-password-toggle"
                 onClick={() => setShowPassword((v) => !v)}
-                aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
@@ -170,10 +170,10 @@ export const AdminLoginPage = () => {
             disabled={isLoading}
           >
             {isLoading ? (
-              <span>Đang xác thực...</span>
+              <span>Authenticating...</span>
             ) : (
               <>
-                <span>Đăng nhập</span>
+                <span>Sign In</span>
                 <ArrowRight size={18} />
               </>
             )}

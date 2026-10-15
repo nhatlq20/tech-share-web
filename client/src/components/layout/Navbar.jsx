@@ -1,4 +1,5 @@
-import { Link, useNavigate } from 'react-router-dom';
+import React from 'react';
+import { Link } from 'react-router-dom';
 import { MessageSquare } from 'lucide-react';
 import { ROUTES } from '../../routes/routes.js';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -9,11 +10,9 @@ import './Navbar.css';
 export const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuth();
   const { unreadMessagesCount } = useChat();
-  const navigate = useNavigate();
 
   const handleLogout = () => {
     logout();
-    navigate('/');
   };
 
   return (
@@ -47,6 +46,11 @@ export const Navbar = () => {
           <Link to={ROUTES.COMPARE || '/compare'} className="navbar-link">
             Compare
           </Link>
+          {isAuthenticated && (
+            <Link to={ROUTES.MY_BOOKINGS} className="navbar-link">
+              My Bookings
+            </Link>
+          )}
           {/* Chỉ hiện với Owner */}
           {user?.role === 'owner' && (
             <Link to={ROUTES.OWNER} className="navbar-link navbar-link-owner">

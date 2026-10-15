@@ -768,6 +768,13 @@ export const BookingCheckoutPage = () => {
               >
                 {STRINGS.booking.successModal.continueExploreBtn}
               </button>
+              <button
+                type="button"
+                onClick={() => navigate(successBooking?.bookingCode ? ROUTES.BOOKING_DETAIL_PATH(successBooking.bookingCode) : ROUTES.MY_BOOKINGS)}
+                className="flex-1 py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs shadow-md transition"
+              >
+                {STRINGS.booking.successModal.viewMyBookingsBtn}
+              </button>
             </div>
           </div>
         </div>

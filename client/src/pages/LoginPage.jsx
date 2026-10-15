@@ -36,11 +36,11 @@ export const LoginPage = () => {
     setSuccessMessage('');
 
     if (!identifier.trim()) {
-      setErrorMessage('Vui lòng nhập tên đăng nhập hoặc email.');
+      setErrorMessage('Please enter your username or email.');
       return;
     }
     if (!password) {
-      setErrorMessage('Vui lòng nhập mật khẩu.');
+      setErrorMessage('Please enter your password.');
       return;
     }
 
@@ -54,10 +54,10 @@ export const LoginPage = () => {
       if (res?.success) {
         const role = res.user?.role;
 
-        // Tài khoản admin không được đăng nhập tại đây
+        // Admin accounts must not log in here
         if (role === 'admin') {
           setErrorMessage(
-            'Tài khoản hoặc mật khẩu không chính xác.'
+            'Invalid username or password.'
           );
           return;
         }
@@ -68,24 +68,24 @@ export const LoginPage = () => {
           account: res.account,
         });
 
-        setSuccessMessage('Đăng nhập thành công! Đang chuyển hướng...');
+        setSuccessMessage('Login successful! Redirecting...');
         setTimeout(() => {
-          // Owner → vào thẳng trang quản lý
+          // Owner → direct to owner portal
           if (role === 'owner') {
             navigate(ROUTES.OWNER, { replace: true });
           } else {
-            // Renter → về trang đích trước đó hoặc home
+            // Renter → previous target route or home
             navigate(from, { replace: true });
           }
         }, 600);
       } else {
-        setErrorMessage(res?.message || 'Đăng nhập không thành công.');
+        setErrorMessage(res?.message || 'Login failed. Please check your credentials.');
       }
     } catch (err) {
       const msg =
         err.data?.message ||
         err.message ||
-        'Không thể kết nối đến máy chủ. Vui lòng thử lại sau.';
+        'Unable to connect to server. Please try again later.';
       setErrorMessage(msg);
     } finally {
       setIsLoading(false);
@@ -101,13 +101,13 @@ export const LoginPage = () => {
             <Sparkles size={14} />
             TechShare Authentication
           </div>
-          <h1 className="login-title">Chào mừng trở lại</h1>
+          <h1 className="login-title">Welcome Back</h1>
           <p className="login-subtitle">
-            Đăng nhập để thuê thiết bị công nghệ &amp; quản lý đơn hàng
+            Log in to rent tech devices &amp; manage your orders
           </p>
         </div>
 
-        {/* Thông báo lỗi */}
+        {/* Error Alert */}
         {errorMessage && (
           <div className="login-alert-error" role="alert">
             <AlertCircle size={18} style={{ flexShrink: 0, marginTop: 2 }} />
@@ -115,7 +115,7 @@ export const LoginPage = () => {
           </div>
         )}
 
-        {/* Thông báo thành công */}
+        {/* Success Alert */}
         {successMessage && (
           <div className="login-alert-success" role="status">
             <CheckCircle2 size={18} />
@@ -123,11 +123,11 @@ export const LoginPage = () => {
           </div>
         )}
 
-        {/* Form đăng nhập */}
+        {/* Login Form */}
         <form onSubmit={handleSubmit} className="login-form">
           <div className="login-form-group">
             <label className="login-label" htmlFor="login-identifier">
-              Tên đăng nhập hoặc Email
+              Username or Email
             </label>
             <div className="login-input-wrapper">
               <User size={18} className="login-input-icon" />
@@ -135,7 +135,7 @@ export const LoginPage = () => {
                 id="login-identifier"
                 type="text"
                 className="login-input"
-                placeholder="Nhập tên đăng nhập hoặc email..."
+                placeholder="Enter username or email..."
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
                 autoComplete="username"
@@ -146,7 +146,7 @@ export const LoginPage = () => {
 
           <div className="login-form-group">
             <label className="login-label" htmlFor="login-password">
-              Mật khẩu
+              Password
             </label>
             <div className="login-input-wrapper">
               <Lock size={18} className="login-input-icon" />
@@ -154,7 +154,7 @@ export const LoginPage = () => {
                 id="login-password"
                 type={showPassword ? 'text' : 'password'}
                 className="login-input login-input-password"
-                placeholder="Nhập mật khẩu..."
+                placeholder="Enter password..."
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete="current-password"
@@ -164,7 +164,7 @@ export const LoginPage = () => {
                 type="button"
                 className="login-password-toggle"
                 onClick={() => setShowPassword((v) => !v)}
-                aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
@@ -176,11 +176,11 @@ export const LoginPage = () => {
               href="#forgot"
               onClick={(e) => {
                 e.preventDefault();
-                alert('Vui lòng liên hệ quản trị viên để khôi phục mật khẩu.');
+                alert('Please contact an administrator to recover your password.');
               }}
               className="login-forgot-link"
             >
-              Quên mật khẩu?
+              Forgot password?
             </a>
           </div>
 
@@ -190,10 +190,10 @@ export const LoginPage = () => {
             disabled={isLoading}
           >
             {isLoading ? (
-              <span>Đang xác thực...</span>
+              <span>Authenticating...</span>
             ) : (
               <>
-                <span>Đăng nhập</span>
+                <span>Sign In</span>
                 <ArrowRight size={18} />
               </>
             )}
@@ -202,9 +202,9 @@ export const LoginPage = () => {
 
         {/* Footer */}
         <div className="login-footer">
-          Chưa có tài khoản?
+          Don't have an account?
           <Link to={ROUTES.REGISTER} className="login-footer-link">
-            Đăng ký ngay
+            Register now
           </Link>
         </div>
       </div>

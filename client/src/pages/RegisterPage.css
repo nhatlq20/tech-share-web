@@ -1,0 +1,474 @@
+/* ==========================================================================
+   TechShare Register Page Stylesheet (UI Written in TSX)
+   Design Tokens: Brand Teal #67BEC3, Modern Slate, Smooth Micro-animations
+   ========================================================================== */
+
+.register-page-container {
+  min-height: calc(100vh - 64px - 80px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 16px;
+  background: radial-gradient(circle at top right, #e8f6f7 0%, #f8fafc 40%, #ffffff 100%);
+}
+
+.register-card {
+  width: 100%;
+  max-width: 520px;
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 38px 36px;
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
+  border: 1px solid #f1f5f9;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.register-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  background: linear-gradient(90deg, #67BEC3, #4CA6AC, #286E74);
+}
+
+.register-header {
+  text-align: center;
+  margin-bottom: 26px;
+}
+
+.register-badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px;
+  background-color: #e8f6f7;
+  color: #286E74;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.register-title {
+  font-size: 26px;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.5px;
+  margin-bottom: 8px;
+}
+
+.register-subtitle {
+  font-size: 14px;
+  color: #64748B;
+  line-height: 1.5;
+}
+
+/* Steps Indicator */
+.register-steps-tracker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.register-step-node {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.register-step-node.active {
+  color: #286E74;
+}
+
+.register-step-node.completed {
+  color: #10b981;
+}
+
+.register-step-circle {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  background-color: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s ease;
+}
+
+.register-step-node.active .register-step-circle {
+  background-color: #67BEC3;
+  color: #ffffff;
+  border-color: #67BEC3;
+  box-shadow: 0 0 0 4px rgba(103, 190, 195, 0.2);
+}
+
+.register-step-node.completed .register-step-circle {
+  background-color: #10b981;
+  color: #ffffff;
+  border-color: #10b981;
+}
+
+.register-step-line {
+  width: 32px;
+  height: 2px;
+  background-color: #e2e8f0;
+  border-radius: 2px;
+}
+
+.register-step-line.active {
+  background-color: #67BEC3;
+}
+
+/* Alert Error Banner */
+.register-alert-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background-color: #fef2f2;
+  border: 1px solid #fee2e2;
+  color: #b91c1c;
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  margin-bottom: 20px;
+  animation: fadeIn 0.25s ease-out;
+  line-height: 1.4;
+}
+
+/* Alert Success Banner */
+.register-alert-success {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: #f0fdf4;
+  border: 1px solid #dcfce7;
+  color: #15803d;
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  margin-bottom: 20px;
+  animation: fadeIn 0.25s ease-out;
+  line-height: 1.4;
+}
+
+/* Form Styles */
+.register-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.register-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+@media (max-width: 480px) {
+  .register-form-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.register-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.register-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.register-label .required {
+  color: #ef4444;
+}
+
+.register-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.register-input-icon {
+  position: absolute;
+  left: 14px;
+  color: #94A3B8;
+  pointer-events: none;
+  transition: color 0.15s ease;
+}
+
+.register-input {
+  width: 100%;
+  height: 44px;
+  padding: 0 14px 0 42px;
+  font-size: 14px;
+  color: #0f172a;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.register-input:focus {
+  background-color: #ffffff;
+  border-color: #67BEC3;
+  box-shadow: 0 0 0 3px rgba(103, 190, 195, 0.2);
+}
+
+.register-input-wrapper:focus-within .register-input-icon {
+  color: #286E74;
+}
+
+.register-input::placeholder {
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+.register-input-password {
+  padding-right: 42px;
+}
+
+.register-password-toggle {
+  position: absolute;
+  right: 12px;
+  background: transparent;
+  border: none;
+  color: #94A3B8;
+  cursor: pointer;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  transition: color 0.15s ease;
+}
+
+.register-password-toggle:hover {
+  color: #334155;
+}
+
+/* Submit Button */
+.register-btn-submit {
+  width: 100%;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #67BEC3 0%, #4CA6AC 100%);
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 700;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(103, 190, 195, 0.35);
+  transition: all 0.2s ease;
+  margin-top: 6px;
+}
+
+.register-btn-submit:hover:not(:disabled) {
+  background: linear-gradient(135deg, #58B0B5 0%, #3F989E 100%);
+  box-shadow: 0 6px 16px rgba(103, 190, 195, 0.45);
+  transform: translateY(-1px);
+}
+
+.register-btn-submit:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* OTP Screen Elements */
+.otp-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding-top: 6px;
+}
+
+.otp-icon-glow {
+  width: 68px;
+  height: 68px;
+  background: #e8f6f7;
+  color: #286E74;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  box-shadow: 0 0 0 10px rgba(103, 190, 195, 0.12);
+  animation: pulseGlow 2s infinite ease-in-out;
+}
+
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 0 8px rgba(103, 190, 195, 0.12); }
+  50% { box-shadow: 0 0 0 14px rgba(103, 190, 195, 0.22); }
+}
+
+.otp-email-badge {
+  font-weight: 700;
+  color: #0f172a;
+  background: #f1f5f9;
+  padding: 4px 12px;
+  border-radius: 8px;
+  display: inline-block;
+  margin: 6px 0 20px 0;
+  font-size: 14px;
+}
+
+/* 6 OTP Box Inputs */
+.otp-inputs-row {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.otp-digit-box {
+  width: 52px;
+  height: 58px;
+  border-radius: 12px;
+  border: 2px solid #e2e8f0;
+  background: #f8fafc;
+  font-size: 24px;
+  font-weight: 800;
+  color: #0f172a;
+  text-align: center;
+  outline: none;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.otp-digit-box:focus {
+  background: #ffffff;
+  border-color: #67BEC3;
+  box-shadow: 0 0 0 4px rgba(103, 190, 195, 0.2);
+  transform: translateY(-2px);
+}
+
+.otp-digit-box.filled {
+  border-color: #67BEC3;
+  background: #f0fafb;
+}
+
+@media (max-width: 420px) {
+  .otp-digit-box {
+    width: 42px;
+    height: 48px;
+    font-size: 20px;
+    gap: 6px;
+  }
+}
+
+.otp-resend-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #64748B;
+  margin-bottom: 20px;
+}
+
+.otp-btn-resend {
+  background: none;
+  border: none;
+  color: #286E74;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+}
+
+.otp-btn-resend:hover:not(:disabled) {
+  color: #1e5257;
+  text-decoration: underline;
+}
+
+.otp-btn-resend:disabled {
+  color: #94a3b8;
+  cursor: not-allowed;
+  text-decoration: none;
+}
+
+.otp-back-btn {
+  background: transparent;
+  border: none;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 14px;
+  transition: color 0.15s ease;
+}
+
+.otp-back-btn:hover {
+  color: #0f172a;
+}
+
+/* Footer & Switch */
+.register-footer {
+  text-align: center;
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid #f1f5f9;
+  font-size: 14px;
+  color: #64748B;
+}
+
+.register-footer-link {
+  color: #286E74;
+  font-weight: 700;
+  text-decoration: none;
+  margin-left: 6px;
+  transition: color 0.15s ease;
+}
+
+.register-footer-link:hover {
+  color: #1c4b4f;
+  text-decoration: underline;
+}
+
+.spin-loader {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}

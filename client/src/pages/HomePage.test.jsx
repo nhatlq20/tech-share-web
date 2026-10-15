@@ -1,9 +1,9 @@
 import React, { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { HomePage } from './HomePage';
-import { deviceService } from '../services/deviceService.ts';
+import { deviceService } from '../services/deviceService.js';
 
-jest.mock('../services/deviceService.ts', () => ({ deviceService: { getNearbyDevices: jest.fn(), getDevices: jest.fn() } }));
+jest.mock('../services/deviceService.js', () => ({ deviceService: { getNearbyDevices: jest.fn(), getDevices: jest.fn() } }));
 jest.mock('../components/home/HeroSection', () => ({ HeroSection: () => null }));
 jest.mock('react-router-dom', () => ({ Link: ({ to, children, ...props }) => <a href={to} {...props}>{children}</a> }));
 
