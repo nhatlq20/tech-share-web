@@ -19,6 +19,9 @@ const HOME_RECOMMENDATION_MAX_DISTANCE_METERS = 100000;
 const MAX_LATITUDE = 90;
 const MAX_LONGITUDE = 180;
 
+const isNumericQueryValue = (value) =>
+  typeof value === "string" && value.trim() !== "" && Number.isFinite(Number(value));
+
 const geoPaginationStages = (page, limit) => [
   {
     $facet: {
@@ -37,34 +40,24 @@ export const getRecommendedDevices = async (req, res, next) => {
       page = RECOMMENDATION_DEFAULT_PAGE,
       limit = RECOMMENDATION_PAGE_SIZE,
     } = req.query;
-    const isNumber = (value) =>
-      typeof value === "string" &&
-      value.trim() !== "" &&
-      Number.isFinite(Number(value));
     const userLat = Number(lat);
     const userLng = Number(lng);
     const pageNum = Number(page);
     const requestedLimit = Number(limit);
-    if (
-      !isNumber(lat) ||
-      !isNumber(lng) ||
-      Math.abs(userLat) > MAX_LATITUDE ||
-      Math.abs(userLng) > MAX_LONGITUDE ||
-      !Number.isSafeInteger(pageNum) ||
-      pageNum < RECOMMENDATION_DEFAULT_PAGE ||
-      !Number.isSafeInteger(requestedLimit) ||
-      requestedLimit < RECOMMENDATION_DEFAULT_PAGE ||
-      !Number.isSafeInteger(
-        (pageNum - RECOMMENDATION_DEFAULT_PAGE) *
-          Math.min(requestedLimit, RECOMMENDATION_PAGE_SIZE),
-      )
-    ) {
+    const limitNum = Math.min(requestedLimit, RECOMMENDATION_PAGE_SIZE);
+    const skip = (pageNum - RECOMMENDATION_DEFAULT_PAGE) * limitNum;
+    const validCoordinates = isNumericQueryValue(lat) && isNumericQueryValue(lng) &&
+      Math.abs(userLat) <= MAX_LATITUDE && Math.abs(userLng) <= MAX_LONGITUDE;
+    const validPagination = Number.isSafeInteger(pageNum) && pageNum >= RECOMMENDATION_DEFAULT_PAGE &&
+      Number.isSafeInteger(requestedLimit) && requestedLimit >= RECOMMENDATION_DEFAULT_PAGE &&
+      Number.isSafeInteger(skip);
+
+    if (!validCoordinates || !validPagination) {
       return res.status(400).json({
         success: false,
         message: "Valid lat, lng, page and limit are required.",
       });
     }
-    const limitNum = Math.min(requestedLimit, RECOMMENDATION_PAGE_SIZE);
     const [result] = await getDevicesCollection()
       .aggregate([
         {

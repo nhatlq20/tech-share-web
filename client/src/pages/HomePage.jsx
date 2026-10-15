@@ -46,8 +46,6 @@ export const HomePage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
 
-  const filteredDevices = devices;
-
   const location = useUserLocation();
   const locationKey = JSON.stringify([location.latitude, location.longitude, location.revision]);
   const [pageSelection, setPageSelection] = useState(null);
@@ -91,35 +89,43 @@ export const HomePage = () => {
         }),
       };
     }
-    pendingRequest.current.promise.then((res) => {
-      if (!Array.isArray(res?.data) || res.data.length > MAGIC_NUMBERS.HOME_RECOMMENDATIONS.PAGE_SIZE) throw new Error('Invalid recommendation response');
-      if (active) {
+    async function loadRecommendedDevices() {
+      try {
+        const response = await pendingRequest.current.promise;
+        if (!Array.isArray(response?.data) || response.data.length > MAGIC_NUMBERS.HOME_RECOMMENDATIONS.PAGE_SIZE) {
+          throw new Error('Invalid recommendation response');
+        }
+        // A newer location/page request must be the only one allowed to update the UI.
+        if (!active) return;
         recovery.current.failures = 0;
-        const total = res.pagination?.total ?? res.data.length;
+        const total = response.pagination?.total ?? response.data.length;
         const totalPages = Math.max(1, Math.ceil(total / MAGIC_NUMBERS.HOME_RECOMMENDATIONS.PAGE_SIZE));
         setPagination({ total, totalPages });
-        // The final page can disappear if devices become unavailable between requests.
+        // Devices may become unavailable while the user is on the final page.
         if (page > totalPages) {
           setPageSelection({ locationKey: JSON.stringify([location.latitude, location.longitude, location.revision]), page: totalPages });
           return;
         }
-        setDevices(res.data);
+        setDevices(response.data);
+      } catch (requestError) {
+        if (!active) return;
+        const isConnectionError = requestError instanceof TypeError || requestError?.name === 'AbortError' ||
+          [502, 503, 504].includes(requestError?.status);
+        setError(isConnectionError ? STRINGS.home.recommended.connectionError : STRINGS.home.recommended.apiError);
+        if (isConnectionError && recovery.current.failures < 4) {
+          const delay = 1000 * (2 ** recovery.current.failures);
+          recovery.current.failures += 1;
+          setRetrying(true);
+          retryTimer = setTimeout(() => {
+            if (active) setRequestAttempt(value => value + 1);
+          }, delay);
+        }
+      } finally {
+        if (active) setLoading(false);
       }
-    }).catch((requestError) => {
-      if (!active) return;
-      const transient = requestError instanceof TypeError || requestError?.name === 'AbortError' ||
-        [502, 503, 504].includes(requestError?.status);
-      setError(transient ? STRINGS.home.recommended.connectionError : STRINGS.home.recommended.apiError);
-      if (transient && recovery.current.failures < 4) {
-        const delay = 1000 * (2 ** recovery.current.failures++);
-        setRetrying(true);
-        retryTimer = setTimeout(() => {
-          if (active) setRequestAttempt(value => value + 1);
-        }, delay);
-      }
-    }).finally(() => {
-      if (active) setLoading(false);
-    });
+    }
+
+    loadRecommendedDevices();
     return () => { active = false; clearTimeout(retryTimer); };
   }, [location.latitude, location.longitude, location.revision, page, requestAttempt]);
 
@@ -249,7 +255,7 @@ export const HomePage = () => {
           )}
 
           {/* Empty State */}
-          {!busy && !displayError && filteredDevices.length === 0 && (
+          {!busy && !displayError && devices.length === 0 && (
             <div className="home-devices-state home-devices-empty">
               <div className="state-icon-circle state-empty-icon">
                 <PackageOpen size={28} />
@@ -259,8 +265,8 @@ export const HomePage = () => {
           )}
 
           {/* Success State */}
-          {!busy && !displayError && filteredDevices.length > 0 && (
-            <DeviceGrid devices={filteredDevices} />
+          {!busy && !displayError && devices.length > 0 && (
+            <DeviceGrid devices={devices} />
           )}
           {!displayError && pagination.totalPages > 1 && (
             <nav className="home-pagination" aria-label={STRINGS.home.recommended.paginationLabel}>
