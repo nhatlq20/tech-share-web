@@ -118,32 +118,6 @@ export const OwnerDashboardScreen = () => {
     fetchOwnerData();
   }, [fetchOwnerData]);
 
-  // Actions: Toggle device status (Active MongoDB mutation)
-  // eslint-disable-next-line no-unused-vars
-  const handleToggleDeviceStatus = async (deviceId, newStatus) => {
-    setDevices((prev) =>
-      prev.map((d) => (d._id === deviceId ? { ...d, status: newStatus } : d)),
-    );
-    try {
-      const token = localStorage.getItem("techshare_token");
-      const headers = {
-        "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      };
-      await fetch(
-        `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.OWNER_TOGGLE_DEVICE(deviceId)}`,
-        {
-          method: "PATCH",
-          headers,
-          body: JSON.stringify({ status: newStatus }),
-        },
-      );
-      fetchOwnerData();
-    } catch (err) {
-      console.error("Failed to toggle device status in DB:", err);
-    }
-  };
-
   const handleDeviceCreated = (device) => {
     const newDevice = {
       ...device,

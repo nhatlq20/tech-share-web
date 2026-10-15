@@ -37,6 +37,8 @@ export const STRINGS = {
   // Home & Landing Page Module (English)
   home: {
     recommended: {
+      connectionError: 'Your location is available, but the device service cannot be reached.',
+      retrying: 'Reconnecting automatically...',
       paginationLabel: 'Recommended devices pagination',
       pageLabel: 'Page',
       devicesLabel: 'devices',

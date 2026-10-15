@@ -13,6 +13,8 @@ import {
   AlertCircle,
   RefreshCw,
   PackageOpen,
+  MapPin,
+  ArrowRight,
 } from 'lucide-react';
 import { deviceService } from '../services/deviceService.js';
 import { DeviceGrid } from '../components/device/DeviceGrid.jsx';
@@ -34,6 +36,10 @@ const getCategories = () => [
 ];
 
 export const HomePage = () => {
+  useEffect(() => {
+    // Opening Home should reveal its hero, rather than restore a previous page's scroll position.
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, []);
   const [devices, setDevices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -54,18 +60,25 @@ export const HomePage = () => {
   };
   const [requestAttempt, setRequestAttempt] = useState(0);
   const pendingRequest = useRef(null);
+  const recovery = useRef({ key: null, failures: 0 });
+  const [retrying, setRetrying] = useState(false);
   const loadDevices = () => {
+    recovery.current.failures = 0;
     if (location.error) location.retry();
     else { setLoading(true); setError(null); setRequestAttempt((value) => value + 1); }
   };
 
   useEffect(() => {
     let active = true;
+    let retryTimer;
     if (location.latitude == null || location.longitude == null) {
       return () => { active = false; };
     }
     setError(null);
+    setRetrying(false);
     setLoading(true);
+    const recoveryKey = JSON.stringify([location.latitude, location.longitude, location.revision, page]);
+    if (recovery.current.key !== recoveryKey) recovery.current = { key: recoveryKey, failures: 0 };
     const key = JSON.stringify([location.latitude, location.longitude, location.revision, page, requestAttempt]);
     // Reuse the in-flight request during StrictMode's setup/cleanup/setup cycle.
     if (pendingRequest.current?.key !== key) {
@@ -81,6 +94,7 @@ export const HomePage = () => {
     pendingRequest.current.promise.then((res) => {
       if (!Array.isArray(res?.data) || res.data.length > MAGIC_NUMBERS.HOME_RECOMMENDATIONS.PAGE_SIZE) throw new Error('Invalid recommendation response');
       if (active) {
+        recovery.current.failures = 0;
         const total = res.pagination?.total ?? res.data.length;
         const totalPages = Math.max(1, Math.ceil(total / MAGIC_NUMBERS.HOME_RECOMMENDATIONS.PAGE_SIZE));
         setPagination({ total, totalPages });
@@ -91,13 +105,38 @@ export const HomePage = () => {
         }
         setDevices(res.data);
       }
-    }).catch(() => {
-      if (active) setError(STRINGS.home.recommended.apiError);
+    }).catch((requestError) => {
+      if (!active) return;
+      const transient = requestError instanceof TypeError || requestError?.name === 'AbortError' ||
+        [502, 503, 504].includes(requestError?.status);
+      setError(transient ? STRINGS.home.recommended.connectionError : STRINGS.home.recommended.apiError);
+      if (transient && recovery.current.failures < 4) {
+        const delay = 1000 * (2 ** recovery.current.failures++);
+        setRetrying(true);
+        retryTimer = setTimeout(() => {
+          if (active) setRequestAttempt(value => value + 1);
+        }, delay);
+      }
     }).finally(() => {
       if (active) setLoading(false);
     });
-    return () => { active = false; };
+    return () => { active = false; clearTimeout(retryTimer); };
   }, [location.latitude, location.longitude, location.revision, page, requestAttempt]);
+
+  useEffect(() => {
+    // Recover when the network returns or the user revisits the tab after starting the backend.
+    const recover = () => {
+      if (!error || location.latitude == null || location.longitude == null || document.visibilityState === 'hidden') return;
+      recovery.current.failures = 0;
+      setRequestAttempt(value => value + 1);
+    };
+    window.addEventListener('online', recover);
+    window.addEventListener('focus', recover);
+    return () => {
+      window.removeEventListener('online', recover);
+      window.removeEventListener('focus', recover);
+    };
+  }, [error, location.latitude, location.longitude]);
 
   const busy = location.loading || (!location.error && loading);
   const displayError = location.error || error;
@@ -119,6 +158,7 @@ export const HomePage = () => {
             <h2 id="categories-heading" className="home-section-title">
               {STRINGS.home.categories.heading}
             </h2>
+            <a className="home-browse-link" href="/explore">Browse all categories <ArrowRight size={14} /></a>
           </div>
 
           <div
@@ -159,18 +199,19 @@ export const HomePage = () => {
                 {STRINGS.home.recommended.subtitle}
               </p>
             </div>
-          </div>
-
+            <div className="home-location-tools">
           {(location.source === 'CACHE' || location.warning || location.isStale) && (
-            <p role="status">
+            <p role="status" className="home-location-notice"><MapPin size={21} />
               {location.isStale ? STRINGS.home.recommended.staleLocation : STRINGS.home.recommended.lastKnownLocation}
             </p>
           )}
           {location.latitude != null && (
-            <button type="button" className="state-retry-btn" onClick={location.refreshLocation} disabled={location.refreshing}>
+            <button type="button" className="state-retry-btn home-location-update" onClick={location.refreshLocation} disabled={location.refreshing}>
               <RefreshCw size={14} /> {location.refreshing ? STRINGS.home.recommended.updatingLocation : STRINGS.home.recommended.updateLocation}
             </button>
           )}
+            </div>
+          </div>
           {busy && <p role="status">{location.loading ? STRINGS.home.recommended.locationLoading : STRINGS.home.recommended.apiLoading}</p>}
           {/* Loading State */}
           {busy && (
@@ -196,6 +237,7 @@ export const HomePage = () => {
               </div>
               <h3 className="state-title">{location.error ? STRINGS.home.nearby.locationError : STRINGS.home.recommended.apiError}</h3>
               <p className="state-desc">{displayError}</p>
+              {retrying && <p role="status">{STRINGS.home.recommended.retrying}</p>}
               <button
                 type="button"
                 onClick={loadDevices}

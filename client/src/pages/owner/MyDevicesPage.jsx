@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
 import "./MyDevicesPage.css";
-import { getMyDevices } from "../../services/deviceService";
+import { deleteMyDevice, getMyDevices } from "../../services/deviceService";
 import { Wrench } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ROUTES from "../../routes/routes";
+import DeleteDeviceModal from "../../components/owner/DeleteDeviceModal";
 function DeviceIcon() {
   return (
     <svg
@@ -24,6 +25,8 @@ function DeviceIcon() {
 function MyDevicesPage() {
   const [devices, setDevices] = useState([]);
   const [errorMessage, setErrorMessage] = useState("");
+  const [deviceToDelete, setDeviceToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const navigation = useNavigate();
   useEffect(() => {
     const fetchDevices = async () => {
@@ -43,7 +46,27 @@ function MyDevicesPage() {
 
     fetchDevices();
   }, []);
+  const handleDelete = async () => {
+    if (!deviceToDelete) return;
+    setIsDeleting(true);
+    try {
+      const response = await deleteMyDevice(deviceToDelete._id);
 
+      if (response.success) {
+        setDevices((prevDevices) =>
+          prevDevices.filter((device) => device._id !== deviceToDelete._id),
+        );
+        setDeviceToDelete(null);
+      } else {
+        throw new Error(response.message || "Xóa thiết bị thất bại!");
+      }
+    } catch (error) {
+      console.log("Delete error:", error);
+      alert(error.message || "Xóa thiết bị thất bại!");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
   const availableDevices = devices.filter(
     (device) => device.status === "available",
   ).length;
@@ -190,6 +213,7 @@ function MyDevicesPage() {
                         className="my-device-icon-button my-device-delete-button"
                         type="button"
                         aria-label="Delete device"
+                        onClick={() => setDeviceToDelete(device)}
                       >
                         <svg aria-hidden="true" viewBox="0 0 20 20" fill="none">
                           <path d="M4.5 6h11m-9.8 0 .6 10h8.4l.6-10M8 6V4h4v2m-3 3v4m2-4v4" />
@@ -228,6 +252,14 @@ function MyDevicesPage() {
           )}
         </section>
       </div>
+      {deviceToDelete && (
+        <DeleteDeviceModal
+          deviceName={deviceToDelete.name || deviceToDelete.title}
+          isDeleting={isDeleting}
+          onCancel={() => setDeviceToDelete(null)}
+          onConfirm={handleDelete}
+        />
+      )}
     </main>
   );
 }

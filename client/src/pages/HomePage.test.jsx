@@ -28,6 +28,7 @@ const click = async (text) => {
 beforeEach(() => {
   global.IS_REACT_ACT_ENVIRONMENT = true;
   jest.clearAllMocks();
+  jest.spyOn(window, 'scrollTo').mockImplementation(() => {});
   localStorage.clear();
   permission('prompt');
   Object.defineProperty(navigator, 'geolocation', { configurable: true, value: {
@@ -298,4 +299,121 @@ test('deleted final page redirects to the last remaining page', async () => {
   expect(deviceService.getRecommendedDevices).toHaveBeenLastCalledWith({ lat: 21.0285, lng: 105.8542, page: 2, limit: 12 });
   expect(container.querySelectorAll('article')).toHaveLength(8);
   expect(pageButton(2).getAttribute('aria-current')).toBe('page');
+});
+
+test('cached location survives an unavailable startup backend and recommendations recover automatically', async () => {
+  jest.useFakeTimers(); save();
+  deviceService.getRecommendedDevices.mockRejectedValueOnce(new TypeError('Failed to fetch')).mockResolvedValueOnce(result());
+  await mount();
+  expect(container.textContent).toContain('Reconnecting automatically...');
+  expect(container.textContent).not.toContain('Unable to determine your location.');
+  expect(localStorage.getItem(LOCATION_CACHE_KEY)).not.toBeNull();
+  await act(async () => jest.advanceTimersByTime(1000));
+  expect(container.querySelectorAll('article')).toHaveLength(1);
+  expect(deviceService.getRecommendedDevices).toHaveBeenCalledTimes(2);
+  expect(navigator.geolocation.getCurrentPosition).not.toHaveBeenCalled();
+});
+
+test('automatic API recovery is bounded and manual retry still works afterwards', async () => {
+  jest.useFakeTimers(); save();
+  deviceService.getRecommendedDevices.mockRejectedValue(new TypeError('Failed to fetch'));
+  await mount();
+  for (const delay of [1000, 2000, 4000, 8000]) await act(async () => jest.advanceTimersByTime(delay));
+  expect(deviceService.getRecommendedDevices).toHaveBeenCalledTimes(5);
+  expect(container.textContent).not.toContain('Reconnecting automatically...');
+  await act(async () => jest.advanceTimersByTime(60000));
+  expect(deviceService.getRecommendedDevices).toHaveBeenCalledTimes(5);
+  deviceService.getRecommendedDevices.mockResolvedValue(result());
+  await click('Try Again');
+  expect(container.querySelectorAll('article')).toHaveLength(1);
+});
+
+test.each(['online', 'focus'])('%s recovers cached recommendations after connection failure', async event => {
+  save(); deviceService.getRecommendedDevices.mockRejectedValueOnce(new TypeError('Failed to fetch')).mockResolvedValueOnce(result());
+  await mount();
+  await act(async () => window.dispatchEvent(new Event(event)));
+  expect(container.querySelectorAll('article')).toHaveLength(1);
+  expect(deviceService.getRecommendedDevices).toHaveBeenCalledTimes(2);
+});
+
+test('backend 503 retries without requesting GPS again', async () => {
+  jest.useFakeTimers(); save();
+  deviceService.getRecommendedDevices.mockRejectedValueOnce(Object.assign(new Error('starting'), { status: 503 })).mockResolvedValueOnce(result());
+  await mount(); await act(async () => jest.advanceTimersByTime(1000));
+  expect(container.querySelectorAll('article')).toHaveLength(1);
+  expect(navigator.geolocation.getCurrentPosition).not.toHaveBeenCalled();
+});
+
+test('invalid API requests do not loop automatically', async () => {
+  jest.useFakeTimers(); save();
+  deviceService.getRecommendedDevices.mockRejectedValue(Object.assign(new Error('bad request'), { status: 400 }));
+  await mount(); await act(async () => jest.advanceTimersByTime(60000));
+  expect(deviceService.getRecommendedDevices).toHaveBeenCalledTimes(1);
+});
+
+test('high accuracy failure retries real browser network positioning and persists success', async () => {
+  await mount(); await reject(2);
+  expect(navigator.geolocation.getCurrentPosition).toHaveBeenCalledTimes(2);
+  expect(navigator.geolocation.getCurrentPosition.mock.calls[1][2]).toEqual({ enableHighAccuracy: false, timeout: 5000, maximumAge: 300000 });
+  await allow();
+  expect(localStorage.getItem(LOCATION_CACHE_KEY)).not.toBeNull();
+  expect(container.querySelectorAll('article')).toHaveLength(1);
+});
+
+test('both browser positioning attempts can fail without losing cached recommendations', async () => {
+  save(); permission('granted'); await mount();
+  await reject(3); await reject(2);
+  expect(navigator.geolocation.getCurrentPosition).toHaveBeenCalledTimes(2);
+  expect(container.querySelectorAll('article')).toHaveLength(1);
+  expect(localStorage.getItem(LOCATION_CACHE_KEY)).not.toBeNull();
+  expect(deviceService.getRecommendedDevices).toHaveBeenCalledTimes(1);
+});
+
+test('permission denied does not trigger a second GPS prompt', async () => {
+  await mount(); await reject(1);
+  expect(navigator.geolocation.getCurrentPosition).toHaveBeenCalledTimes(1);
+  expect(deviceService.getRecommendedDevices).not.toHaveBeenCalled();
+});
+
+test('unmount cancels pending recommendation recovery', async () => {
+  jest.useFakeTimers(); save();
+  deviceService.getRecommendedDevices.mockRejectedValue(new TypeError('Failed to fetch'));
+  await mount(); await mount(null);
+  await act(async () => jest.advanceTimersByTime(60000));
+  expect(deviceService.getRecommendedDevices).toHaveBeenCalledTimes(1);
+});
+
+test('favorite control toggles independently of the device link and persists across Home mounts', async () => {
+  save(); await mount();
+  let favorite = container.querySelector('button[aria-label="Add to favorites: Cached device"]');
+  expect(favorite.closest('a')).toBeNull();
+  await act(async () => favorite.click());
+  expect(favorite.getAttribute('aria-pressed')).toBe('true');
+  expect(JSON.parse(localStorage.getItem('techshare:favorite-devices'))).toEqual(['Cached device']);
+  await mount(null); await mount();
+  favorite = container.querySelector('button[aria-label="Remove from favorites: Cached device"]');
+  expect(favorite.getAttribute('aria-pressed')).toBe('true');
+  await act(async () => favorite.click());
+  expect(JSON.parse(localStorage.getItem('techshare:favorite-devices'))).toEqual([]);
+});
+
+test('unresponsive permission inspection cannot block first-visit browser positioning forever', async () => {
+  jest.useFakeTimers();
+  navigator.permissions.query.mockReturnValue(new Promise(() => {}));
+  await mount();
+  expect(navigator.geolocation.getCurrentPosition).not.toHaveBeenCalled();
+  await act(async () => jest.advanceTimersByTime(1500));
+  expect(navigator.geolocation.getCurrentPosition).toHaveBeenCalledTimes(1);
+  await allow();
+  expect(container.querySelectorAll('article')).toHaveLength(1);
+});
+
+test('permission inspection timeout with cache still never triggers a browser prompt', async () => {
+  jest.useFakeTimers(); save();
+  navigator.permissions.query.mockReturnValue(new Promise(() => {}));
+  await mount();
+  expect(container.querySelectorAll('article')).toHaveLength(1);
+  await act(async () => jest.advanceTimersByTime(1500));
+  expect(navigator.geolocation.getCurrentPosition).not.toHaveBeenCalled();
+  expect(deviceService.getRecommendedDevices).toHaveBeenCalledTimes(1);
 });
