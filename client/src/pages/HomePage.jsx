@@ -51,6 +51,13 @@ export const HomePage = () => {
   const [pageSelection, setPageSelection] = useState(null);
   const page = pageSelection?.locationKey === locationKey ? pageSelection.page : MAGIC_NUMBERS.HOME_RECOMMENDATIONS.INITIAL_PAGE;
   const [pagination, setPagination] = useState({ total: 0, totalPages: 1 });
+  const handleCategoryChange = (category) => {
+    if (category === selectedCategory) return;
+    setSelectedCategory(category);
+    setPageSelection(null);
+    setLoading(true);
+    setError(null);
+  };
   const changePage = (nextPage) => {
     if (busy || nextPage === page || nextPage < 1 || nextPage > pagination.totalPages) return;
     setLoading(true);
@@ -75,9 +82,9 @@ export const HomePage = () => {
     setError(null);
     setRetrying(false);
     setLoading(true);
-    const recoveryKey = JSON.stringify([location.latitude, location.longitude, location.revision, page]);
+    const recoveryKey = JSON.stringify([location.latitude, location.longitude, location.revision, selectedCategory, page]);
     if (recovery.current.key !== recoveryKey) recovery.current = { key: recoveryKey, failures: 0 };
-    const key = JSON.stringify([location.latitude, location.longitude, location.revision, page, requestAttempt]);
+    const key = JSON.stringify([location.latitude, location.longitude, location.revision, selectedCategory, page, requestAttempt]);
     // Reuse the in-flight request during StrictMode's setup/cleanup/setup cycle.
     if (pendingRequest.current?.key !== key) {
       pendingRequest.current = {
@@ -86,6 +93,7 @@ export const HomePage = () => {
           lat: location.latitude, lng: location.longitude,
           page,
           limit: MAGIC_NUMBERS.HOME_RECOMMENDATIONS.PAGE_SIZE,
+          ...(selectedCategory !== 'all' ? { category: selectedCategory } : {}),
         }),
       };
     }
@@ -95,7 +103,7 @@ export const HomePage = () => {
         if (!Array.isArray(response?.data) || response.data.length > MAGIC_NUMBERS.HOME_RECOMMENDATIONS.PAGE_SIZE) {
           throw new Error('Invalid recommendation response');
         }
-        // A newer location/page request must be the only one allowed to update the UI.
+        // Ignore older responses when the user changes category, location or page.
         if (!active) return;
         recovery.current.failures = 0;
         const total = response.pagination?.total ?? response.data.length;
@@ -127,7 +135,7 @@ export const HomePage = () => {
 
     loadRecommendedDevices();
     return () => { active = false; clearTimeout(retryTimer); };
-  }, [location.latitude, location.longitude, location.revision, page, requestAttempt]);
+  }, [location.latitude, location.longitude, location.revision, selectedCategory, page, requestAttempt]);
 
   useEffect(() => {
     // Recover when the network returns or the user revisits the tab after starting the backend.
@@ -179,7 +187,8 @@ export const HomePage = () => {
                 <button
                   key={cat.id}
                   type="button"
-                  onClick={() => setSelectedCategory(cat.id)}
+                  onClick={() => handleCategoryChange(cat.id)}
+                  aria-pressed={isActive}
                   className={`home-category-chip ${isActive ? 'active' : ''}`}
                 >
                   <div className="category-chip-icon">

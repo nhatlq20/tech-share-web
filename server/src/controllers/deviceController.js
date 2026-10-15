@@ -37,6 +37,7 @@ export const getRecommendedDevices = async (req, res, next) => {
     const {
       lat,
       lng,
+      category,
       page = RECOMMENDATION_DEFAULT_PAGE,
       limit = RECOMMENDATION_PAGE_SIZE,
     } = req.query;
@@ -58,6 +59,33 @@ export const getRecommendedDevices = async (req, res, next) => {
         message: "Valid lat, lng, page and limit are required.",
       });
     }
+    if (category !== undefined && typeof category !== "string") {
+      return res.status(400).json({ success: false, message: "Valid device category is required." });
+    }
+    const categoryFilter = category ? category.trim().toLowerCase() : "";
+    const allowedCategories = Device.schema.path("category").enumValues;
+    if (categoryFilter && categoryFilter !== "all" && !allowedCategories.includes(categoryFilter)) {
+      return res.status(400).json({ success: false, message: "Valid device category is required." });
+    }
+    const deviceFilter = {
+      status: "available",
+      isDeleted: { $ne: true },
+      "location.type": "Point",
+      "location.coordinates": { $size: 2 },
+      "location.coordinates.0": {
+        $type: "number",
+        $gte: -MAX_LONGITUDE,
+        $lte: MAX_LONGITUDE,
+      },
+      "location.coordinates.1": {
+        $type: "number",
+        $gte: -MAX_LATITUDE,
+        $lte: MAX_LATITUDE,
+      },
+    };
+    // Filter before sorting/pagination so totals and every page belong to this category.
+    if (categoryFilter && categoryFilter !== "all") deviceFilter.category = categoryFilter;
+
     const [result] = await getDevicesCollection()
       .aggregate([
         {
@@ -67,22 +95,7 @@ export const getRecommendedDevices = async (req, res, next) => {
             distanceField: "distanceMeters",
             spherical: true,
             maxDistance: HOME_RECOMMENDATION_MAX_DISTANCE_METERS,
-            query: {
-              status: "available",
-              isDeleted: { $ne: true },
-              "location.type": "Point",
-              "location.coordinates": { $size: 2 },
-              "location.coordinates.0": {
-                $type: "number",
-                $gte: -MAX_LONGITUDE,
-                $lte: MAX_LONGITUDE,
-              },
-              "location.coordinates.1": {
-                $type: "number",
-                $gte: -MAX_LATITUDE,
-                $lte: MAX_LATITUDE,
-              },
-            },
+            query: deviceFilter,
           },
         },
         {

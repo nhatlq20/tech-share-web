@@ -77,3 +77,30 @@ test('database failure goes to Express error handling without fake results', asy
   const result = await request();
   assert.equal(result.error, databaseError); assert.equal(result.body, undefined);
 });
+test('camera category is included inside geoNear before pagination', async () => {
+  const result = await request({ category: 'camera', page: '2' });
+  assert.equal(result.status, 200);
+  assert.equal(pipeline[0].$geoNear.query.category, 'camera');
+  assert.equal(pipeline[0].$geoNear.maxDistance, 100000);
+  assert.deepEqual(pipeline.at(-1).$facet.data, [{ $skip: 12 }, { $limit: 12 }]);
+  assert.deepEqual(pipeline.at(-1).$facet.totals, [{ $count: 'total' }]);
+});
+
+for (const category of ['', 'all', ' All ']) {
+  test(`no category filter for ${JSON.stringify(category)}`, async () => {
+    assert.equal((await request({ category })).status, 200);
+    assert.equal(pipeline[0].$geoNear.query.category, undefined);
+  });
+}
+
+test('category normalization handles whitespace and casing', async () => {
+  await request({ category: ' Camera ' });
+  assert.equal(pipeline[0].$geoNear.query.category, 'camera');
+});
+
+for (const category of ['invalid-category', ['camera'], { $ne: null }]) {
+  test(`reject invalid category ${JSON.stringify(category)} before database query`, async () => {
+    assert.equal((await request({ category })).status, 400);
+    assert.equal(pipeline, null);
+  });
+}
