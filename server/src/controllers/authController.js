@@ -650,4 +650,62 @@ export const resendRegisterOtp = async (req, res) => {
   }
 };
 
+/**
+ * 8. PATCH/PUT /api/users/profile or /api/auth/profile
+ * Cập nhật thông tin profile của người dùng (địa chỉ, họ tên, số điện thoại)
+ */
+export const updateProfile = async (req, res) => {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Unauthorized. Please log in.',
+      });
+    }
+
+    const { name, phone, address } = req.body;
+
+    const updateFields = {};
+    if (address !== undefined) {
+      updateFields.address = (address || '').trim();
+    }
+    if (name !== undefined && name.trim()) {
+      updateFields.name = name.trim();
+    }
+    if (phone !== undefined) {
+      updateFields.phone = (phone || '').trim();
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { $set: updateFields },
+      { new: true, runValidators: true }
+    )
+      .select('-passwordHash')
+      .lean();
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        success: false,
+        message: 'User profile not found.',
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Profile updated successfully.',
+      user: updatedUser,
+    });
+  } catch (error) {
+    console.error('Error in updateProfile:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Server error while updating profile.',
+      error: error.message,
+    });
+  }
+};
+
+
 

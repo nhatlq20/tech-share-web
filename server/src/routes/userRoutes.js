@@ -1,5 +1,5 @@
 import express from 'express';
-import { getProfile, getCurrentUser, updateAvatar } from '../controllers/authController.js';
+import { getProfile, getCurrentUser, updateAvatar, updateProfile } from '../controllers/authController.js';
 import { protect } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
@@ -10,6 +10,10 @@ const router = express.Router();
 // Lấy profile của người dùng hiện tại từ token
 router.get('/me', protect, getCurrentUser);
 router.get('/profile', protect, getProfile);
+
+// Cập nhật thông tin profile (địa chỉ, tên, sđt)
+router.patch('/profile', protect, updateProfile);
+router.put('/profile', protect, updateProfile);
 
 // Cập nhật ảnh đại diện (Upload Cloudinary)
 router.post('/avatar', protect, updateAvatar);

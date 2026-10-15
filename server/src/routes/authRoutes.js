@@ -4,6 +4,7 @@ import {
   getProfile,
   getCurrentUser,
   updateAvatar,
+  updateProfile,
   registerInit,
   registerVerifyOtp,
   resendRegisterOtp,
@@ -22,6 +23,10 @@ router.post('/resend-otp', resendRegisterOtp);
 
 // Lấy thông tin user hiện tại (cần Token)
 router.get('/me', protect, getCurrentUser);
+
+// Cập nhật thông tin Profile (địa chỉ, tên, sđt)
+router.patch('/profile', protect, updateProfile);
+router.put('/profile', protect, updateProfile);
 
 // Cập nhật ảnh đại diện lên Cloudinary
 router.post('/avatar', protect, updateAvatar);
