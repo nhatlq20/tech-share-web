@@ -555,6 +555,37 @@ export const myDevices = async (req, res) => {
     });
   }
 };
+
+export const deleteOwner = async (req,res) => {
+  try {
+    const { deviceId } = req.params;
+    const ownerId = req.user.userId;
+    const device = await Device.findOne({
+      _id: deviceId,
+      owner: ownerId,
+      isDeleted: false,
+    });
+
+    if (!device) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy thiết bị",
+      });
+    }
+    device.isDeleted = true;
+    await device.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Xóa thiết bị thành công",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Internal server error",
+    });
+  }
+};
 export default {
   getDevices,
   getNearbyDevices,
