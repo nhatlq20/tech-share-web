@@ -92,11 +92,11 @@ export const OwnerSidebar = ({
           }}
         >
           <div className="owner-logo-icon">
-            <Sparkles size={16} />
+            <Sparkles size={20} />
           </div>
           <div className="owner-logo-text">
             Tech<span>Share</span>{' '}
-            <span style={{ fontSize: '10px', fontWeight: 600, color: COLORS.neutral[500] }}>
+            <span style={{ fontSize: '11px', fontWeight: 600, color: COLORS.neutral[500] }}>
               OWNER
             </span>
           </div>
@@ -141,12 +141,12 @@ export const OwnerSidebar = ({
               className={`owner-nav-item ${isActive ? 'active' : ''}`}
               onClick={() => onNavigate(item.path)}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '7px', minWidth: 0 }}>
-                <Icon size={15} strokeWidth={isActive ? 2.5 : 2} style={{ flexShrink: 0 }} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '11px', minWidth: 0 }}>
+                <Icon size={18} strokeWidth={isActive ? 2.5 : 2} style={{ flexShrink: 0 }} />
                 <span
                   style={{
-                    fontSize: '11.5px',
-                    fontWeight: isActive ? 700 : 500,
+                    fontSize: '12.5px',
+                    fontWeight: isActive ? 700 : 600,
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
@@ -157,7 +157,7 @@ export const OwnerSidebar = ({
               </div>
               {item.badge !== null && item.badge !== undefined && (
                 <span
-                  className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center shrink-0 shadow-2xs leading-none"
+                  className="owner-badge-count"
                   title={`${item.badge} mục cần xử lý`}
                 >
                   {item.badge}
@@ -175,7 +175,7 @@ export const OwnerSidebar = ({
           onClick={() => onNavigate(ROUTES.HOME)}
           className="owner-footer-btn client-switch"
         >
-          <ExternalLink size={13} />
+          <ExternalLink size={15} />
           <span>{t.switchClientBtn}</span>
         </button>
 
@@ -184,7 +184,7 @@ export const OwnerSidebar = ({
           onClick={onLogout}
           className="owner-footer-btn logout"
         >
-          <LogOut size={13} />
+          <LogOut size={15} />
           <span>{t.logoutBtn}</span>
         </button>
       </div>
