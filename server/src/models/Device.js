@@ -1,78 +1,81 @@
 import mongoose from 'mongoose';
 
+/**
+ * 4. Bảng devices (Tier 1 - Đã tối ưu & Tương thích cả Web + App)
+ * Gom nhóm stats (sao, lượt thuê, doanh thu), gộp addressText vào location,
+ * bổ sung trạng thái kiểm duyệt moderationStatus cho Admin.
+ * Tương thích App & Web: Có sẵn Virtual Getters & Setters 2 chiều cho addressText,
+ * ratingAvg, ratingCount, rentalCount, revenueTotal, dailyRate, title, v.v.
+ */
 const deviceSchema = new mongoose.Schema(
   {
-    owner: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: false,
-      index: true,
-    },
     ownerId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: false,
+      required: true,
       index: true,
     },
-    title: {
-      type: String,
-      required: [true, 'Tên thiết bị là bắt buộc'],
-      trim: true,
-    },
+
+    // 1. Định danh & Phân loại thiết bị
     name: {
       type: String,
+      required: true,
       trim: true,
     },
     brand: {
       type: String,
-      required: [true, 'Thương hiệu là bắt buộc'],
+      required: true,
       trim: true,
-    },
-    yearOfManufacture: {
-      type: Number,
-      min: 1990,
-      max: new Date().getFullYear(),
+      index: true,
     },
     category: {
       type: String,
-      required: [true, 'Danh mục thiết bị là bắt buộc'],
-      enum: ['smartphone', 'laptop', 'camera', 'drone', 'audio', 'accessory', 'tablet', 'other'],
+      enum: ['smartphone', 'laptop', 'camera', 'drone', 'audio', 'gaming', 'accessory'],
+      required: true,
+      index: true,
+    },
+    yearOfManufacture: {
+      type: Number,
     },
     condition: {
       type: String,
-      enum: ['new', 'like_new', 'good', 'fair'],
-      default: 'like_new',
+      enum: ['new99', 'used95', 'scratched'],
+      default: 'new99',
     },
-    dailyRate: {
-      type: Number,
-      required: [true, 'Giá thuê mỗi ngày là bắt buộc'],
-      min: 0,
+    description: {
+      type: String,
+      required: true,
     },
-    pricePerDay: {
-      type: Number,
-      min: 0,
-    },
-    depositValue: {
-      type: Number,
-      default: 0,
-    },
-    depositAmount: {
-      type: Number,
-      default: 0,
-    },
+
+    // 2. Đa phương tiện & Thông số kỹ thuật động (Specs Map)
     images: {
       type: [String],
-      default: [],
+      required: true,
+      validate: [val => Array.isArray(val) && val.length > 0 && val.length <= 8, 'Cần từ 1 - 8 ảnh'],
     },
     specs: {
       type: Map,
       of: String,
       default: {},
     },
-    description: {
+    accessories: [{
       type: String,
-      default: '',
+    }],
+
+    // 3. Chi phí thuê & Tiền cọc
+    pricePerDay: {
+      type: Number,
+      required: true,
+      min: 10000,
+      index: true,
     },
+    depositAmount: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+
+    // 4. Vị trí Địa lý GeoJSON
     location: {
       type: {
         type: String,
@@ -81,76 +84,125 @@ const deviceSchema = new mongoose.Schema(
       },
       coordinates: {
         type: [Number], // [lng, lat]
-        default: [105.7826, 21.0285],
+        required: true,
+      },
+      addressText: {
+        type: String,
+        required: true,
       },
     },
-    address: {
-      type: String,
-      default: 'Hà Nội, Việt Nam',
-    },
+
+    // 5. Trạng thái Kho, Lịch bận & Kiểm duyệt Admin
     status: {
       type: String,
-      enum: ['available', 'rented', 'maintenance', 'hidden'],
+      enum: ['available', 'maintenance', 'hidden', 'rented'],
       default: 'available',
+      index: true,
+    },
+    moderationStatus: {
+      type: String,
+      enum: ['pending', 'approved', 'rejected'],
+      default: 'approved',
+      index: true,
     },
     blockedDates: [
       {
-        type: Date,
+        startDate: { type: Date, required: true },
+        endDate: { type: Date, required: true },
+        reason: { type: String, default: '' },
+        _id: false,
       },
     ],
-    rating: {
-      type: Number,
-      default: 5.0,
-      min: 1.0,
-      max: 5.0,
+
+    // 6. Nhóm Thống kê Hiệu quả Kinh doanh
+    stats: {
+      ratingAvg: { type: Number, default: 5.0, min: 1.0, max: 5.0 },
+      ratingCount: { type: Number, default: 0 },
+      rentalCount: { type: Number, default: 0 },
+      revenueTotal: { type: Number, default: 0 },
     },
-    ratingAvg: {
-      type: Number,
-      default: 5.0,
-    },
-    reviewCount: {
-      type: Number,
-      default: 0,
-    },
-    viewsCount: {
-      type: Number,
-      default: 0,
-    },
+
     isDeleted: {
       type: Boolean,
       default: false,
+      index: true,
     },
   },
   {
     timestamps: true,
-    toJSON: {
-      virtuals: true,
-      transform: (doc, ret) => {
-        if (!ret.name && ret.title) ret.name = ret.title;
-        if (!ret.title && ret.name) ret.title = ret.name;
-        if (ret.pricePerDay === undefined && ret.dailyRate !== undefined) ret.pricePerDay = ret.dailyRate;
-        if (ret.dailyRate === undefined && ret.pricePerDay !== undefined) ret.dailyRate = ret.pricePerDay;
-        if (ret.ratingAvg === undefined && ret.rating !== undefined) ret.ratingAvg = ret.rating;
-        delete ret.__v;
-        return ret;
-      },
-    },
+    toJSON: { virtuals: true },
     toObject: { virtuals: true },
+    collection: 'devices',
   }
 );
 
-// Auto-sync aliases before saving
+// Virtuals 2 chiều giúp code App và Web truy cập trực tiếp
+deviceSchema.virtual('owner', {
+  ref: 'User',
+  localField: 'ownerId',
+  foreignField: '_id',
+  justOne: true,
+});
+
+deviceSchema.virtual('addressText')
+  .get(function () { return this.location?.addressText ?? ''; })
+  .set(function (v) { this.set('location.addressText', v); });
+
+deviceSchema.virtual('address')
+  .get(function () { return this.location?.addressText ?? ''; })
+  .set(function (v) { this.set('location.addressText', v); });
+
+deviceSchema.virtual('ratingAvg')
+  .get(function () { return this.stats?.ratingAvg ?? 5.0; })
+  .set(function (v) { this.set('stats.ratingAvg', v); });
+
+deviceSchema.virtual('rating')
+  .get(function () { return this.stats?.ratingAvg ?? 5.0; })
+  .set(function (v) { this.set('stats.ratingAvg', v); });
+
+deviceSchema.virtual('ratingCount')
+  .get(function () { return this.stats?.ratingCount ?? 0; })
+  .set(function (v) { this.set('stats.ratingCount', v); });
+
+deviceSchema.virtual('reviewCount')
+  .get(function () { return this.stats?.ratingCount ?? 0; })
+  .set(function (v) { this.set('stats.ratingCount', v); });
+
+deviceSchema.virtual('rentalCount')
+  .get(function () { return this.stats?.rentalCount ?? 0; })
+  .set(function (v) { this.set('stats.rentalCount', v); });
+
+deviceSchema.virtual('revenueTotal')
+  .get(function () { return this.stats?.revenueTotal ?? 0; })
+  .set(function (v) { this.set('stats.revenueTotal', v); });
+
+deviceSchema.virtual('title')
+  .get(function () { return this.name; })
+  .set(function (v) { this.name = v; });
+
+deviceSchema.virtual('dailyRate')
+  .get(function () { return this.pricePerDay; })
+  .set(function (v) { this.pricePerDay = v; });
+
+deviceSchema.virtual('depositValue')
+  .get(function () { return this.depositAmount; })
+  .set(function (v) { this.depositAmount = v; });
+
+// Pre-save hook đồng bộ các trường alias
 deviceSchema.pre('save', function (next) {
-  if (!this.title && this.name) this.title = this.name;
   if (!this.name && this.title) this.name = this.title;
-  if (this.dailyRate === undefined && this.pricePerDay !== undefined) this.dailyRate = this.pricePerDay;
-  if (this.pricePerDay === undefined && this.dailyRate !== undefined) this.pricePerDay = this.dailyRate;
-  if (this.ratingAvg === undefined && this.rating !== undefined) this.ratingAvg = this.rating;
+  if (!this.pricePerDay && this.dailyRate) this.pricePerDay = this.dailyRate;
+  if (this.depositAmount === undefined && this.depositValue !== undefined) this.depositAmount = this.depositValue;
+  if (this.stats?.ratingAvg === undefined && this.rating !== undefined) {
+    if (!this.stats) this.stats = {};
+    this.stats.ratingAvg = this.rating;
+  }
   next();
 });
 
 deviceSchema.index({ location: '2dsphere' });
-deviceSchema.index({ category: 1, dailyRate: 1, status: 1 });
+deviceSchema.index({ category: 1, status: 1, isDeleted: 1 });
+deviceSchema.index({ name: 'text', brand: 'text', description: 'text' });
 
-export const Device = mongoose.models.Device || mongoose.model('Device', deviceSchema);
+export const Device = mongoose.models.Device || mongoose.model('Device', deviceSchema, 'devices');
 export default Device;

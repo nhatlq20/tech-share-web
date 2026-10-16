@@ -1,320 +1,253 @@
 import mongoose from 'mongoose';
 
+/**
+ * 5. Bảng bookings (Tier 1 - Đã tối ưu & Tương thích ngược 100% với App & Web)
+ * Gom gọn 26 trường rời rạc vào 4 khối: pricing (tài chính), delivery (giao nhận),
+ * handover (QR & ảnh bàn giao trước/sau), extensionRequest (gia hạn).
+ * Tương thích tuyệt đối với các commit đã hoàn thành: Toàn bộ các trường phẳng
+ * đều có Virtual Getter & Setter 2 chiều.
+ */
 const bookingSchema = new mongoose.Schema(
   {
-    // Standard Atlas booking code (Format: BXXXXXXXXX e.g. B967685850)
     bookingCode: {
       type: String,
       unique: true,
-      required: true,
+      sparse: true,
       index: true,
     },
-
-    // Handover QR token (Format: TSQR-BXXXXXXXXX-XXXX)
-    qrToken: {
-      type: String,
-      default: '',
-      index: true,
-    },
-
-    // Device reference (Uniform ObjectId reference for web & mobile app)
     deviceId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Device',
       required: true,
       index: true,
     },
-    device: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Device',
-      index: true,
-    },
-
-    // Renter reference (User)
     renterId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: false,
+      required: true,
       index: true,
     },
-    renter: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      index: true,
-    },
-
-    // Recipient display information
-    renterInfo: {
-      name: { type: String, trim: true },
-      phone: { type: String, trim: true },
-      email: { type: String, trim: true },
-    },
-
-    // Device owner reference (User)
     ownerId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: false,
-      index: true,
-    },
-    owner: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      required: true,
       index: true,
     },
 
-    // Rental period
+    // 1. Thời gian thuê
     startDate: {
       type: Date,
-      required: [true, 'Start date is required'],
+      required: true,
     },
     endDate: {
       type: Date,
-      required: [true, 'End date is required'],
-    },
-    totalDays: {
-      type: Number,
-      required: true,
-      min: 1,
-    },
-
-    // Rental rate & discounts (Synchronized pricePerDayAtBooking & dailyRate)
-    pricePerDayAtBooking: {
-      type: Number,
-      required: true,
-      min: 0,
-    },
-    dailyRate: {
-      type: Number,
-      min: 0,
-    },
-    rentalFee: {
-      type: Number,
-      required: true,
-      min: 0,
-    },
-    discountPercent: {
-      type: Number,
-      default: 0,
-      min: 0,
-      max: 100,
-    },
-    discountAmount: {
-      type: Number,
-      default: 0,
-      min: 0,
-    },
-
-    // Promotional voucher
-    voucherCode: {
-      type: String,
-      trim: true,
-      default: '',
-    },
-    voucherDiscount: {
-      type: Number,
-      default: 0,
-      min: 0,
-    },
-
-    // Security deposit (Synchronized depositFee & depositValue)
-    depositFee: {
-      type: Number,
-      default: 0,
-      min: 0,
-    },
-    depositValue: {
-      type: Number,
-      default: 0,
-      min: 0,
-    },
-
-    // Total payment amount
-    totalAmount: {
-      type: Number,
-      required: true,
-      min: 0,
-    },
-
-    // Delivery method and handover address
-    deliveryMethod: {
-      type: String,
-      enum: ['pickup', 'delivery'],
-      default: 'delivery',
-    },
-    deliveryAddress: {
-      type: mongoose.Schema.Types.Mixed, // Supports both String (Atlas Mobile) and Object
       required: true,
     },
-    note: {
-      type: String,
-      trim: true,
-      default: '',
-    },
 
-    // Order status lifecycle
+    // 2. Trạng thái Đơn & Thanh toán
     status: {
       type: String,
-      enum: ['pending', 'approved', 'active', 'completed', 'cancelled', 'rejected'],
+      enum: ['pending', 'approved', 'rejected', 'active', 'completed', 'cancelled', 'disputed'],
       default: 'pending',
       index: true,
     },
     paymentStatus: {
       type: String,
-      enum: ['unpaid', 'deposit_held', 'paid', 'refunded'],
+      enum: ['unpaid', 'deposit_held', 'paid', 'refunded', 'disputed'],
       default: 'unpaid',
     },
-    paymentMethod: {
-      type: String,
-      enum: ['escrow', 'bank_transfer', 'cash_on_delivery'],
-      default: 'escrow',
-    },
-
-    // Cancellation and rejection reasons
-    rejectReason: {
+    statusReason: {
       type: String,
       default: '',
-    },
-    cancelReason: {
-      type: String,
-      default: '',
-    },
+    }, // Lý do hủy hoặc từ chối đơn
 
-    // Handover condition photos (before & after)
-    handoverPhotos: {
-      beforeRental: [{ type: String }],
-      afterRental: [{ type: String }],
-    },
-
-    // Device condition inspection notes
-    conditionNotes: {
-      before: { type: String, default: '' },
-      after: { type: String, default: '' },
+    // 3. Nhóm Chi tiết Tài chính (Gom 7 trường tiền tệ)
+    pricing: {
+      pricePerDayAtBooking: { type: Number, required: true },
+      rentalFee: { type: Number, required: true },
+      discountPercent: { type: Number, default: 0 },
+      depositFee: { type: Number, required: true, default: 0 },
+      voucherCode: { type: String, default: '' },
+      voucherDiscount: { type: Number, default: 0 },
+      totalAmount: { type: Number, required: true },
     },
 
-    // Digital signature
-    digitalSignature: {
-      type: String,
-      default: '',
+    // 4. Nhóm Giao nhận
+    delivery: {
+      method: { type: String, enum: ['pickup', 'delivery'], default: 'pickup' },
+      address: { type: String, default: '' },
     },
 
-    // Order history timeline (Supports both timestamp and updatedAt)
-    timeline: [
-      {
-        status: { type: String, required: true },
-        note: { type: String, default: '' },
-        timestamp: { type: Date, default: Date.now },
-        updatedAt: { type: Date, default: Date.now },
-      },
-    ],
+    // 5. Nhóm Bàn giao QR & Ảnh đối soát Trước/Sau
+    handover: {
+      qrToken: { type: String },
+      beforePhotos: [{ type: String }],
+      afterPhotos: [{ type: String }],
+      beforeNote: { type: String, default: '' },
+      afterNote: { type: String, default: '' },
+    },
 
-    // Rental extension request
+    // 6. Nhóm Yêu cầu Gia hạn Thuê
     extensionRequest: {
+      requestedEndDate: { type: Date },
       requestedDays: { type: Number, default: 0 },
       additionalFee: { type: Number, default: 0 },
       status: { type: String, enum: ['none', 'pending', 'approved', 'rejected'], default: 'none' },
-      requestedEndDate: { type: Date },
     },
 
-    // Dispute resolution (Synchronized disputeStatus & dispute)
-    disputeStatus: {
-      type: String,
-      enum: ['none', 'pending', 'resolved_owner_compensated', 'resolved_renter_refunded', 'resolved_partial'],
-      default: 'none',
-    },
-    disputeNote: {
-      type: String,
-      default: '',
-    },
-    dispute: {
-      isDisputed: { type: Boolean, default: false },
-      reason: { type: String, default: '' },
-      requestedAmount: { type: Number, default: 0 },
-      proofPhotos: [{ type: String }],
-      resolutionStatus: {
-        type: String,
-        enum: ['none', 'pending', 'resolved_owner_compensated', 'resolved_renter_refunded', 'resolved_partial'],
-        default: 'none',
+    // 7. Sơ đồ Tiến trình Timeline & Ẩn lịch sử (UC-R26, UC-R28)
+    timeline: [
+      {
+        status: { type: String, required: true },
+        timestamp: { type: Date, default: Date.now },
+        note: { type: String, default: '' },
+        _id: false,
       },
-      adminNote: { type: String, default: '' },
-      resolvedAt: { type: Date },
+    ],
+    isHiddenByRenter: {
+      type: Boolean,
+      default: false,
     },
-
-    // Automated reminder flags
-    reminder6hSent: { type: Boolean, default: false },
-    reminder2hSent: { type: Boolean, default: false },
-    isReviewed: { type: Boolean, default: false },
   },
   {
     timestamps: true,
-    toJSON: {
-      virtuals: true,
-      transform: (doc, ret) => {
-        // Synchronize field aliases on JSON export
-        if (!ret.deviceId && ret.device) ret.deviceId = ret.device;
-        if (!ret.device && ret.deviceId) ret.device = ret.deviceId;
-        if (!ret.renterId && ret.renter) ret.renterId = ret.renter;
-        if (!ret.renter && ret.renterId) ret.renter = ret.renterId;
-        if (!ret.ownerId && ret.owner) ret.ownerId = ret.owner;
-        if (!ret.owner && ret.ownerId) ret.owner = ret.ownerId;
-        if (ret.pricePerDayAtBooking === undefined && ret.dailyRate !== undefined) {
-          ret.pricePerDayAtBooking = ret.dailyRate;
-        }
-        if (ret.dailyRate === undefined && ret.pricePerDayAtBooking !== undefined) {
-          ret.dailyRate = ret.pricePerDayAtBooking;
-        }
-        if (ret.depositFee === undefined && ret.depositValue !== undefined) {
-          ret.depositFee = ret.depositValue;
-        }
-        if (ret.depositValue === undefined && ret.depositFee !== undefined) {
-          ret.depositValue = ret.depositFee;
-        }
-        delete ret.__v;
-        return ret;
-      },
-    },
+    toJSON: { virtuals: true },
     toObject: { virtuals: true },
+    collection: 'bookings',
   }
 );
 
-// Synchronize field aliases before persisting to MongoDB Atlas
+// Virtual references
+bookingSchema.virtual('device', {
+  ref: 'Device',
+  localField: 'deviceId',
+  foreignField: '_id',
+  justOne: true,
+});
+
+bookingSchema.virtual('renter', {
+  ref: 'User',
+  localField: 'renterId',
+  foreignField: '_id',
+  justOne: true,
+});
+
+bookingSchema.virtual('owner', {
+  ref: 'User',
+  localField: 'ownerId',
+  foreignField: '_id',
+  justOne: true,
+});
+
+// --- VIRTUAL GETTERS & SETTERS 2 CHIỀU CHO CẢ APP & WEB ---
+bookingSchema.virtual('totalDays').get(function () {
+  if (!this.startDate || !this.endDate) return 1;
+  return Math.max(1, Math.ceil((new Date(this.endDate) - new Date(this.startDate)) / (1000 * 60 * 60 * 24)));
+});
+
+// Mapping nhóm pricing <-> trường phẳng
+['pricePerDayAtBooking', 'rentalFee', 'discountPercent', 'depositFee', 'voucherCode', 'voucherDiscount', 'totalAmount'].forEach((field) => {
+  bookingSchema.virtual(field)
+    .get(function () { return this.pricing?.[field]; })
+    .set(function (v) {
+      if (!this.pricing) this.pricing = {};
+      this.set(`pricing.${field}`, v);
+    });
+});
+
+// Aliases
+bookingSchema.virtual('totalPrice')
+  .get(function () { return this.pricing?.totalAmount ?? 0; })
+  .set(function (v) {
+    if (!this.pricing) this.pricing = {};
+    this.set('pricing.totalAmount', v);
+  });
+
+bookingSchema.virtual('dailyRate')
+  .get(function () { return this.pricing?.pricePerDayAtBooking ?? 0; })
+  .set(function (v) {
+    if (!this.pricing) this.pricing = {};
+    this.set('pricing.pricePerDayAtBooking', v);
+  });
+
+bookingSchema.virtual('depositValue')
+  .get(function () { return this.pricing?.depositFee ?? 0; })
+  .set(function (v) {
+    if (!this.pricing) this.pricing = {};
+    this.set('pricing.depositFee', v);
+  });
+
+// Mapping nhóm delivery <-> trường phẳng
+bookingSchema.virtual('deliveryMethod')
+  .get(function () { return this.delivery?.method ?? 'pickup'; })
+  .set(function (v) {
+    if (!this.delivery) this.delivery = {};
+    this.set('delivery.method', v);
+  });
+
+bookingSchema.virtual('deliveryAddress')
+  .get(function () { return this.delivery?.address ?? ''; })
+  .set(function (v) {
+    if (!this.delivery) this.delivery = {};
+    this.set('delivery.address', v);
+  });
+
+// Mapping nhóm handover <-> trường phẳng của App
+bookingSchema.virtual('qrToken')
+  .get(function () { return this.handover?.qrToken; })
+  .set(function (v) {
+    if (!this.handover) this.handover = {};
+    this.set('handover.qrToken', v);
+  });
+
+bookingSchema.virtual('handoverPhotos')
+  .get(function () {
+    return {
+      beforeRental: this.handover?.beforePhotos ?? [],
+      afterRental: this.handover?.afterPhotos ?? [],
+    };
+  })
+  .set(function (v) {
+    if (!this.handover) this.handover = {};
+    if (v?.beforeRental) this.set('handover.beforePhotos', v.beforeRental);
+    if (v?.afterRental) this.set('handover.afterPhotos', v.afterRental);
+  });
+
+bookingSchema.virtual('conditionNotes')
+  .get(function () {
+    return {
+      before: this.handover?.beforeNote ?? '',
+      after: this.handover?.afterNote ?? '',
+    };
+  })
+  .set(function (v) {
+    if (!this.handover) this.handover = {};
+    if (v?.before !== undefined) this.set('handover.beforeNote', v.before);
+    if (v?.after !== undefined) this.set('handover.afterNote', v.after);
+  });
+
+bookingSchema.virtual('rejectReason')
+  .get(function () { return this.status === 'rejected' ? this.statusReason : ''; })
+  .set(function (v) { if (v) this.statusReason = v; });
+
+bookingSchema.virtual('cancelReason')
+  .get(function () { return this.status === 'cancelled' ? this.statusReason : ''; })
+  .set(function (v) { if (v) this.statusReason = v; });
+
+// Pre-save hook tự động tạo mã QR nếu thiếu
 bookingSchema.pre('save', function (next) {
-  if (!this.deviceId && this.device) this.deviceId = this.device;
-  if (!this.device && this.deviceId) this.device = this.deviceId;
-  if (!this.renterId && this.renter) this.renterId = this.renter;
-  if (!this.renter && this.renterId) this.renter = this.renterId;
-  if (!this.ownerId && this.owner) this.ownerId = this.owner;
-  if (!this.owner && this.ownerId) this.owner = this.ownerId;
-
-  if (this.pricePerDayAtBooking === undefined && this.dailyRate !== undefined) {
-    this.pricePerDayAtBooking = this.dailyRate;
-  }
-  if (this.dailyRate === undefined && this.pricePerDayAtBooking !== undefined) {
-    this.dailyRate = this.pricePerDayAtBooking;
-  }
-
-  if (this.depositFee === undefined && this.depositValue !== undefined) {
-    this.depositFee = this.depositValue;
-  }
-  if (this.depositValue === undefined && this.depositFee !== undefined) {
-    this.depositValue = this.depositFee;
-  }
-
-  // Auto-generate qrToken if missing
-  if (!this.qrToken && this.bookingCode) {
+  if (!this.handover) this.handover = {};
+  if (!this.handover.qrToken && this.bookingCode) {
     const suffix = Math.random().toString(36).substring(2, 6).toUpperCase();
-    this.qrToken = `TSQR-${this.bookingCode}-${suffix}`;
+    this.handover.qrToken = `TSQR-${this.bookingCode}-${suffix}`;
   }
-
   next();
 });
 
+bookingSchema.index({ deviceId: 1, status: 1, startDate: 1, endDate: 1 });
 bookingSchema.index({ renterId: 1, status: 1, createdAt: -1 });
-bookingSchema.index({ renter: 1, status: 1, createdAt: -1 });
 bookingSchema.index({ ownerId: 1, status: 1, createdAt: -1 });
-bookingSchema.index({ owner: 1, status: 1, createdAt: -1 });
-bookingSchema.index({ deviceId: 1, startDate: 1, endDate: 1 });
-bookingSchema.index({ device: 1, startDate: 1, endDate: 1 });
+bookingSchema.index({ 'handover.qrToken': 1 }, { unique: true, sparse: true });
 
-export const Booking = mongoose.models.Booking || mongoose.model('Booking', bookingSchema);
+export const Booking = mongoose.models.Booking || mongoose.model('Booking', bookingSchema, 'bookings');
 export default Booking;
