@@ -18,6 +18,10 @@ import { API_CONFIG } from "../../constants/config";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useChat } from "../../context/ChatContext.jsx";
 import "./OwnerWorkspace.css";
+import { useChat } from "../../context/ChatContext";
+import { OwnerAIAssistantTab } from "../owner/OwnerAIAssistantTab";
+import MessagesPage from "../../pages/MessagesPage";
+
 
 export const OwnerDashboardScreen = () => {
   const { user, logout } = useAuth();

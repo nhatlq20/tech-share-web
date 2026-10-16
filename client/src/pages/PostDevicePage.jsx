@@ -107,8 +107,7 @@ const PostDevicePage = ({ onBack, onDeviceCreated }) => {
     const nextErrors = {};
 
     if (currentStep === 1) {
-       if (!formData.title.trim())
-        nextErrors.title = "Vui lòng nhập tiêu đề.";
+      if (!formData.title.trim()) nextErrors.title = "Vui lòng nhập tiêu đề.";
       if (!formData.name.trim())
         nextErrors.name = "Vui lòng nhập tên thiết bị.";
       if (!formData.category) nextErrors.category = "Vui lòng chọn danh mục.";
