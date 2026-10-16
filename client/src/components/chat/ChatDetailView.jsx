@@ -174,11 +174,39 @@ export const ChatDetailView = ({
       setLoading(true);
       setErrorMsg(null);
       const res = await getMessages(bId);
-      if (res && res.data) {
-        setMessages(res.data);
-      }
-      if (res && res.booking) {
-        setBookingContext((prev) => ({ ...(prev || {}), ...res.booking }));
+      if (res) {
+        // Hỗ trợ linh hoạt cả 2 định dạng response:
+        // 1) res.data là mảng tin nhắn
+        // 2) res.data là object { booking, otherUser/partner, messages }
+        const rawList = Array.isArray(res.data)
+          ? res.data
+          : Array.isArray(res.data?.messages)
+          ? res.data.messages
+          : Array.isArray(res.messages)
+          ? res.messages
+          : [];
+        setMessages(rawList);
+
+        // Trích xuất booking context
+        const rawBooking = res.booking || res.data?.booking;
+        if (rawBooking) {
+          setBookingContext((prev) => ({ ...(prev || {}), ...rawBooking }));
+        }
+
+        // Trích xuất partner (nếu API trả otherUser)
+        const rawPartner = res.partner || res.data?.otherUser || res.data?.partner;
+        if (rawPartner) {
+          setBookingContext((prev) => ({
+            ...(prev || {}),
+            partner: {
+              _id: rawPartner._id?.toString() || rawPartner.id,
+              name: rawPartner.name || 'Người dùng TechShare',
+              avatar: rawPartner.avatar || '',
+              role: rawPartner.role || 'user',
+              isVerified: Boolean(rawPartner.isVerified),
+            },
+          }));
+        }
       }
       // Đánh dấu đã đọc
       apiMarkAsRead(bId).catch(() => {});
@@ -221,16 +249,17 @@ export const ChatDetailView = ({
       const msgBookingId = (msg.bookingId?._id || msg.bookingId)?.toString();
       if (msgBookingId === bookingId) {
         setMessages((prev) => {
+          const list = Array.isArray(prev) ? prev : [];
           // Tránh duplicate nếu tin nhắn đã có
-          const exists = prev.some(
+          const exists = list.some(
             (m) => m._id === msg._id || (m.tempId && m.tempId === msg.tempId)
           );
           if (exists) {
-            return prev.map((m) =>
+            return list.map((m) =>
               m._id === msg._id || (m.tempId && m.tempId === msg.tempId) ? msg : m
             );
           }
-          return [...prev, msg];
+          return [...list, msg];
         });
 
         // Nếu tin nhắn là từ đối phương gửi cho mình -> đánh dấu đã đọc ngay
@@ -246,15 +275,16 @@ export const ChatDetailView = ({
     // Xử lý sự kiện tin nhắn đã được đối phương đọc
     const handleMessagesRead = (payload) => {
       if (payload && payload.bookingId === bookingId) {
-        setMessages((prev) =>
-          prev.map((m) => {
+        setMessages((prev) => {
+          const list = Array.isArray(prev) ? prev : [];
+          return list.map((m) => {
             const senderIdStr = (m.senderId?._id || m.senderId)?.toString();
             if (senderIdStr === currentUserId) {
               return { ...m, status: 'read' };
             }
             return m;
-          })
-        );
+          });
+        });
       }
     };
 
@@ -322,7 +352,7 @@ export const ChatDetailView = ({
     };
 
     // Đẩy ngay vào state local (Optimistic UI)
-    setMessages((prev) => [...prev, optimisticMessage]);
+    setMessages((prev) => [...(Array.isArray(prev) ? prev : []), optimisticMessage]);
     setTimeout(() => scrollToBottom('smooth'), 20);
 
     try {
@@ -344,12 +374,13 @@ export const ChatDetailView = ({
         location: payload.location,
       });
 
-      const savedMessage = res.data;
+      const savedMessage = res?.data?.message || res?.data || res?.message || res;
 
       // Cập nhật tin nhắn tạm bằng tin nhắn chính thức từ DB
-      setMessages((prev) =>
-        prev.map((m) => (m.tempId === tempId ? { ...savedMessage, tempId } : m))
-      );
+      setMessages((prev) => {
+        const list = Array.isArray(prev) ? prev : [];
+        return list.map((m) => (m.tempId === tempId ? { ...savedMessage, tempId } : m));
+      });
 
       if (onMessageSent) {
         onMessageSent(savedMessage);
@@ -357,17 +388,21 @@ export const ChatDetailView = ({
     } catch (err) {
       console.error('Failed to send message:', err);
       // Đánh dấu lỗi để người dùng có thể thử lại
-      setMessages((prev) =>
-        prev.map((m) =>
+      setMessages((prev) => {
+        const list = Array.isArray(prev) ? prev : [];
+        return list.map((m) =>
           m.tempId === tempId ? { ...m, status: 'error', errorMsg: err.message } : m
-        )
-      );
+        );
+      });
     }
   };
 
   // Thử lại tin nhắn bị lỗi
   const handleRetryMessage = (failedMsg) => {
-    setMessages((prev) => prev.filter((m) => m.tempId !== failedMsg.tempId));
+    setMessages((prev) => {
+      const list = Array.isArray(prev) ? prev : [];
+      return list.filter((m) => m.tempId !== failedMsg.tempId);
+    });
     handleSendMessage({
       type: failedMsg.type,
       content: failedMsg.content,
@@ -376,11 +411,11 @@ export const ChatDetailView = ({
     });
   };
 
-  const partner = bookingContext?.partner || {};
-  const device = bookingContext?.device || {};
-  const partnerBookings = bookingContext?.bookings || [];
+  const partner = bookingContext?.partner || bookingContext?.otherUser || {};
+  const device = bookingContext?.device || bookingContext?.booking?.device || {};
+  const partnerBookings = Array.isArray(bookingContext?.bookings) ? bookingContext.bookings : [];
   const otherBookings = partnerBookings.filter(
-    (b) => String(b.bookingId) !== String(bookingId)
+    (b) => String(b.bookingId || b._id) !== String(bookingId)
   );
 
   return (
@@ -629,7 +664,7 @@ export const ChatDetailView = ({
               Thử lại
             </button>
           </div>
-        ) : messages.length === 0 ? (
+        ) : (!Array.isArray(messages) || messages.length === 0) ? (
           // Empty State Card
           <div className="flex flex-col items-center justify-center h-full text-center p-6 max-w-md mx-auto my-auto animate-in fade-in zoom-in-95 duration-200 select-none">
             <div className="w-14 h-14 rounded-2xl bg-teal-50 border border-teal-100 text-teal-600 flex items-center justify-center mb-3 shadow-xs">
@@ -649,7 +684,7 @@ export const ChatDetailView = ({
             </div>
           </div>
         ) : (
-          messages.map((msg, index) => {
+          (Array.isArray(messages) ? messages : []).map((msg, index) => {
             const senderIdStr = (msg.senderId?._id || msg.senderId)?.toString();
             const isOwn = senderIdStr === currentUserId;
             const isError = msg.status === 'error';

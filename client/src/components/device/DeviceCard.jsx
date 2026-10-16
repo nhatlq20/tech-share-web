@@ -1,9 +1,17 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Star, ImageOff } from 'lucide-react';
+import { Star, ImageOff, MapPin, Heart } from 'lucide-react';
 import { ROUTES } from '../../routes/routes.js';
 import { formatPrice } from '../../utils/formatters.js';
 import './DeviceCard.css';
+
+const FAVORITES_KEY = 'techshare:favorite-devices';
+const readFavorites = () => {
+  try {
+    const value = JSON.parse(localStorage.getItem(FAVORITES_KEY) || '[]');
+    return Array.isArray(value) ? value.filter(id => typeof id === 'string') : [];
+  } catch { return []; }
+};
 
 const CATEGORY_LABEL_MAP = {
   smartphone: 'Smartphone',
@@ -49,6 +57,7 @@ export const formatConditionLabel = (condition) => {
  */
 export const DeviceCard = ({ device }) => {
   const [imgError, setImgError] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(() => readFavorites().includes(String(device?._id || device?.id || '')));
 
   if (!device || typeof device !== 'object') {
     return null;
@@ -79,6 +88,18 @@ export const DeviceCard = ({ device }) => {
 
   return (
     <article className="device-card-item">
+      {deviceId && (
+        <button type="button" className="device-card-favorite" aria-pressed={isFavorite}
+          aria-label={`${isFavorite ? 'Remove from' : 'Add to'} favorites: ${title}`}
+          onClick={() => {
+            const ids = new Set(readFavorites());
+            if (isFavorite) ids.delete(String(deviceId)); else ids.add(String(deviceId));
+            try { localStorage.setItem(FAVORITES_KEY, JSON.stringify([...ids])); } catch { /* Keep this session usable. */ }
+            setIsFavorite(!isFavorite);
+          }}>
+          <Heart size={20} fill={isFavorite ? 'currentColor' : 'none'} strokeWidth={2} />
+        </button>
+      )}
       <Link
         to={detailUrl}
         className="device-card-link"
@@ -102,6 +123,7 @@ export const DeviceCard = ({ device }) => {
 
           {conditionLabel && (
             <span className="device-card-condition-badge">
+              <Star size={12} fill="currentColor" aria-hidden="true" />
               {conditionLabel}
             </span>
           )}
@@ -116,6 +138,9 @@ export const DeviceCard = ({ device }) => {
           <h3 className="device-card-title" title={title}>
             {title}
           </h3>
+          {Number.isFinite(device.distanceMeters) && (
+            <div className="device-card-distance"><MapPin size={12} /> {(device.distanceMeters / 1000).toFixed(1)} km away</div>
+          )}
 
           <div className="device-card-footer">
             <div className="device-card-price-wrap">
@@ -132,6 +157,7 @@ export const DeviceCard = ({ device }) => {
               </div>
             ) : null}
           </div>
+          <span className="device-card-rent-cta">View device <span aria-hidden="true">↗</span></span>
         </div>
       </Link>
     </article>

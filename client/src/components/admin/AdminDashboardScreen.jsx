@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Search, RefreshCw } from 'lucide-react';
 import { AdminSidebarContent } from './AdminSidebarContent';
 import { AdminOverviewTab } from './AdminOverviewTab';
@@ -7,6 +8,7 @@ import { AdminDevicesTab } from './AdminDevicesTab';
 import { AdminEkycTab } from './AdminEkycTab';
 import { NotificationDropdown } from '../notifications/NotificationDropdown';
 import { STRINGS } from '../../constants/strings';
+import { ROUTES } from '../../routes/routes';
 import { useAuth } from '../../context/AuthContext.jsx';
 import './AdminWorkspace.css';
 
@@ -62,10 +64,41 @@ const DEFAULT_CATEGORIES = [
 ];
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 export const AdminDashboardScreen = () => {
-  const { logout } = useAuth();
-  const [currentTab, setCurrentTab] = useState('overview');
+  const { user, logout } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const getTabFromPath = useCallback((pathname) => {
+    if (pathname === ROUTES.ADMIN_USER_MANAGER || pathname === ROUTES.ADMIN_USERS) return 'users';
+    if (pathname === ROUTES.ADMIN_DEVICE_MANAGER || pathname === ROUTES.ADMIN_DEVICES) return 'devices';
+    if (pathname === ROUTES.ADMIN_EKYC_VERIFICATION || pathname === ROUTES.ADMIN_EKYC) return 'ekyc';
+    if (pathname === ROUTES.ADMIN_SETTINGS) return 'settings';
+    return 'overview';
+  }, []);
+
+  const [currentTab, setCurrentTab] = useState(() => getTabFromPath(location.pathname));
+  const [adminProfile, setAdminProfile] = useState(() => user || null);
   const [globalSearch, setGlobalSearch] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  // Sync tab when browser URL changes (e.g. forward/back/direct link)
+  useEffect(() => {
+    const matchedTab = getTabFromPath(location.pathname);
+    setCurrentTab(matchedTab);
+  }, [location.pathname, getTabFromPath]);
+
+  const handleSelectTab = (tabId, targetPath) => {
+    setCurrentTab(tabId);
+    if (targetPath) {
+      navigate(targetPath);
+    } else {
+      if (tabId === 'users') navigate(ROUTES.ADMIN_USER_MANAGER);
+      else if (tabId === 'devices') navigate(ROUTES.ADMIN_DEVICE_MANAGER);
+      else if (tabId === 'ekyc') navigate(ROUTES.ADMIN_EKYC_VERIFICATION);
+      else if (tabId === 'settings') navigate(ROUTES.ADMIN_SETTINGS);
+      else navigate(ROUTES.ADMIN_DASHBOARD);
+    }
+  };
 
   // State data
   const [kpi, setKpi] = useState(DEFAULT_KPI);
@@ -79,12 +112,20 @@ export const AdminDashboardScreen = () => {
   const fetchAllData = useCallback(async () => {
     setIsLoading(true);
     try {
-      // 1. Fetch Analytics
-      const resAnalytics = await fetch(`${API_BASE}/admin/analytics`);
+      const token = localStorage.getItem('techshare_auth_token') || localStorage.getItem('techshare_token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+      // 1. Fetch Analytics & Live Admin Profile from MongoDB Atlas
+      const resAnalytics = await fetch(`${API_BASE}/admin/analytics`, { headers });
       if (resAnalytics.ok) {
         const json = await resAnalytics.json();
         if (json.success && json.data) {
           const raw = json.data;
+          if (raw.admin) {
+            setAdminProfile(raw.admin);
+          } else if (raw.kpi?.admin) {
+            setAdminProfile(raw.kpi.admin);
+          }
           const kpiSource = raw.kpi || raw;
           const totalRev = kpiSource.totalRevenue ?? kpiSource.totalRentalRevenue ?? 49770000;
           setKpi({
@@ -222,13 +263,13 @@ export const AdminDashboardScreen = () => {
       // Nếu route riêng chưa có, tổng hợp người dùng thật từ DB thiết bị và eKYC
       const userMap = new Map();
 
-      // Thêm Admin chính
+      // Thêm Admin chính (fallback nếu không fetch được từ backend)
       userMap.set('admin_1', {
-        _id: '64e0a12f9b1c2b001a111111',
-        name: 'Trần Nhật (System Admin)',
-        email: 'admin@techshare.vn',
-        phone: '0971244438',
-        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop',
+        _id: adminProfile?._id || user?._id || '64e0a12f9b1c2b001a111111',
+        name: (adminProfile?.name || user?.name) ? `${adminProfile?.name || user?.name} (System Admin)` : 'Admin (System Admin)',
+        email: adminProfile?.email || user?.email || '',
+        phone: adminProfile?.phone || user?.phone || '',
+        avatar: adminProfile?.avatar || user?.avatar || user?.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop',
         role: 'admin',
         isVerified: true,
         trustScore: 100,
@@ -285,10 +326,18 @@ export const AdminDashboardScreen = () => {
     } finally {
       setIsLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
   useEffect(() => {
     fetchAllData();
   }, [fetchAllData]);
+
+  useEffect(() => {
+    if (user) {
+      setAdminProfile((prev) => prev || user);
+    }
+  }, [user]);
 
   // Action: Toggle user status (Khóa / Mở khóa)
   const handleToggleUserStatus = async (userId, currentStatus) => {
@@ -406,9 +455,12 @@ export const AdminDashboardScreen = () => {
       {/* A. Fixed Left Sidebar */}
       <AdminSidebarContent
         currentTab={currentTab}
-        onSelectTab={setCurrentTab}
+        currentPath={location.pathname}
+        onSelectTab={handleSelectTab}
         pendingEkycCount={pendingEkycCount}
         onLogout={logout}
+        admin={adminProfile || user}
+        user={user}
         onSwitchToClient={() => {
           window.location.href = '/';
         }}
@@ -458,13 +510,14 @@ export const AdminDashboardScreen = () => {
               }}
             >
               <img
-                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop"
-                alt={STRINGS.admin.dashboard.avatarAlt}
+                src={(adminProfile || user)?.avatar || (adminProfile || user)?.avatarUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop"}
+                alt={(adminProfile || user)?.name || STRINGS.admin.dashboard.avatarAlt}
                 style={{
                   width: '36px',
                   height: '36px',
                   borderRadius: '50%',
                   border: '2px solid #67BEC3',
+                  objectFit: 'cover',
                 }}
               />
               <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -475,7 +528,7 @@ export const AdminDashboardScreen = () => {
                     color: '#0F172A',
                   }}
                 >
-                  {STRINGS.admin.dashboard.adminName}
+                  {(adminProfile || user)?.name || 'Admin'}
                 </span>
                 <span
                   style={{
@@ -484,7 +537,7 @@ export const AdminDashboardScreen = () => {
                     fontWeight: 600,
                   }}
                 >
-                  {STRINGS.admin.dashboard.adminRole}
+                  {(adminProfile || user)?.role === 'admin' ? 'Quản trị viên hệ thống' : ((adminProfile || user)?.role || STRINGS.admin.dashboard.adminRole)}
                 </span>
               </div>
             </div>

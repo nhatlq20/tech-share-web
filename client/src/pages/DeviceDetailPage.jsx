@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useLocation, Link } from 'react-router-dom';
 import {
   Star,
   ShieldCheck,
@@ -19,10 +19,21 @@ import { STRINGS } from '../constants/strings.js';
 import { api } from '../services/api.js';
 import { formatPrice } from '../utils/formatters.js';
 import { formatCategoryLabel, formatConditionLabel } from '../components/device/DeviceCard.jsx';
+import './DeviceDetailPage.css';
+
+const formatSpecLabel = (key) => String(key)
+  .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+  .replace(/([A-Z])([A-Z][a-z])/g, '$1 $2')
+  .replace(/[_-]+/g, ' ')
+  .replace(/\s+/g, ' ')
+  .trim()
+  .replace(/\b[a-z]/g, letter => letter.toUpperCase());
 
 export const DeviceDetailPage = () => {
   const { deviceId, id } = useParams();
   const currentDeviceId = deviceId || id;
+  const location = useLocation();
+  const openedFromMap = location.state?.from === ROUTES.NEARBY;
 
   const [device, setDevice] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -77,10 +88,10 @@ export const DeviceDetailPage = () => {
           {error || 'The device you are looking for does not exist or has been hidden.'}
         </p>
         <Link
-          to={ROUTES.EXPLORE}
+          to={openedFromMap ? ROUTES.NEARBY : ROUTES.EXPLORE}
           className="px-5 py-2.5 rounded-xl bg-brand-500 text-white font-semibold text-sm hover:bg-brand-600 transition shadow-sm"
         >
-          &larr; Back to Device Catalog
+          &larr; {openedFromMap ? 'Back to Map' : 'Back to Device Catalog'}
         </Link>
       </div>
     );
@@ -103,11 +114,11 @@ export const DeviceDetailPage = () => {
         {/* Back Link */}
         <div className="mb-6">
           <Link
-            to={ROUTES.OWNER_DEVICES}
+            to={openedFromMap ? ROUTES.NEARBY : ROUTES.OWNER_DEVICES}
             className="inline-flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-brand-600 transition"
           >
             <ChevronLeft className="w-4 h-4" />
-            Back to Catalog
+            {openedFromMap ? 'Back to Map' : 'Back to Catalog'}
           </Link>
         </div>
 
@@ -168,14 +179,14 @@ export const DeviceDetailPage = () => {
                   <Cpu className="w-4 h-4 text-brand-500" />
                   Technical Specifications
                 </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <dl className="device-specifications-grid">
                   {specs.map(([k, v]) => (
-                    <div key={k} className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex justify-between text-xs">
-                      <span className="text-slate-500 capitalize">{k}:</span>
-                      <strong className="text-slate-700">{String(v)}</strong>
+                    <div key={k} className="device-specification">
+                      <dt className="device-specification-label">{formatSpecLabel(k)}</dt>
+                      <dd className="device-specification-value">{String(v)}</dd>
                     </div>
                   ))}
-                </div>
+                </dl>
               </div>
             )}
           </div>

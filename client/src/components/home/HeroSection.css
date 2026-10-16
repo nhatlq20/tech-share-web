@@ -1,0 +1,76 @@
+.tech-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: 24px 24px 0 0;
+  background:
+    radial-gradient(ellipse at 78% 38%, #bde8e34d 0%, transparent 52%),
+    radial-gradient(ellipse at 15% 15%, #ffffffd9 0%, transparent 62%),
+    linear-gradient(115deg, #effafa 0%, #e3f5f3 55%, #d3eeeb 100%);
+}
+.tech-hero::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+  width: 80%;
+  height: 75%;
+  right: -15%;
+  top: -48%;
+  border-radius: 50%;
+  background: #ffffff70;
+  filter: blur(38px);
+  transform: rotate(-18deg);
+}
+.tech-hero-inner { position: relative; max-width: 1280px; margin: auto; min-height: 440px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr); gap: 24px; align-items: center; }
+.tech-hero-copy { position: relative; z-index: 2; padding: 35px 0 30px; }
+.tech-hero-badge { display: inline-flex; align-items: center; gap: 8px; color: #148b94; border: 1px solid #b9e5e7; background: #f2ffffb3; padding: 7px 12px; border-radius: 30px; font-size: 11px; font-weight: 700; box-shadow: 0 2px 6px #15828d08; }
+.tech-hero-badge svg { color: #eab84f; }
+.tech-hero h1 { font-size: clamp(36px, 4vw, 58px); font-weight: 850; line-height: 1.04; letter-spacing: -2.5px; color: #0b1932; margin: 18px 0 12px; }
+.tech-hero h1 span { color: #22afb6; }
+.tech-hero-description { color: #657b99; font-size: 15px; line-height: 1.6; max-width: 550px; margin: 0 0 18px; }
+.tech-hero-search { display: flex; align-items: center; gap: 12px; padding: 6px 6px 6px 18px; border: 1px solid #dcf3f4; border-radius: 40px; background: #fff; box-shadow: 0 7px 18px #2e8b9812; }
+.tech-hero-search > svg { color: #20acb6; flex-shrink: 0; }
+.tech-hero-search input { min-width: 0; width: 100%; padding: 7px 0; border: 0; outline: none; background: transparent; color: #26364e; font: inherit; font-size: 13px; }
+.tech-hero-search input::placeholder { color: #8d9fb8; }
+.tech-hero-search:focus-within { outline: 2px solid #29b8bf; outline-offset: 3px; }
+.tech-hero-search button { display: flex; align-items: center; gap: 10px; border: 0; background: linear-gradient(110deg, #15b7bd, #62c3c5); border-radius: 30px; padding: 12px 25px; color: white; font: inherit; font-size: 13px; font-weight: 650; cursor: pointer; }
+.tech-hero-popular { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin-top: 14px; color: #7188a1; font-size: 10px; }
+.tech-hero-popular button { border: 1px solid #d8eef0; border-radius: 20px; color: #378e9c; background: #f5ffffbf; padding: 6px 10px; font: inherit; font-weight: 600; cursor: pointer; }
+.tech-hero-benefits { display: flex; justify-content: space-between; gap: 12px; margin-top: 24px; }
+.tech-hero-benefits > div { display: flex; align-items: center; gap: 9px; }
+.tech-hero-benefits i { display: flex; align-items: center; justify-content: center; height: 40px; width: 40px; border-radius: 50%; background: #c9f5f3; color: #12a4ac; }
+.tech-hero-benefits strong, .tech-hero-benefits small { display: block; }
+.tech-hero-benefits strong { font-size: 11px; color: #25364d; font-weight: 650; }
+.tech-hero-benefits small { font-size: 10px; margin-top: 4px; color: #788ca3; }
+.tech-hero-art { min-width: 0; align-self: stretch; position: relative; display: flex; align-items: flex-end; padding-top: 16px; isolation: isolate; }
+.tech-hero-art::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+  inset: 8% -8% 12% -2%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, #b1ded6a6 0%, #c9ece45c 48%, transparent 72%);
+  filter: blur(30px);
+}
+.tech-hero-art::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+  width: 82%;
+  height: 24px;
+  bottom: 8px;
+  left: 9%;
+  border-radius: 50%;
+  background: #3a807729;
+  filter: blur(18px);
+}
+.tech-hero-art img { display: block; flex-shrink: 0; width: calc(100% + 56px); max-width: none; height: 440px; margin-left: -28px; object-fit: contain; object-position: center bottom; border-radius: 0; }
+.tech-hero-note { position: absolute; top: 20px; right: -8px; z-index: 2; font-size: 16px; font-style: italic; color: #578b9c; transform: rotate(-10deg); line-height: 1.5; }
+@media (max-width: 1350px) { .tech-hero-inner { margin-inline: 40px; } }
+@media (max-width: 900px) { .tech-hero-inner { grid-template-columns: 1fr; margin-inline: 24px; } .tech-hero-copy { padding-bottom: 20px; } .tech-hero-art { justify-content: center; padding-top: 40px; } .tech-hero-art img { width: 100%; max-width: 100%; height: auto; max-height: 340px; margin-left: 0; object-fit: contain; border-radius: 0; } .tech-hero-note { right: 5%; top: 0; font-size: 14px; } }
+@media (max-width: 480px) { .tech-hero h1 { font-size: 38px; letter-spacing: -1.8px; } .tech-hero-inner { margin-inline: 18px; } .tech-hero-benefits { flex-wrap: wrap; } .tech-hero-benefits small { font-size: 9px; } .tech-hero-search button { padding: 12px 16px; } .tech-hero-note { display: none; } }
+.tech-hero-note { font-family: 'Segoe Print', 'Comic Sans MS', cursive; font-size: 15px; }
+.tech-hero-note svg { display: block; margin: 7px 0 0 25px; transform: rotate(-18deg); }

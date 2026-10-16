@@ -7,7 +7,8 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
-    "seed:devices": "node src/scripts/seedDevices.js"
+    "seed:devices": "node src/scripts/seedDevices.js",
+    "test": "node --test"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -21,5 +22,12 @@
     "nodemailer": "^10.1.1",
     "nodemon": "^3.1.14",
     "socket.io": "^4.8.4"
+  },
+  "nodemonConfig": {
+    "watch": [
+      "src",
+      ".env"
+    ],
+    "ext": "js,json,env"
   }
 }

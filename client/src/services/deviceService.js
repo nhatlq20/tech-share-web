@@ -111,11 +111,11 @@ export const getNearbyDevices = async (params = {}) => {
   const lat = params.lat ?? params.latitude;
   const lng = params.lng ?? params.longitude;
 
-  if (typeof lat !== "number" || Number.isNaN(lat)) {
+  if (!Number.isFinite(lat) || Math.abs(lat) > 90) {
     throw new Error("Valid latitude is required for nearby devices query");
   }
 
-  if (typeof lng !== "number" || Number.isNaN(lng)) {
+  if (!Number.isFinite(lng) || Math.abs(lng) > 180) {
     throw new Error("Valid longitude is required for nearby devices query");
   }
 
@@ -154,12 +154,14 @@ export const getRecommendedDevices = async (params = {}) => {
   ) {
     throw new Error("Valid coordinates are required for recommendations");
   }
+  const category = normalizeCategory(params.category);
   const response = await api.get(API_CONFIG.ENDPOINTS.DEVICES_RECOMMENDED, {
     params: {
       lat: params.lat,
       lng: params.lng,
       page: params.page ?? MAGIC_NUMBERS.HOME_RECOMMENDATIONS.INITIAL_PAGE,
       limit: params.limit ?? MAGIC_NUMBERS.HOME_RECOMMENDATIONS.PAGE_SIZE,
+      ...(category ? { category } : {}),
     },
   });
   if (

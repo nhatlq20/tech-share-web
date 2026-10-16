@@ -18,34 +18,46 @@ const getNavItems = (t) => [
     id: 'overview',
     label: t.overviewTab,
     icon: LayoutDashboard,
+    path: ROUTES.ADMIN_DASHBOARD,
+    aliases: [ROUTES.ADMIN],
   },
   {
     id: 'users',
     label: t.usersTab,
     icon: Users,
+    path: ROUTES.ADMIN_USER_MANAGER,
+    aliases: [ROUTES.ADMIN_USERS],
   },
   {
     id: 'devices',
     label: t.devicesTab,
     icon: Cpu,
+    path: ROUTES.ADMIN_DEVICE_MANAGER,
+    aliases: [ROUTES.ADMIN_DEVICES],
   },
   {
     id: 'ekyc',
     label: t.ekycTab,
     icon: ShieldCheck,
     showBadge: true,
+    path: ROUTES.ADMIN_EKYC_VERIFICATION,
+    aliases: [ROUTES.ADMIN_EKYC],
   },
 ];
 
 export const AdminSidebarContent = ({
   currentTab,
+  currentPath = '',
   onSelectTab,
   pendingEkycCount = 0,
   onLogout,
   onSwitchToClient,
+  admin,
+  user,
 }) => {
   const t = STRINGS.admin.dashboard;
   const navItems = getNavItems(t);
+  const currentAdmin = admin || user;
 
   return (
     <aside className="admin-sidebar bg-white border-r border-slate-200" aria-label={t.brandSubtitle}>
@@ -56,7 +68,7 @@ export const AdminSidebarContent = ({
           className="admin-logo-box"
           onClick={(e) => {
             e.preventDefault();
-            onSelectTab('overview');
+            onSelectTab('overview', ROUTES.ADMIN_DASHBOARD);
           }}
         >
           <div className="admin-logo-icon">
@@ -70,17 +82,24 @@ export const AdminSidebarContent = ({
           </div>
         </a>
 
-        {/* Profile Card */}
+        {/* Profile Card synced from Database */}
         <div className="admin-profile-badge-wrap">
           <img
-            src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop"
-            alt={t.avatarAlt}
+            src={currentAdmin?.avatar || currentAdmin?.avatarUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop"}
+            alt={currentAdmin?.name || t.avatarAlt}
             className="admin-profile-avatar"
+            style={{ objectFit: 'cover' }}
           />
           <div className="admin-profile-info">
-            <div className="admin-profile-name" title={t.adminName}>{t.adminName}</div>
-            <div className="admin-profile-role">{t.adminRole}</div>
-            <div className="admin-profile-email" title={t.adminEmail}>{t.adminEmail}</div>
+            <div className="admin-profile-name" title={currentAdmin?.name || ''}>
+              {currentAdmin?.name || 'Đang đồng bộ...'}
+            </div>
+            <div className="admin-profile-role">
+              {currentAdmin?.role === 'admin' ? 'Quản trị viên hệ thống' : (currentAdmin?.role || t.adminRole)}
+            </div>
+            <div className="admin-profile-email" title={currentAdmin?.email || ''}>
+              {currentAdmin?.email || ''}
+            </div>
           </div>
         </div>
       </div>
@@ -96,13 +115,15 @@ export const AdminSidebarContent = ({
 
         {navItems.map((item) => {
           const Icon = item.icon;
-          const isActive = currentTab === item.id;
+          const isActive =
+            currentTab === item.id ||
+            (currentPath && (currentPath === item.path || item.aliases?.includes(currentPath)));
 
           return (
             <button
               key={item.id}
               type="button"
-              onClick={() => onSelectTab(item.id)}
+              onClick={() => onSelectTab(item.id, item.path)}
               className={`admin-nav-item ${isActive ? 'active' : ''}`}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '11px', minWidth: 0, flex: 1 }}>

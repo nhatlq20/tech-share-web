@@ -199,4 +199,5 @@ export const uploadAvatar = async (file, { onProgress = null, maxSize = 800, qua
 };
 
 const uploadService = { compressImage, uploadToCloudinaryDirect, uploadAvatar };
+
 export default uploadService;

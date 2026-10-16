@@ -1,51 +1,35 @@
 import mongoose from 'mongoose';
-import dotenv from 'dotenv';
+import { getDatabaseConfig } from './env.js';
 
-dotenv.config();
-
-/**
- * MongoDB connection helper using Mongoose
- * Hỗ trợ cả MONGODB_URI và MONGO_URI từ biến môi trường
- */
 export const connectDB = async () => {
   try {
-    const mongoUri =
-      process.env.MONGODB_URI ||
-      process.env.MONGO_URI ||
-      'mongodb://localhost:27017/techshare';
-
-    const conn = await mongoose.connect(mongoUri);
-
-    console.log(
-      `✅ MongoDB Connected: ${conn.connection.host} (DB: ${conn.connection.name})`
-    );
-
-    // Lắng nghe sự kiện kết nối của Mongoose
-    mongoose.connection.on('error', (err) => {
-      console.error(`❌ MongoDB Runtime Error: ${err.message}`);
+    const { uri, source } = getDatabaseConfig();
+    const conn = await mongoose.connect(uri, { serverSelectionTimeoutMS: 15000 });
+    const devices = conn.connection.db.collection('devices');
+    const [total, notDeleted] = await Promise.all([
+      devices.countDocuments({}),
+      devices.countDocuments({ isDeleted: { $ne: true } }),
+    ]);
+    console.log('[DATABASE] Connected: ' + conn.connection.host + ':' + conn.connection.port + '; database: ' + conn.connection.name);
+    console.log('[DATABASE] source: ' + source + '; devices: ' + total + '; not deleted: ' + notDeleted);
+    mongoose.connection.on('error', (error) => {
+      console.error('[DATABASE] Runtime error (' + error.name + ').');
     });
-
     mongoose.connection.on('disconnected', () => {
-      console.warn('⚠️ MongoDB disconnected.');
+      console.warn('[DATABASE] Disconnected.');
     });
-
     return conn;
   } catch (error) {
-    console.error(`❌ MongoDB Connection Error: ${error.message}`);
-    process.exit(1);
+    // Driver errors may contain connection strings. Never log credentials.
+    console.error('[DATABASE] Startup validation failed (' + error.name + '). Check MongoDB configuration and connectivity.');
+    await mongoose.disconnect();
+    throw error;
   }
 };
 
-/**
- * Ngắt kết nối MongoDB an toàn (Graceful shutdown hoặc testing)
- */
 export const disconnectDB = async () => {
-  try {
-    await mongoose.connection.close();
-    console.log('MongoDB connection closed gracefully.');
-  } catch (error) {
-    console.error(`Error closing MongoDB connection: ${error.message}`);
-  }
+  await mongoose.connection.close();
+  console.log('[DATABASE] Connection closed.');
 };
 
 export default connectDB;

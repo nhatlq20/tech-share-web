@@ -34,6 +34,80 @@ export const AppRoutes = () => {
           Không có Navbar/Footer, chỉ vào bằng gõ URL trực tiếp          */}
       <Route path={ROUTES.ADMIN_LOGIN} element={<AdminLoginPage />} />
 
+      {/* ── Admin Hub (Quản trị viên) - Dedicated Workspace Layout ─────── */}
+      <Route
+        path={ROUTES.ADMIN}
+        element={
+          <ProtectedRoute roles={['admin']}>
+            <AdminPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path={ROUTES.ADMIN_DASHBOARD}
+        element={
+          <ProtectedRoute roles={['admin']}>
+            <AdminPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path={ROUTES.ADMIN_USERS}
+        element={
+          <ProtectedRoute roles={['admin']}>
+            <AdminPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path={ROUTES.ADMIN_USER_MANAGER}
+        element={
+          <ProtectedRoute roles={['admin']}>
+            <AdminPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path={ROUTES.ADMIN_DEVICES}
+        element={
+          <ProtectedRoute roles={['admin']}>
+            <AdminPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path={ROUTES.ADMIN_DEVICE_MANAGER}
+        element={
+          <ProtectedRoute roles={['admin']}>
+            <AdminPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path={ROUTES.ADMIN_EKYC}
+        element={
+          <ProtectedRoute roles={['admin']}>
+            <AdminPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path={ROUTES.ADMIN_EKYC_VERIFICATION}
+        element={
+          <ProtectedRoute roles={['admin']}>
+            <AdminPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path={ROUTES.ADMIN_SETTINGS}
+        element={
+          <ProtectedRoute roles={['admin']}>
+            <AdminPage />
+          </ProtectedRoute>
+        }
+      />
+
       {/* ── Owner Hub (Chủ thiết bị) - Dedicated Workspace Layout ─────── */}
       <Route
         path={ROUTES.OWNER}
@@ -182,16 +256,6 @@ export const AppRoutes = () => {
           element={
             <ProtectedRoute roles={['renter', 'owner', 'admin']}>
               <MessagesPage />
-            </ProtectedRoute>
-          }
-        />
-
-        {/* Chỉ admin */}
-        <Route
-          path={ROUTES.ADMIN}
-          element={
-            <ProtectedRoute roles={['admin']}>
-              <AdminPage />
             </ProtectedRoute>
           }
         />

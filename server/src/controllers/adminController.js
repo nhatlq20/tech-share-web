@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import jwt from 'jsonwebtoken';
 
 /**
  * Helper to get MongoDB collections safely
@@ -14,6 +15,46 @@ const getCollections = () => {
     bookingsCol: db.collection('bookings'),
     ekycCol: db.collection('ekycrequests'),
   };
+};
+
+/**
+ * Resolve Admin user document directly from MongoDB collection `users`
+ */
+export const resolveAdminProfile = async (req) => {
+  try {
+    const { usersCol } = getCollections();
+
+    // 1. Kiểm tra từ req.user (nếu đã qua middleware xác thực)
+    const targetId = req.user?.userId || req.user?.id || req.user?._id;
+    if (targetId && mongoose.isValidObjectId(targetId)) {
+      const found = await usersCol.findOne({ _id: new mongoose.Types.ObjectId(targetId) });
+      if (found) return found;
+    }
+
+    // 2. Kiểm tra từ Bearer token trong req.headers.authorization
+    const authHeader = req.headers?.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.split(' ')[1];
+      try {
+        const secret = process.env.JWT_SECRET || 'techshare_jwt_secret_key_2026';
+        const decoded = jwt.verify(token, secret);
+        const decId = decoded?.userId || decoded?.id || decoded?._id;
+        if (decId && mongoose.isValidObjectId(decId)) {
+          const found = await usersCol.findOne({ _id: new mongoose.Types.ObjectId(decId) });
+          if (found) return found;
+        }
+      } catch {
+        // Token không giải mã được hoặc hết hạn
+      }
+    }
+
+    // 3. Truy vấn tài khoản admin đầu tiên trong database
+    const adminUser = await usersCol.findOne({ role: 'admin' });
+    return adminUser;
+  } catch (err) {
+    console.error('Lỗi khi resolveAdminProfile từ MongoDB:', err);
+    return null;
+  }
 };
 
 /**
@@ -148,9 +189,24 @@ export const getAdminAnalytics = async (req, res, next) => {
       percent: Math.round((cat.count / sumCategoryCounts) * 100),
     }));
 
+    // Lấy thông tin tài khoản Admin thực tế trực tiếp từ MongoDB Atlas
+    const adminDoc = await resolveAdminProfile(req);
+    const adminProfile = adminDoc ? {
+      _id: adminDoc._id.toString(),
+      name: adminDoc.name || 'Admin',
+      email: adminDoc.email || '',
+      role: adminDoc.role || 'admin',
+      avatar: adminDoc.avatar || adminDoc.avatarUrl || '',
+      phone: adminDoc.phone || '',
+      address: adminDoc.address || '',
+      isVerified: Boolean(adminDoc.isVerified),
+      trustScore: adminDoc.trustScore || 100,
+    } : null;
+
     return res.json({
       success: true,
       data: {
+        admin: adminProfile,
         kpi: {
           totalUsers,
           activeUsers,
@@ -163,6 +219,7 @@ export const getAdminAnalytics = async (req, res, next) => {
             style: 'currency',
             currency: 'VND',
           }).format(totalRevenue),
+          admin: adminProfile,
         },
         charts: {
           '7d': chart7Days,
@@ -489,6 +546,9 @@ export const approveEkycRequest = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Không tìm thấy hồ sơ eKYC' });
     }
 
+    const adminDoc = await resolveAdminProfile(req);
+    const reviewerName = adminDoc?.name || req.user?.name || 'Administrator';
+
     // Cập nhật trạng thái hồ sơ eKYC
     await ekycCol.updateOne(
       { _id: objectId },
@@ -496,7 +556,7 @@ export const approveEkycRequest = async (req, res, next) => {
         $set: {
           status: 'approved',
           reviewedAt: new Date(),
-          reviewedBy: 'Admin Trần Nhật',
+          reviewedBy: reviewerName,
         },
       }
     );
@@ -558,6 +618,9 @@ export const rejectEkycRequest = async (req, res, next) => {
 
     const rejectReason = reason?.trim() || 'Hình ảnh giấy tờ bị mờ hoặc thông tin không khớp.';
 
+    const adminDoc = await resolveAdminProfile(req);
+    const reviewerName = adminDoc?.name || req.user?.name || 'Administrator';
+
     await ekycCol.updateOne(
       { _id: objectId },
       {
@@ -565,7 +628,7 @@ export const rejectEkycRequest = async (req, res, next) => {
           status: 'rejected',
           rejectReason,
           reviewedAt: new Date(),
-          reviewedBy: 'Admin Trần Nhật',
+          reviewedBy: reviewerName,
         },
       }
     );

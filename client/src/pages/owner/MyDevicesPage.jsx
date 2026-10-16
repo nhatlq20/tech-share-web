@@ -127,7 +127,7 @@ function MyDevicesPage() {
             <span className="my-devices-stat-caption">On your account</span>
           </article>
           <article className="my-devices-stat-card">
-            <MdBuild size={20} color="#f59e0b" />
+            <Wrench size={20} color="#f59e0b" />
             <div>
               <p>Maintenance Devices</p>
               <strong>{maintenance}</strong>

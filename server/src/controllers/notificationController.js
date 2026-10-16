@@ -6,7 +6,7 @@ import notificationService from '../services/notificationService.js';
  */
 export const getNotifications = async (req, res, next) => {
   try {
-    const userId = req.user.id || req.user._id;
+    const userId = req.user?.userId || req.user?.id || req.user?._id;
     const { limit, page, type } = req.query;
 
     const result = await notificationService.getUserNotifications(userId, {
@@ -34,7 +34,7 @@ export const getNotifications = async (req, res, next) => {
  */
 export const markNotificationRead = async (req, res, next) => {
   try {
-    const userId = req.user.id || req.user._id;
+    const userId = req.user?.userId || req.user?.id || req.user?._id;
     const { id } = req.params;
 
     const updated = await notificationService.markAsRead(id, userId);
@@ -61,7 +61,7 @@ export const markNotificationRead = async (req, res, next) => {
  */
 export const markAllNotificationsRead = async (req, res, next) => {
   try {
-    const userId = req.user.id || req.user._id;
+    const userId = req.user?.userId || req.user?.id || req.user?._id;
     await notificationService.markAllAsRead(userId);
 
     res.status(200).json({
@@ -79,7 +79,7 @@ export const markAllNotificationsRead = async (req, res, next) => {
  */
 export const registerFcmToken = async (req, res, next) => {
   try {
-    const userId = req.user.id || req.user._id;
+    const userId = req.user?.userId || req.user?.id || req.user?._id;
     const { token } = req.body;
 
     if (!token) {
@@ -106,7 +106,7 @@ export const registerFcmToken = async (req, res, next) => {
  */
 export const createTestNotification = async (req, res, next) => {
   try {
-    const userId = req.user.id || req.user._id;
+    const userId = req.user?.userId || req.user?.id || req.user?._id;
     const { title, body, type = 'system', relatedId } = req.body;
 
     const notification = await notificationService.createAndSendNotification({

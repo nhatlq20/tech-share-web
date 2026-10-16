@@ -7,13 +7,16 @@ import { OwnerBookingsTab } from "./OwnerBookingsTab";
 import { OwnerCalendarTab } from "./OwnerCalendarTab";
 import { OwnerAnalyticsTab } from "./OwnerAnalyticsTab";
 import { OwnerWalletTab } from "./OwnerWalletTab";
+import { OwnerAIAssistantTab } from "./OwnerAIAssistantTab";
 import PostDevicePage from "../../pages/PostDevicePage";
 import MyDevicesPage from "../../pages/owner/MyDevicesPage";
+import MessagesPage from "../../pages/MessagesPage";
 import { NotificationDropdown } from "../notifications/NotificationDropdown";
 import { ROUTES } from "../../routes/routes";
 import { STRINGS } from "../../constants/strings";
 import { API_CONFIG } from "../../constants/config";
 import { useAuth } from "../../context/AuthContext.jsx";
+import { useChat } from "../../context/ChatContext.jsx";
 import "./OwnerWorkspace.css";
 import { useChat } from "../../context/ChatContext";
 import { OwnerAIAssistantTab } from "../owner/OwnerAIAssistantTab";
@@ -21,7 +24,7 @@ import MessagesPage from "../../pages/MessagesPage";
 
 
 export const OwnerDashboardScreen = () => {
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const { unreadMessagesCount } = useChat();
@@ -53,6 +56,7 @@ export const OwnerDashboardScreen = () => {
 
   // Sync route navigation
   const handleNavigate = (path) => {
+    if (!path) return;
     navigate(path);
   };
 
@@ -84,17 +88,20 @@ export const OwnerDashboardScreen = () => {
       );
       if (resDev.ok) {
         const jsonDev = await resDev.json();
-        if (jsonDev.success && Array.isArray(jsonDev.data)) {
-          setDevices(jsonDev.data);
-          // Sync blocked dates map from devices
-          const bMap = {};
-          jsonDev.data.forEach((d) => {
-            if (d._id && Array.isArray(d.blockedDates)) {
-              bMap[d._id] = d.blockedDates;
-            }
-          });
-          setBlockedDatesMap(bMap);
-        }
+        const devList = Array.isArray(jsonDev.data)
+          ? jsonDev.data
+          : Array.isArray(jsonDev.devices)
+          ? jsonDev.devices
+          : [];
+        setDevices(devList);
+        // Sync blocked dates map from devices
+        const bMap = {};
+        devList.forEach((d) => {
+          if (d._id && Array.isArray(d.blockedDates)) {
+            bMap[d._id] = d.blockedDates;
+          }
+        });
+        setBlockedDatesMap(bMap);
       }
 
       // 3. Fetch owner bookings
@@ -104,9 +111,12 @@ export const OwnerDashboardScreen = () => {
       );
       if (resBook.ok) {
         const jsonBook = await resBook.json();
-        if (jsonBook.success && Array.isArray(jsonBook.data)) {
-          setBookings(jsonBook.data);
-        }
+        const bookList = Array.isArray(jsonBook.data)
+          ? jsonBook.data
+          : Array.isArray(jsonBook.bookings)
+          ? jsonBook.bookings
+          : [];
+        setBookings(bookList);
       }
     } catch (err) {
       console.error("Failed to fetch live owner data from DB:", err);
@@ -118,31 +128,6 @@ export const OwnerDashboardScreen = () => {
   useEffect(() => {
     fetchOwnerData();
   }, [fetchOwnerData]);
-
-  // Actions: Toggle device status (Active MongoDB mutation)
-  const handleToggleDeviceStatus = async (deviceId, newStatus) => {
-    setDevices((prev) =>
-      prev.map((d) => (d._id === deviceId ? { ...d, status: newStatus } : d)),
-    );
-    try {
-      const token = localStorage.getItem("techshare_token");
-      const headers = {
-        "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      };
-      await fetch(
-        `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.OWNER_TOGGLE_DEVICE(deviceId)}`,
-        {
-          method: "PATCH",
-          headers,
-          body: JSON.stringify({ status: newStatus }),
-        },
-      );
-      fetchOwnerData();
-    } catch (err) {
-      console.error("Failed to toggle device status in DB:", err);
-    }
-  };
 
   const handleDeviceCreated = (device) => {
     const newDevice = {
@@ -275,7 +260,7 @@ export const OwnerDashboardScreen = () => {
         onNavigate={handleNavigate}
         pendingCount={pendingApprovalsCount}
         unreadMessagesCount={unreadMessagesCount}
-        owner={kpi?.owner}
+        owner={kpi?.owner || user}
         onLogout={logout}
       />
 
@@ -334,8 +319,9 @@ export const OwnerDashboardScreen = () => {
             >
               <img
                 src={
-                  kpi?.owner?.avatarUrl ||
-                  "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop"
+                  (kpi?.owner || user)?.avatarUrl ||
+                  (kpi?.owner || user)?.avatar ||
+                  "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400"
                 }
                 alt={STRINGS.owner.sidebar.avatarAlt}
                 style={{
@@ -354,7 +340,7 @@ export const OwnerDashboardScreen = () => {
                     color: "#0F172A",
                   }}
                 >
-                  {kpi?.owner?.name || STRINGS.owner.sidebar.ownerName}
+                  {(kpi?.owner || user)?.name || STRINGS.owner.sidebar.ownerName}
                 </span>
                 <span
                   style={{
