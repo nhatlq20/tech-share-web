@@ -51,8 +51,8 @@ const normalizeRentalItem = (item) => ({
     trustScore: item.renter?.trustScore ?? 90,
   },
   rentalPeriod: {
-    startDate: item.rentalPeriod?.startDate || item.startDate || '2026-10-08',
-    endDate: item.rentalPeriod?.endDate || item.endDate || '2026-10-10',
+    startDate: item.rentalPeriod?.startDate || item.startDate || '',
+    endDate: item.rentalPeriod?.endDate || item.endDate || '',
     totalDays: item.rentalPeriod?.totalDays || item.totalDays || 1,
   },
   totalPrice: item.totalPrice ?? item.totalRentalPrice ?? 0,

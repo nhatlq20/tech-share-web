@@ -32,9 +32,14 @@ export const MessagesPage = () => {
     try {
       setLoading(true);
       const res = await getConversations();
-      if (res && res.data) {
-        setConversations(res.data);
-      }
+      const list = Array.isArray(res?.data)
+        ? res.data
+        : Array.isArray(res?.data?.conversations)
+        ? res.data.conversations
+        : Array.isArray(res?.conversations)
+        ? res.conversations
+        : [];
+      setConversations(list);
     } catch (err) {
       console.error('Failed to load conversations:', err);
     } finally {

@@ -339,7 +339,7 @@ export const STRINGS = {
       logoutBtn: 'Log Out',
       ownerName: 'Chủ thiết bị',
       ownerRole: 'Equipment Partner',
-      ownerEmail: 'partner@techshare.vn',
+      ownerEmail: '',
       avatarAlt: 'Owner Avatar',
       verifiedBadge: 'Verified Partner',
     },

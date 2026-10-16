@@ -19,7 +19,7 @@ export const OwnerWalletTab = ({ kpi, bookings = [], walletData, transactions = 
       type: isCompleted ? 'rental_income' : isActive ? 'deposit_hold' : 'deposit_refund',
       amount: isCompleted ? (b.totalPrice || b.totalRentalPrice || 0) : (b.depositAmount || 0),
       bookingCode: b.bookingCode || b.id,
-      createdAt: (b.createdAt || '').split('T')[0] || '2026-10-08',
+      createdAt: (b.createdAt || '').split('T')[0] || '',
       status: isCompleted ? 'success' : 'pending',
     };
   });

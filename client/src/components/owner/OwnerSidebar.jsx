@@ -105,7 +105,7 @@ export const OwnerSidebar = ({
         {/* Profile Card */}
         <div className="owner-profile-badge-wrap">
           <img
-            src={owner?.avatarUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop"}
+            src={owner?.avatarUrl || owner?.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400"}
             alt={t.avatarAlt}
             className="owner-profile-avatar"
             style={{ objectFit: 'cover' }}
