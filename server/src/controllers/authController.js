@@ -38,7 +38,7 @@ export const login = async (req, res) => {
         { username: { $regex: new RegExp(`^${loginKey}$`, 'i') } },
         { email: { $regex: new RegExp(`^${loginKey}$`, 'i') } },
       ],
-    });
+    }).select('+passwordHash');
 
     if (!account) {
       return res.status(401).json({
@@ -63,23 +63,43 @@ export const login = async (req, res) => {
       });
     }
 
-    // Lấy thông tin chi tiết từ collection users qua account.userId
+    // Lấy thông tin chi tiết từ collection users qua accountId hoặc account.userId
     let user = null;
     if (account.userId) {
       user = await User.findById(account.userId).lean();
     }
-
-    // Nếu không tìm thấy bằng userId, thử tìm bằng email trong collection users
+    if (!user) {
+      user = await User.findOne({ accountId: account._id }).lean();
+    }
+    if (!user && account.username) {
+      user = await User.findOne({ username: account.username }).lean();
+    }
     if (!user && account.email) {
       user = await User.findOne({ email: account.email }).lean();
     }
 
+    // Tra cứu mã quyền thực tế từ collection roles nếu có
+    let roleCode = user?.role;
+    if (!roleCode && account.roleId) {
+      try {
+        const roleDoc = await mongoose.connection.db
+          .collection('roles')
+          .findOne({ _id: account.roleId });
+        if (roleDoc) roleCode = roleDoc.code;
+      } catch (err) {
+        console.warn('Lỗi khi tra cứu role:', err.message);
+      }
+    }
+    if (!roleCode) roleCode = 'renter';
+
+    const finalUserId = user?._id || account.userId;
+
     const tokenPayload = {
       accountId: account._id,
-      userId: user?._id || account.userId,
+      userId: finalUserId,
       username: account.username,
       email: account.email,
-      role: user?.role || 'renter',
+      role: roleCode,
     };
 
     const token = generateToken(tokenPayload);
@@ -90,15 +110,20 @@ export const login = async (req, res) => {
       username: account.username,
       email: account.email,
       roleId: account.roleId,
-      userId: account.userId,
+      userId: finalUserId,
+      role: roleCode,
       isActive: account.isActive,
       createdAt: account.createdAt,
     };
 
     let safeUser = null;
     if (user) {
-      const { passwordHash, ...restUser } = user;
-      safeUser = restUser;
+      const { passwordHash: _, ...restUser } = user;
+      safeUser = {
+        ...restUser,
+        role: roleCode,
+        email: account.email,
+      };
     }
 
     return res.status(200).json({
@@ -144,11 +169,18 @@ export const getProfile = async (req, res) => {
     }
 
     // Lấy thông tin tài khoản tương ứng trong collection accounts
-    const account = await Account.findOne({ userId: targetUserId })
-      .select('-passwordHash')
-      .lean();
+    let account = null;
+    if (user.accountId) {
+      account = await Account.findById(user.accountId).select('-passwordHash').lean();
+    }
+    if (!account) {
+      account = await Account.findOne({ userId: targetUserId })
+        .select('-passwordHash')
+        .lean();
+    }
 
     const { passwordHash, ...safeUser } = user;
+    if (account?.email && !safeUser.email) safeUser.email = account.email;
 
     return res.status(200).json({
       success: true,
@@ -174,10 +206,17 @@ export const getCurrentUser = async (req, res) => {
     const userId = req.user?.userId;
     const accountId = req.user?.accountId;
 
-    const [user, account] = await Promise.all([
+    let [user, account] = await Promise.all([
       userId ? User.findById(userId).lean() : null,
       accountId ? Account.findById(accountId).select('-passwordHash').lean() : null,
     ]);
+
+    if (!user && account) {
+      user = await User.findOne({ accountId: account._id }).lean();
+    }
+    if (!account && user?.accountId) {
+      account = await Account.findById(user.accountId).select('-passwordHash').lean();
+    }
 
     if (!user && !account) {
       return res.status(404).json({
@@ -190,6 +229,8 @@ export const getCurrentUser = async (req, res) => {
     if (user) {
       const { passwordHash, ...rest } = user;
       safeUser = rest;
+      if (account?.email && !safeUser.email) safeUser.email = account.email;
+      if (req.user?.role && !safeUser.role) safeUser.role = req.user.role;
     }
 
     return res.status(200).json({

@@ -1,8 +1,9 @@
 import mongoose from 'mongoose';
 
 /**
- * Notification Schema - Collection: notifications
+ * 8. Bảng notifications (Tier 2 - Thông báo đa nền tảng)
  * Lưu trữ vĩnh viễn các thông báo hệ thống, đơn hàng, nhắc nhở trên MongoDB
+ * Index tối ưu hóa: { userId: 1, isRead: 1, createdAt: -1 }
  */
 const notificationSchema = new mongoose.Schema(
   {
@@ -24,7 +25,7 @@ const notificationSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ['order', 'reminder', 'system', 'review', 'promo'],
+      enum: ['order', 'message', 'promo', 'system', 'reminder', 'review'],
       default: 'system',
       index: true,
     },
@@ -40,16 +41,16 @@ const notificationSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
     collection: 'notifications',
   }
 );
 
-// Compound index for fast queries by user and read state/creation date
-notificationSchema.index({ userId: 1, createdAt: -1 });
-notificationSchema.index({ userId: 1, isRead: 1 });
+// Compound index tối ưu tốc độ đếm và hiển thị badge thông báo chưa đọc
+notificationSchema.index({ userId: 1, isRead: 1, createdAt: -1 });
 
 export const Notification =
   mongoose.models.Notification || mongoose.model('Notification', notificationSchema, 'notifications');
 
 export default Notification;
-

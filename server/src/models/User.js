@@ -1,28 +1,36 @@
 import mongoose from 'mongoose';
 
 /**
- * User Schema - Collection: users
- * Lưu thông tin hồ sơ cá nhân, vai trò, tín nhiệm, ví tiền, v.v.
+ * 3. Bảng users (Tier 1 - Hồ sơ Đa nền tảng Web & Mobile)
+ * Đã tối ưu: Gom nhóm trust (tín nhiệm), wallet (ví ký quỹ) và notificationTokens
+ * Tương thích App & Web: Có sẵn Getter & Setter 2 chiều cho isVerified, trustScore,
+ * badges, walletBalance, walletEscrowBalance, expoPushToken, v.v.
  */
 const userSchema = new mongoose.Schema(
   {
+    accountId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Account',
+      required: true,
+      unique: true,
+      index: true,
+    },
+    username: {
+      type: String,
+      unique: true,
+      sparse: true,
+      trim: true,
+      lowercase: true,
+    },
     name: {
       type: String,
-      required: [true, 'Họ tên là bắt buộc'],
+      required: true,
       trim: true,
-    },
-    email: {
-      type: String,
-      required: [true, 'Email là bắt buộc'],
-      lowercase: true,
-      trim: true,
-    },
-    passwordHash: {
-      type: String,
     },
     phone: {
       type: String,
       default: '',
+      trim: true,
     },
     address: {
       type: String,
@@ -30,89 +38,111 @@ const userSchema = new mongoose.Schema(
     },
     avatar: {
       type: String,
-      default: '',
+      default: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400',
     },
-    role: {
-      type: String,
-      enum: ['admin', 'owner', 'renter'],
-      default: 'renter',
+
+    // 1. Nhóm Tín nhiệm & Định danh (Issue #7, #8)
+    trust: {
+      isVerified: { type: Boolean, default: false },
+      score: { type: Number, default: 100, min: 0, max: 200 },
+      badges: [{ type: String }],
     },
-    isVerified: {
-      type: Boolean,
-      default: false,
+
+    // 2. Nhóm Ví Ký quỹ Nội bộ (Issue #39)
+    wallet: {
+      balance: { type: Number, default: 0, min: 0 },
+      escrowBalance: { type: Number, default: 0, min: 0 },
     },
-    trustScore: {
-      type: Number,
-      default: 100,
+
+    // 3. Nhóm Thiết bị & Push Notification (Hỗ trợ cả Mobile Expo & Web FCM)
+    pushConfig: {
+      expoPushToken: { type: String, default: '' },
+      fcmTokens: [{ type: String }], // Dùng cho Web Push & FCM
+      biometricEnabled: { type: Boolean, default: false }, // Dùng cho Mobile App FaceID/TouchID
     },
-    badges: {
-      type: [String],
-      default: [],
-    },
-    referralCode: {
-      type: String,
-      default: '',
-    },
-    referredBy: {
-      type: String,
-      default: null,
-    },
-    wishlist: {
-      type: [mongoose.Schema.Types.ObjectId],
-      ref: 'Device',
-      default: [],
-    },
-    walletBalance: {
-      type: Number,
-      default: 0,
-    },
-    walletEscrowBalance: {
-      type: Number,
-      default: 0,
-    },
-    expoPushToken: {
-      type: String,
-      default: '',
-    },
-    pushTokens: {
-      type: [String],
-      default: [],
-    },
-    fcmTokens: {
-      type: [String],
-      default: [],
-    },
-    biometricEnabled: {
-      type: Boolean,
-      default: false,
-    },
+
+    // 4. Vị trí Địa lý GeoJSON & Cá nhân hóa
     location: {
-      type: mongoose.Schema.Types.Mixed,
-      default: null,
+      type: { type: String, enum: ['Point'], default: 'Point' },
+      coordinates: { type: [Number], default: [105.7826, 21.0285] }, // [lng, lat]
     },
-    rating: {
-      type: Number,
-      default: 5,
-    },
-    totalReviews: {
-      type: Number,
-      default: 0,
-    },
-    isActive: {
-      type: Boolean,
-      default: true,
-    },
-    accountId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Account',
-      default: null,
-    },
+    wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Device' }],
+
+    referralCode: { type: String, unique: true, sparse: true },
+    referredBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+
+    rating: { type: Number, default: 5.0, min: 1.0, max: 5.0 },
+    totalReviews: { type: Number, default: 0 },
+    isActive: { type: Boolean, default: true },
   },
   {
     timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
     collection: 'users',
   }
 );
+
+// Virtual liên kết Account
+userSchema.virtual('account', {
+  ref: 'Account',
+  localField: 'accountId',
+  foreignField: '_id',
+  justOne: true,
+});
+
+userSchema.virtual('email')
+  .get(function () {
+    return this.account?.email || this._email || '';
+  })
+  .set(function (v) {
+    this._email = v;
+  });
+
+userSchema.virtual('role')
+  .get(function () {
+    return this.account?.roleId?.code || this.account?.roleId || this._role || 'renter';
+  })
+  .set(function (v) {
+    this._role = v;
+  });
+
+// Virtual Getters & Setters 2 chiều (Đảm bảo Mobile App & Web gọi kiểu cũ hay mới đều chạy)
+userSchema.virtual('isVerified')
+  .get(function () { return this.trust?.isVerified ?? false; })
+  .set(function (v) { this.set('trust.isVerified', v); });
+
+userSchema.virtual('trustScore')
+  .get(function () { return this.trust?.score ?? 100; })
+  .set(function (v) { this.set('trust.score', v); });
+
+userSchema.virtual('badges')
+  .get(function () { return this.trust?.badges ?? []; })
+  .set(function (v) { this.set('trust.badges', v); });
+
+userSchema.virtual('walletBalance')
+  .get(function () { return this.wallet?.balance ?? 0; })
+  .set(function (v) { this.set('wallet.balance', v); });
+
+userSchema.virtual('walletEscrowBalance')
+  .get(function () { return this.wallet?.escrowBalance ?? 0; })
+  .set(function (v) { this.set('wallet.escrowBalance', v); });
+
+userSchema.virtual('expoPushToken')
+  .get(function () { return this.pushConfig?.expoPushToken ?? ''; })
+  .set(function (v) { this.set('pushConfig.expoPushToken', v); });
+
+userSchema.virtual('biometricEnabled')
+  .get(function () { return this.pushConfig?.biometricEnabled ?? false; })
+  .set(function (v) { this.set('pushConfig.biometricEnabled', v); });
+
+// Alias cho avatarUrl
+userSchema.virtual('avatarUrl')
+  .get(function () { return this.avatar; })
+  .set(function (v) { this.avatar = v; });
+
+userSchema.index({ location: '2dsphere' });
+userSchema.index({ 'trust.score': -1 });
 
 export const User = mongoose.models.User || mongoose.model('User', userSchema, 'users');
 export default User;
