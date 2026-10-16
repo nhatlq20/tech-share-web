@@ -1,10 +1,15 @@
 import React, { useEffect, useState } from "react";
 import "./MyDevicesPage.css";
-import { deleteMyDevice, getMyDevices } from "../../services/deviceService";
+import {
+  deleteMyDevice,
+  getMyDevices,
+  updateMyDeviceStatus,
+} from "../../services/deviceService";
 import { MdBuild } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import ROUTES from "../../routes/routes";
 import DeleteDeviceModal from "../../components/owner/DeleteDeviceModal";
+import StatusSwitch from "../../components/owner/StatusSwitch";
 function DeviceIcon() {
   return (
     <svg
@@ -27,6 +32,8 @@ function MyDevicesPage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [deviceToDelete, setDeviceToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [updatingDeviceId, setUpdatingDeviceId] = useState(null);
+  const [statusError, setStatusError] = useState("");
   const navigation = useNavigate();
   useEffect(() => {
     const fetchDevices = async () => {
@@ -65,6 +72,30 @@ function MyDevicesPage() {
       alert(error.message || "Xóa thiết bị thất bại!");
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  const handleStatusChange = async (device, newStatus) => {
+    if (updatingDeviceId) return;
+
+    if (device.status === newStatus) return;
+    setUpdatingDeviceId(device._id);
+    setStatusError("");
+
+    try {
+      await updateMyDeviceStatus(device._id, newStatus);
+      setDevices((previousDevices) =>
+        previousDevices.map((item) =>
+          item._id === device._id ? { ...item, status: newStatus } : item,
+        ),
+      );
+    } catch (error) {
+      console.error("Lỗi cập nhật trạng thái thiết bị:", error);
+      setStatusError(
+        error.message || "Không thể cập nhật trạng thái thiết bị.",
+      );
+    } finally {
+      setUpdatingDeviceId(null);
     }
   };
   const availableDevices = devices.filter(
@@ -131,106 +162,137 @@ function MyDevicesPage() {
               {errorMessage}
             </p>
           ) : devices.length > 0 ? (
-            <div className="my-devices-grid">
-              {devices.map((device) => (
-                <article
-                  className="my-device-card"
-                  key={device._id || device.id}
-                >
-                  <div className="my-device-image-wrap">
-                    <img
-                      className="my-device-image"
-                      src={
-                        device.images?.[0] ||
-                        "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=900&q=80"
-                      }
-                      alt={device.name || device.title}
-                    />
-                    <span
-                      className={`my-device-status ${
-                        device.status === "available"
-                          ? "is-available"
-                          : "is-unavailable"
-                      }`}
-                    >
-                      <span aria-hidden="true" />
-                      {device.status === "available"
-                        ? "Available"
-                        : "Unavailable"}
-                    </span>
-                  </div>
+            <>
+              {statusError && (
+                <p className="my-devices-error" role="alert">
+                  {statusError}
+                </p>
+              )}
+              <div className="my-devices-grid">
+                {devices.map((device) => (
+                  <article
+                    className="my-device-card"
+                    key={device._id || device.id}
+                  >
+                    <div className="my-device-image-wrap">
+                      <img
+                        className="my-device-image"
+                        src={
+                          device.images?.[0] ||
+                          "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=900&q=80"
+                        }
+                        alt={device.name || device.title}
+                      />
+                      <span
+                        className={`my-device-status ${
+                          device.status === "available"
+                            ? "is-available"
+                            : device.status === "maintenance"
+                              ? "is-maintenance"
+                              : device.status === "rented"
+                                ? "is-rented"
+                                : "is-unavailable"
+                        }`}
+                      >
+                        <span aria-hidden="true" />
+                        {device.status === "available"
+                          ? "Available"
+                          : device.status === "maintenance"
+                            ? "Maintenance"
+                            : device.status === "rented"
+                              ? "Rented"
+                              : "Hidden"}
+                      </span>
+                    </div>
 
-                  <div className="my-device-content">
-                    <div className="my-device-title-row">
-                      <div>
-                        <p className="my-device-category">{device.category}</p>
-                        <h3>{device.name || device.title}</h3>
+                    <div className="my-device-content">
+                      <div className="my-device-title-row">
+                        <div>
+                          <p className="my-device-category">
+                            {device.category}
+                          </p>
+                          <h3>{device.name || device.title}</h3>
+                        </div>
+                        <span className="my-device-condition">
+                          {(device.condition || "good").replace(/_/g, " ")}
+                        </span>
                       </div>
-                      <span className="my-device-condition">
-                        {(device.condition || "good").replace(/_/g, " ")}
-                      </span>
-                    </div>
 
-                    <div className="my-device-info">
-                      <span>
-                        <span className="my-device-info-label">Brand</span>
-                        {device.brand}
-                      </span>
-                      <span>
-                        <span className="my-device-info-label">Location</span>
-                        {device.address || "Location not provided"}
-                      </span>
-                    </div>
+                      <div className="my-device-info">
+                        <span>
+                          <span className="my-device-info-label">Brand</span>
+                          {device.brand}
+                        </span>
+                        <span>
+                          <span className="my-device-info-label">Location</span>
+                          {device.address || "Location not provided"}
+                        </span>
+                      </div>
 
-                    <div className="my-device-price">
-                      <strong>
-                        {new Intl.NumberFormat("vi-VN").format(
-                          device.dailyRate ?? device.pricePerDay ?? 0,
-                        )}{" "}
-                        <span>VND</span>
-                      </strong>
-                      <span>per day</span>
-                    </div>
+                      <div className="my-device-price">
+                        <strong>
+                          {new Intl.NumberFormat("vi-VN").format(
+                            device.dailyRate ?? device.pricePerDay ?? 0,
+                          )}{" "}
+                          <span>VND</span>
+                        </strong>
+                        <span>per day</span>
+                      </div>
 
-                    <div className="my-device-actions">
-                      <button
-                        className="my-device-details-button"
-                        type="button"
-                        onClick={() => navigation(`/device/${device._id}`)}
-                      >
-                        View Details
-                      </button>
-                      <button
-                        className="my-device-icon-button"
-                        type="button"
-                        aria-label="Edit device"
-                      >
-                        <svg aria-hidden="true" viewBox="0 0 20 20" fill="none">
-                          <path d="m13.8 3.5 2.7 2.7M4 16l3.4-.7L16 6.7a1.9 1.9 0 0 0-2.7-2.7L4.7 12.6 4 16Z" />
-                        </svg>
-                      </button>
-                      <button
-                        className="my-device-icon-button my-device-delete-button"
-                        type="button"
-                        aria-label="Delete device"
-                        onClick={() => setDeviceToDelete(device)}
-                      >
-                        <svg aria-hidden="true" viewBox="0 0 20 20" fill="none">
-                          <path d="M4.5 6h11m-9.8 0 .6 10h8.4l.6-10M8 6V4h4v2m-3 3v4m2-4v4" />
-                        </svg>
-                      </button>
-                    </div>
+                      <div className="my-device-actions">
+                        <button
+                          className="my-device-details-button"
+                          type="button"
+                          onClick={() => navigation(`/device/${device._id}`)}
+                        >
+                          View Details
+                        </button>
+                        <button
+                          className="my-device-icon-button"
+                          type="button"
+                          aria-label="Edit device"
+                        >
+                          <svg
+                            aria-hidden="true"
+                            viewBox="0 0 20 20"
+                            fill="none"
+                          >
+                            <path d="m13.8 3.5 2.7 2.7M4 16l3.4-.7L16 6.7a1.9 1.9 0 0 0-2.7-2.7L4.7 12.6 4 16Z" />
+                          </svg>
+                        </button>
+                        <button
+                          className="my-device-icon-button my-device-delete-button"
+                          type="button"
+                          aria-label="Delete device"
+                          onClick={() => setDeviceToDelete(device)}
+                        >
+                          <svg
+                            aria-hidden="true"
+                            viewBox="0 0 20 20"
+                            fill="none"
+                          >
+                            <path d="M4.5 6h11m-9.8 0 .6 10h8.4l.6-10M8 6V4h4v2m-3 3v4m2-4v4" />
+                          </svg>
+                        </button>
+                      </div>
 
-                    <button
-                      className="my-device-availability-button"
-                      type="button"
-                    >
-                      Manage Availability
-                    </button>
-                  </div>
-                </article>
-              ))}
-            </div>
+                      <div className="my-device-availability-button">
+                        <StatusSwitch
+                          status={device.status}
+                          onStatusChange={(newStatus) =>
+                            handleStatusChange(device, newStatus)
+                          }
+                          disabled={
+                            Boolean(updatingDeviceId) ||
+                            device.status === "rented"
+                          }
+                        />
+                      </div>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </>
           ) : (
             <div className="my-devices-empty-state">
               <span className="my-devices-empty-icon">

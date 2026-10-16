@@ -250,6 +250,22 @@
   background: #e9994b;
 }
 
+.my-device-status.is-maintenance {
+  color: #b76a28;
+}
+
+.my-device-status.is-maintenance > span {
+  background: #e9994b;
+}
+
+.my-device-status.is-rented {
+  color: #526273;
+}
+
+.my-device-status.is-rented > span {
+  background: #94a3b8;
+}
+
 .my-device-content {
   padding: 17px;
 }
@@ -389,8 +405,11 @@
 }
 
 .my-device-availability-button {
+  display: flex;
   width: 100%;
-  min-height: 37px;
+  min-height: 43px;
+  align-items: center;
+  justify-content: center;
   margin-top: 8px;
 }
 

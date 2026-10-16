@@ -185,13 +185,27 @@ export const deleteMyDevice = async (deviceId) => {
   return response;
 };
 
+export const updateMyDeviceStatus = async (deviceId, status) => {
+  const response = await api.patch(
+    API_CONFIG.ENDPOINTS.OWNER_TOGGLE_DEVICE(deviceId),
+    { status },
+  );
+
+  if (!response?.success) {
+    throw new Error(response?.message || "Không thể cập nhật trạng thái thiết bị.");
+  }
+
+  return response;
+};
+
 export const deviceService = {
   getDevices,
   getDeviceById,
   getNearbyDevices,
   getRecommendedDevices,
   getMyDevices,
-  deleteMyDevice
+  deleteMyDevice,
+  updateMyDeviceStatus,
 };
 
 export default deviceService;

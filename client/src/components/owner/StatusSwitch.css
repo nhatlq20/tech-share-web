@@ -1,0 +1,59 @@
+.status-switch {
+  display: flex;
+  gap: 10px;
+  /* border: 1px solid #e2e8f0; */
+  border-radius: 9px;
+  /* background: #f1f5f9; */
+  padding: 5px;
+}
+
+.status-switch-option {
+  min-width: 0;
+  height: 39px;
+  padding: 0px 5px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: #74797f;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 650;
+  white-space: nowrap;
+  transition:
+    background 150ms ease,
+    color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.status-switch-option:hover:not(:disabled) {
+  background: #fff;
+  color: #334155;
+}
+
+.status-switch-option:focus-visible {
+  outline: 3px solid rgba(76, 166, 172, 0.3);
+  outline-offset: 2px;
+}
+
+.status-switch-option:disabled:not(.is-selected) {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.status-switch-option.is-selected {
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12);
+}
+
+.status-switch-option.is-selected.is-available {
+  color: #0b694a;
+  
+}
+
+.status-switch-option.is-selected.is-maintenance {
+  color: #b76a28;
+}
+
+.status-switch-option.is-selected.is-hidden {
+  color: #4f5a68;
+}
