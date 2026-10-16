@@ -17,44 +17,54 @@ const getCollections = () => {
 };
 
 /**
- * Resolve ownerId from request (JWT token, query, or fallback to first owner in DB)
+ * Resolve ownerId from request (JWT token, query, or req.user)
  */
 export const resolveOwnerId = async (req) => {
-  if (req.user && (req.user.id || req.user._id)) {
-    return (req.user.id || req.user._id).toString();
+  // 1. Direct from req.user if populated by auth middleware
+  const userTargetId = req.user?.userId || req.user?.id || req.user?._id;
+  if (userTargetId) {
+    return userTargetId.toString();
   }
-  if (req.query && req.query.ownerId) {
-    return req.query.ownerId.toString();
+
+  // 2. Query param if explicitly provided
+  if (req.query && (req.query.ownerId || req.query.userId)) {
+    return (req.query.ownerId || req.query.userId).toString();
   }
-  const token = req.headers.authorization && req.headers.authorization.startsWith('Bearer')
-    ? req.headers.authorization.split(' ')[1]
+
+  // 3. JWT Bearer token from Authorization header
+  const authHeader = req.headers?.authorization;
+  const token = authHeader && authHeader.startsWith('Bearer ')
+    ? authHeader.split(' ')[1]
     : null;
+
   if (token) {
     try {
       const secret = process.env.JWT_SECRET || 'techshare_jwt_secret_key_2026';
       const decoded = jwt.verify(token, secret);
-      if (decoded && (decoded.id || decoded._id)) {
-        return (decoded.id || decoded._id).toString();
+      const decodedId = decoded?.userId || decoded?.id || decoded?._id;
+      if (decodedId) {
+        return decodedId.toString();
+      }
+      if (decoded?.email) {
+        const { usersCol } = getCollections();
+        const found = await usersCol.findOne({ email: decoded.email });
+        if (found) return found._id.toString();
       }
     } catch {
-      // Continue to fallback
+      // Continue without token
     }
   }
 
-  // Fallback to active owner from DB
-  const { usersCol } = getCollections();
-  const ownerUser = await usersCol.findOne({ role: 'owner' });
-  if (ownerUser) {
-    return ownerUser._id.toString();
-  }
-
-  return '64e0a12f9b1c2b001a222222';
+  return null;
 };
 
 /**
  * Build MongoDB match query for ownerId supporting both ObjectId and string formats
  */
 const buildOwnerQuery = (ownerId) => {
+  if (!ownerId) {
+    return { ownerId: '__none__' };
+  }
   if (mongoose.Types.ObjectId.isValid(ownerId)) {
     return {
       $or: [
@@ -84,15 +94,23 @@ export const getOwnerOverview = async (req, res, next) => {
   try {
     const { usersCol, devicesCol, bookingsCol } = getCollections();
     const ownerId = await resolveOwnerId(req);
+
+    if (!ownerId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Yêu cầu đăng nhập tài khoản chủ thiết bị.',
+      });
+    }
+
     const ownerFilter = buildOwnerQuery(ownerId);
 
-    // Fetch owner user profile
+    // Fetch owner user profile directly from database
     const ownerObjectId = mongoose.Types.ObjectId.isValid(ownerId)
       ? new mongoose.Types.ObjectId(ownerId)
       : null;
     const ownerProfile = ownerObjectId
       ? await usersCol.findOne({ _id: ownerObjectId })
-      : await usersCol.findOne({ email: 'minhtuan@techshare.vn' });
+      : await usersCol.findOne({ _id: ownerId });
 
     // 1. Devices summary
     const totalDevices = await devicesCol.countDocuments({
@@ -235,9 +253,9 @@ export const getOwnerOverview = async (req, res, next) => {
       owner: {
         id: ownerId,
         name: ownerProfile?.name || 'Equipment Partner',
-        email: ownerProfile?.email || 'partner@techshare.vn',
+        email: ownerProfile?.email || '',
         avatarUrl: ownerProfile?.avatarUrl || ownerProfile?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop',
-        isVerified: ownerProfile?.isVerified ?? true,
+        isVerified: ownerProfile?.isVerified ?? false,
       },
     };
 
@@ -265,6 +283,14 @@ export const getOwnerDevices = async (req, res, next) => {
   try {
     const { devicesCol } = getCollections();
     const ownerId = await resolveOwnerId(req);
+
+    if (!ownerId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Yêu cầu đăng nhập tài khoản chủ thiết bị.',
+      });
+    }
+
     const ownerFilter = buildOwnerQuery(ownerId);
 
     const devices = await devicesCol
@@ -309,6 +335,13 @@ export const createOwnerDevice = async (req, res, next) => {
   try {
     const { devicesCol } = getCollections();
     const ownerId = await resolveOwnerId(req);
+
+    if (!ownerId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Yêu cầu đăng nhập tài khoản chủ thiết bị.',
+      });
+    }
 
     const {
       name,
@@ -452,6 +485,14 @@ export const getOwnerBookings = async (req, res, next) => {
   try {
     const { bookingsCol, devicesCol, usersCol } = getCollections();
     const ownerId = await resolveOwnerId(req);
+
+    if (!ownerId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Yêu cầu đăng nhập tài khoản chủ thiết bị.',
+      });
+    }
+
     const ownerFilter = buildOwnerQuery(ownerId);
 
     const bookings = await bookingsCol
@@ -478,8 +519,8 @@ export const getOwnerBookings = async (req, res, next) => {
           renter = renterObjectId ? await usersCol.findOne({ _id: renterObjectId }) : null;
         }
 
-        const startDateStr = b.startDate ? new Date(b.startDate).toISOString().split('T')[0] : '2026-10-08';
-        const endDateStr = b.endDate ? new Date(b.endDate).toISOString().split('T')[0] : '2026-10-10';
+        const startDateStr = b.startDate ? new Date(b.startDate).toISOString().split('T')[0] : '';
+        const endDateStr = b.endDate ? new Date(b.endDate).toISOString().split('T')[0] : '';
         const rentalPrice = Number(b.rentalFee) || Number(b.totalPrice) || (Number(b.totalAmount) > 5000000 ? (Number(b.totalAmount) - Number(b.depositFee || 0)) : Number(b.totalAmount)) || 0;
         const depositPrice = Number(b.depositFee) || Number(b.depositAmount) || 0;
 
@@ -488,22 +529,22 @@ export const getOwnerBookings = async (req, res, next) => {
           id: b.bookingCode || `TS-${b._id.toString().slice(-4)}`,
           bookingCode: b.bookingCode || `TS-${b._id.toString().slice(-4)}`,
           deviceId: b.deviceId ? b.deviceId.toString() : '',
-          deviceName: device?.name || b.deviceName || 'Tech Equipment',
+          deviceName: device?.name || b.deviceName || 'Thiết bị công nghệ',
           deviceCategory: device?.category || b.deviceCategory || 'electronics',
           deviceImage: device?.images?.[0] || 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=150&q=80',
           device: {
-            name: device?.name || b.deviceName || 'Tech Equipment',
+            name: device?.name || b.deviceName || 'Thiết bị công nghệ',
             imageUrl: device?.images?.[0] || 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=150&q=80',
           },
           renter: {
-            _id: renter?._id?.toString() || b.renterId?.toString() || 'renter_unknown',
-            name: renter?.name || 'Customer',
-            email: renter?.email || 'customer@gmail.com',
-            phone: renter?.phone || '0912345678',
+            _id: renter?._id?.toString() || b.renterId?.toString() || '',
+            name: renter?.name || 'Khách thuê',
+            email: renter?.email || '',
+            phone: renter?.phone || '',
             avatar: renter?.avatarUrl || renter?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80',
             avatarUrl: renter?.avatarUrl || renter?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80',
-            trustScore: renter?.trustScore || 90,
-            isVerified: renter?.isVerified ?? true,
+            trustScore: renter?.trustScore || 100,
+            isVerified: renter?.isVerified ?? false,
           },
           rentalPeriod: {
             startDate: startDateStr,

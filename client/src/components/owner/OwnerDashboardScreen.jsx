@@ -20,7 +20,7 @@ import { useChat } from "../../context/ChatContext.jsx";
 import "./OwnerWorkspace.css";
 
 export const OwnerDashboardScreen = () => {
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const { unreadMessagesCount } = useChat();
@@ -84,17 +84,20 @@ export const OwnerDashboardScreen = () => {
       );
       if (resDev.ok) {
         const jsonDev = await resDev.json();
-        if (jsonDev.success && Array.isArray(jsonDev.data)) {
-          setDevices(jsonDev.data);
-          // Sync blocked dates map from devices
-          const bMap = {};
-          jsonDev.data.forEach((d) => {
-            if (d._id && Array.isArray(d.blockedDates)) {
-              bMap[d._id] = d.blockedDates;
-            }
-          });
-          setBlockedDatesMap(bMap);
-        }
+        const devList = Array.isArray(jsonDev.data)
+          ? jsonDev.data
+          : Array.isArray(jsonDev.devices)
+          ? jsonDev.devices
+          : [];
+        setDevices(devList);
+        // Sync blocked dates map from devices
+        const bMap = {};
+        devList.forEach((d) => {
+          if (d._id && Array.isArray(d.blockedDates)) {
+            bMap[d._id] = d.blockedDates;
+          }
+        });
+        setBlockedDatesMap(bMap);
       }
 
       // 3. Fetch owner bookings
@@ -104,9 +107,12 @@ export const OwnerDashboardScreen = () => {
       );
       if (resBook.ok) {
         const jsonBook = await resBook.json();
-        if (jsonBook.success && Array.isArray(jsonBook.data)) {
-          setBookings(jsonBook.data);
-        }
+        const bookList = Array.isArray(jsonBook.data)
+          ? jsonBook.data
+          : Array.isArray(jsonBook.bookings)
+          ? jsonBook.bookings
+          : [];
+        setBookings(bookList);
       }
     } catch (err) {
       console.error("Failed to fetch live owner data from DB:", err);
@@ -250,7 +256,7 @@ export const OwnerDashboardScreen = () => {
         onNavigate={handleNavigate}
         pendingCount={pendingApprovalsCount}
         unreadMessagesCount={unreadMessagesCount}
-        owner={kpi?.owner}
+        owner={kpi?.owner || user}
         onLogout={logout}
       />
 
@@ -309,8 +315,9 @@ export const OwnerDashboardScreen = () => {
             >
               <img
                 src={
-                  kpi?.owner?.avatarUrl ||
-                  "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop"
+                  (kpi?.owner || user)?.avatarUrl ||
+                  (kpi?.owner || user)?.avatar ||
+                  "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400"
                 }
                 alt={STRINGS.owner.sidebar.avatarAlt}
                 style={{
@@ -329,7 +336,7 @@ export const OwnerDashboardScreen = () => {
                     color: "#0F172A",
                   }}
                 >
-                  {kpi?.owner?.name || STRINGS.owner.sidebar.ownerName}
+                  {(kpi?.owner || user)?.name || STRINGS.owner.sidebar.ownerName}
                 </span>
                 <span
                   style={{
