@@ -5,7 +5,7 @@ import {
   getMyDevices,
   updateMyDeviceStatus,
 } from "../../services/deviceService";
-import { MdBuild } from "react-icons/md";
+import { Wrench } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ROUTES from "../../routes/routes";
 import DeleteDeviceModal from "../../components/owner/DeleteDeviceModal";

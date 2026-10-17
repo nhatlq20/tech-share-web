@@ -54,14 +54,6 @@ export const LoginPage = () => {
       if (res?.success) {
         const role = res.user?.role;
 
-        // Admin accounts must not log in here
-        if (role === 'admin') {
-          setErrorMessage(
-            'Invalid username or password.'
-          );
-          return;
-        }
-
         login({
           token: res.token,
           user: res.user,
@@ -70,12 +62,15 @@ export const LoginPage = () => {
 
         setSuccessMessage('Login successful! Redirecting...');
         setTimeout(() => {
-          // Owner → direct to owner portal
-          if (role === 'owner') {
+          // Phân quyền điều hướng theo role
+          if (role === 'admin') {
+            navigate(ROUTES.ADMIN, { replace: true });
+          } else if (role === 'owner') {
             navigate(ROUTES.OWNER, { replace: true });
           } else {
-            // Renter → previous target route or home
-            navigate(from, { replace: true });
+            // Renter: điều hướng về trang home (hoặc route người thuê trước đó)
+            const isRenterSafeRoute = from && !from.startsWith('/admin') && !from.startsWith('/owner') && from !== ROUTES.LOGIN;
+            navigate(isRenterSafeRoute ? from : ROUTES.HOME, { replace: true });
           }
         }, 600);
       } else {

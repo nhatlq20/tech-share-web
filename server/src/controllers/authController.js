@@ -3,9 +3,36 @@ import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
 import { Account } from '../models/Account.js';
 import { User } from '../models/User.js';
+import { Role } from '../models/Role.js';
 import { Otp } from '../models/Otp.js';
 import { sendOtpEmail } from '../services/emailService.js';
 import { uploadToCloudinary, deleteFromCloudinary } from '../services/cloudinaryService.js';
+
+/**
+ * Helper tra cứu mã quyền (role code: 'admin', 'owner', 'renter') từ account.roleId trong collection roles
+ */
+export const resolveRoleCode = async (account, user = null) => {
+  if (account?.roleId) {
+    // Nếu roleId đã được populate thành object của model Role
+    if (typeof account.roleId === 'object' && account.roleId?.code) {
+      return account.roleId.code;
+    }
+    // Nếu roleId là ObjectId hoặc String ID
+    try {
+      const rawRoleId = account.roleId._id || account.roleId;
+      const roleDoc = await Role.findById(rawRoleId).lean()
+        || await mongoose.connection.db.collection('roles').findOne({
+            _id: mongoose.Types.ObjectId.isValid(rawRoleId)
+              ? new mongoose.Types.ObjectId(rawRoleId)
+              : rawRoleId,
+          });
+      if (roleDoc?.code) return roleDoc.code;
+    } catch (err) {
+      console.warn('Lỗi khi tra cứu role từ collection roles:', err.message);
+    }
+  }
+  return user?.role || 'renter';
+};
 
 /**
  * Tạo JSON Web Token (JWT) cho tài khoản đã xác thực
@@ -32,13 +59,15 @@ export const login = async (req, res) => {
       });
     }
 
-    // Tìm tài khoản trong collection accounts (không phân biệt hoa thường)
+    // Tìm tài khoản trong collection accounts (không phân biệt hoa thường) kèm roleId
     const account = await Account.findOne({
       $or: [
         { username: { $regex: new RegExp(`^${loginKey}$`, 'i') } },
         { email: { $regex: new RegExp(`^${loginKey}$`, 'i') } },
       ],
-    }).select('+passwordHash');
+    })
+      .select('+passwordHash')
+      .populate('roleId');
 
     if (!account) {
       return res.status(401).json({
@@ -78,21 +107,10 @@ export const login = async (req, res) => {
       user = await User.findOne({ email: account.email }).lean();
     }
 
-    // Tra cứu mã quyền thực tế từ collection roles nếu có
-    let roleCode = user?.role;
-    if (!roleCode && account.roleId) {
-      try {
-        const roleDoc = await mongoose.connection.db
-          .collection('roles')
-          .findOne({ _id: account.roleId });
-        if (roleDoc) roleCode = roleDoc.code;
-      } catch (err) {
-        console.warn('Lỗi khi tra cứu role:', err.message);
-      }
-    }
-    if (!roleCode) roleCode = 'renter';
+    // Tra cứu mã quyền thực tế từ roleId (trong collection roles)
+    const roleCode = await resolveRoleCode(account, user);
 
-    const finalUserId = user?._id || account.userId;
+    const finalUserId = user?._id || account.userId || account._id;
 
     const tokenPayload = {
       accountId: account._id,
@@ -123,6 +141,15 @@ export const login = async (req, res) => {
         ...restUser,
         role: roleCode,
         email: account.email,
+      };
+    } else {
+      safeUser = {
+        _id: finalUserId,
+        accountId: account._id,
+        username: account.username,
+        email: account.email,
+        name: account.username,
+        role: roleCode,
       };
     }
 
@@ -168,19 +195,30 @@ export const getProfile = async (req, res) => {
       });
     }
 
-    // Lấy thông tin tài khoản tương ứng trong collection accounts
+    // Lấy thông tin tài khoản tương ứng trong collection accounts kèm roleId
     let account = null;
     if (user.accountId) {
-      account = await Account.findById(user.accountId).select('-passwordHash').lean();
+      account = await Account.findById(user.accountId)
+        .select('-passwordHash')
+        .populate('roleId')
+        .lean();
     }
     if (!account) {
       account = await Account.findOne({ userId: targetUserId })
         .select('-passwordHash')
+        .populate('roleId')
         .lean();
     }
 
+    const roleCode = (await resolveRoleCode(account, user)) || req.user?.role || 'renter';
+
     const { passwordHash, ...safeUser } = user;
     if (account?.email && !safeUser.email) safeUser.email = account.email;
+    safeUser.role = roleCode;
+
+    if (account) {
+      account.role = roleCode;
+    }
 
     return res.status(200).json({
       success: true,
@@ -208,14 +246,22 @@ export const getCurrentUser = async (req, res) => {
 
     let [user, account] = await Promise.all([
       userId ? User.findById(userId).lean() : null,
-      accountId ? Account.findById(accountId).select('-passwordHash').lean() : null,
+      accountId
+        ? Account.findById(accountId)
+            .select('-passwordHash')
+            .populate('roleId')
+            .lean()
+        : null,
     ]);
 
     if (!user && account) {
       user = await User.findOne({ accountId: account._id }).lean();
     }
     if (!account && user?.accountId) {
-      account = await Account.findById(user.accountId).select('-passwordHash').lean();
+      account = await Account.findById(user.accountId)
+        .select('-passwordHash')
+        .populate('roleId')
+        .lean();
     }
 
     if (!user && !account) {
@@ -225,12 +271,29 @@ export const getCurrentUser = async (req, res) => {
       });
     }
 
+    const roleCode = (await resolveRoleCode(account, user)) || req.user?.role || 'renter';
+
     let safeUser = null;
     if (user) {
       const { passwordHash, ...rest } = user;
-      safeUser = rest;
+      safeUser = {
+        ...rest,
+        role: roleCode,
+      };
       if (account?.email && !safeUser.email) safeUser.email = account.email;
-      if (req.user?.role && !safeUser.role) safeUser.role = req.user.role;
+    } else {
+      safeUser = {
+        _id: userId,
+        accountId: account?._id,
+        username: account?.username,
+        email: account?.email,
+        name: account?.username,
+        role: roleCode,
+      };
+    }
+
+    if (account) {
+      account.role = roleCode;
     }
 
     return res.status(200).json({
@@ -732,6 +795,16 @@ export const updateProfile = async (req, res) => {
         message: 'User profile not found.',
       });
     }
+
+    let account = null;
+    if (updatedUser.accountId) {
+      account = await Account.findById(updatedUser.accountId)
+        .select('-passwordHash')
+        .populate('roleId')
+        .lean();
+    }
+    const roleCode = (await resolveRoleCode(account, updatedUser)) || req.user?.role || 'renter';
+    updatedUser.role = roleCode;
 
     return res.status(200).json({
       success: true,

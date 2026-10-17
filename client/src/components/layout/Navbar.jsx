@@ -51,10 +51,16 @@ export const Navbar = () => {
               My Bookings
             </Link>
           )}
-          {/* Chỉ hiện với Owner */}
+          {/* Nút dành riêng cho Admin */}
+          {user?.role === 'admin' && (
+            <Link to={ROUTES.ADMIN} className="navbar-link navbar-link-admin">
+              Admin Portal
+            </Link>
+          )}
+          {/* Nút dành riêng cho Owner */}
           {user?.role === 'owner' && (
             <Link to={ROUTES.OWNER} className="navbar-link navbar-link-owner">
-              Owner
+              Owner Portal
             </Link>
           )}
         </nav>
