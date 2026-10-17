@@ -229,9 +229,9 @@ export const getDevices = async (req, res, next) => {
       dailyRate: d.dailyRate ?? d.pricePerDay ?? 0,
       pricePerDay: d.pricePerDay ?? d.dailyRate ?? 0,
       depositValue: d.depositValue || 0,
-      rating: d.rating ?? d.ratingAvg ?? 5.0,
-      ratingAvg: d.ratingAvg ?? d.rating ?? 5.0,
-      reviewCount: d.reviewCount || 0,
+      rating: d.stats?.ratingAvg ?? d.rating ?? d.ratingAvg ?? 0,
+      ratingAvg: d.stats?.ratingAvg ?? d.ratingAvg ?? d.rating ?? 0,
+      reviewCount: d.stats?.ratingCount ?? d.reviewCount ?? 0,
       images: Array.isArray(d.images) ? d.images : [],
       location: d.location || {
         type: "Point",

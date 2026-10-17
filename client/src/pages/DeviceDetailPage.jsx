@@ -20,6 +20,7 @@ import { api } from '../services/api.js';
 import { formatPrice } from '../utils/formatters.js';
 import { formatCategoryLabel, formatConditionLabel } from '../components/device/DeviceCard.jsx';
 import './DeviceDetailPage.css';
+import { DeviceReviews } from '../components/device/DeviceReviews';
 
 const formatSpecLabel = (key) => String(key)
   .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
@@ -39,9 +40,11 @@ export const DeviceDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeImage, setActiveImage] = useState(0);
+  const [ratingSummary, setRatingSummary] = useState(null);
 
   useEffect(() => {
     let isMounted = true;
+    setRatingSummary(null);
     const fetchDevice = async () => {
       try {
         setLoading(true);
@@ -102,8 +105,8 @@ export const DeviceDetailPage = () => {
   const images = Array.isArray(device.images) && device.images.length > 0 ? device.images : [];
   const dailyRate = device.dailyRate ?? device.pricePerDay ?? 0;
   const depositValue = device.depositValue || 0;
-  const rating = (device.rating ?? device.ratingAvg ?? 5.0).toFixed(1);
-  const reviewCount = device.reviewCount || 0;
+  const reviewCount = ratingSummary?.ratingCount ?? 0;
+  const rating = reviewCount ? ratingSummary.ratingAvg.toFixed(1) : '—';
   const categoryLabel = formatCategoryLabel(device.category);
   const conditionLabel = formatConditionLabel(device.condition);
   const specs = device.specs && typeof device.specs === 'object' ? Object.entries(device.specs) : [];
@@ -189,6 +192,8 @@ export const DeviceDetailPage = () => {
                 </dl>
               </div>
             )}
+            <DeviceReviews key={currentDeviceId} deviceId={currentDeviceId} ownerId={device.ownerId}
+              onSummaryChange={setRatingSummary} />
           </div>
 
           {/* Right: Booking Summary & Direct CTA (5 cols) */}
