@@ -175,8 +175,40 @@ export const getRecommendedDevices = async (params = {}) => {
 };
 export const getMyDevices = async () => {
   const response = await api.get(API_CONFIG.ENDPOINTS.OWNER_DEVICES);
-  console.log(response);
-  return response;
+  const devices = Array.isArray(response?.data)
+    ? response.data
+    : Array.isArray(response?.devices)
+      ? response.devices
+      : null;
+
+  if (!response?.success || !devices) {
+    throw new Error(
+      response?.message || "API không trả về danh sách thiết bị hợp lệ.",
+    );
+  }
+
+  return { ...response, devices };
+};
+
+export const getOwnerDevice = async (deviceId) => {
+  const response = await api.get(
+    API_CONFIG.ENDPOINTS.OWNER_DEVICE_BY_ID(encodeURIComponent(deviceId)),
+  );
+  if (!response?.success || !response.data) {
+    throw new Error(response?.message || "Không thể tải thông tin thiết bị.");
+  }
+  return response.data;
+};
+
+export const updateOwnerDevice = async (deviceId, values) => {
+  const response = await api.patch(
+    API_CONFIG.ENDPOINTS.OWNER_UPDATE_DEVICE(encodeURIComponent(deviceId)),
+    values,
+  );
+  if (!response?.success || !response.data) {
+    throw new Error(response?.message || "Không thể cập nhật thiết bị.");
+  }
+  return response.data;
 };
 
 export const deleteMyDevice = async (deviceId) => {

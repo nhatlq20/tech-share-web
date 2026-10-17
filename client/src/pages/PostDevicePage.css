@@ -253,6 +253,37 @@
   font-weight: 400;
 }
 
+.post-device-location-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.post-device-location-heading > div {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.post-device-location-heading button {
+  flex: 0 0 auto;
+  padding: 9px 12px;
+  color: #286e74;
+  background: #e8f6f7;
+  border: 1px solid #b9dfe1;
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.post-device-location-heading button:hover {
+  background: #d8eff0;
+}
+
 .post-device-image-field {
   display: flex;
   flex-direction: column;

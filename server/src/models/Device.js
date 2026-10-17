@@ -30,7 +30,7 @@ const deviceSchema = new mongoose.Schema(
     },
     category: {
       type: String,
-      enum: ['smartphone', 'laptop', 'camera', 'drone', 'audio', 'tablet', 'gaming', 'accessory'],
+      enum: ['smartphone', 'laptop', 'camera', 'drone', 'audio', 'tablet', 'gaming', 'accessory', 'other'],
       required: true,
       index: true,
     },
@@ -39,7 +39,7 @@ const deviceSchema = new mongoose.Schema(
     },
     condition: {
       type: String,
-      enum: ['new99', 'used95', 'scratched'],
+      enum: ['new99', 'used95', 'scratched', 'new', 'like_new', 'good', 'fair'],
       default: 'new99',
     },
     description: {

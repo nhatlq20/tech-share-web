@@ -1,7 +1,11 @@
 import express from 'express';
+import { protect } from '../middlewares/authMiddleware.js';
+import { requireOwner } from '../middlewares/roleMiddleware.js';
 import {
   getOwnerOverview,
   getOwnerDevices,
+  getOwnerDeviceById,
+  updateOwnerDevice,
   createOwnerDevice,
   toggleDeviceStatus,
   toggleBlockedDate,
@@ -21,7 +25,9 @@ router.get('/kpi', getOwnerOverview);
 router.get('/analytics', getOwnerAnalytics);
 
 // Devices
-router.get('/devices', getOwnerDevices);
+router.get('/devices', protect, requireOwner, getOwnerDevices);
+router.get('/devices/:id', protect, requireOwner, getOwnerDeviceById);
+router.patch('/devices/:id', protect, requireOwner, updateOwnerDevice);
 router.post('/devices', createOwnerDevice);
 router.patch('/devices/:id/status', toggleDeviceStatus);
 router.patch('/devices/:id/blocked-dates', toggleBlockedDate);
@@ -34,4 +40,3 @@ router.patch('/bookings/:id/handover', handoverBooking);
 router.patch('/bookings/:id/complete', completeBooking);
 
 export default router;
-

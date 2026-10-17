@@ -142,6 +142,14 @@ export const AppRoutes = () => {
         }
       />
       <Route
+        path={ROUTES.OWNER_DEVICE_EDIT}
+        element={
+          <ProtectedRoute roles={['owner']}>
+            <OwnerPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path={ROUTES.OWNER_BOOKINGS}
         element={
           <ProtectedRoute roles={['owner']}>

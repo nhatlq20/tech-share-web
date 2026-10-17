@@ -131,6 +131,9 @@ export const OwnerSidebar = ({
           const Icon = item.icon;
           const isActive =
             currentPath === item.path ||
+            (item.path === ROUTES.OWNER_DEVICES &&
+              currentPath.startsWith(`${ROUTES.OWNER_DEVICES}/`) &&
+              currentPath !== ROUTES.OWNER_DEVICE_NEW) ||
             (item.path === ROUTES.OWNER_DASHBOARD && currentPath === ROUTES.OWNER) ||
             (item.path === ROUTES.OWNER_MESSAGES && currentPath.startsWith(ROUTES.OWNER_MESSAGES));
 
@@ -193,4 +196,3 @@ export const OwnerSidebar = ({
 };
 
 export default OwnerSidebar;
-

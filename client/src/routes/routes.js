@@ -38,6 +38,8 @@ export const ROUTES = {
   OWNER_DASHBOARD: '/owner/dashboard',
   OWNER_DEVICES: '/owner/devices',
   OWNER_DEVICE_NEW: '/owner/devices/new',
+  OWNER_DEVICE_EDIT: '/owner/devices/:deviceId/edit',
+  OWNER_DEVICE_EDIT_PATH: (deviceId) => `/owner/devices/${deviceId}/edit`,
   OWNER_BOOKINGS: '/owner/bookings',
   OWNER_CALENDAR: '/owner/calendar',
   OWNER_ANALYTICS: '/owner/analytics',

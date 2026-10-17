@@ -76,6 +76,19 @@ const buildOwnerQuery = (ownerId) => {
   return { ownerId: ownerId.toString() };
 };
 
+const buildDeviceOwnerQuery = (ownerId) => {
+  const ownerValues = mongoose.Types.ObjectId.isValid(ownerId)
+    ? [new mongoose.Types.ObjectId(ownerId), ownerId.toString()]
+    : [ownerId.toString()];
+
+  return {
+    $or: [
+      ...ownerValues.map((value) => ({ ownerId: value })),
+      ...ownerValues.map((value) => ({ owner: value })),
+    ],
+  };
+};
+
 /**
  * Format VND currency
  */
@@ -291,7 +304,7 @@ export const getOwnerDevices = async (req, res, next) => {
       });
     }
 
-    const ownerFilter = buildOwnerQuery(ownerId);
+    const ownerFilter = buildDeviceOwnerQuery(ownerId);
 
     const devices = await devicesCol
       .find({
@@ -304,17 +317,20 @@ export const getOwnerDevices = async (req, res, next) => {
     const formattedDevices = devices.map((d) => ({
       _id: d._id.toString(),
       id: d._id.toString(),
-      name: d.name,
+      name: d.name || d.title || 'Untitled Device',
       brand: d.brand || '',
-      category: d.category || 'general',
-      dailyRate: Number(d.dailyRate) || 0,
-      depositAmount: Number(d.depositAmount) || 0,
+      category: d.category || 'other',
+      dailyRate: Number(d.dailyRate ?? d.pricePerDay) || 0,
+      pricePerDay: Number(d.pricePerDay ?? d.dailyRate) || 0,
+      depositAmount: Number(d.depositAmount ?? d.depositValue) || 0,
       status: d.status || 'available',
       images: Array.isArray(d.images) && d.images.length > 0 ? d.images : ['https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=400&q=80'],
-      ratingAvg: Number(d.ratingAvg) || 5.0,
-      rentalCount: Number(d.rentalCount) || 0,
+      ratingAvg: Number(d.ratingAvg ?? d.stats?.ratingAvg) || 5.0,
+      rentalCount: Number(d.rentalCount ?? d.stats?.rentalCount) || 0,
       condition: d.condition || 'Good',
       specs: d.specs || {},
+      location: d.location || null,
+      address: d.location?.addressText || d.addressText || d.address || '',
       blockedDates: Array.isArray(d.blockedDates) ? d.blockedDates : [],
       createdAt: d.createdAt || new Date().toISOString(),
     }));
@@ -322,6 +338,283 @@ export const getOwnerDevices = async (req, res, next) => {
     return res.status(200).json({
       success: true,
       data: formattedDevices,
+      devices: formattedDevices,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const getOwnerDeviceById = async (req, res, next) => {
+  try {
+    const { devicesCol } = getCollections();
+    const ownerId = await resolveOwnerId(req);
+    const { id } = req.params;
+
+    if (!ownerId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Yêu cầu đăng nhập tài khoản chủ thiết bị.',
+      });
+    }
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Mã thiết bị không hợp lệ.',
+      });
+    }
+
+    const device = await devicesCol.findOne({
+      _id: new mongoose.Types.ObjectId(id),
+      ...buildDeviceOwnerQuery(ownerId),
+      isDeleted: { $ne: true },
+    });
+
+    if (!device) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy thiết bị trong kho của bạn.',
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        ...device,
+        _id: device._id.toString(),
+        id: device._id.toString(),
+        name: device.name || device.title || '',
+        title: device.title || device.name || '',
+        brand: device.brand || '',
+        category: device.category || 'other',
+        yearOfManufacture: device.yearOfManufacture || '',
+        condition: device.condition || 'good',
+        description: device.description || '',
+        dailyRate: Number(device.dailyRate ?? device.pricePerDay) || 0,
+        depositAmount: Number(device.depositAmount ?? device.depositValue) || 0,
+        addressText:
+          device.location?.addressText || device.addressText || device.address || '',
+        location: device.location || null,
+        specs: device.specs || {},
+        images: Array.isArray(device.images) ? device.images : [],
+      },
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const updateOwnerDevice = async (req, res, next) => {
+  try {
+    const { devicesCol } = getCollections();
+    const ownerId = await resolveOwnerId(req);
+    const { id } = req.params;
+
+    if (!ownerId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Yêu cầu đăng nhập tài khoản chủ thiết bị.',
+      });
+    }
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Mã thiết bị không hợp lệ.',
+      });
+    }
+
+    const {
+      name,
+      title,
+      brand,
+      category,
+      yearOfManufacture,
+      condition,
+      description,
+      dailyRate,
+      pricePerDay,
+      depositAmount,
+      depositValue,
+      location,
+      addressText,
+      latitude,
+      longitude,
+      specs,
+      images,
+    } = req.body;
+
+    const normalizedName = name ?? title;
+    if (
+      typeof normalizedName !== 'string' ||
+      !normalizedName.trim() ||
+      typeof brand !== 'string' ||
+      !brand.trim() ||
+      typeof category !== 'string' ||
+      !category.trim() ||
+      typeof condition !== 'string' ||
+      !condition.trim() ||
+      typeof description !== 'string' ||
+      !description.trim()
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: 'Vui lòng nhập đầy đủ thông tin thiết bị.',
+      });
+    }
+
+    const allowedCategories = [
+      'smartphone', 'laptop', 'camera', 'drone', 'audio',
+      'tablet', 'gaming', 'accessory', 'other',
+    ];
+    const allowedConditions = [
+      'new99', 'used95', 'scratched', 'new', 'like_new', 'good', 'fair',
+    ];
+    if (!allowedCategories.includes(category) || !allowedConditions.includes(condition)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Danh mục hoặc tình trạng thiết bị không hợp lệ.',
+      });
+    }
+
+    const price = Number(pricePerDay ?? dailyRate);
+    const deposit = Number(depositAmount ?? depositValue);
+    if (!Number.isFinite(price) || price <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Giá thuê phải lớn hơn 0.',
+      });
+    }
+    if (!Number.isFinite(deposit) || deposit < 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Tiền đặt cọc không hợp lệ.',
+      });
+    }
+
+    const year = yearOfManufacture === '' || yearOfManufacture == null
+      ? undefined
+      : Number(yearOfManufacture);
+    if (
+      year !== undefined &&
+      (!Number.isInteger(year) || year < 1990 || year > new Date().getFullYear())
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: 'Năm sản xuất phải từ 1990 đến hiện tại.',
+      });
+    }
+
+    const coordinates = location?.coordinates;
+    const longitudeValue = coordinates?.[0] ?? longitude;
+    const latitudeValue = coordinates?.[1] ?? latitude;
+    const parsedLongitude = Number(longitudeValue);
+    const parsedLatitude = Number(latitudeValue);
+    const address = location?.addressText ?? addressText;
+    if (
+      !Array.isArray(coordinates) ||
+      coordinates.length !== 2 ||
+      location?.type !== 'Point' ||
+      !Number.isFinite(parsedLongitude) ||
+      parsedLongitude < -180 ||
+      parsedLongitude > 180 ||
+      !Number.isFinite(parsedLatitude) ||
+      parsedLatitude < -90 ||
+      parsedLatitude > 90 ||
+      typeof address !== 'string' ||
+      !address.trim()
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: 'Vui lòng nhập địa chỉ và tọa độ hợp lệ.',
+      });
+    }
+
+    let parsedSpecs = specs ?? {};
+    if (typeof parsedSpecs === 'string') {
+      try {
+        parsedSpecs = JSON.parse(parsedSpecs);
+      } catch {
+        return res.status(400).json({
+          success: false,
+          message: 'Thông số kỹ thuật phải là JSON hợp lệ.',
+        });
+      }
+    }
+    if (!parsedSpecs || typeof parsedSpecs !== 'object' || Array.isArray(parsedSpecs)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Thông số kỹ thuật không hợp lệ.',
+      });
+    }
+
+    if (
+      images !== undefined &&
+      (!Array.isArray(images) ||
+        images.length < 1 ||
+        images.length > 8 ||
+        images.some(
+          (image) =>
+            typeof image !== 'string' || !image.startsWith('https://'),
+        ))
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: 'Thiết bị cần từ 1 đến 8 ảnh HTTPS hợp lệ.',
+      });
+    }
+
+    const ownerValues = mongoose.Types.ObjectId.isValid(ownerId)
+      ? [new mongoose.Types.ObjectId(ownerId), ownerId.toString()]
+      : [ownerId.toString()];
+    const update = {
+      name: normalizedName.trim(),
+      title: normalizedName.trim(),
+      brand: brand.trim(),
+      category,
+      yearOfManufacture: year,
+      condition,
+      description: description.trim(),
+      dailyRate: price,
+      pricePerDay: price,
+      depositAmount: deposit,
+      depositValue: deposit,
+      location: {
+        type: 'Point',
+        coordinates: [parsedLongitude, parsedLatitude],
+        addressText: address.trim(),
+      },
+      specs: parsedSpecs,
+      updatedAt: new Date(),
+    };
+    if (images !== undefined) update.images = images;
+    if (year === undefined) delete update.yearOfManufacture;
+
+    const result = await devicesCol.updateOne(
+      {
+        _id: new mongoose.Types.ObjectId(id),
+        $or: [
+          ...ownerValues.map((value) => ({ ownerId: value })),
+          ...ownerValues.map((value) => ({ owner: value })),
+        ],
+        isDeleted: { $ne: true },
+      },
+      { $set: update },
+    );
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy thiết bị trong kho của bạn.',
+      });
+    }
+
+    const updatedDevice = await devicesCol.findOne({
+      _id: new mongoose.Types.ObjectId(id),
+    });
+    return res.status(200).json({
+      success: true,
+      data: updatedDevice,
+      message: 'Cập nhật thiết bị thành công.',
     });
   } catch (error) {
     return next(error);
@@ -353,6 +646,10 @@ export const createOwnerDevice = async (req, res, next) => {
       description,
       images,
       specs,
+      location,
+      addressText,
+      latitude,
+      longitude,
     } = req.body;
 
     if (!name || !dailyRate) {
@@ -360,6 +657,44 @@ export const createOwnerDevice = async (req, res, next) => {
         success: false,
         message: 'Name and daily rate are required.',
       });
+    }
+
+    const coordinates = location?.coordinates;
+    const hasMalformedCoordinates =
+      coordinates !== undefined &&
+      (!Array.isArray(coordinates) || coordinates.length !== 2);
+    const longitudeValue = coordinates?.[0] ?? longitude;
+    const latitudeValue = coordinates?.[1] ?? latitude;
+    const parsedLongitude = Number(longitudeValue);
+    const parsedLatitude = Number(latitudeValue);
+    const deviceAddress = location?.addressText ?? addressText;
+    const hasValidLocation =
+      (!location?.type || location.type === 'Point') &&
+      !hasMalformedCoordinates &&
+      ['number', 'string'].includes(typeof longitudeValue) &&
+      ['number', 'string'].includes(typeof latitudeValue) &&
+      longitudeValue != null &&
+      longitudeValue !== '' &&
+      latitudeValue != null &&
+      latitudeValue !== '' &&
+      Number.isFinite(parsedLongitude) &&
+      parsedLongitude >= -180 &&
+      parsedLongitude <= 180 &&
+      Number.isFinite(parsedLatitude) &&
+      parsedLatitude >= -90 &&
+      parsedLatitude <= 90;
+
+    if (location || latitude != null || longitude != null) {
+      if (
+        !hasValidLocation ||
+        typeof deviceAddress !== 'string' ||
+        !deviceAddress.trim()
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: 'Valid device location is required.',
+        });
+      }
     }
 
     const newDevice = {
@@ -370,6 +705,15 @@ export const createOwnerDevice = async (req, res, next) => {
       depositAmount: Number(depositAmount) || 0,
       condition: (condition || '').trim(),
       description: (description || '').trim(),
+      ...(hasValidLocation
+        ? {
+            location: {
+              type: 'Point',
+              coordinates: [parsedLongitude, parsedLatitude],
+              addressText: (deviceAddress || '').trim(),
+            },
+          }
+        : {}),
       images: Array.isArray(images) && images.length > 0 ? images : ['https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=400&q=80'],
       specs: specs || {},
       ownerId: mongoose.Types.ObjectId.isValid(ownerId) ? new mongoose.Types.ObjectId(ownerId) : ownerId,
@@ -690,4 +1034,3 @@ export const getOwnerAnalytics = async (req, res, next) => {
     return next(error);
   }
 };
-

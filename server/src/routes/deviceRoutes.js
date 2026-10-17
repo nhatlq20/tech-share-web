@@ -23,7 +23,7 @@ const router = express.Router();
 // Specific routes before parameterized :id route
 router.get("/nearby", getNearbyDevices);
 router.get("/recommended", getRecommendedDevices);
-router.get("/my-devices", getOwnerDevices);
+router.get("/my-devices", protect, requireOwner, getOwnerDevices);
 router.get("/owner/analytics", getOwnerAnalytics);
 
 // Root devices listing with search, category, pagination & sorting
