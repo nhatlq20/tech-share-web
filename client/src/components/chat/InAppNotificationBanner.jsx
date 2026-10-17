@@ -90,9 +90,9 @@ export const InAppNotificationBanner = () => {
         if (Notification.permission === 'granted') {
           try {
             const notif = new Notification(
-              `Tin nhắn mới từ ${data.sender?.name || 'TechShare'}`,
+              `New message from ${data.sender?.name || 'TechShare'}`,
               {
-                body: data.content || 'Bạn có một tin nhắn mới.',
+                body: data.content || 'You have received a new message.',
                 icon: data.sender?.avatar || '/assets/logo.svg',
                 tag: `chat-${data.bookingId}`,
               }
@@ -144,57 +144,60 @@ export const InAppNotificationBanner = () => {
   return (
     <div
       role="alert"
-      className="fixed top-20 right-4 sm:right-6 z-50 max-w-sm w-full bg-white/95 backdrop-blur-md border border-teal-200/90 rounded-2xl shadow-xl p-3.5 flex items-start gap-3 transition-all duration-300 animate-in slide-in-from-top-4 fade-in cursor-pointer select-none hover:shadow-2xl hover:border-teal-300"
+      className="fixed top-20 right-4 sm:right-6 z-50 max-w-sm w-full bg-white/95 backdrop-blur-xl border border-teal-200/90 rounded-2xl shadow-2xl p-4 flex items-start gap-3.5 transition-all duration-300 animate-in slide-in-from-top-4 fade-in cursor-pointer select-none hover:shadow-2xl hover:border-teal-400 group ring-1 ring-black/5"
       onClick={handleClickBanner}
     >
-      {/* Avatar người gửi */}
+      {/* Sender Avatar */}
       <div className="relative flex-shrink-0">
-        <div className="w-10 h-10 rounded-full bg-slate-200 overflow-hidden flex items-center justify-center font-bold text-slate-700 text-xs border border-slate-200">
-          {activeBanner.sender?.avatar ? (
-            <img
-              src={activeBanner.sender.avatar}
-              alt={activeBanner.sender.name || 'User'}
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-              }}
-            />
-          ) : (
-            <span>{(activeBanner.sender?.name || 'U').charAt(0).toUpperCase()}</span>
-          )}
+        <div className="w-11 h-11 rounded-full bg-gradient-to-tr from-teal-500 to-emerald-400 p-[2px] shadow-sm">
+          <div className="w-full h-full rounded-full bg-slate-100 overflow-hidden flex items-center justify-center font-bold text-slate-700 text-xs">
+            {activeBanner.sender?.avatar ? (
+              <img
+                src={activeBanner.sender.avatar}
+                alt={activeBanner.sender.name || 'User'}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
+            ) : (
+              <span>{(activeBanner.sender?.name || 'U').charAt(0).toUpperCase()}</span>
+            )}
+          </div>
         </div>
-        <span className="absolute -bottom-1 -right-1 bg-teal-500 rounded-full p-0.5 text-white">
+        <span className="absolute -bottom-0.5 -right-0.5 bg-teal-600 rounded-full p-1 text-white shadow-xs ring-2 ring-white">
           <MessageSquare size={10} />
         </span>
       </div>
 
-      {/* Nội dung thông báo */}
+      {/* Notification Content */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1.5 mb-0.5">
+        <div className="flex items-center justify-between gap-1.5 mb-1">
           <span className="text-xs font-bold text-slate-900 truncate">
-            {activeBanner.sender?.name || 'Đối tác TechShare'}
+            {activeBanner.sender?.name || 'TechShare Partner'}
           </span>
-          <span className="text-[10px] text-teal-700 font-semibold px-1 rounded bg-teal-50">
-            Tin mới
+          <span className="text-[10px] text-teal-700 font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-teal-50 border border-teal-100">
+            Chat
           </span>
         </div>
-        <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
+        <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed font-normal">
           {activeBanner.content}
         </p>
-        <p className="text-[10px] text-teal-600 font-medium mt-1 hover:underline">
-          Nhấn để mở cuộc trò chuyện →
+        <p className="text-[11px] text-teal-600 font-semibold mt-1.5 group-hover:text-teal-700 group-hover:underline flex items-center gap-1">
+          Click to open conversation &rarr;
         </p>
       </div>
 
-      {/* Nút đóng */}
+      {/* Dismiss Button */}
       <button
         type="button"
         onClick={(e) => {
           e.stopPropagation();
           handleDismiss();
         }}
-        className="p-1 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition flex-shrink-0"
-        title="Bỏ qua"
+        className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors flex-shrink-0"
+        title="Dismiss"
+        aria-label="Dismiss notification"
       >
         <X size={15} />
       </button>

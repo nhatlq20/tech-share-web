@@ -5,6 +5,7 @@ import { STRINGS } from '../../constants/strings.js';
 import { ROUTES } from '../../routes/routes.js';
 import { formatPrice, formatDate } from '../../utils/formatters.js';
 import { BookingStatusBadge } from './BookingStatusBadge.jsx';
+import { CountdownBadge } from './CountdownBadge.jsx';
 
 const T = STRINGS.booking.myBookings;
 
@@ -14,6 +15,18 @@ const T = STRINGS.booking.myBookings;
 const toRowModel = (booking) => {
   const device = booking.device || booking.deviceId || {};
   const bookingKey = booking.bookingCode || booking._id;
+
+  // Tính chính xác số ngày thuê giữa startDate và endDate
+  let totalDays = booking.totalDays;
+  if (booking.startDate && booking.endDate) {
+    const s = new Date(booking.startDate).getTime();
+    const e = new Date(booking.endDate).getTime();
+    const diff = e - s;
+    if (diff > 0) {
+      totalDays = Math.max(1, Math.round(diff / (1000 * 60 * 60 * 24)));
+    }
+  }
+
   return {
     bookingKey,
     detailPath: ROUTES.BOOKING_DETAIL_PATH(bookingKey),
@@ -23,7 +36,9 @@ const toRowModel = (booking) => {
     bookingCode: booking.bookingCode || '',
     startDate: formatDate(booking.startDate),
     endDate: formatDate(booking.endDate),
-    totalDays: booking.totalDays || 1,
+    rawStartDate: booking.startDate,
+    rawEndDate: booking.endDate,
+    totalDays: totalDays || 1,
     createdAt: formatDate(booking.createdAt),
     totalAmount: formatPrice(booking.totalAmount),
     status: booking.status,
@@ -86,6 +101,11 @@ export const BookingTableRow = ({ booking }) => {
       </td>
       <td className="px-4 py-4 whitespace-nowrap">
         <BookingStatusBadge status={row.status} />
+        {row.status === 'active' && row.rawEndDate && (
+          <div className="mt-1.5">
+            <CountdownBadge startDate={row.rawStartDate} targetDate={row.rawEndDate} size="sm" />
+          </div>
+        )}
       </td>
       <td className="px-5 py-4 text-right whitespace-nowrap">
         <Link
@@ -117,7 +137,12 @@ export const BookingMobileCard = ({ booking }) => {
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
             <h3 className="text-sm font-bold text-slate-800 truncate">{row.title}</h3>
-            <BookingStatusBadge status={row.status} size="sm" />
+            <div className="flex flex-col items-end gap-1 flex-shrink-0">
+              <BookingStatusBadge status={row.status} size="sm" />
+              {row.status === 'active' && row.rawEndDate && (
+                <CountdownBadge startDate={row.rawStartDate} targetDate={row.rawEndDate} size="sm" />
+              )}
+            </div>
           </div>
           <p className="text-xs font-mono text-slate-500 mt-1">
             {T.bookingCodePrefix}: {row.bookingCode}

@@ -36,7 +36,7 @@ export const CancelBookingModal = ({ isOpen, bookingCode, isSubmitting, errorMes
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200"
       onClick={() => !isSubmitting && onClose()}
       role="presentation"
     >
@@ -46,29 +46,33 @@ export const CancelBookingModal = ({ isOpen, bookingCode, isSubmitting, errorMes
         role="dialog"
         aria-modal="true"
         aria-labelledby="cancel-booking-title"
-        className="relative bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl"
+        className="relative bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95 duration-200"
       >
         <button
           type="button"
           onClick={onClose}
           disabled={isSubmitting}
-          className="absolute top-4 right-4 p-1.5 rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors disabled:opacity-50"
+          className="absolute top-5 right-5 p-2 rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition disabled:opacity-50"
           aria-label={STRINGS.common.close}
         >
-          <X className="w-4 h-4" />
+          <X className="w-5 h-5" />
         </button>
 
-        <div className="w-12 h-12 rounded-full bg-red-50 text-red-500 flex items-center justify-center mb-4">
+        <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-500 border border-red-100 flex items-center justify-center mb-4 shadow-xs">
           <AlertTriangle className="w-6 h-6" aria-hidden="true" />
         </div>
 
-        <h2 id="cancel-booking-title" className="text-lg font-bold text-slate-800">
+        <h2 id="cancel-booking-title" className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
           {T.modalTitle}
         </h2>
-        {bookingCode && <p className="text-xs font-mono text-slate-500 mt-1">{bookingCode}</p>}
-        <p className="text-sm text-slate-500 mt-2">{T.modalDesc}</p>
+        {bookingCode && (
+          <span className="inline-flex items-center gap-1 font-mono text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 mt-2">
+            #{bookingCode}
+          </span>
+        )}
+        <p className="text-xs sm:text-sm text-slate-500 mt-2 leading-relaxed">{T.modalDesc}</p>
 
-        <label htmlFor="cancel-booking-reason" className="block text-xs font-semibold text-slate-700 mt-5 mb-2">
+        <label htmlFor="cancel-booking-reason" className="block text-xs font-bold text-slate-700 mt-5 mb-2">
           {T.reasonLabel}
         </label>
         <textarea
@@ -80,12 +84,12 @@ export const CancelBookingModal = ({ isOpen, bookingCode, isSubmitting, errorMes
           onChange={(event) => setReason(event.target.value)}
           placeholder={T.reasonPlaceholder}
           disabled={isSubmitting}
-          className="w-full px-4 py-3 text-sm rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition resize-none disabled:opacity-60"
+          className="w-full px-3.5 py-2.5 text-xs rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-400 transition resize-none disabled:opacity-60 placeholder:text-slate-400"
         />
         <p className="text-right text-xs text-slate-400 mt-1">{T.reasonCounter(reason.length, MAX_REASON)}</p>
 
         {errorMessage && (
-          <div className="mt-3 p-3 rounded-xl bg-red-50 text-red-600 text-xs flex items-start gap-2" role="alert">
+          <div className="mt-3 p-3 rounded-2xl bg-red-50 text-red-600 text-xs flex items-start gap-2 border border-red-200" role="alert">
             <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" aria-hidden="true" />
             <span className="font-medium">{errorMessage}</span>
           </div>
@@ -97,7 +101,7 @@ export const CancelBookingModal = ({ isOpen, bookingCode, isSubmitting, errorMes
             id="cancel-booking-keep-btn"
             onClick={onClose}
             disabled={isSubmitting}
-            className="flex-1 py-3 px-4 rounded-full bg-slate-100 text-slate-700 font-semibold text-sm hover:bg-slate-200 transition-colors disabled:opacity-50"
+            className="flex-1 py-3 px-4 rounded-full bg-slate-100 text-slate-700 font-bold text-xs hover:bg-slate-200 transition disabled:opacity-50"
           >
             {T.keepBtn}
           </button>
@@ -105,7 +109,7 @@ export const CancelBookingModal = ({ isOpen, bookingCode, isSubmitting, errorMes
             type="submit"
             id="cancel-booking-confirm-btn"
             disabled={isSubmitting}
-            className="flex-1 py-3 px-4 rounded-full bg-red-500 text-white font-semibold text-sm hover:bg-red-600 shadow-sm transition-colors disabled:opacity-60 inline-flex items-center justify-center gap-2"
+            className="flex-1 py-3 px-4 rounded-full bg-red-500 text-white font-bold text-xs hover:bg-red-600 shadow-md shadow-red-500/20 transition disabled:opacity-60 inline-flex items-center justify-center gap-2"
           >
             {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />}
             {isSubmitting ? T.submitting : T.confirmBtn}

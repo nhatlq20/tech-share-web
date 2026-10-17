@@ -895,6 +895,8 @@ export const getOwnerBookings = async (req, res, next) => {
             endDate: endDateStr,
             totalDays: Number(b.totalDays) || 1,
           },
+          rawStartDate: b.startDate ? new Date(b.startDate).toISOString() : '',
+          rawEndDate: b.endDate ? new Date(b.endDate).toISOString() : '',
           startDate: startDateStr,
           endDate: endDateStr,
           totalDays: Number(b.totalDays) || 1,
