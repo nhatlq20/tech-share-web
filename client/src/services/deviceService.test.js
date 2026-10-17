@@ -3,21 +3,21 @@ import { getRecommendedDevices, getNearbyDevices } from './deviceService';
 
 jest.mock('./api', () => ({ __esModule: true, default: { get: jest.fn() } }));
 
-test('recommendations keep the existing endpoint and page 1 / limit 12 contract', async () => {
+test('recommendations keep the existing endpoint and page 1 / limit 24 contract', async () => {
   api.get.mockResolvedValue({ success: true, data: [] });
   await getRecommendedDevices({ lat: 21.0285, lng: 105.8542 });
   expect(api.get).toHaveBeenCalledTimes(1);
   expect(api.get).toHaveBeenCalledWith('/devices/recommended', {
-    params: { lat: 21.0285, lng: 105.8542, page: 1, limit: 12 },
+    params: { lat: 21.0285, lng: 105.8542, page: 1, limit: 24 },
   });
 });
 
 beforeEach(() => { jest.clearAllMocks(); api.get.mockResolvedValue({ success: true, data: [] }); });
 
 test('camera filter is sent to recommended API with coordinates and pagination', async () => {
-  await getRecommendedDevices({ lat: 21.0285, lng: 105.8542, category: 'camera', page: 2, limit: 12 });
+  await getRecommendedDevices({ lat: 21.0285, lng: 105.8542, category: 'camera', page: 2, limit: 24 });
   expect(api.get).toHaveBeenCalledWith('/devices/recommended', {
-    params: { lat: 21.0285, lng: 105.8542, category: 'camera', page: 2, limit: 12 },
+    params: { lat: 21.0285, lng: 105.8542, category: 'camera', page: 2, limit: 24 },
   });
 });
 

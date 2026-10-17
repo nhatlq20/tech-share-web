@@ -95,6 +95,7 @@ export const STRINGS = {
       drone: 'Drones',
       audio: 'Audio',
       tablet: 'Tablets',
+      gaming: 'Gaming & VR',
       accessory: 'Accessories',
     },
     devices: {

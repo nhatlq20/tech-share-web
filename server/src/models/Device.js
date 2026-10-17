@@ -30,7 +30,7 @@ const deviceSchema = new mongoose.Schema(
     },
     category: {
       type: String,
-      enum: ['smartphone', 'laptop', 'camera', 'drone', 'audio', 'gaming', 'accessory'],
+      enum: ['smartphone', 'laptop', 'camera', 'drone', 'audio', 'tablet', 'gaming', 'accessory'],
       required: true,
       index: true,
     },
