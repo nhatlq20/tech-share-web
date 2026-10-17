@@ -71,19 +71,19 @@
 /* Popover Panel */
 .notification-popover {
   position: absolute;
-  top: calc(100% + 10px);
+  top: calc(100% + 12px);
   right: 0;
-  width: 380px;
+  width: 400px;
   max-width: calc(100vw - 24px);
   background: #ffffff;
-  border-radius: 18px;
+  border-radius: 24px;
   border: 1px solid #e2e8f0;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.22), 0 0 0 1px rgba(0, 0, 0, 0.04);
   z-index: 1050;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  animation: popover-fade-in 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: popover-fade-in 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes popover-fade-in {

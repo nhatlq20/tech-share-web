@@ -1,5 +1,5 @@
 import React from 'react';
-import { Clock, CheckCircle2, PackageCheck, BadgeCheck, XCircle, Ban, HelpCircle } from 'lucide-react';
+import { Clock, CheckCircle2, BadgeCheck, XCircle, Ban, HelpCircle } from 'lucide-react';
 import { STRINGS } from '../../constants/strings.js';
 import { BOOKING_STATUS } from '../../constants/config.js';
 
@@ -19,7 +19,7 @@ export const BOOKING_STATUS_STYLES = {
     dot: 'bg-sky-500',
   },
   [BOOKING_STATUS.ACTIVE]: {
-    icon: PackageCheck,
+    icon: CheckCircle2,
     badge: 'bg-brand-50 text-brand-800 ring-brand-300',
     dot: 'bg-brand-500',
   },

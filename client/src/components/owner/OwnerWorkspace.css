@@ -693,24 +693,38 @@
 .owner-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.45);
-  backdrop-filter: blur(4px);
+  background: rgba(15, 23, 42, 0.62);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 50;
+  z-index: 100;
   padding: 20px;
+  animation: ownerModalFadeIn 0.2s ease-out;
 }
 
 .owner-modal-card {
   background: #FFFFFF;
-  border-radius: 20px;
+  border-radius: 28px;
   width: 100%;
   max-width: 640px;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
-  padding: 28px;
+  box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.3), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  padding: 32px;
+  position: relative;
+  animation: ownerModalZoomIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes ownerModalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes ownerModalZoomIn {
+  from { opacity: 0; transform: scale(0.96) translateY(6px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
 }
 
 .owner-modal-header {
@@ -718,7 +732,7 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: 20px;
-  padding-bottom: 12px;
+  padding-bottom: 14px;
   border-bottom: 1px solid var(--owner-border);
 }
 
@@ -726,20 +740,27 @@
   font-size: 18px;
   font-weight: 700;
   color: var(--owner-text-main);
+  letter-spacing: -0.01em;
 }
 
 .owner-close-btn {
-  background: transparent;
-  border: none;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
   color: var(--owner-text-muted);
   cursor: pointer;
-  padding: 4px;
-  border-radius: 8px;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  transition: all 0.15s ease;
 }
 
 .owner-close-btn:hover {
   background: #F1F5F9;
   color: var(--owner-text-main);
+  transform: rotate(90deg);
 }
 
 /* Tabs */

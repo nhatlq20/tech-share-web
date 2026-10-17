@@ -45,10 +45,22 @@ export const cancelBooking = async (bookingId, reason = '') => {
   return res?.data || null;
 };
 
+/**
+ * POST /api/bookings/:id/extend
+ */
+export const requestBookingExtension = async (bookingId, { days, note = '' }) => {
+  const res = await api.post(API_CONFIG.ENDPOINTS.BOOKING_EXTEND(bookingId), {
+    days: Number(days),
+    note: (note || '').trim(),
+  });
+  return res?.data || null;
+};
+
 const bookingService = {
   fetchMyBookings,
   fetchBookingById,
   cancelBooking,
+  requestBookingExtension,
 };
 
 export default bookingService;

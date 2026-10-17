@@ -6,6 +6,9 @@ import {
   cancelBooking,
   validatePricing,
   getDeviceAvailability,
+  requestBookingExtension,
+  approveBookingExtension,
+  rejectBookingExtension,
 } from '../controllers/bookingController.js';
 import {
   getOwnerBookings,
@@ -29,6 +32,11 @@ router.patch('/:id/approve', approveBooking);
 router.patch('/:id/reject', rejectBooking);
 router.patch('/:id/handover', handoverBooking);
 router.patch('/:id/complete', completeBooking);
+
+// Rental Extension actions
+router.post('/:id/extend', protect, requestBookingExtension);
+router.patch('/:id/extension/approve', protect, approveBookingExtension);
+router.patch('/:id/extension/reject', protect, rejectBookingExtension);
 
 // Standard REST routes
 router.post('/', createBooking);

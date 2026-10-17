@@ -14,6 +14,7 @@ import {
 import { STRINGS } from '../../constants/strings';
 import { COLORS } from '../../constants/colors';
 import { ROUTES } from '../../routes/routes.js';
+import { CountdownBadge } from '../booking/CountdownBadge.jsx';
 
 export const OwnerBookingsTab = ({ 
   bookings = [], 
@@ -220,6 +221,11 @@ export const OwnerBookingsTab = ({
                          b.status === 'completed' ? t.status.completed :
                          b.status === 'rejected' ? t.status.rejected : b.status}
                       </span>
+                      {b.status === 'active' && (b.rawEndDate || b.endDate) && (
+                        <div className="mt-1">
+                          <CountdownBadge startDate={b.rawStartDate || b.startDate} targetDate={b.rawEndDate || b.endDate} size="sm" />
+                        </div>
+                      )}
                     </td>
 
                     {/* Action Buttons */}
@@ -273,15 +279,15 @@ export const OwnerBookingsTab = ({
                           </button>
                         )}
 
-                        {/* Nhắn tin với Người thuê */}
+                        {/* Chat with Customer */}
                         <button
                           type="button"
                           className="owner-btn-outline py-1 px-2.5 text-xs text-teal-700 bg-teal-50 border-teal-200 hover:bg-teal-100 flex items-center gap-1"
                           onClick={() => navigate(ROUTES.MESSAGES_PATH(b._id || b.id))}
-                          title="Nhắn tin với người thuê"
+                          title="Chat with customer"
                         >
                           <MessageSquare size={13} className="text-teal-600" />
-                          <span>Nhắn tin</span>
+                          <span>Chat</span>
                         </button>
                       </div>
                     </td>
@@ -298,60 +304,74 @@ export const OwnerBookingsTab = ({
         <div className="owner-modal-overlay">
           <div className="owner-modal-card max-w-md">
             <div className="owner-modal-header">
-              <h3 className="owner-modal-title flex items-center gap-2 text-rose-600">
-                <AlertTriangle size={18} />
-                <span>{t.modalReject.title}</span>
-              </h3>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-rose-50 border border-rose-200/80 text-rose-600 flex items-center justify-center shadow-xs">
+                  <AlertTriangle size={20} />
+                </div>
+                <div>
+                  <h3 className="owner-modal-title text-slate-900">{t.modalReject.title}</h3>
+                  <p className="text-[11px] text-slate-500 font-medium">Order #{rejectingBooking.bookingCode || rejectingBooking._id?.slice(-8)}</p>
+                </div>
+              </div>
               <button 
                 type="button" 
                 className="owner-close-btn"
                 onClick={() => setRejectingBooking(null)}
+                aria-label="Close"
               >
-                <X size={18} />
+                <X size={16} />
               </button>
             </div>
 
-            <p className="text-xs text-slate-600 mb-3">
+            <p className="text-xs text-slate-600 mb-3 leading-relaxed">
               {t.modalReject.prompt}
             </p>
 
             <div className="flex flex-col gap-2 mb-4">
-              {t.modalReject.reasons.map((r, idx) => (
-                <label 
-                  key={idx} 
-                  className="flex items-center gap-2 text-xs text-slate-700 p-2.5 rounded-lg border border-slate-200 cursor-pointer hover:bg-slate-50"
-                >
-                  <input
-                    type="radio"
-                    name="rejectReason"
-                    value={r}
-                    checked={rejectReason === r}
-                    onChange={(e) => setRejectReason(e.target.value)}
-                  />
-                  <span>{r}</span>
-                </label>
-              ))}
+              {t.modalReject.reasons.map((r, idx) => {
+                const isSelected = rejectReason === r;
+                return (
+                  <label 
+                    key={idx} 
+                    className={`flex items-center gap-2.5 text-xs p-3 rounded-xl border cursor-pointer transition-all ${
+                      isSelected 
+                        ? 'bg-rose-50/80 border-rose-300 text-rose-900 font-semibold shadow-xs' 
+                        : 'border-slate-200 text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="rejectReason"
+                      value={r}
+                      checked={isSelected}
+                      onChange={(e) => setRejectReason(e.target.value)}
+                      className="accent-rose-600 w-3.5 h-3.5"
+                    />
+                    <span>{r}</span>
+                  </label>
+                );
+              })}
             </div>
 
             <textarea
               rows={2}
-              className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:border-brand-500 focus:outline-none mb-4"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:border-rose-400 focus:ring-2 focus:ring-rose-400/20 focus:outline-none mb-5"
               placeholder={t.modalReject.placeholder}
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
             />
 
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-end gap-2.5">
               <button
                 type="button"
-                className="owner-btn-outline"
+                className="px-5 py-2.5 rounded-full border border-slate-200 text-slate-700 font-semibold text-xs hover:bg-slate-50 transition shadow-xs"
                 onClick={() => setRejectingBooking(null)}
               >
                 {t.modalReject.cancelBtn}
               </button>
               <button
                 type="button"
-                className="owner-btn-danger"
+                className="px-5 py-2.5 rounded-full bg-rose-600 text-white font-semibold text-xs hover:bg-rose-700 transition shadow-sm hover:shadow-md"
                 onClick={handleConfirmReject}
               >
                 {t.modalReject.confirmBtn}
@@ -366,54 +386,73 @@ export const OwnerBookingsTab = ({
         <div className="owner-modal-overlay">
           <div className="owner-modal-card max-w-md text-center">
             <div className="owner-modal-header text-left">
-              <h3 className="owner-modal-title flex items-center gap-2">
-                <QrCode size={18} color={COLORS.primary.DEFAULT} />
-                <span>{t.modalQr.title}</span>
-              </h3>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-teal-50 border border-teal-200/80 text-teal-600 flex items-center justify-center shadow-xs">
+                  <QrCode size={20} />
+                </div>
+                <div>
+                  <h3 className="owner-modal-title text-slate-900">{t.modalQr.title}</h3>
+                  <p className="text-[11px] text-slate-500 font-medium">Order #{qrScanningBooking.bookingCode || qrScanningBooking._id?.slice(-8)}</p>
+                </div>
+              </div>
               <button 
                 type="button" 
                 className="owner-close-btn"
                 onClick={() => setQrScanningBooking(null)}
+                aria-label="Close"
               >
-                <X size={18} />
+                <X size={16} />
               </button>
             </div>
 
-            <p className="text-xs text-slate-600 mb-4 text-left">
+            <p className="text-xs text-slate-600 mb-4 text-left leading-relaxed">
               {t.modalQr.instruction}
             </p>
 
             {/* Webcam QR Scanner Viewport Simulation */}
-            <div className="w-full h-56 bg-slate-900 rounded-2xl flex flex-col items-center justify-center relative overflow-hidden mb-4 border-2 border-dashed border-brand-500">
+            <div className="w-full h-60 bg-slate-950 rounded-2xl flex flex-col items-center justify-center relative overflow-hidden mb-5 border border-slate-800 shadow-inner">
+              {/* Corner brackets */}
+              <div className="absolute top-4 left-4 w-6 h-6 border-t-2 border-l-2 border-teal-400 rounded-tl-md" />
+              <div className="absolute top-4 right-4 w-6 h-6 border-t-2 border-r-2 border-teal-400 rounded-tr-md" />
+              <div className="absolute bottom-4 left-4 w-6 h-6 border-b-2 border-l-2 border-teal-400 rounded-bl-md" />
+              <div className="absolute bottom-4 right-4 w-6 h-6 border-b-2 border-r-2 border-teal-400 rounded-br-md" />
+
+              {/* Scanning laser line */}
+              {isScanning && (
+                <div className="absolute inset-x-8 top-1/2 h-[2px] bg-gradient-to-r from-transparent via-teal-400 to-transparent shadow-[0_0_12px_#2dd4bf] animate-pulse" />
+              )}
+
               {scanSuccess ? (
-                <div className="text-emerald-400 flex flex-col items-center gap-2 animate-bounce">
-                  <Check size={48} />
+                <div className="text-emerald-400 flex flex-col items-center gap-2 animate-in zoom-in-90 duration-200">
+                  <div className="w-14 h-14 rounded-full bg-emerald-500/20 border border-emerald-400 flex items-center justify-center text-emerald-400">
+                    <Check size={32} />
+                  </div>
                   <span className="text-sm font-bold">{t.modalQr.successText}</span>
                 </div>
               ) : isScanning ? (
-                <div className="text-brand-300 flex flex-col items-center gap-2">
-                  <div className="w-10 h-10 border-4 border-brand-400 border-t-transparent rounded-full animate-spin" />
-                  <span className="text-xs">{t.modalQr.scanning}</span>
+                <div className="text-teal-300 flex flex-col items-center gap-3">
+                  <div className="w-10 h-10 border-3 border-teal-400 border-t-transparent rounded-full animate-spin" />
+                  <span className="text-xs font-medium">{t.modalQr.scanning}</span>
                 </div>
               ) : (
-                <div className="text-slate-400 flex flex-col items-center gap-2">
-                  <QrCode size={48} className="opacity-40" />
-                  <span className="text-xs">Webcam Scanner (html5-qrcode ready)</span>
+                <div className="text-slate-400 flex flex-col items-center gap-2.5">
+                  <QrCode size={52} className="opacity-40 text-teal-400" />
+                  <span className="text-xs text-slate-400">Point viewfinder directly at customer's QR code</span>
                 </div>
               )}
             </div>
 
-            <div className="flex justify-between items-center gap-2">
+            <div className="flex justify-between items-center gap-2.5">
               <button
                 type="button"
-                className="owner-btn-outline"
+                className="px-5 py-2.5 rounded-full border border-slate-200 text-slate-700 font-semibold text-xs hover:bg-slate-50 transition shadow-xs"
                 onClick={() => setQrScanningBooking(null)}
               >
                 {t.modalQr.closeBtn}
               </button>
               <button
                 type="button"
-                className="owner-btn-primary"
+                className="px-6 py-2.5 rounded-full bg-teal-600 text-white font-semibold text-xs hover:bg-teal-700 transition shadow-sm hover:shadow-md disabled:opacity-50"
                 onClick={handleSimulateQrScan}
                 disabled={isScanning || scanSuccess}
               >
@@ -429,41 +468,49 @@ export const OwnerBookingsTab = ({
         <div className="owner-modal-overlay">
           <div className="owner-modal-card max-w-lg">
             <div className="owner-modal-header">
-              <h3 className="owner-modal-title flex items-center gap-2">
-                <Camera size={18} color={COLORS.primary.DEFAULT} />
-                <span>{t.modalReturn.title}</span>
-              </h3>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-teal-50 border border-teal-200/80 text-teal-600 flex items-center justify-center shadow-xs">
+                  <Camera size={20} />
+                </div>
+                <div>
+                  <h3 className="owner-modal-title text-slate-900">{t.modalReturn.title}</h3>
+                  <p className="text-[11px] text-slate-500 font-medium">Order #{returnBooking.bookingCode || returnBooking._id?.slice(-8)}</p>
+                </div>
+              </div>
               <button 
                 type="button" 
                 className="owner-close-btn"
                 onClick={() => setReturnBooking(null)}
+                aria-label="Close"
               >
-                <X size={18} />
+                <X size={16} />
               </button>
             </div>
 
-            <p className="text-xs text-slate-600 mb-4">
+            <p className="text-xs text-slate-600 mb-4 leading-relaxed">
               {t.modalReturn.instruction}
             </p>
 
-            <div className="grid grid-cols-2 gap-4 mb-5">
-              <div>
-                <span className="block text-xs font-semibold text-slate-700 mb-2">
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                <span className="block text-xs font-bold text-slate-700 mb-2">
                   {t.modalReturn.beforeLabel}
                 </span>
                 <img
                   src={returnBooking.deviceImage}
                   alt="Before rental"
-                  className="w-full h-32 rounded-xl object-cover border border-slate-200"
+                  className="w-full h-36 rounded-xl object-cover border border-slate-200 shadow-xs"
                 />
               </div>
-              <div>
-                <span className="block text-xs font-semibold text-slate-700 mb-2">
+              <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                <span className="block text-xs font-bold text-slate-700 mb-2">
                   {t.modalReturn.afterLabel}
                 </span>
-                <div className="w-full h-32 rounded-xl border-2 border-dashed border-slate-300 flex flex-col items-center justify-center bg-slate-50">
-                  <Camera size={24} className="text-slate-400 mb-1" />
-                  <span className="text-[11px] text-slate-500">Capture with camera or upload</span>
+                <div className="w-full h-36 rounded-xl border-2 border-dashed border-slate-300 flex flex-col items-center justify-center bg-white cursor-pointer hover:border-teal-400 hover:bg-teal-50/30 transition-all">
+                  <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 mb-1.5">
+                    <Camera size={18} />
+                  </div>
+                  <span className="text-[11px] font-semibold text-slate-600">Upload return photo</span>
                 </div>
               </div>
             </div>
@@ -471,7 +518,7 @@ export const OwnerBookingsTab = ({
             <div className="flex justify-between items-center gap-3">
               <button
                 type="button"
-                className="owner-btn-outline text-rose-600 hover:bg-rose-50 border-rose-200"
+                className="px-4 py-2.5 rounded-full border border-rose-200 text-rose-600 font-semibold text-xs hover:bg-rose-50 transition"
                 onClick={() => {
                   alert('Dispute report initiated and sent to TechShare Admin for resolution.');
                   setReturnBooking(null);
@@ -481,13 +528,13 @@ export const OwnerBookingsTab = ({
               </button>
               <button
                 type="button"
-                className="owner-btn-primary"
+                className="px-6 py-2.5 rounded-full bg-emerald-600 text-white font-semibold text-xs hover:bg-emerald-700 transition shadow-sm hover:shadow-md flex items-center gap-1.5"
                 onClick={() => {
                   onCompleteReturn(returnBooking._id);
                   setReturnBooking(null);
                 }}
               >
-                <Check size={14} />
+                <Check size={15} />
                 <span>{t.modalReturn.confirmComplete}</span>
               </button>
             </div>

@@ -27,7 +27,7 @@ import {
 import './NotificationDropdown.css';
 
 /**
- * Format relative time (time ago) in Vietnamese
+ * Format relative time (time ago) in English
  */
 const formatTimeAgo = (dateString) => {
   if (!dateString) return '';
@@ -35,18 +35,18 @@ const formatTimeAgo = (dateString) => {
   const date = new Date(dateString);
   const diffInSeconds = Math.max(1, Math.floor((now.getTime() - date.getTime()) / 1000));
 
-  if (diffInSeconds < 60) return 'Vừa xong';
+  if (diffInSeconds < 60) return 'Just now';
   const diffInMinutes = Math.floor(diffInSeconds / 60);
-  if (diffInMinutes < 60) return `${diffInMinutes} phút trước`;
+  if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
   const diffInHours = Math.floor(diffInMinutes / 60);
-  if (diffInHours < 24) return `${diffInHours} giờ trước`;
+  if (diffInHours < 24) return `${diffInHours}h ago`;
   const diffInDays = Math.floor(diffInHours / 24);
-  if (diffInDays < 30) return `${diffInDays} ngày trước`;
-  return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
+  if (diffInDays < 30) return `${diffInDays}d ago`;
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 };
 
 /**
- * Lấy Icon và class tương ứng với Type của thông báo
+ * Type config and badges
  */
 const getTypeConfig = (type) => {
   switch (type) {
@@ -54,42 +54,42 @@ const getTypeConfig = (type) => {
       return {
         icon: Package,
         className: 'notification-icon-order',
-        label: 'Đơn hàng',
+        label: 'Orders',
       };
     case 'reminder':
       return {
         icon: Clock,
         className: 'notification-icon-reminder',
-        label: 'Nhắc nhở',
+        label: 'Reminders',
       };
     case 'review':
       return {
         icon: Star,
         className: 'notification-icon-review',
-        label: 'Đánh giá',
+        label: 'Reviews',
       };
     case 'promo':
       return {
         icon: Tag,
         className: 'notification-icon-promo',
-        label: 'Ưu đãi',
+        label: 'Promos',
       };
     case 'system':
     default:
       return {
         icon: ShieldAlert,
         className: 'notification-icon-system',
-        label: 'Hệ thống',
+        label: 'System',
       };
   }
 };
 
 const FILTER_TABS = [
-  { id: 'all', label: 'Tất cả' },
-  { id: 'order', label: 'Đơn hàng' },
-  { id: 'system', label: 'Hệ thống' },
-  { id: 'reminder', label: 'Nhắc nhở' },
-  { id: 'promo', label: 'Ưu đãi' },
+  { id: 'all', label: 'All' },
+  { id: 'order', label: 'Orders' },
+  { id: 'system', label: 'System' },
+  { id: 'reminder', label: 'Reminders' },
+  { id: 'promo', label: 'Promotions' },
 ];
 
 export const NotificationDropdown = ({ className = '' }) => {
@@ -158,14 +158,14 @@ export const NotificationDropdown = ({ className = '' }) => {
     }
   };
 
-  // Gửi thông báo test
+  // Send test notification
   const handleSendTestNotification = async () => {
     if (isSendingTest) return;
     setIsSendingTest(true);
     try {
       await sendTestNotificationApi({
-        title: 'Đơn hàng mới đã được xác nhận! 📦',
-        body: 'Khách hàng vừa đặt thuê máy ảnh Sony A7 IV của bạn. Nhấn vào để xem chi tiết.',
+        title: 'New order confirmed! 📦',
+        body: 'A customer just booked your Sony A7 IV camera. Click to view details.',
         type: 'order',
       });
     } catch (err) {
@@ -175,27 +175,27 @@ export const NotificationDropdown = ({ className = '' }) => {
     }
   };
 
-  // Bật quyền thông báo
+  // Enable push permission
   const handleEnablePermission = async () => {
     await requestNotificationPermission();
   };
 
   return (
     <div className={`notification-bell-container ${className}`} ref={containerRef}>
-      {/* Nút Chuông */}
+      {/* Bell Button */}
       <button
         type="button"
         className={`notification-bell-btn relative ${isOpen ? 'active' : ''}`}
         onClick={() => setIsOpen(!isOpen)}
-        title="Thông báo"
-        aria-label="Thông báo"
+        title="Notifications"
+        aria-label="Notifications"
         aria-expanded={isOpen}
       >
         <Bell size={19} />
         {unreadCount > 0 && (
           <span
             className="bg-red-500 text-white text-[11px] font-bold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center absolute -top-1 -right-1 shadow-xs leading-none"
-            aria-label={`${unreadCount} thông báo chưa đọc`}
+            aria-label={`${unreadCount} unread notifications`}
           >
             {unreadCount > 99 ? '99+' : unreadCount}
           </span>
@@ -204,13 +204,13 @@ export const NotificationDropdown = ({ className = '' }) => {
 
       {/* Popover Menu */}
       {isOpen && (
-        <div className="notification-popover" role="dialog" aria-label="Hộp thông báo">
+        <div className="notification-popover" role="dialog" aria-label="Notification center">
           {/* Header */}
           <div className="notification-popover-header">
             <div className="notification-header-title-box">
-              <span className="notification-header-title">Thông báo</span>
+              <span className="notification-header-title">Notifications</span>
               {unreadCount > 0 && (
-                <span className="notification-count-pill">{unreadCount} mới</span>
+                <span className="notification-count-pill">{unreadCount} new</span>
               )}
             </div>
             {unreadCount > 0 && (
@@ -218,10 +218,10 @@ export const NotificationDropdown = ({ className = '' }) => {
                 type="button"
                 className="notification-mark-all-btn"
                 onClick={handleMarkAllAsRead}
-                title="Đánh dấu tất cả là đã đọc"
+                title="Mark all as read"
               >
                 <CheckCheck size={14} style={{ display: 'inline', marginRight: 4 }} />
-                Đã đọc tất cả
+                Mark all as read
               </button>
             )}
           </div>
@@ -242,18 +242,18 @@ export const NotificationDropdown = ({ className = '' }) => {
             ))}
           </div>
 
-          {/* Danh sách thông báo */}
+          {/* Notification List */}
           <div className="notification-list" role="list">
             {filteredNotifications.length === 0 ? (
               <div className="notification-empty">
                 <div className="notification-empty-icon">
                   <Inbox size={24} />
                 </div>
-                <h4 className="notification-empty-title">Không có thông báo nào</h4>
+                <h4 className="notification-empty-title">No notifications yet</h4>
                 <p className="notification-empty-desc">
                   {filter === 'all'
-                    ? 'Bạn đã xem hết các thông báo gần đây.'
-                    : `Chưa có thông báo thuộc mục "${FILTER_TABS.find((t) => t.id === filter)?.label}".`}
+                    ? "You're all caught up with your recent updates."
+                    : `No notifications under "${FILTER_TABS.find((t) => t.id === filter)?.label}".`}
                 </p>
               </div>
             ) : (
@@ -295,11 +295,11 @@ export const NotificationDropdown = ({ className = '' }) => {
                 onClick={handleEnablePermission}
               >
                 <Volume2 size={13} />
-                Bật thông báo đẩy
+                Enable Push
               </button>
             ) : (
               <span style={{ fontSize: '11px', color: '#10b981', display: 'flex', alignItems: 'center', gap: 4 }}>
-                <Sparkles size={12} /> Web Push sẵn sàng
+                <Sparkles size={12} /> Web Push active
               </span>
             )}
 
@@ -309,7 +309,7 @@ export const NotificationDropdown = ({ className = '' }) => {
               onClick={handleSendTestNotification}
               disabled={isSendingTest}
             >
-              {isSendingTest ? 'Đang gửi...' : 'Gửi thông báo test'}
+              {isSendingTest ? 'Sending...' : 'Send test alert'}
             </button>
           </div>
         </div>

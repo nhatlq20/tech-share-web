@@ -3,6 +3,8 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft,
   Calendar,
+  CalendarPlus,
+  Clock,
   MapPin,
   User,
   Phone,
@@ -24,7 +26,9 @@ import { fetchBookingById, cancelBooking } from '../../services/bookingService.j
 import { BookingStatusBadge } from '../../components/booking/BookingStatusBadge.jsx';
 import { OrderTimelineStepper, OrderActivityHistory } from '../../components/booking/OrderTimelineStepper.jsx';
 import { CancelBookingModal } from '../../components/booking/CancelBookingModal.jsx';
-import { formatPrice, formatDateTime } from '../../utils/formatters.js';
+import { CountdownBadge } from '../../components/booking/CountdownBadge.jsx';
+import { ExtensionModal } from '../../components/booking/ExtensionModal.jsx';
+import { formatPrice, formatDateTime, formatDate } from '../../utils/formatters.js';
 
 const T = STRINGS.booking.detail;
 
@@ -41,6 +45,10 @@ export const BookingDetailPage = () => {
   const [isCancelling, setIsCancelling] = useState(false);
   const [cancelError, setCancelError] = useState(null);
   const [cancelSuccessMsg, setCancelSuccessMsg] = useState(null);
+
+  // Extension modal state
+  const [isExtensionModalOpen, setIsExtensionModalOpen] = useState(false);
+  const [extensionSuccessMsg, setExtensionSuccessMsg] = useState(null);
 
   const loadBooking = useCallback(async (signal) => {
     if (!bookingId) return;
@@ -93,6 +101,14 @@ export const BookingDetailPage = () => {
     } finally {
       setIsCancelling(false);
     }
+  };
+
+  const handleExtensionSuccess = (updatedBooking) => {
+    if (updatedBooking) {
+      setBooking(updatedBooking);
+    }
+    setExtensionSuccessMsg(STRINGS.booking.extension.successMsg);
+    setTimeout(() => setExtensionSuccessMsg(null), 5000);
   };
 
   if (isLoading) {
@@ -184,35 +200,127 @@ export const BookingDetailPage = () => {
                     {booking.bookingCode}
                   </h1>
                   <BookingStatusBadge status={booking.status} />
+                  {booking.status === 'active' && booking.endDate && (
+                    <CountdownBadge startDate={booking.startDate} targetDate={booking.endDate} size="md" />
+                  )}
                 </div>
                 <p className="text-xs text-slate-400 mt-1">
                   {T.createdAtLabel}: {formatDateTime(booking.createdAt)}
                 </p>
               </div>
             </div>
+
+            {/* Quick Extension action in Header when active */}
+            {booking.status === 'active' && booking.extensionRequest?.status !== 'pending' && (
+              <button
+                type="button"
+                id="header-extend-booking-btn"
+                onClick={() => setIsExtensionModalOpen(true)}
+                className="px-4 py-2 rounded-full bg-brand-500 hover:bg-brand-600 text-white font-bold text-xs transition shadow-sm flex items-center justify-center gap-2 self-start sm:self-auto"
+              >
+                <CalendarPlus className="w-4 h-4" />
+                <span>{STRINGS.booking.extension.openModalBtn}</span>
+              </button>
+            )}
           </div>
+
+          {/* Extension success notification banner */}
+          {extensionSuccessMsg && (
+            <div className="mt-4 p-4 rounded-2xl bg-emerald-50 text-emerald-700 text-xs font-semibold flex items-center gap-2 border border-emerald-200 animate-in fade-in">
+              <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+              <span>{extensionSuccessMsg}</span>
+            </div>
+          )}
+
+          {/* Extension success notification banner */}
+          {extensionSuccessMsg && (
+            <div className="mt-4 p-4 rounded-2xl bg-emerald-50/90 text-emerald-800 text-xs border border-emerald-200/90 shadow-xs flex items-center justify-between gap-3 animate-in fade-in slide-in-from-top-2">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-xl bg-emerald-100/80 text-emerald-700 flex items-center justify-center flex-shrink-0">
+                  <CheckCircle2 className="w-4 h-4" />
+                </div>
+                <span className="font-semibold">{extensionSuccessMsg}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setExtensionSuccessMsg(null)}
+                className="text-emerald-500 hover:text-emerald-700 p-1"
+                aria-label="Dismiss"
+              >
+                &times;
+              </button>
+            </div>
+          )}
 
           {/* Cancellation notification banner if just cancelled */}
           {cancelSuccessMsg && (
-            <div className="mt-4 p-4 rounded-2xl bg-emerald-50 text-emerald-700 text-xs font-semibold flex items-center gap-2 border border-emerald-200">
-              <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
-              <span>{cancelSuccessMsg}</span>
+            <div className="mt-4 p-4 rounded-2xl bg-emerald-50/90 text-emerald-800 text-xs border border-emerald-200/90 shadow-xs flex items-center justify-between gap-3 animate-in fade-in slide-in-from-top-2">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-xl bg-emerald-100/80 text-emerald-700 flex items-center justify-center flex-shrink-0">
+                  <CheckCircle2 className="w-4 h-4" />
+                </div>
+                <span className="font-semibold">{cancelSuccessMsg}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setCancelSuccessMsg(null)}
+                className="text-emerald-500 hover:text-emerald-700 p-1"
+                aria-label="Dismiss"
+              >
+                &times;
+              </button>
+            </div>
+          )}
+
+          {/* Pending extension review banner */}
+          {booking.extensionRequest?.status === 'pending' && (
+            <div className="mt-4 p-4 rounded-2xl bg-amber-50/90 text-amber-900 border border-amber-200/90 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in slide-in-from-top-2 shadow-xs">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-xl bg-amber-100/80 text-amber-700 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <Clock className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="font-bold text-amber-900">
+                    {STRINGS.booking.extension.pendingBannerTitle}
+                  </div>
+                  <p className="text-amber-700 mt-0.5 leading-relaxed">
+                    {STRINGS.booking.extension.pendingBannerDesc(
+                      booking.extensionRequest.requestedDays,
+                      formatDate(booking.extensionRequest.requestedEndDate),
+                      formatPrice(booking.extensionRequest.additionalFee)
+                    )}
+                  </p>
+                </div>
+              </div>
+              <span className="self-start sm:self-auto px-3 py-1 rounded-full bg-amber-200/80 text-amber-800 text-[11px] font-bold uppercase tracking-wider shadow-xs">
+                {STRINGS.booking.extension.statusPendingBadge}
+              </span>
             </div>
           )}
 
           {/* Cancellation reason if already cancelled */}
           {booking.status === 'cancelled' && booking.cancelReason && (
-            <div className="mt-4 p-4 rounded-2xl bg-slate-100 text-slate-700 text-xs border border-slate-200">
-              <span className="font-bold">{T.fields.cancelReason}: </span>
-              <span>{booking.cancelReason}</span>
+            <div className="mt-4 p-4 rounded-2xl bg-slate-100/90 text-slate-700 text-xs border border-slate-200 flex items-start gap-3 shadow-xs">
+              <div className="w-8 h-8 rounded-xl bg-slate-200/80 text-slate-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <AlertCircle className="w-4 h-4" />
+              </div>
+              <div>
+                <span className="font-bold text-slate-800">{T.fields.cancelReason}: </span>
+                <span className="text-slate-600">{booking.cancelReason}</span>
+              </div>
             </div>
           )}
 
           {/* Rejection reason if rejected by owner */}
           {booking.status === 'rejected' && booking.rejectReason && (
-            <div className="mt-4 p-4 rounded-2xl bg-red-50 text-red-700 text-xs border border-red-200">
-              <span className="font-bold">{T.fields.rejectReason}: </span>
-              <span>{booking.rejectReason}</span>
+            <div className="mt-4 p-4 rounded-2xl bg-red-50/90 text-red-800 text-xs border border-red-200 flex items-start gap-3 shadow-xs">
+              <div className="w-8 h-8 rounded-xl bg-red-100/80 text-red-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <AlertCircle className="w-4 h-4" />
+              </div>
+              <div>
+                <span className="font-bold text-red-900">{T.fields.rejectReason}: </span>
+                <span className="text-red-700">{booking.rejectReason}</span>
+              </div>
             </div>
           )}
 
@@ -408,10 +516,15 @@ export const BookingDetailPage = () => {
           <div className="lg:col-span-5 flex flex-col gap-6">
             {/* Rental Period Card */}
             <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
-              <h2 className="text-base font-bold text-slate-800 pb-4 border-b border-slate-100 mb-4 flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-brand-500" />
-                {T.sections.period}
-              </h2>
+              <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
+                <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-brand-500" />
+                  {T.sections.period}
+                </h2>
+                {booking.status === 'active' && booking.endDate && (
+                  <CountdownBadge startDate={booking.startDate} targetDate={booking.endDate} size="sm" />
+                )}
+              </div>
 
               <div className="flex flex-col gap-3 text-xs">
                 <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-50">
@@ -424,10 +537,35 @@ export const BookingDetailPage = () => {
                 </div>
                 <div className="flex items-center justify-between p-3 rounded-2xl bg-brand-50/70 border border-brand-100">
                   <span className="text-brand-800 font-semibold">{T.fields.duration}</span>
-                  <span className="font-extrabold text-brand-800">
-                    {booking.totalDays} {booking.totalDays === 1 ? 'ngày' : 'ngày'}
+                  <span className="font-extrabold text-brand-800 flex items-center gap-2">
+                    <span>{booking.totalDays} {booking.totalDays === 1 ? 'day' : 'days'}</span>
+                    {booking.extensionRequest?.status === 'approved' && (
+                      <span className="text-[11px] font-bold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full">
+                        +{booking.extensionRequest.requestedDays}d extended
+                      </span>
+                    )}
                   </span>
                 </div>
+
+                {/* Rental Extension Action inside Rental Period Card */}
+                {booking.status === 'active' && (
+                  booking.extensionRequest?.status === 'pending' ? (
+                    <div className="mt-2 p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-800 flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                      <span>{STRINGS.booking.extension.statusPendingBadge} (+{booking.extensionRequest.requestedDays} {booking.extensionRequest.requestedDays === 1 ? 'day' : 'days'})</span>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      id="period-card-extend-btn"
+                      onClick={() => setIsExtensionModalOpen(true)}
+                      className="mt-2 w-full py-2.5 px-4 rounded-full bg-brand-50 hover:bg-brand-500 text-brand-700 hover:text-white border border-brand-200 hover:border-brand-500 font-bold text-xs transition shadow-xs flex items-center justify-center gap-2"
+                    >
+                      <CalendarPlus className="w-4 h-4" />
+                      <span>{STRINGS.booking.extension.openModalBtn}</span>
+                    </button>
+                  )
+                )}
               </div>
             </div>
 
@@ -442,13 +580,13 @@ export const BookingDetailPage = () => {
                 <div className="flex justify-between">
                   <span>{T.fields.dailyRate}</span>
                   <span className="font-medium text-slate-800">
-                    {formatPrice(booking.pricePerDayAtBooking || booking.dailyRate || 0)} / ngày
+                    {formatPrice(booking.pricePerDayAtBooking || booking.dailyRate || 0)} / day
                   </span>
                 </div>
 
                 <div className="flex justify-between">
                   <span>
-                    {T.fields.rentalFee} ({booking.totalDays} ngày)
+                    {T.fields.rentalFee} ({booking.totalDays} {booking.totalDays === 1 ? 'day' : 'days'})
                   </span>
                   <span className="font-medium text-slate-800">
                     {formatPrice(booking.rentalFee)}
@@ -532,6 +670,14 @@ export const BookingDetailPage = () => {
         errorMessage={cancelError}
         onConfirm={handleConfirmCancel}
         onClose={handleCloseCancelModal}
+      />
+
+      {/* Rental Extension Modal */}
+      <ExtensionModal
+        isOpen={isExtensionModalOpen}
+        booking={booking}
+        onClose={() => setIsExtensionModalOpen(false)}
+        onSuccess={handleExtensionSuccess}
       />
     </div>
   );

@@ -758,13 +758,13 @@ export const BookingCheckoutPage = () => {
 
       {/* Success Modal */}
       {successBooking && (
-        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-8 shadow-2xl border border-slate-100 flex flex-col items-center text-center animate-in fade-in zoom-in-95 duration-200">
-            <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-4">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-100 flex flex-col items-center text-center animate-in fade-in zoom-in-95 duration-200">
+            <div className="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center mb-4 shadow-xs">
               <CheckCircle2 className="w-9 h-9" />
             </div>
 
-            <h2 className="text-xl font-bold text-slate-800">
+            <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
               {STRINGS.booking.successModal.title}
             </h2>
             <p className="text-xs text-slate-500 mt-1 max-w-md">
@@ -772,19 +772,19 @@ export const BookingCheckoutPage = () => {
             </p>
 
             {/* Booking Code Snippet */}
-            <div className="my-5 p-4 rounded-2xl bg-brand-50/70 border border-brand-200 w-full flex items-center justify-between">
+            <div className="my-5 p-4 rounded-2xl bg-brand-50/70 border border-brand-200/80 w-full flex items-center justify-between">
               <div className="text-left">
-                <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider block">
+                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">
                   {STRINGS.booking.successModal.codePrefix}
                 </span>
                 <span className="text-lg font-black text-brand-800 tracking-wider">
-                  {successBooking.bookingCode}
+                  #{successBooking.bookingCode}
                 </span>
               </div>
               <button
                 type="button"
                 onClick={handleCopyCode}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-brand-300 text-brand-700 text-xs font-semibold hover:bg-brand-100 transition shadow-xs"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white border border-brand-200 text-brand-700 text-xs font-bold hover:bg-brand-50 transition shadow-xs"
               >
                 <Copy className="w-3.5 h-3.5" />
                 <span>
@@ -796,35 +796,35 @@ export const BookingCheckoutPage = () => {
             </div>
 
             {/* Summary Details */}
-            <div className="w-full bg-slate-50 rounded-2xl p-4 text-xs text-slate-600 flex flex-col gap-2.5 mb-6 text-left">
+            <div className="w-full bg-slate-50 rounded-2xl p-4 text-xs text-slate-600 flex flex-col gap-2.5 mb-5 text-left border border-slate-100">
               <div className="flex justify-between">
-                <span>{STRINGS.booking.successModal.deviceInfo}</span>
+                <span className="text-slate-400">{STRINGS.booking.successModal.deviceInfo}</span>
                 <strong className="text-slate-800">{device.title || device.name}</strong>
               </div>
               <div className="flex justify-between">
-                <span>{STRINGS.booking.successModal.durationInfo}</span>
-                <span className="text-slate-800">
+                <span className="text-slate-400">{STRINGS.booking.successModal.durationInfo}</span>
+                <span className="text-slate-800 font-medium">
                   {formatDate(startDate)} ➔ {formatDate(endDate)} ({totalDays} {totalDays === 1 ? 'day' : 'days'})
                 </span>
               </div>
               <div className="flex justify-between">
-                <span>{STRINGS.booking.successModal.totalInfo}</span>
-                <strong className="text-brand-700 font-bold">{formatPrice(totalAmount)}</strong>
+                <span className="text-slate-400">{STRINGS.booking.successModal.totalInfo}</span>
+                <strong className="text-brand-800 font-extrabold text-sm">{formatPrice(totalAmount)}</strong>
               </div>
-              <div className="flex justify-between pt-2 border-t border-slate-200">
+              <div className="flex justify-between items-center pt-2 border-t border-slate-200/60">
                 <span className="text-slate-500">Status:</span>
-                <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-semibold text-[11px]">
+                <span className="px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 font-bold text-[11px]">
                   {STRINGS.booking.successModal.statusPendingBadge}
                 </span>
               </div>
             </div>
 
-            <p className="text-[11px] text-slate-400 mb-6 italic">
+            <p className="text-[11px] text-slate-400 mb-6 italic leading-relaxed">
               {STRINGS.booking.successModal.noticeText}
             </p>
 
             {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-3 w-full">
+            <div className="flex flex-col sm:flex-row gap-2.5 w-full">
               <button
                 type="button"
                 onClick={() =>
@@ -834,22 +834,22 @@ export const BookingCheckoutPage = () => {
                     )
                   )
                 }
-                className="flex-1 py-3 px-4 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-1.5"
+                className="flex-1 py-3 px-4 rounded-full bg-teal-50 hover:bg-teal-500 text-teal-700 hover:text-white border border-teal-200 hover:border-teal-500 font-bold text-xs transition shadow-xs flex items-center justify-center gap-1.5"
               >
-                <MessageSquare className="w-4 h-4" />
-                <span>Nhắn tin với Chủ máy</span>
+                <MessageSquare className="w-3.5 h-3.5" />
+                <span>Chat with Owner</span>
               </button>
               <button
                 type="button"
                 onClick={() => navigate(ROUTES.EXPLORE)}
-                className="flex-1 py-3 px-4 rounded-xl border border-slate-200 text-slate-700 font-bold text-xs hover:bg-slate-100 transition"
+                className="flex-1 py-3 px-4 rounded-full border border-slate-200 text-slate-700 font-bold text-xs hover:bg-slate-100 transition"
               >
                 {STRINGS.booking.successModal.continueExploreBtn}
               </button>
               <button
                 type="button"
                 onClick={() => navigate(successBooking?.bookingCode ? ROUTES.BOOKING_DETAIL_PATH(successBooking.bookingCode) : ROUTES.MY_BOOKINGS)}
-                className="flex-1 py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs shadow-md transition"
+                className="flex-1 py-3 px-4 rounded-full bg-brand-500 hover:bg-brand-600 text-white font-bold text-xs shadow-md shadow-brand-500/20 transition"
               >
                 {STRINGS.booking.successModal.viewMyBookingsBtn}
               </button>

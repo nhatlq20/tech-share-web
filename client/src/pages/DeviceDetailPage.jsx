@@ -257,7 +257,7 @@ export const DeviceDetailPage = () => {
                 className="w-full py-2.5 px-4 rounded-xl font-semibold text-xs border border-slate-200 text-slate-700 hover:bg-slate-50 transition flex items-center justify-center gap-1.5"
               >
                 <MessageSquare className="w-3.5 h-3.5 text-teal-600" />
-                <span>Nhắn tin trao đổi với Chủ thiết bị</span>
+                <span>Chat with Device Owner</span>
               </Link>
 
               {/* Escrow Guarantee */}

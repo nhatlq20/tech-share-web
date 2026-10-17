@@ -863,6 +863,302 @@ export const validatePricing = async (req, res, next) => {
   }
 };
 
+/**
+ * 6. POST /api/bookings/:id/extend
+ * Renter requests an extension of their active / approved rental.
+ */
+export const requestBookingExtension = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const userObjId = getAuthUserObjectId(req);
+
+    if (!userObjId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Please log in to request an extension.',
+      });
+    }
+
+    const days = parseInt(req.body?.days, 10);
+    if (!days || days < 1 || days > 30) {
+      return res.status(400).json({
+        success: false,
+        message: 'Extension days must be between 1 and 30.',
+      });
+    }
+
+    const note = (req.body?.note || '').toString().trim();
+
+    const booking = await Booking.findOne(buildBookingLookup(id))
+      .populate('device', BOOKING_DEVICE_DETAIL_FIELDS)
+      .populate('deviceId', BOOKING_DEVICE_DETAIL_FIELDS);
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: 'Booking not found.',
+      });
+    }
+
+    const isRenter = isSameId(booking.renterId, userObjId) || isSameId(booking.renter, userObjId);
+    if (!isRenter) {
+      return res.status(403).json({
+        success: false,
+        message: 'Only the renter can request an extension for this booking.',
+      });
+    }
+
+    if (!['active', 'approved'].includes(booking.status)) {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot extend booking with status "${booking.status}". Only active rentals can be extended.`,
+      });
+    }
+
+    if (booking.extensionRequest?.status === 'pending') {
+      return res.status(409).json({
+        success: false,
+        message: 'An extension request is already pending owner review.',
+      });
+    }
+
+    const currentEnd = new Date(booking.endDate);
+    const requestedEndDate = new Date(currentEnd.getTime() + days * 24 * 60 * 60 * 1000);
+
+    const rawDevice = booking.device || booking.deviceId;
+    const dailyRate =
+      booking.pricePerDayAtBooking ||
+      booking.dailyRate ||
+      rawDevice?.dailyRate ||
+      rawDevice?.pricePerDay ||
+      0;
+    const additionalFee = dailyRate * days;
+
+    // Check conflict with other bookings during the extension window
+    const rawDevId = rawDevice?._id || booking.device || booking.deviceId;
+    if (rawDevId && mongoose.isValidObjectId(rawDevId)) {
+      const devObjId = new mongoose.Types.ObjectId(String(rawDevId));
+      const conflict = await Booking.findOne({
+        _id: { $ne: booking._id },
+        $or: [{ device: devObjId }, { deviceId: devObjId }],
+        status: { $in: ['pending', 'approved', 'active'] },
+        startDate: { $lt: requestedEndDate },
+        endDate: { $gt: currentEnd },
+      });
+
+      if (conflict) {
+        return res.status(409).json({
+          success: false,
+          message: 'The device is already booked by another user during the requested extension period.',
+        });
+      }
+
+      if (Array.isArray(rawDevice?.blockedDates) && rawDevice.blockedDates.length > 0) {
+        const hasBlockedConflict = rawDevice.blockedDates.some((bDate) => {
+          const bd = new Date(bDate);
+          return bd >= currentEnd && bd <= requestedEndDate;
+        });
+
+        if (hasBlockedConflict) {
+          return res.status(409).json({
+            success: false,
+            message: 'The requested extension period conflicts with owner blocked dates.',
+          });
+        }
+      }
+    }
+
+    const now = new Date();
+    const formattedFee = additionalFee.toLocaleString('vi-VN');
+    const timelineNote = `Requested extension for +${days} ${days === 1 ? 'day' : 'days'} (until ${requestedEndDate.toLocaleDateString('en-US')}), additional fee: ${formattedFee} VND${note ? ` · Note: "${note}"` : ''}`;
+
+    booking.extensionRequest = {
+      requestedEndDate,
+      requestedDays: days,
+      additionalFee,
+      status: 'pending',
+    };
+
+    if (!Array.isArray(booking.timeline)) {
+      booking.timeline = [];
+    }
+
+    booking.timeline.push({
+      status: 'extension_requested',
+      note: timelineNote,
+      timestamp: now,
+      updatedAt: now,
+    });
+
+    await booking.save();
+
+    const populated = await Booking.findById(booking._id)
+      .populate('device', BOOKING_DEVICE_DETAIL_FIELDS)
+      .populate('deviceId', BOOKING_DEVICE_DETAIL_FIELDS)
+      .populate('ownerId', BOOKING_PARTY_FIELDS)
+      .populate('owner', BOOKING_PARTY_FIELDS)
+      .populate('renterId', BOOKING_PARTY_FIELDS)
+      .populate('renter', BOOKING_PARTY_FIELDS)
+      .lean();
+
+    return res.status(200).json({
+      success: true,
+      message: 'Extension request submitted successfully and is pending owner approval.',
+      data: normalizeBookingAliases(populated),
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * 7. PATCH /api/bookings/:id/extension/approve
+ * Owner approves renter's extension request.
+ */
+export const approveBookingExtension = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const userObjId = getAuthUserObjectId(req);
+
+    if (!userObjId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Please log in to perform this action.',
+      });
+    }
+
+    const booking = await Booking.findOne(buildBookingLookup(id));
+    if (!booking) {
+      return res.status(404).json({ success: false, message: 'Booking not found.' });
+    }
+
+    const isOwner = isSameId(booking.ownerId, userObjId) || isSameId(booking.owner, userObjId);
+    if (!isOwner && req.user?.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Only the owner can approve extensions.' });
+    }
+
+    if (booking.extensionRequest?.status !== 'pending') {
+      return res.status(400).json({ success: false, message: 'No pending extension request found for this booking.' });
+    }
+
+    const { requestedEndDate, requestedDays, additionalFee } = booking.extensionRequest;
+    const now = new Date();
+
+    booking.endDate = requestedEndDate;
+    booking.totalDays = (booking.totalDays || 1) + (requestedDays || 0);
+
+    const prevRentalFee = booking.rentalFee ?? booking.pricing?.rentalFee ?? 0;
+    const prevTotalAmount = booking.totalAmount ?? booking.pricing?.totalAmount ?? 0;
+
+    booking.rentalFee = prevRentalFee + (additionalFee || 0);
+    booking.totalAmount = prevTotalAmount + (additionalFee || 0);
+
+    if (booking.pricing) {
+      booking.pricing.rentalFee = (booking.pricing.rentalFee || 0) + (additionalFee || 0);
+      booking.pricing.totalAmount = (booking.pricing.totalAmount || 0) + (additionalFee || 0);
+    }
+
+    booking.extensionRequest.status = 'approved';
+
+    if (!Array.isArray(booking.timeline)) {
+      booking.timeline = [];
+    }
+
+    booking.timeline.push({
+      status: 'approved',
+      note: `Owner approved rental extension for +${requestedDays} ${requestedDays === 1 ? 'day' : 'days'} (new return date: ${new Date(requestedEndDate).toLocaleDateString('en-US')})`,
+      timestamp: now,
+      updatedAt: now,
+    });
+
+    await booking.save();
+
+    const populated = await Booking.findById(booking._id)
+      .populate('device', BOOKING_DEVICE_DETAIL_FIELDS)
+      .populate('deviceId', BOOKING_DEVICE_DETAIL_FIELDS)
+      .populate('ownerId', BOOKING_PARTY_FIELDS)
+      .populate('owner', BOOKING_PARTY_FIELDS)
+      .populate('renterId', BOOKING_PARTY_FIELDS)
+      .populate('renter', BOOKING_PARTY_FIELDS)
+      .lean();
+
+    return res.status(200).json({
+      success: true,
+      message: 'Rental extension approved successfully.',
+      data: normalizeBookingAliases(populated),
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * 8. PATCH /api/bookings/:id/extension/reject
+ * Owner rejects renter's extension request.
+ */
+export const rejectBookingExtension = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const userObjId = getAuthUserObjectId(req);
+
+    if (!userObjId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Please log in to perform this action.',
+      });
+    }
+
+    const reason = (req.body?.reason || '').toString().trim();
+
+    const booking = await Booking.findOne(buildBookingLookup(id));
+    if (!booking) {
+      return res.status(404).json({ success: false, message: 'Booking not found.' });
+    }
+
+    const isOwner = isSameId(booking.ownerId, userObjId) || isSameId(booking.owner, userObjId);
+    if (!isOwner && req.user?.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Only the owner can reject extensions.' });
+    }
+
+    if (booking.extensionRequest?.status !== 'pending') {
+      return res.status(400).json({ success: false, message: 'No pending extension request found for this booking.' });
+    }
+
+    const now = new Date();
+    booking.extensionRequest.status = 'rejected';
+
+    if (!Array.isArray(booking.timeline)) {
+      booking.timeline = [];
+    }
+
+    booking.timeline.push({
+      status: 'rejected',
+      note: `Owner declined rental extension request${reason ? `: ${reason}` : ''}`,
+      timestamp: now,
+      updatedAt: now,
+    });
+
+    await booking.save();
+
+    const populated = await Booking.findById(booking._id)
+      .populate('device', BOOKING_DEVICE_DETAIL_FIELDS)
+      .populate('deviceId', BOOKING_DEVICE_DETAIL_FIELDS)
+      .populate('ownerId', BOOKING_PARTY_FIELDS)
+      .populate('owner', BOOKING_PARTY_FIELDS)
+      .populate('renterId', BOOKING_PARTY_FIELDS)
+      .populate('renter', BOOKING_PARTY_FIELDS)
+      .lean();
+
+    return res.status(200).json({
+      success: true,
+      message: 'Rental extension request rejected.',
+      data: normalizeBookingAliases(populated),
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export default {
   getDeviceAvailability,
   createBooking,
@@ -870,4 +1166,7 @@ export default {
   getBookingById,
   cancelBooking,
   validatePricing,
+  requestBookingExtension,
+  approveBookingExtension,
+  rejectBookingExtension,
 };

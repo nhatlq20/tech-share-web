@@ -20,47 +20,63 @@ import {
 import { connectSocket } from '../../services/socketService.js';
 
 /**
- * Toast Banner hiển thị thông báo thời gian thực nổi ở góc phải
+ * Modern Glassmorphic Toast Notification Banner
  */
 const renderCustomToast = (notification, navigate, dispatch) => {
-  const getIcon = () => {
+  const getTypeTheme = () => {
     switch (notification.type) {
       case 'order':
-        return <Package size={20} className="text-teal-600" />;
+        return {
+          icon: <Package size={18} className="text-teal-600" />,
+          badgeBg: 'bg-teal-50 border-teal-200/80',
+          accent: 'border-l-teal-500',
+          label: 'Order',
+          labelColor: 'text-teal-700 bg-teal-50',
+        };
       case 'reminder':
-        return <Clock size={20} className="text-amber-600" />;
+        return {
+          icon: <Clock size={18} className="text-amber-600" />,
+          badgeBg: 'bg-amber-50 border-amber-200/80',
+          accent: 'border-l-amber-500',
+          label: 'Reminder',
+          labelColor: 'text-amber-700 bg-amber-50',
+        };
       case 'review':
-        return <Star size={20} className="text-yellow-600" />;
+        return {
+          icon: <Star size={18} className="text-yellow-600" />,
+          badgeBg: 'bg-yellow-50 border-yellow-200/80',
+          accent: 'border-l-yellow-500',
+          label: 'Review',
+          labelColor: 'text-yellow-700 bg-yellow-50',
+        };
       case 'promo':
-        return <Tag size={20} className="text-pink-600" />;
+        return {
+          icon: <Tag size={18} className="text-pink-600" />,
+          badgeBg: 'bg-pink-50 border-pink-200/80',
+          accent: 'border-l-pink-500',
+          label: 'Promotion',
+          labelColor: 'text-pink-700 bg-pink-50',
+        };
       case 'system':
       default:
-        return <ShieldAlert size={20} className="text-indigo-600" />;
+        return {
+          icon: <ShieldAlert size={18} className="text-indigo-600" />,
+          badgeBg: 'bg-indigo-50 border-indigo-200/80',
+          accent: 'border-l-indigo-500',
+          label: 'System',
+          labelColor: 'text-indigo-700 bg-indigo-50',
+        };
     }
   };
 
-  const getBgColor = () => {
-    switch (notification.type) {
-      case 'order':
-        return 'bg-teal-50 border-teal-200';
-      case 'reminder':
-        return 'bg-amber-50 border-amber-200';
-      case 'review':
-        return 'bg-yellow-50 border-yellow-200';
-      case 'promo':
-        return 'bg-pink-50 border-pink-200';
-      case 'system':
-      default:
-        return 'bg-indigo-50 border-indigo-200';
-    }
-  };
+  const theme = getTypeTheme();
 
   toast.custom(
     (t) => (
       <div
         className={`${
-          t.visible ? 'animate-enter' : 'animate-leave'
-        } max-w-sm w-full bg-white shadow-xl rounded-2xl pointer-events-auto flex ring-1 ring-black ring-opacity-5 border border-slate-200 overflow-hidden cursor-pointer transition-all hover:scale-[1.02]`}
+          t.visible ? 'animate-in fade-in slide-in-from-top-3' : 'animate-out fade-out slide-out-to-top-2'
+        } max-w-sm w-full bg-white/95 backdrop-blur-xl shadow-2xl rounded-2xl pointer-events-auto border border-slate-200/80 border-l-4 ${theme.accent} overflow-hidden cursor-pointer transition-all duration-200 hover:scale-[1.015] hover:shadow-2xl group`}
         onClick={() => {
           toast.dismiss(t.id);
           dispatch(markNotificationAsRead(notification._id));
@@ -75,32 +91,42 @@ const renderCustomToast = (notification, navigate, dispatch) => {
           }
         }}
       >
-        <div className="flex-1 w-0 p-4">
-          <div className="flex items-start">
-            <div className={`flex-shrink-0 pt-0.5 p-2 rounded-xl border ${getBgColor()}`}>
-              {getIcon()}
+        <div className="p-3.5 sm:p-4 flex items-start gap-3">
+          <div className={`flex-shrink-0 p-2.5 rounded-xl border ${theme.badgeBg} shadow-xs`}>
+            {theme.icon}
+          </div>
+
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <span className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md ${theme.labelColor}`}>
+                {theme.label}
+              </span>
+              <span className="text-[10px] text-slate-400 font-medium">Just now</span>
             </div>
-            <div className="ml-3 flex-1">
-              <p className="text-sm font-bold text-slate-900 leading-snug">
-                {notification.title}
-              </p>
-              <p className="mt-1 text-xs text-slate-600 line-clamp-2 leading-relaxed">
-                {notification.body}
-              </p>
-              <span className="mt-1 inline-block text-[10px] font-semibold text-teal-600">
-                Nhấn để xem chi tiết →
+
+            <p className="text-xs font-bold text-slate-900 leading-snug truncate">
+              {notification.title}
+            </p>
+
+            <p className="mt-1 text-xs text-slate-600 line-clamp-2 leading-relaxed">
+              {notification.body}
+            </p>
+
+            <div className="mt-2 flex items-center justify-between pt-1 border-t border-slate-100">
+              <span className="text-[11px] font-semibold text-teal-600 group-hover:text-teal-700 group-hover:underline flex items-center gap-1">
+                View details &rarr;
               </span>
             </div>
           </div>
-        </div>
-        <div className="flex border-l border-slate-100">
+
           <button
+            type="button"
             onClick={(e) => {
               e.stopPropagation();
               toast.dismiss(t.id);
             }}
-            className="w-full border border-transparent rounded-none rounded-r-2xl p-3 flex items-center justify-center text-xs font-medium text-slate-400 hover:text-slate-600 focus:outline-none"
-            aria-label="Đóng thông báo"
+            className="flex-shrink-0 p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+            aria-label="Dismiss notification"
           >
             <X size={15} />
           </button>
@@ -199,7 +225,7 @@ export const NotificationProvider = ({ children }) => {
         const newNotif = {
           _id: notifId,
           userId: String(currentUserId),
-          title: data.title || 'Thông báo mới',
+          title: data.title || 'New notification',
           body: data.body || '',
           type: data.type || 'system',
           relatedId: data.relatedId || data.metadata?.bookingId,
@@ -255,11 +281,15 @@ export const NotificationProvider = ({ children }) => {
         toastOptions={{
           duration: 4500,
           style: {
-            background: '#ffffff',
+            background: 'rgba(255, 255, 255, 0.95)',
+            backdropFilter: 'blur(12px)',
             color: '#0f172a',
-            borderRadius: '14px',
-            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)',
+            borderRadius: '16px',
+            boxShadow: '0 20px 30px -10px rgba(15, 23, 42, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.05)',
             border: '1px solid #e2e8f0',
+            padding: '12px 16px',
+            fontSize: '13px',
+            fontWeight: 500,
           },
         }}
       />
