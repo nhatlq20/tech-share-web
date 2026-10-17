@@ -16,6 +16,7 @@ export const ROUTES = {
   NEARBY: '/nearby',
   LOGIN: '/login',
   REGISTER: '/register',
+  FORGOT_PASSWORD: '/forgot-password',
   // Admin Hub Routes
   ADMIN: '/admin',
   ADMIN_DASHBOARD: '/admin/dashboard',
