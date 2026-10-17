@@ -7,6 +7,7 @@ import {
   Aperture,
   Headphones,
   Tablet,
+  Gamepad2,
   Watch,
   ChevronLeft,
   ChevronRight,
@@ -35,6 +36,7 @@ const getCategories = () => [
   { id: 'drone', label: STRINGS.home.categories.drone, icon: Aperture },
   { id: 'audio', label: STRINGS.home.categories.audio, icon: Headphones },
   { id: 'tablet', label: STRINGS.home.categories.tablet, icon: Tablet },
+  { id: 'gaming', label: STRINGS.home.categories.gaming, icon: Gamepad2 },
   { id: 'accessory', label: STRINGS.home.categories.accessory, icon: Watch },
 ];
 

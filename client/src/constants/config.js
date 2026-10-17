@@ -54,7 +54,7 @@ export const API_CONFIG = {
 };
 
 export const MAGIC_NUMBERS = {
-  HOME_RECOMMENDATIONS: { INITIAL_PAGE: 1, PAGE_SIZE: 12 },
+  HOME_RECOMMENDATIONS: { INITIAL_PAGE: 1, PAGE_SIZE: 24 },
   // Điểm tín nhiệm Escrow (Trust Score)
   TRUST_SCORE: {
     MAX: 100,

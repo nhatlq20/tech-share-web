@@ -25,6 +25,9 @@ const CATEGORY_LABEL_MAP = {
 };
 
 const CONDITION_LABEL_MAP = {
+  new99: 'Like New (99%)',
+  used95: 'Used (95%)',
+  scratched: 'Scratched',
   new: 'New',
   like_new: 'Like New',
   good: 'Good',
@@ -75,10 +78,11 @@ export const DeviceCard = ({ device }) => {
   const formattedPrice = hasValidPrice ? `${formatPrice(rawPrice)} / day` : 'Contact for price';
 
   // Rating calculation
-  const rawRating = device.rating ?? device.ratingAvg;
+  const rawRating = device.stats?.ratingAvg ?? device.rating ?? device.ratingAvg;
   const hasValidRating = typeof rawRating === 'number' && !Number.isNaN(rawRating) && rawRating > 0;
   const ratingDisplay = hasValidRating ? rawRating.toFixed(1) : null;
-  const reviewCount = typeof device.reviewCount === 'number' ? device.reviewCount : 0;
+  const rawReviewCount = device.stats?.ratingCount ?? device.reviewCount ?? device.ratingCount;
+  const reviewCount = typeof rawReviewCount === 'number' ? rawReviewCount : 0;
 
   // Image URL
   const imageUrl = Array.isArray(device.images) && device.images.length > 0 ? device.images[0] : null;

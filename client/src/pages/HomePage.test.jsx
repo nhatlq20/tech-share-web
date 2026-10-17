@@ -49,10 +49,32 @@ test('first visit prompts, persists browser location, then renders recommended d
   expect(deviceService.getRecommendedDevices).not.toHaveBeenCalled();
   await allow();
   expect(JSON.parse(localStorage.getItem(LOCATION_CACHE_KEY))).toEqual(cached({ timestamp: expect.any(Number) }));
-  expect(deviceService.getRecommendedDevices).toHaveBeenCalledWith({ lat: 21.0285, lng: 105.8542, page: 1, limit: 12 });
+  expect(deviceService.getRecommendedDevices).toHaveBeenCalledWith({ lat: 21.0285, lng: 105.8542, page: 1, limit: 24 });
   expect(container.querySelectorAll('article')).toHaveLength(1);
   expect(deviceService.getNearbyDevices).not.toHaveBeenCalled();
   expect(deviceService.getDevices).not.toHaveBeenCalled();
+});
+
+test('renders migrated device fields including nested ratings and condition', async () => {
+  save();
+  deviceService.getRecommendedDevices.mockResolvedValue({ data: [{
+    _id: 'migrated', name: 'Migrated camera', pricePerDay: 450000,
+    condition: 'new99', stats: { ratingAvg: 4.9, ratingCount: 24 },
+  }] });
+  await mount();
+  expect(container.textContent).toContain('Migrated camera');
+  expect(container.querySelector('.device-card-price').textContent).not.toContain('Contact for price');
+  expect(container.querySelector('[aria-label="Rating: 4.9"]')).not.toBeNull();
+  expect(container.querySelector('.device-card-reviews-count').textContent).toBe('(24)');
+  expect(container.querySelector('.device-card-condition-badge').textContent).toBe('Like New (99%)');
+});
+
+test.each([['Tablets', 'tablet'], ['Gaming & VR', 'gaming']])('Home supports %s from the migrated database', async (label, category) => {
+  save(); await mount();
+  await click(label);
+  expect(deviceService.getRecommendedDevices).toHaveBeenLastCalledWith({
+    lat: 21.0285, lng: 105.8542, page: 1, limit: 24, category,
+  });
 });
 
 test.each(['prompt', 'denied'])('%s + cache renders without requesting browser position', async state => {
@@ -97,7 +119,7 @@ test('granted + cache starts immediately and significant Hanoi to Can Tho moveme
   deviceService.getRecommendedDevices.mockResolvedValue(result('Can Tho device'));
   await allow({ latitude: 10.0452, longitude: 105.7469 });
   expect(deviceService.getRecommendedDevices).toHaveBeenCalledTimes(2);
-  expect(deviceService.getRecommendedDevices).toHaveBeenLastCalledWith({ lat: 10.0452, lng: 105.7469, page: 1, limit: 12 });
+  expect(deviceService.getRecommendedDevices).toHaveBeenLastCalledWith({ lat: 10.0452, lng: 105.7469, page: 1, limit: 24 });
   expect(JSON.parse(localStorage.getItem(LOCATION_CACHE_KEY)).latitude).toBe(10.0452);
   expect(container.textContent).toContain('Can Tho device');
 });
@@ -225,28 +247,28 @@ test('background deadline preserves rendered devices', async () => {
   expect(container.textContent).not.toContain('Unable to determine your location.');
 });
 
-const pagedResult = (page, total = 30) => ({
-  data: Array.from({ length: Math.max(0, Math.min(12, total - (page - 1) * 12)) }, (_, index) => ({
-    _id: `device-${(page - 1) * 12 + index}`, name: `Device ${(page - 1) * 12 + index}`,
+const pagedResult = (page, total = 54) => ({
+  data: Array.from({ length: Math.max(0, Math.min(24, total - (page - 1) * 24)) }, (_, index) => ({
+    _id: `device-${(page - 1) * 24 + index}`, name: `Device ${(page - 1) * 24 + index}`,
   })),
-  pagination: { page, limit: 12, total, totalPages: Math.max(1, Math.ceil(total / 12)) },
+  pagination: { page, limit: 24, total, totalPages: Math.max(1, Math.ceil(total / 24)) },
 });
 const pageButton = number => container.querySelector(`button[aria-label="Page ${number}"]`);
 const goToPage = async number => { await act(async () => pageButton(number).click()); };
 
-test('30 devices paginate 12 / 12 / 6 and support returning to the previous page', async () => {
+test('54 devices paginate 24 / 24 / 6 and support returning to the previous page', async () => {
   save(); deviceService.getRecommendedDevices.mockImplementation(({ page }) => Promise.resolve(pagedResult(page)));
   await mount();
-  expect(container.querySelectorAll('article')).toHaveLength(12);
+  expect(container.querySelectorAll('article')).toHaveLength(24);
   expect(container.textContent).toContain('Page 1 / 3');
   expect([...container.querySelectorAll('button')].find(b => b.textContent.includes('Previous')).disabled).toBe(true);
   await click('Next');
-  expect(deviceService.getRecommendedDevices).toHaveBeenLastCalledWith({ lat: 21.0285, lng: 105.8542, page: 2, limit: 12 });
-  expect(container.querySelectorAll('article')).toHaveLength(12);
-  expect(container.querySelector('article').textContent).toContain('Device 12');
+  expect(deviceService.getRecommendedDevices).toHaveBeenLastCalledWith({ lat: 21.0285, lng: 105.8542, page: 2, limit: 24 });
+  expect(container.querySelectorAll('article')).toHaveLength(24);
+  expect(container.querySelector('article').textContent).toContain('Device 24');
   await goToPage(3);
   expect(container.querySelectorAll('article')).toHaveLength(6);
-  expect(container.querySelector('article').textContent).toContain('Device 24');
+  expect(container.querySelector('article').textContent).toContain('Device 48');
   expect([...container.querySelectorAll('button')].find(b => b.textContent.includes('Next')).disabled).toBe(true);
   await click('Previous');
   expect(pageButton(2).getAttribute('aria-current')).toBe('page');
@@ -265,8 +287,8 @@ test('page failure retries that same page', async () => {
   await mount(); await click('Next');
   expect(container.textContent).toContain('Unable to load recommended devices.');
   await click('Try Again');
-  expect(deviceService.getRecommendedDevices).toHaveBeenLastCalledWith({ lat: 21.0285, lng: 105.8542, page: 2, limit: 12 });
-  expect(container.querySelector('article').textContent).toContain('Device 12');
+  expect(deviceService.getRecommendedDevices).toHaveBeenLastCalledWith({ lat: 21.0285, lng: 105.8542, page: 2, limit: 24 });
+  expect(container.querySelector('article').textContent).toContain('Device 24');
 });
 
 test('location update resets page 1 without requesting page 2 at the new coordinates', async () => {
@@ -274,7 +296,7 @@ test('location update resets page 1 without requesting page 2 at the new coordin
   await mount(); await goToPage(2); await click('Update location');
   await allow({ latitude: 10.0452, longitude: 105.7469 });
   expect(deviceService.getRecommendedDevices).toHaveBeenCalledTimes(3);
-  expect(deviceService.getRecommendedDevices).toHaveBeenLastCalledWith({ lat: 10.0452, lng: 105.7469, page: 1, limit: 12 });
+  expect(deviceService.getRecommendedDevices).toHaveBeenLastCalledWith({ lat: 10.0452, lng: 105.7469, page: 1, limit: 24 });
   expect(pageButton(1).getAttribute('aria-current')).toBe('page');
 });
 
@@ -282,7 +304,7 @@ test('late page response cannot overwrite new location results', async () => {
   save(); let resolvePage;
   deviceService.getRecommendedDevices.mockResolvedValueOnce(pagedResult(1))
     .mockImplementationOnce(() => new Promise(resolve => { resolvePage = resolve; }))
-    .mockResolvedValueOnce({ ...pagedResult(1, 14), data: [{ _id: 'new', name: 'New location device' }] });
+    .mockResolvedValueOnce({ ...pagedResult(1, 26), data: [{ _id: 'new', name: 'New location device' }] });
   await mount(); await goToPage(2);
   expect(pageButton(3).disabled).toBe(true);
   await click('Update location'); await allow({ latitude: 10.0452, longitude: 105.7469 });
@@ -294,9 +316,9 @@ test('late page response cannot overwrite new location results', async () => {
 
 test('deleted final page redirects to the last remaining page', async () => {
   save(); deviceService.getRecommendedDevices.mockResolvedValueOnce(pagedResult(1))
-    .mockResolvedValueOnce(pagedResult(3, 20)).mockResolvedValueOnce(pagedResult(2, 20));
+    .mockResolvedValueOnce(pagedResult(3, 32)).mockResolvedValueOnce(pagedResult(2, 32));
   await mount(); await goToPage(3);
-  expect(deviceService.getRecommendedDevices).toHaveBeenLastCalledWith({ lat: 21.0285, lng: 105.8542, page: 2, limit: 12 });
+  expect(deviceService.getRecommendedDevices).toHaveBeenLastCalledWith({ lat: 21.0285, lng: 105.8542, page: 2, limit: 24 });
   expect(container.querySelectorAll('article')).toHaveLength(8);
   expect(pageButton(2).getAttribute('aria-current')).toBe('page');
 });
@@ -425,7 +447,7 @@ test('Cameras filters recommendations and resets pagination without fetching GPS
   await mount(); await goToPage(2);
   deviceService.getRecommendedDevices.mockResolvedValue({ ...pagedResult(1, 1), data: [{ _id: 'camera', name: 'Camera result' }] });
   await click('Cameras');
-  expect(deviceService.getRecommendedDevices).toHaveBeenLastCalledWith({ lat: 21.0285, lng: 105.8542, category: 'camera', page: 1, limit: 12 });
+  expect(deviceService.getRecommendedDevices).toHaveBeenLastCalledWith({ lat: 21.0285, lng: 105.8542, category: 'camera', page: 1, limit: 24 });
   expect(deviceService.getRecommendedDevices).toHaveBeenCalledTimes(3);
   expect(navigator.geolocation.getCurrentPosition).not.toHaveBeenCalled();
   expect(container.querySelectorAll('article')).toHaveLength(1);
@@ -440,7 +462,7 @@ test('All clears the category and clicking the selected category makes no duplic
   expect(deviceService.getRecommendedDevices).toHaveBeenCalledTimes(2);
   const all = [...container.querySelectorAll('button')].find(b => b.textContent === 'All');
   await act(async () => all.click());
-  expect(deviceService.getRecommendedDevices).toHaveBeenLastCalledWith({ lat: 21.0285, lng: 105.8542, page: 1, limit: 12 });
+  expect(deviceService.getRecommendedDevices).toHaveBeenLastCalledWith({ lat: 21.0285, lng: 105.8542, page: 1, limit: 24 });
 });
 
 test('rapid category changes ignore older category responses', async () => {
@@ -457,9 +479,9 @@ test('rapid category changes ignore older category responses', async () => {
 test('pagination and location refresh retain selected category', async () => {
   save(); deviceService.getRecommendedDevices.mockImplementation(({ page }) => Promise.resolve(pagedResult(page)));
   await mount(); await click('Cameras'); await goToPage(2);
-  expect(deviceService.getRecommendedDevices).toHaveBeenLastCalledWith({ lat: 21.0285, lng: 105.8542, category: 'camera', page: 2, limit: 12 });
+  expect(deviceService.getRecommendedDevices).toHaveBeenLastCalledWith({ lat: 21.0285, lng: 105.8542, category: 'camera', page: 2, limit: 24 });
   await click('Update location'); await allow({ latitude: 10.0452, longitude: 105.7469 });
-  expect(deviceService.getRecommendedDevices).toHaveBeenLastCalledWith({ lat: 10.0452, lng: 105.7469, category: 'camera', page: 1, limit: 12 });
+  expect(deviceService.getRecommendedDevices).toHaveBeenLastCalledWith({ lat: 10.0452, lng: 105.7469, category: 'camera', page: 1, limit: 24 });
 });
 
 test('category selected before GPS success is used for the first request', async () => {
@@ -467,14 +489,14 @@ test('category selected before GPS success is used for the first request', async
   expect(deviceService.getRecommendedDevices).not.toHaveBeenCalled();
   await allow();
   expect(deviceService.getRecommendedDevices).toHaveBeenCalledTimes(1);
-  expect(deviceService.getRecommendedDevices).toHaveBeenCalledWith({ lat: 21.0285, lng: 105.8542, category: 'camera', page: 1, limit: 12 });
+  expect(deviceService.getRecommendedDevices).toHaveBeenCalledWith({ lat: 21.0285, lng: 105.8542, category: 'camera', page: 1, limit: 24 });
 });
 
 test('category errors can retry and empty category results use the existing empty state', async () => {
   save(); deviceService.getRecommendedDevices.mockResolvedValueOnce(result())
     .mockRejectedValueOnce(new Error('API error')).mockResolvedValueOnce({ data: [], pagination: { total: 0 } });
   await mount(); await click('Cameras'); await click('Try Again');
-  expect(deviceService.getRecommendedDevices).toHaveBeenLastCalledWith({ lat: 21.0285, lng: 105.8542, category: 'camera', page: 1, limit: 12 });
+  expect(deviceService.getRecommendedDevices).toHaveBeenLastCalledWith({ lat: 21.0285, lng: 105.8542, category: 'camera', page: 1, limit: 24 });
   expect(container.textContent).toContain('No recommended devices found.');
   expect(container.querySelectorAll('article')).toHaveLength(0);
 });

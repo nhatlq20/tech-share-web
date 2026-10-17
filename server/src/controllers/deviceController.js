@@ -14,7 +14,7 @@ const getDevicesCollection = () => {
 };
 
 const RECOMMENDATION_DEFAULT_PAGE = 1;
-const RECOMMENDATION_PAGE_SIZE = 12;
+const RECOMMENDATION_PAGE_SIZE = 24;
 const HOME_RECOMMENDATION_MAX_DISTANCE_METERS = 100000;
 const NEARBY_MAX_DISTANCE_METERS = 10000;
 const MAX_LATITUDE = 90;
@@ -70,6 +70,7 @@ export const getRecommendedDevices = async (req, res, next) => {
     }
     const deviceFilter = {
       status: "available",
+      moderationStatus: "approved",
       isDeleted: { $ne: true },
       "location.type": "Point",
       "location.coordinates": { $size: 2 },
@@ -102,7 +103,7 @@ export const getRecommendedDevices = async (req, res, next) => {
         {
           $set: {
             _recommendationRating: {
-              $ifNull: ["$rating", { $ifNull: ["$ratingAvg", 0] }],
+              $ifNull: ["$stats.ratingAvg", { $ifNull: ["$rating", { $ifNull: ["$ratingAvg", 0] }] }],
             },
           },
         },
