@@ -41,6 +41,8 @@ const formatDisplayDate = (dateStr) => {
 export const WebDatePicker = ({
   startDate,
   endDate,
+  pickupTime = '09:00',
+  returnTime = '18:00',
   onChange,
   disabledDates = [],
   bookedRanges = [],
@@ -155,6 +157,8 @@ export const WebDatePicker = ({
       onChange({
         startDate: dateKey,
         endDate: null,
+        pickupTime,
+        returnTime,
         totalDays: MAGIC_NUMBERS.BOOKING.MIN_RENTAL_DAYS,
       });
       return;
@@ -167,6 +171,8 @@ export const WebDatePicker = ({
         onChange({
           startDate: dateKey,
           endDate: null,
+          pickupTime,
+          returnTime,
           totalDays: MAGIC_NUMBERS.BOOKING.MIN_RENTAL_DAYS,
         });
         return;
@@ -189,6 +195,8 @@ export const WebDatePicker = ({
       onChange({
         startDate: startKey,
         endDate: dateKey,
+        pickupTime,
+        returnTime,
         totalDays: diffDays,
       });
     }
@@ -202,6 +210,8 @@ export const WebDatePicker = ({
     onChange({
       startDate: null,
       endDate: null,
+      pickupTime: '09:00',
+      returnTime: '18:00',
       totalDays: 0,
     });
   };
@@ -238,11 +248,33 @@ export const WebDatePicker = ({
       onChange({
         startDate: foundStartKey,
         endDate: foundEndKey,
+        pickupTime,
+        returnTime,
         totalDays: daysCount,
       });
     } else {
       setErrorMessage(STRINGS.booking.datePicker.conflictAlert);
     }
+  };
+
+  const handlePickupTimeChange = (newTime) => {
+    onChange({
+      startDate: startKey || null,
+      endDate: endKey || null,
+      pickupTime: newTime,
+      returnTime: returnTime || '18:00',
+      totalDays: totalSelectedDays || 1,
+    });
+  };
+
+  const handleReturnTimeChange = (newTime) => {
+    onChange({
+      startDate: startKey || null,
+      endDate: endKey || null,
+      pickupTime: pickupTime || '09:00',
+      returnTime: newTime,
+      totalDays: totalSelectedDays || 1,
+    });
   };
 
   // Compute cell classes for rendering
@@ -436,6 +468,97 @@ export const WebDatePicker = ({
         </div>
       )}
 
+      {/* Time Selection Section */}
+      <div className="mt-5 pt-4 border-t border-slate-100">
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+            <Clock className="w-4 h-4 text-brand-500" />
+            <span>{STRINGS.booking.datePicker.timeSelectTitle || 'Handover & Return Time'}</span>
+          </span>
+          <span className="text-[11px] text-slate-400">
+            {STRINGS.booking.datePicker.timeSelectDesc || 'Specify preferred pickup and return times'}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* Pickup Time */}
+          <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-brand-500" />
+                <span>{STRINGS.booking.datePicker.pickupTimeLabel || 'Pickup Time'}</span>
+              </label>
+              <span className="text-[11px] font-medium text-brand-600">
+                {startKey ? formatDisplayDate(startKey) : ''}
+              </span>
+            </div>
+            <div className="relative">
+              <input
+                type="time"
+                value={pickupTime || '09:00'}
+                onChange={(e) => handlePickupTimeChange(e.target.value)}
+                className="w-full px-3 py-2 text-xs font-bold text-slate-800 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition cursor-pointer"
+              />
+            </div>
+            {/* Quick time pills */}
+            <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+              {['08:00', '09:00', '10:00', '14:00'].map((t) => (
+                <button
+                  key={`p-${t}`}
+                  type="button"
+                  onClick={() => handlePickupTimeChange(t)}
+                  className={`px-2 py-0.5 rounded text-[10px] font-medium transition ${
+                    pickupTime === t
+                      ? 'bg-brand-500 text-white font-bold'
+                      : 'bg-white text-slate-600 hover:bg-slate-200/80 border border-slate-200'
+                  }`}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Return Time */}
+          <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-amber-500" />
+                <span>{STRINGS.booking.datePicker.returnTimeLabel || 'Return Time'}</span>
+              </label>
+              <span className="text-[11px] font-medium text-amber-600">
+                {endKey ? formatDisplayDate(endKey) : (startKey ? formatDisplayDate(startKey) : '')}
+              </span>
+            </div>
+            <div className="relative">
+              <input
+                type="time"
+                value={returnTime || '18:00'}
+                onChange={(e) => handleReturnTimeChange(e.target.value)}
+                className="w-full px-3 py-2 text-xs font-bold text-slate-800 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition cursor-pointer"
+              />
+            </div>
+            {/* Quick time pills */}
+            <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+              {['12:00', '17:00', '18:00', '20:00'].map((t) => (
+                <button
+                  key={`r-${t}`}
+                  type="button"
+                  onClick={() => handleReturnTimeChange(t)}
+                  className={`px-2 py-0.5 rounded text-[10px] font-medium transition ${
+                    returnTime === t
+                      ? 'bg-brand-500 text-white font-bold'
+                      : 'bg-white text-slate-600 hover:bg-slate-200/80 border border-slate-200'
+                  }`}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Legend & Selected Duration Summary Bar */}
       <div className="mt-5 pt-4 border-t border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-3">
         {/* Legend */}
@@ -460,11 +583,13 @@ export const WebDatePicker = ({
           {startKey ? (
             <span>
               {STRINGS.booking.datePicker.startDateLabel}:{' '}
-              <strong>{formatDisplayDate(startKey)}</strong>
+              <strong>{formatDisplayDate(startKey)}</strong>{' '}
+              <span className="text-slate-500 font-medium">({pickupTime || '09:00'})</span>
               {endKey ? (
                 <>
                   {' '}➔ {STRINGS.booking.datePicker.endDateLabel}:{' '}
-                  <strong>{formatDisplayDate(endKey)}</strong> (
+                  <strong>{formatDisplayDate(endKey)}</strong>{' '}
+                  <span className="text-slate-500 font-medium">({returnTime || '18:00'})</span> (
                   <strong className="text-brand-600">
                     {totalSelectedDays} {STRINGS.booking.datePicker.totalDaysSuffix}
                   </strong>

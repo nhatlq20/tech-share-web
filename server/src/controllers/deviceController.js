@@ -357,9 +357,10 @@ export const getDeviceById = async (req, res, next) => {
 
     let device = null;
     if (mongoose.isValidObjectId(id)) {
-      device = await Device.findOne({ _id: id, isDeleted: { $ne: true } }).lean(
-        { virtuals: true },
-      );
+      device = await Device.findOne({ _id: id, isDeleted: { $ne: true } })
+        .populate("ownerId", "name email phone avatar address location")
+        .populate("owner", "name email phone avatar address location")
+        .lean({ virtuals: true });
     }
 
     if (!device) {

@@ -12,6 +12,8 @@ import {
   Copy,
   ArrowLeft,
   MessageSquare,
+  Truck,
+  Store,
 } from 'lucide-react';
 import { STRINGS } from '../../constants/strings.js';
 import { API_CONFIG, MAGIC_NUMBERS } from '../../constants/config.js';
@@ -39,12 +41,24 @@ export const BookingCheckoutPage = () => {
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
   const [totalDays, setTotalDays] = useState(1);
+  const [pickupTime, setPickupTime] = useState('09:00');
+  const [returnTime, setReturnTime] = useState('18:00');
 
+  const [deliveryMethod, setDeliveryMethod] = useState('delivery');
   const [recipientName, setRecipientName] = useState(user?.name || '');
   const [phone, setPhone] = useState(user?.phone || '');
   const [address, setAddress] = useState(user?.address || '');
   const [note, setNote] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('escrow');
+
+  // Sync profile data when user is loaded asynchronously
+  useEffect(() => {
+    if (user) {
+      setRecipientName((prev) => prev || user.name || '');
+      setPhone((prev) => prev || user.phone || '');
+      setAddress((prev) => prev || user.address || '');
+    }
+  }, [user]);
 
   const [agreedTerms, setAgreedTerms] = useState(true);
   const [pledgedCondition, setPledgedCondition] = useState(true);
@@ -130,25 +144,36 @@ export const BookingCheckoutPage = () => {
   const totalAmount = finalRentalFee + depositValue;
 
   // Handle Date Selection Change
-  const handleDateChange = useCallback(({ startDate: start, endDate: end, totalDays: days }) => {
+  const handleDateChange = useCallback(({ startDate: start, endDate: end, totalDays: days, pickupTime: pTime, returnTime: rTime }) => {
     setStartDate(start);
     setEndDate(end);
     setTotalDays(days || 1);
+    if (pTime) setPickupTime(pTime);
+    if (rTime) setReturnTime(rTime);
     setFormError(null);
   }, []);
 
+  const ownerPickupAddress =
+    device?.address ||
+    device?.location?.addressText ||
+    device?.ownerId?.address ||
+    device?.owner?.address ||
+    STRINGS.booking.delivery.methods?.pickup?.noAddress ||
+    'Owner address pending confirmation';
+
   // Form Validation
   const canSubmit = useMemo(() => {
+    const isAddressValid = deliveryMethod === 'pickup' ? true : address.trim().length > 0;
     return (
       Boolean(startDate) &&
       Boolean(endDate) &&
       recipientName.trim().length > 0 &&
       phone.trim().length >= 10 &&
-      address.trim().length > 0 &&
+      isAddressValid &&
       agreedTerms &&
       pledgedCondition
     );
-  }, [startDate, endDate, recipientName, phone, address, agreedTerms, pledgedCondition]);
+  }, [startDate, endDate, recipientName, phone, address, deliveryMethod, agreedTerms, pledgedCondition]);
 
   // Handle Order Submit
   const handleSubmitBooking = async () => {
@@ -172,7 +197,7 @@ export const BookingCheckoutPage = () => {
       return;
     }
 
-    if (!address.trim()) {
+    if (deliveryMethod === 'delivery' && !address.trim()) {
       setFormError(STRINGS.booking.validation.missingAddress);
       window.scrollTo({ top: 400, behavior: 'smooth' });
       return;
@@ -187,16 +212,33 @@ export const BookingCheckoutPage = () => {
     try {
       setIsSubmitting(true);
 
+      const effectiveAddress = deliveryMethod === 'pickup' ? ownerPickupAddress : address.trim();
+
+      // Combine date string (YYYY-MM-DD) with chosen time (HH:mm)
+      const buildIsoDateTime = (dateStr, timeStr, fallbackTime) => {
+        if (!dateStr) return null;
+        const time = timeStr || fallbackTime || '09:00';
+        const [year, month, day] = dateStr.split('-').map(Number);
+        const [hours, minutes] = time.split(':').map(Number);
+        const d = new Date(year, month - 1, day, hours || 0, minutes || 0, 0, 0);
+        return d.toISOString();
+      };
+
+      const startDateTime = buildIsoDateTime(startDate, pickupTime, '09:00');
+      const endDateTime = buildIsoDateTime(endDate || startDate, returnTime, '18:00');
+
       const payload = {
         deviceId: currentDeviceId,
         renterId: user?._id || user?.id || null,
-        startDate,
-        endDate,
-        deliveryMethod: 'delivery',
+        startDate: startDateTime,
+        endDate: endDateTime,
+        pickupTime,
+        returnTime,
+        deliveryMethod,
         deliveryAddress: {
           recipientName: recipientName.trim(),
           phone: phone.trim(),
-          address: address.trim(),
+          address: effectiveAddress,
         },
         renterInfo: {
           name: recipientName.trim(),
@@ -340,15 +382,17 @@ export const BookingCheckoutPage = () => {
             <WebDatePicker
               startDate={startDate}
               endDate={endDate}
+              pickupTime={pickupTime}
+              returnTime={returnTime}
               onChange={handleDateChange}
               disabledDates={disabledDates}
               bookedRanges={bookedRanges}
             />
 
-            {/* Section 2: Delivery & Renter Information */}
+            {/* Section 2: Handover & Delivery Details */}
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
               <div className="flex items-center gap-2 pb-4 border-b border-slate-100 mb-5">
-                <User className="w-5 h-5 text-brand-500" />
+                <Truck className="w-5 h-5 text-brand-500" />
                 <div>
                   <h2 className="text-base font-bold text-slate-800">
                     {STRINGS.booking.delivery.title}
@@ -359,7 +403,138 @@ export const BookingCheckoutPage = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Delivery Method Selector (Self Pickup vs Doorstep Delivery) */}
+              <div className="mb-6">
+                <label className="block text-xs font-semibold text-slate-700 mb-2">
+                  {STRINGS.booking.delivery.methodLabel}
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Option 1: Self Pickup */}
+                  <button
+                    type="button"
+                    onClick={() => setDeliveryMethod('pickup')}
+                    className={`flex items-start gap-3 p-4 rounded-xl border text-left transition-all duration-200 ${
+                      deliveryMethod === 'pickup'
+                        ? 'border-brand-500 bg-brand-50/50 ring-2 ring-brand-500/20 shadow-sm'
+                        : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50/60'
+                    }`}
+                  >
+                    <div
+                      className={`p-2.5 rounded-lg flex-shrink-0 ${
+                        deliveryMethod === 'pickup'
+                          ? 'bg-brand-500 text-white'
+                          : 'bg-slate-100 text-slate-500'
+                      }`}
+                    >
+                      <Store className="w-5 h-5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-slate-900">
+                          {STRINGS.booking.delivery.methods?.pickup?.title || 'Self Pickup'}
+                        </span>
+                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">
+                          {STRINGS.booking.delivery.methods?.pickup?.badge || 'Free'}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 mt-1 leading-snug">
+                        {STRINGS.booking.delivery.methods?.pickup?.desc}
+                      </p>
+                    </div>
+                  </button>
+
+                  {/* Option 2: Doorstep Delivery */}
+                  <button
+                    type="button"
+                    onClick={() => setDeliveryMethod('delivery')}
+                    className={`flex items-start gap-3 p-4 rounded-xl border text-left transition-all duration-200 ${
+                      deliveryMethod === 'delivery'
+                        ? 'border-brand-500 bg-brand-50/50 ring-2 ring-brand-500/20 shadow-sm'
+                        : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50/60'
+                    }`}
+                  >
+                    <div
+                      className={`p-2.5 rounded-lg flex-shrink-0 ${
+                        deliveryMethod === 'delivery'
+                          ? 'bg-brand-500 text-white'
+                          : 'bg-slate-100 text-slate-500'
+                      }`}
+                    >
+                      <Truck className="w-5 h-5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-slate-900">
+                          {STRINGS.booking.delivery.methods?.delivery?.title || 'Doorstep Delivery'}
+                        </span>
+                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-brand-50 text-brand-700 border border-brand-100">
+                          {STRINGS.booking.delivery.methods?.delivery?.badge || 'Convenient'}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 mt-1 leading-snug">
+                        {STRINGS.booking.delivery.methods?.delivery?.desc}
+                      </p>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              {/* Dynamic Address Presentation */}
+              <div className="mb-4">
+                {deliveryMethod === 'pickup' ? (
+                  /* Self Pickup: Display Owner's device pickup address */
+                  <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 rounded-lg bg-white border border-slate-200 text-brand-600 flex-shrink-0 mt-0.5">
+                        <MapPin className="w-4 h-4" />
+                      </div>
+                      <div className="flex-1">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block">
+                          {STRINGS.booking.delivery.methods?.pickup?.locationLabel || 'Owner Device Pickup Address'}
+                        </span>
+                        <p className="text-xs font-bold text-slate-900 mt-1">
+                          {ownerPickupAddress}
+                        </p>
+                        <p className="text-[11px] text-slate-500 mt-1.5 flex items-center gap-1">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
+                          <span>
+                            {STRINGS.booking.delivery.methods?.pickup?.locationNote ||
+                              'Please arrive at this address at the agreed time to inspect and receive the device.'}
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  /* Doorstep Delivery: Take renter address from profile and allow editing */
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-xs font-semibold text-slate-700">
+                        {STRINGS.booking.delivery.methods?.delivery?.addressLabel || STRINGS.booking.delivery.addressLabel}
+                      </label>
+                      <span className="text-[11px] text-slate-400">
+                        {STRINGS.booking.delivery.methods?.delivery?.helperText}
+                      </span>
+                    </div>
+                    <div className="relative">
+                      <MapPin className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                      <input
+                        type="text"
+                        value={address}
+                        onChange={(e) => setAddress(e.target.value)}
+                        placeholder={
+                          STRINGS.booking.delivery.methods?.delivery?.addressPlaceholder ||
+                          STRINGS.booking.delivery.addressPlaceholder
+                        }
+                        className="w-full pl-10 pr-3.5 py-2.5 text-xs font-medium rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition"
+                        required
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                 {/* Recipient Name */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1.5">
@@ -390,24 +565,6 @@ export const BookingCheckoutPage = () => {
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       placeholder={STRINGS.booking.delivery.phonePlaceholder}
-                      className="w-full pl-10 pr-3.5 py-2.5 text-xs font-medium rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition"
-                      required
-                    />
-                  </div>
-                </div>
-
-                {/* Delivery Address */}
-                <div className="md:col-span-2">
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                    {STRINGS.booking.delivery.addressLabel}
-                  </label>
-                  <div className="relative">
-                    <MapPin className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
-                    <input
-                      type="text"
-                      value={address}
-                      onChange={(e) => setAddress(e.target.value)}
-                      placeholder={STRINGS.booking.delivery.addressPlaceholder}
                       className="w-full pl-10 pr-3.5 py-2.5 text-xs font-medium rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition"
                       required
                     />

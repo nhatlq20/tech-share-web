@@ -21,10 +21,10 @@ const CANCEL_REASON_MAX_LENGTH = 300;
 const CANCELLABLE_STATUS = 'pending';
 
 const BOOKING_DEVICE_LIST_FIELDS =
-  'title name brand category images dailyRate pricePerDay depositValue address';
+  'title name brand category images dailyRate pricePerDay depositValue depositAmount address location stats';
 const BOOKING_DEVICE_DETAIL_FIELDS =
-  'title name brand category images dailyRate pricePerDay depositValue address specs condition';
-const BOOKING_PARTY_FIELDS = 'name email phone avatar rating totalReviews isVerified';
+  'title name brand category images dailyRate pricePerDay depositValue depositAmount address location specs condition stats';
+const BOOKING_PARTY_FIELDS = 'name email phone avatar rating totalReviews isVerified address';
 
 /**
  * Resolve the authenticated user's ObjectId from the JWT payload set by `protect`.
@@ -49,10 +49,23 @@ const isSameId = (a, b) => Boolean(a && b) && String(a._id || a) === String(b._i
 
 /**
  * Normalize alias fields (device/deviceId, renter/renterId, owner/ownerId) on lean documents.
+ * Flattens pricing, delivery, handover, and statusReason into root fields for 100% compatibility.
  */
 const normalizeBookingAliases = (booking) => {
   if (!booking) return booking;
-  const device = booking.device || booking.deviceId || null;
+
+  const rawDevice = booking.device || booking.deviceId || null;
+  const device = rawDevice && typeof rawDevice === 'object' ? {
+    ...rawDevice,
+    title: rawDevice.title || rawDevice.name || '',
+    name: rawDevice.name || rawDevice.title || '',
+    address: rawDevice.address || rawDevice.location?.addressText || '',
+    dailyRate: rawDevice.dailyRate ?? rawDevice.pricePerDay ?? 0,
+    pricePerDay: rawDevice.pricePerDay ?? rawDevice.dailyRate ?? 0,
+    depositValue: rawDevice.depositValue ?? rawDevice.depositAmount ?? 0,
+    depositAmount: rawDevice.depositAmount ?? rawDevice.depositValue ?? 0,
+  } : rawDevice;
+
   const resolveParty = (a, b) => {
     if (a && typeof a === 'object' && (a.name || a.email || a._id)) return a;
     if (b && typeof b === 'object' && (b.name || b.email || b._id)) return b;
@@ -60,6 +73,83 @@ const normalizeBookingAliases = (booking) => {
   };
   const owner = resolveParty(booking.owner, booking.ownerId);
   const renter = resolveParty(booking.renter, booking.renterId);
+
+  // Unpack nested blocks if present, or fallback to root fields
+  const pricing = booking.pricing || {};
+  const delivery = booking.delivery || {};
+  const handover = booking.handover || {};
+
+  const pricePerDayAtBooking =
+    booking.pricePerDayAtBooking ??
+    pricing.pricePerDayAtBooking ??
+    booking.dailyRate ??
+    (device && typeof device === 'object' ? device.dailyRate : 0);
+
+  const rentalFee = booking.rentalFee ?? pricing.rentalFee ?? 0;
+  const discountPercent = booking.discountPercent ?? pricing.discountPercent ?? 0;
+  const voucherCode = booking.voucherCode ?? pricing.voucherCode ?? '';
+  const voucherDiscount = booking.voucherDiscount ?? pricing.voucherDiscount ?? 0;
+  const discountAmount =
+    booking.discountAmount ??
+    (rentalFee * (discountPercent / 100) + voucherDiscount);
+
+  const depositFee =
+    booking.depositFee ??
+    pricing.depositFee ??
+    booking.depositValue ??
+    booking.depositAmount ??
+    (device && typeof device === 'object' ? device.depositValue : 0);
+
+  const totalAmount =
+    booking.totalAmount ??
+    pricing.totalAmount ??
+    booking.totalPrice ??
+    (Math.max(0, rentalFee - discountAmount) + depositFee);
+
+  const deliveryMethod =
+    (typeof booking.deliveryMethod === 'string' ? booking.deliveryMethod : null) ??
+    delivery.method ??
+    'pickup';
+
+  const deliveryAddress =
+    (typeof booking.deliveryAddress === 'string'
+      ? booking.deliveryAddress
+      : (booking.deliveryAddress?.address || '')) ||
+    delivery.address ||
+    (deliveryMethod === 'pickup' ? (device?.address || '') : (renter?.address || '')) ||
+    '';
+
+  const renterInfo = booking.renterInfo || (renter && typeof renter === 'object' ? {
+    name: renter.name || '',
+    phone: renter.phone || '',
+    email: renter.email || '',
+  } : null);
+
+  const qrToken = booking.qrToken ?? handover.qrToken ?? '';
+  const handoverPhotos = booking.handoverPhotos ?? {
+    beforeRental: handover.beforePhotos ?? [],
+    afterRental: handover.afterPhotos ?? [],
+  };
+  const conditionNotes = booking.conditionNotes ?? {
+    before: handover.beforeNote ?? '',
+    after: handover.afterNote ?? '',
+  };
+
+  const cancelReason =
+    booking.cancelReason ??
+    (booking.status === 'cancelled' ? booking.statusReason : '');
+  const rejectReason =
+    booking.rejectReason ??
+    (booking.status === 'rejected' ? booking.statusReason : '');
+
+  // Calculate totalDays accurately if not provided
+  let totalDays = booking.totalDays;
+  if (!totalDays && booking.startDate && booking.endDate) {
+    const diff = new Date(booking.endDate) - new Date(booking.startDate);
+    totalDays = Math.max(1, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+  }
+  totalDays = totalDays || 1;
+
   return {
     ...booking,
     device,
@@ -68,8 +158,27 @@ const normalizeBookingAliases = (booking) => {
     ownerId: owner,
     renter,
     renterId: renter,
-    pricePerDayAtBooking: booking.pricePerDayAtBooking ?? booking.dailyRate ?? 0,
-    depositFee: booking.depositFee ?? booking.depositValue ?? booking.depositAmount ?? 0,
+    renterInfo,
+    totalDays,
+    pricePerDayAtBooking,
+    dailyRate: pricePerDayAtBooking,
+    rentalFee,
+    discountPercent,
+    discountAmount,
+    voucherCode,
+    voucherDiscount,
+    depositFee,
+    depositValue: depositFee,
+    depositAmount: depositFee,
+    totalAmount,
+    totalPrice: totalAmount,
+    deliveryMethod,
+    deliveryAddress,
+    qrToken,
+    handoverPhotos,
+    conditionNotes,
+    cancelReason,
+    rejectReason,
   };
 };
 
@@ -263,8 +372,19 @@ export const createBooking = async (req, res, next) => {
       });
     }
 
-    start.setHours(0, 0, 0, 0);
-    end.setHours(23, 59, 59, 999);
+    if (req.body.pickupTime && typeof req.body.pickupTime === 'string') {
+      const [h, m] = req.body.pickupTime.split(':').map(Number);
+      if (!isNaN(h) && !isNaN(m)) start.setHours(h, m, 0, 0);
+    } else if (startDate && String(startDate).length <= 10) {
+      start.setHours(0, 0, 0, 0);
+    }
+
+    if (req.body.returnTime && typeof req.body.returnTime === 'string') {
+      const [h, m] = req.body.returnTime.split(':').map(Number);
+      if (!isNaN(h) && !isNaN(m)) end.setHours(h, m, 0, 0);
+    } else if (endDate && String(endDate).length <= 10) {
+      end.setHours(23, 59, 59, 999);
+    }
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -385,16 +505,29 @@ export const createBooking = async (req, res, next) => {
       note: (note || '').trim(),
       status: 'pending',
       paymentStatus: 'unpaid',
+      statusReason: '',
       paymentMethod,
       rejectReason: '',
       cancelReason: '',
-      handoverPhotos: {
-        beforeRental: [],
-        afterRental: [],
+      pricing: {
+        pricePerDayAtBooking: dailyRate,
+        rentalFee,
+        discountPercent,
+        depositFee,
+        voucherCode: '',
+        voucherDiscount: 0,
+        totalAmount,
       },
-      conditionNotes: {
-        before: '',
-        after: '',
+      delivery: {
+        method: deliveryMethod || 'delivery',
+        address: formattedDeliveryAddress,
+      },
+      handover: {
+        qrToken,
+        beforePhotos: [],
+        afterPhotos: [],
+        beforeNote: '',
+        afterNote: '',
       },
       digitalSignature: '',
       timeline: [

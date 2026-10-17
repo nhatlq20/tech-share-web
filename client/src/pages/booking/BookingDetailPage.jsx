@@ -15,6 +15,8 @@ import {
   ExternalLink,
   ChevronRight,
   FileText,
+  Truck,
+  MessageSquare,
 } from 'lucide-react';
 import { STRINGS } from '../../constants/strings.js';
 import { ROUTES } from '../../routes/routes.js';
@@ -22,7 +24,7 @@ import { fetchBookingById, cancelBooking } from '../../services/bookingService.j
 import { BookingStatusBadge } from '../../components/booking/BookingStatusBadge.jsx';
 import { OrderTimelineStepper, OrderActivityHistory } from '../../components/booking/OrderTimelineStepper.jsx';
 import { CancelBookingModal } from '../../components/booking/CancelBookingModal.jsx';
-import { formatPrice, formatDate, formatDateTime } from '../../utils/formatters.js';
+import { formatPrice, formatDateTime } from '../../utils/formatters.js';
 
 const T = STRINGS.booking.detail;
 
@@ -122,13 +124,29 @@ export const BookingDetailPage = () => {
 
   const device = booking.device || booking.deviceId || {};
   const owner = booking.owner || booking.ownerId || device.owner || device.ownerId || {};
+  const renter = booking.renter || booking.renterId || {};
 
-  const deliveryAddress = typeof booking.deliveryAddress === 'object' && booking.deliveryAddress !== null
-    ? booking.deliveryAddress.address || ''
-    : (booking.deliveryAddress || '');
+  const deliveryMethod = booking.deliveryMethod || booking.delivery?.method || 'delivery';
 
-  const recipientName = booking.renterInfo?.name || (typeof booking.deliveryAddress === 'object' ? booking.deliveryAddress.recipientName : '') || '';
-  const recipientPhone = booking.renterInfo?.phone || (typeof booking.deliveryAddress === 'object' ? booking.deliveryAddress.phone : '') || '';
+  const deliveryAddress =
+    (typeof booking.deliveryAddress === 'string'
+      ? booking.deliveryAddress
+      : booking.deliveryAddress?.address) ||
+    booking.delivery?.address ||
+    (deliveryMethod === 'pickup' ? (device.address || '') : (renter.address || '')) ||
+    '';
+
+  const recipientName =
+    booking.renterInfo?.name ||
+    (typeof booking.deliveryAddress === 'object' ? booking.deliveryAddress?.recipientName : '') ||
+    renter.name ||
+    '';
+
+  const recipientPhone =
+    booking.renterInfo?.phone ||
+    (typeof booking.deliveryAddress === 'object' ? booking.deliveryAddress?.phone : '') ||
+    renter.phone ||
+    '';
 
   const canCancel = booking.canCancel ?? (booking.status === 'pending');
 
@@ -263,38 +281,60 @@ export const BookingDetailPage = () => {
 
             {/* Handover & Delivery Details */}
             <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
-              <h2 className="text-base font-bold text-slate-800 pb-4 border-b border-slate-100 mb-4 flex items-center gap-2">
-                <MapPin className="w-5 h-5 text-brand-500" />
-                {T.sections.delivery}
-              </h2>
+              <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
+                <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                  <MapPin className="w-5 h-5 text-brand-500" />
+                  {T.sections.delivery}
+                </h2>
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-brand-50 text-brand-700 border border-brand-100">
+                  {deliveryMethod === 'pickup' ? (
+                    <MapPin className="w-3.5 h-3.5 text-brand-600" />
+                  ) : (
+                    <Truck className="w-3.5 h-3.5 text-brand-600" />
+                  )}
+                  <span>{T.deliveryMethods[deliveryMethod] || deliveryMethod}</span>
+                </span>
+              </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                <div>
-                  <span className="text-slate-400 block mb-1">{T.fields.recipient}</span>
-                  <p className="font-semibold text-slate-800 flex items-center gap-1.5">
-                    <User className="w-3.5 h-3.5 text-slate-400" />
-                    {recipientName || T.notProvided}
-                  </p>
-                </div>
-                <div>
-                  <span className="text-slate-400 block mb-1">{T.fields.phone}</span>
-                  <p className="font-semibold text-slate-800 flex items-center gap-1.5">
-                    <Phone className="w-3.5 h-3.5 text-slate-400" />
-                    {recipientPhone || T.notProvided}
-                  </p>
-                </div>
-                <div className="sm:col-span-2">
-                  <span className="text-slate-400 block mb-1">{T.fields.address}</span>
-                  <p className="font-semibold text-slate-800">
-                    {deliveryAddress || T.notProvided}
-                  </p>
-                </div>
-                {booking.note && (
+                {recipientName ? (
+                  <div>
+                    <span className="text-slate-400 block mb-1">{T.fields.recipient}</span>
+                    <p className="font-semibold text-slate-800 flex items-center gap-1.5">
+                      <User className="w-3.5 h-3.5 text-slate-400" />
+                      <span>{recipientName}</span>
+                    </p>
+                  </div>
+                ) : null}
+
+                {recipientPhone ? (
+                  <div>
+                    <span className="text-slate-400 block mb-1">{T.fields.phone}</span>
+                    <p className="font-semibold text-slate-800 flex items-center gap-1.5">
+                      <Phone className="w-3.5 h-3.5 text-slate-400" />
+                      <span>{recipientPhone}</span>
+                    </p>
+                  </div>
+                ) : null}
+
+                {deliveryAddress ? (
+                  <div className="sm:col-span-2">
+                    <span className="text-slate-400 block mb-1">
+                      {deliveryMethod === 'pickup' ? (T.fields.pickupAddress || 'Pickup Location') : T.fields.address}
+                    </span>
+                    <p className="font-semibold text-slate-800 flex items-start gap-1.5">
+                      <MapPin className="w-3.5 h-3.5 text-slate-400 mt-0.5 flex-shrink-0" />
+                      <span>{deliveryAddress}</span>
+                    </p>
+                  </div>
+                ) : null}
+
+                {booking.note ? (
                   <div className="sm:col-span-2 p-3 rounded-xl bg-slate-50 border border-slate-100">
                     <span className="text-slate-400 block mb-1">{T.fields.note}</span>
                     <p className="text-slate-700 italic">"{booking.note}"</p>
                   </div>
-                )}
+                ) : null}
               </div>
             </div>
 
@@ -330,21 +370,20 @@ export const BookingDetailPage = () => {
                   </div>
 
                   <div className="flex items-center gap-2">
-                    {owner.phone && (
-                      <a
-                        href={`tel:${owner.phone}`}
-                        className="px-3 py-1.5 rounded-full bg-brand-50 text-brand-700 hover:bg-brand-100 font-semibold text-xs transition flex items-center gap-1"
-                      >
-                        <Phone className="w-3 h-3" />
-                        {T.callOwnerBtn}
-                      </a>
-                    )}
+                    <Link
+                      to={ROUTES.MESSAGES_PATH(booking._id || booking.bookingCode)}
+                      id="chat-owner-btn"
+                      className="px-4 py-2 rounded-full bg-brand-50 hover:bg-brand-500 text-brand-700 hover:text-white border border-brand-200 hover:border-brand-500 font-semibold text-xs transition-colors flex items-center gap-1.5 shadow-sm"
+                    >
+                      <MessageSquare className="w-3.5 h-3.5" />
+                      <span>{T.chatOwnerBtn || 'Chat with Owner'}</span>
+                    </Link>
                     {owner.email && (
                       <a
                         href={`mailto:${owner.email}`}
-                        className="px-3 py-1.5 rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200 font-semibold text-xs transition flex items-center gap-1"
+                        className="px-3 py-2 rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200 font-semibold text-xs transition flex items-center gap-1"
                       >
-                        <Mail className="w-3 h-3" />
+                        <Mail className="w-3.5 h-3.5" />
                         {T.emailOwnerBtn}
                       </a>
                     )}
@@ -377,11 +416,11 @@ export const BookingDetailPage = () => {
               <div className="flex flex-col gap-3 text-xs">
                 <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-50">
                   <span className="text-slate-500">{T.fields.pickupDate}</span>
-                  <span className="font-bold text-slate-800">{formatDate(booking.startDate)}</span>
+                  <span className="font-bold text-slate-800">{formatDateTime(booking.startDate)}</span>
                 </div>
                 <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-50">
                   <span className="text-slate-500">{T.fields.returnDate}</span>
-                  <span className="font-bold text-slate-800">{formatDate(booking.endDate)}</span>
+                  <span className="font-bold text-slate-800">{formatDateTime(booking.endDate)}</span>
                 </div>
                 <div className="flex items-center justify-between p-3 rounded-2xl bg-brand-50/70 border border-brand-100">
                   <span className="text-brand-800 font-semibold">{T.fields.duration}</span>
