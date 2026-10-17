@@ -659,3 +659,57 @@
     transition: none;
   }
 }
+
+.my-device-moderation-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.my-device-moderation-badge.is-pending {
+  background: #FEF3C7;
+  color: #B45309;
+  border: 1px solid #FCD34D;
+}
+
+.my-device-moderation-badge.is-approved {
+  background: #ECFDF5;
+  color: #047857;
+  border: 1px solid #A7F3D0;
+}
+
+.my-device-moderation-badge.is-rejected {
+  background: #FEE2E2;
+  color: #B91C1C;
+  border: 1px solid #FCA5A5;
+}
+
+.my-device-rejection-banner {
+  background: #FEF2F2;
+  border: 1px solid #FECACA;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin: 10px 0 14px;
+  font-size: 12px;
+  color: #991B1B;
+  line-height: 1.4;
+}
+
+.my-device-rejection-banner strong {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #DC2626;
+  font-size: 12px;
+  margin-bottom: 3px;
+}
+

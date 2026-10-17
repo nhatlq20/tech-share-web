@@ -96,14 +96,42 @@ const deviceSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: ['available', 'maintenance', 'hidden', 'rented'],
-      default: 'available',
+      default: 'hidden',
       index: true,
     },
     moderationStatus: {
       type: String,
       enum: ['pending', 'approved', 'rejected'],
-      default: 'approved',
+      default: 'pending',
       index: true,
+    },
+    moderationReason: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    rejectReason: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    moderatedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    reviewedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    moderatedAt: {
+      type: Date,
+      default: null,
+    },
+    reviewedAt: {
+      type: Date,
+      default: null,
     },
     blockedDates: [
       {

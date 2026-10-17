@@ -32,6 +32,7 @@ const getNavItems = (t) => [
     id: 'devices',
     label: t.devicesTab,
     icon: Cpu,
+    showBadge: true,
     path: ROUTES.ADMIN_DEVICE_MANAGER,
     aliases: [ROUTES.ADMIN_DEVICES],
   },
@@ -50,6 +51,7 @@ export const AdminSidebarContent = ({
   currentPath = '',
   onSelectTab,
   pendingEkycCount = 0,
+  pendingDevicesCount = 0,
   onLogout,
   onSwitchToClient,
   admin,
@@ -140,9 +142,18 @@ export const AdminSidebarContent = ({
                   {item.label}
                 </span>
               </div>
-              {item.showBadge && pendingEkycCount > 0 && (
+              {item.id === 'ekyc' && item.showBadge && pendingEkycCount > 0 && (
                 <span className="admin-nav-badge" title={t.pendingBadgeTitle(pendingEkycCount)}>
                   {pendingEkycCount}
+                </span>
+              )}
+              {item.id === 'devices' && item.showBadge && pendingDevicesCount > 0 && (
+                <span
+                  className="admin-nav-badge"
+                  style={{ backgroundColor: '#F59E0B', color: '#FFFFFF' }}
+                  title={`${pendingDevicesCount} thiết bị chờ duyệt`}
+                >
+                  {pendingDevicesCount}
                 </span>
               )}
             </button>

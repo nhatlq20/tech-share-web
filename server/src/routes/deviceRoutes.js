@@ -5,6 +5,7 @@ import {
   getRecommendedDevices,
   getDeviceById,
   createDevice,
+  updateDevice,
   myDevices,
   deleteOwner,
 } from "../controllers/deviceController.js";
@@ -39,5 +40,7 @@ router.patch("/:id/blocked-dates", toggleBlockedDate);
 router.get("/:id", getDeviceById);
 
 router.post("/", protect, requireOwner, createDevice);
+router.put("/:id", protect, requireOwner, updateDevice);
+router.patch("/:id/update", protect, requireOwner, updateDevice);
 
 export default router;

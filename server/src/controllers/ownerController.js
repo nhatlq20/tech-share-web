@@ -304,14 +304,22 @@ export const getOwnerDevices = async (req, res, next) => {
     const formattedDevices = devices.map((d) => ({
       _id: d._id.toString(),
       id: d._id.toString(),
-      name: d.name,
+      name: d.name || d.title || 'Thiết bị',
+      title: d.title || d.name || 'Thiết bị',
       brand: d.brand || '',
       category: d.category || 'general',
-      dailyRate: Number(d.dailyRate) || 0,
-      depositAmount: Number(d.depositAmount) || 0,
-      status: d.status || 'available',
+      dailyRate: Number(d.dailyRate ?? d.pricePerDay) || 0,
+      pricePerDay: Number(d.pricePerDay ?? d.dailyRate) || 0,
+      depositAmount: Number(d.depositAmount ?? d.depositValue) || 0,
+      depositValue: Number(d.depositValue ?? d.depositAmount) || 0,
+      status: d.status || 'hidden',
+      moderationStatus: d.moderationStatus || 'approved',
+      moderationReason: d.moderationReason || d.rejectReason || '',
+      rejectReason: d.rejectReason || d.moderationReason || '',
+      moderatedBy: d.moderatedBy || d.reviewedBy || null,
+      moderatedAt: d.moderatedAt || d.reviewedAt || null,
       images: Array.isArray(d.images) && d.images.length > 0 ? d.images : ['https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=400&q=80'],
-      ratingAvg: Number(d.ratingAvg) || 5.0,
+      ratingAvg: Number(d.ratingAvg ?? d.rating) || 5.0,
       rentalCount: Number(d.rentalCount) || 0,
       condition: d.condition || 'Good',
       specs: d.specs || {},
@@ -373,7 +381,15 @@ export const createOwnerDevice = async (req, res, next) => {
       images: Array.isArray(images) && images.length > 0 ? images : ['https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=400&q=80'],
       specs: specs || {},
       ownerId: mongoose.Types.ObjectId.isValid(ownerId) ? new mongoose.Types.ObjectId(ownerId) : ownerId,
-      status: 'available',
+      owner: mongoose.Types.ObjectId.isValid(ownerId) ? new mongoose.Types.ObjectId(ownerId) : ownerId,
+      status: 'hidden',
+      moderationStatus: 'pending',
+      moderationReason: '',
+      rejectReason: '',
+      moderatedBy: null,
+      reviewedBy: null,
+      moderatedAt: null,
+      reviewedAt: null,
       ratingAvg: 5.0,
       rentalCount: 0,
       blockedDates: [],
@@ -392,7 +408,7 @@ export const createOwnerDevice = async (req, res, next) => {
     return res.status(201).json({
       success: true,
       data: createdDevice,
-      message: 'Device created successfully.',
+      message: 'Đăng thiết bị thành công! Bài đăng đang chờ Admin kiểm duyệt trước khi hiển thị công khai trên sàn.',
     });
   } catch (error) {
     return next(error);
@@ -417,6 +433,19 @@ export const toggleDeviceStatus = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Invalid status value.' });
     }
 
+    const device = await devicesCol.findOne({ _id: new mongoose.Types.ObjectId(id) });
+    if (!device) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy thiết bị.' });
+    }
+
+    // Không cho phép bật available nếu thiết bị chưa được Admin duyệt
+    if (status === 'available' && device.moderationStatus && device.moderationStatus !== 'approved') {
+      return res.status(400).json({
+        success: false,
+        message: 'Thiết bị chưa được Admin phê duyệt nên không thể chuyển sang trạng thái Sẵn sàng cho thuê.',
+      });
+    }
+
     const updated = await devicesCol.findOneAndUpdate(
       { _id: new mongoose.Types.ObjectId(id) },
       { $set: { status, updatedAt: new Date() } },
@@ -426,7 +455,7 @@ export const toggleDeviceStatus = async (req, res, next) => {
     return res.status(200).json({
       success: true,
       data: updated,
-      message: 'Device status updated.',
+      message: 'Cập nhật trạng thái thiết bị thành công.',
     });
   } catch (error) {
     return next(error);

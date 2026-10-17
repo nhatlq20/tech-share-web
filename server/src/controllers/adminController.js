@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
+import notificationService from '../services/notificationService.js';
 
 /**
  * Helper to get MongoDB collections safely
@@ -73,6 +74,11 @@ export const getAdminAnalytics = async (req, res, next) => {
     const availableDevices = await devicesCol.countDocuments({
       isDeleted: { $ne: true },
       status: { $in: ['available', 'sẵn sàng', 'active'] },
+    });
+
+    const pendingDevices = await devicesCol.countDocuments({
+      isDeleted: { $ne: true },
+      moderationStatus: 'pending',
     });
 
     const activeBookings = await bookingsCol.countDocuments({
@@ -164,12 +170,14 @@ export const getAdminAnalytics = async (req, res, next) => {
       .toArray();
 
     const categoryMap = {
-      smartphone: { name: 'Smartphone & Tablet', color: '#67BEC3', fallbackCount: 14 },
+      smartphone: { name: 'Smartphone', color: '#67BEC3', fallbackCount: 14 },
+      tablet: { name: 'Tablet & iPad', color: '#A855F7', fallbackCount: 8 },
       laptop: { name: 'Laptop & Workstation', color: '#38BDF8', fallbackCount: 10 },
       camera: { name: 'Máy ảnh & Ống kính', color: '#818CF8', fallbackCount: 8 },
       drone: { name: 'Flycam & Gimbal', color: '#F472B6', fallbackCount: 5 },
       audio: { name: 'Tai nghe & Âm thanh', color: '#FBBF24', fallbackCount: 6 },
       gaming: { name: 'Máy chơi game & VR', color: '#34D399', fallbackCount: 4 },
+      accessory: { name: 'Phụ kiện công nghệ', color: '#14B8A6', fallbackCount: 12 },
     };
 
     const categoriesResult = Object.keys(categoryMap).map((key) => {
@@ -212,6 +220,7 @@ export const getAdminAnalytics = async (req, res, next) => {
           activeUsers,
           totalDevices,
           availableDevices,
+          pendingDevices,
           activeBookings,
           pendingEkyc,
           totalRevenue,
@@ -344,9 +353,10 @@ export const toggleUserStatus = async (req, res, next) => {
 export const getAdminDevices = async (req, res, next) => {
   try {
     const { devicesCol, usersCol } = getCollections();
-    const { search, category, status } = req.query;
+    const { search, category, status, moderationStatus } = req.query;
 
     const query = { isDeleted: { $ne: true } };
+    const andConditions = [];
 
     if (category && category !== 'all') {
       query.category = category;
@@ -354,21 +364,80 @@ export const getAdminDevices = async (req, res, next) => {
     if (status && status !== 'all') {
       query.status = status;
     }
-    if (search && search.trim()) {
-      const regex = new RegExp(search.trim(), 'i');
-      query.$or = [{ name: regex }, { brand: regex }];
+
+    if (moderationStatus && moderationStatus !== 'all') {
+      if (moderationStatus === 'approved') {
+        andConditions.push({
+          $or: [{ moderationStatus: 'approved' }, { moderationStatus: { $exists: false } }],
+        });
+      } else {
+        query.moderationStatus = moderationStatus;
+      }
     }
 
+    if (search && search.trim()) {
+      const regex = new RegExp(search.trim(), 'i');
+      andConditions.push({
+        $or: [{ name: regex }, { title: regex }, { brand: regex }],
+      });
+    }
+
+    if (andConditions.length > 0) {
+      query.$and = andConditions;
+    }
+
+    // Tab counts for moderation UI badges
+    const totalCount = await devicesCol.countDocuments({ isDeleted: { $ne: true } });
+    const pendingCount = await devicesCol.countDocuments({
+      isDeleted: { $ne: true },
+      moderationStatus: 'pending',
+    });
+    const approvedCount = await devicesCol.countDocuments({
+      isDeleted: { $ne: true },
+      $or: [{ moderationStatus: 'approved' }, { moderationStatus: { $exists: false } }],
+    });
+    const rejectedCount = await devicesCol.countDocuments({
+      isDeleted: { $ne: true },
+      moderationStatus: 'rejected',
+    });
+
+    const requestedLimit = req.query.limit === 'all' ? 1000 : parseInt(req.query.limit, 10);
+    const limitNum = Number.isInteger(requestedLimit) && requestedLimit > 0 ? requestedLimit : 500;
+
     const devices = await devicesCol
-      .find(query)
-      .sort({ createdAt: -1 })
-      .limit(100)
+      .aggregate([
+        { $match: query },
+        {
+          $addFields: {
+            priorityOrder: {
+              $switch: {
+                branches: [
+                  { case: { $eq: ['$moderationStatus', 'pending'] }, then: 1 },
+                  { case: { $eq: ['$moderationStatus', 'rejected'] }, then: 2 },
+                  { case: { $eq: ['$moderationStatus', 'approved'] }, then: 3 },
+                ],
+                default: 3,
+              },
+            },
+          },
+        },
+        { $sort: { priorityOrder: 1, createdAt: -1 } },
+        { $limit: limitNum },
+      ])
       .toArray();
 
     // Map owner information
-    const ownerIds = [...new Set(devices.map((d) => d.ownerId).filter(Boolean))];
+    const ownerIds = [
+      ...new Set(devices.map((d) => d.ownerId || d.owner).filter(Boolean)),
+    ];
     const owners = await usersCol
-      .find({ _id: { $in: ownerIds.map((id) => (mongoose.isValidObjectId(id) ? new mongoose.Types.ObjectId(id) : id)) } })
+      .find({
+        _id: {
+          $in: ownerIds.map((id) =>
+            mongoose.isValidObjectId(id) ? new mongoose.Types.ObjectId(id) : id
+          ),
+        },
+      })
       .toArray();
 
     const ownerMap = new Map();
@@ -378,30 +447,48 @@ export const getAdminDevices = async (req, res, next) => {
         name: o.name || 'Chủ thiết bị',
         email: o.email || '',
         phone: o.phone || '',
-        avatar: o.avatar || '',
+        avatar: o.avatar || o.avatarUrl || '',
+        trustScore: o.trustScore || 100,
+        isVerified: Boolean(o.isVerified),
       });
     });
 
     const formattedDevices = devices.map((d) => {
-      const owner = d.ownerId ? ownerMap.get(d.ownerId.toString()) : null;
+      const ownerKey = d.ownerId ? d.ownerId.toString() : d.owner ? d.owner.toString() : null;
+      const owner = ownerKey ? ownerMap.get(ownerKey) : null;
       return {
         _id: d._id.toString(),
-        name: d.name || 'Thiết bị công nghệ',
+        name: d.name || d.title || 'Thiết bị công nghệ',
+        title: d.title || d.name || 'Thiết bị công nghệ',
         brand: d.brand || 'Khác',
         category: d.category || 'other',
+        yearOfManufacture: d.yearOfManufacture || null,
         condition: d.condition || '99%',
         description: d.description || '',
-        images: Array.isArray(d.images) && d.images.length > 0 ? d.images : ['https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?w=400'],
+        images:
+          Array.isArray(d.images) && d.images.length > 0
+            ? d.images
+            : ['https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?w=400'],
         specs: d.specs || {},
-        pricePerDay: typeof d.pricePerDay === 'number' ? d.pricePerDay : 0,
-        depositAmount: typeof d.depositAmount === 'number' ? d.depositAmount : 0,
-        status: d.status || 'available',
+        pricePerDay: typeof d.pricePerDay === 'number' ? d.pricePerDay : d.dailyRate || 0,
+        dailyRate: typeof d.dailyRate === 'number' ? d.dailyRate : d.pricePerDay || 0,
+        depositAmount: typeof d.depositAmount === 'number' ? d.depositAmount : d.depositValue || 0,
+        depositValue: typeof d.depositValue === 'number' ? d.depositValue : d.depositAmount || 0,
+        status: d.status || 'hidden',
+        moderationStatus: d.moderationStatus || 'approved',
+        moderationReason: d.moderationReason || d.rejectReason || '',
+        rejectReason: d.rejectReason || d.moderationReason || '',
+        moderatedBy: d.moderatedBy || d.reviewedBy || null,
+        moderatedAt: d.moderatedAt || d.reviewedAt || null,
+        address: d.address || '',
         ratingAvg: d.ratingAvg || 5.0,
         rentalCount: d.rentalCount || 0,
         owner: owner || {
           name: 'Chủ thiết bị đối tác',
           phone: '0901234567',
           email: 'owner@techshare.vn',
+          trustScore: 100,
+          isVerified: true,
         },
         createdAt: d.createdAt || new Date(),
       };
@@ -410,7 +497,202 @@ export const getAdminDevices = async (req, res, next) => {
     return res.json({
       success: true,
       total: formattedDevices.length,
+      counts: {
+        all: totalCount,
+        pending: pendingCount,
+        approved: approvedCount,
+        rejected: rejectedCount,
+      },
       data: formattedDevices,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * 4.1. GET /api/admin/devices/:id
+ * Xem hồ sơ thẩm định chi tiết thiết bị (Ảnh, GPS, Thông số, Giấy tờ, Chủ máy)
+ */
+export const getAdminDeviceDetails = async (req, res, next) => {
+  try {
+    const { devicesCol, usersCol, bookingsCol } = getCollections();
+    const { id } = req.params;
+
+    let objectId;
+    try {
+      objectId = new mongoose.Types.ObjectId(id);
+    } catch {
+      return res.status(400).json({ success: false, message: 'ID thiết bị không hợp lệ' });
+    }
+
+    const device = await devicesCol.findOne({ _id: objectId, isDeleted: { $ne: true } });
+    if (!device) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy thiết bị' });
+    }
+
+    // Owner profile dossier
+    let owner = null;
+    const targetOwnerId = device.ownerId || device.owner;
+    if (targetOwnerId) {
+      const ownerObjId = mongoose.isValidObjectId(targetOwnerId)
+        ? new mongoose.Types.ObjectId(targetOwnerId)
+        : targetOwnerId;
+      const ownerDoc = await usersCol.findOne({ _id: ownerObjId });
+      if (ownerDoc) {
+        const ownerDeviceCount = await devicesCol.countDocuments({
+          $or: [{ ownerId: ownerObjId }, { owner: ownerObjId }],
+          isDeleted: { $ne: true },
+        });
+        const completedBookings = await bookingsCol.countDocuments({
+          $or: [{ ownerId: ownerObjId }, { owner: ownerObjId }],
+          status: 'completed',
+        });
+        owner = {
+          _id: ownerDoc._id.toString(),
+          name: ownerDoc.name || 'Chủ thiết bị',
+          email: ownerDoc.email || '',
+          phone: ownerDoc.phone || '',
+          avatar: ownerDoc.avatar || ownerDoc.avatarUrl || '',
+          trustScore: ownerDoc.trustScore || 100,
+          isVerified: Boolean(ownerDoc.isVerified),
+          createdAt: ownerDoc.createdAt,
+          deviceCount: ownerDeviceCount,
+          completedOrdersCount: completedBookings,
+        };
+      }
+    }
+
+    return res.json({
+      success: true,
+      data: {
+        _id: device._id.toString(),
+        name: device.name || device.title || 'Thiết bị công nghệ',
+        title: device.title || device.name || 'Thiết bị công nghệ',
+        brand: device.brand || 'Khác',
+        category: device.category || 'other',
+        yearOfManufacture: device.yearOfManufacture || null,
+        condition: device.condition || '99%',
+        description: device.description || '',
+        images:
+          Array.isArray(device.images) && device.images.length > 0
+            ? device.images
+            : ['https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?w=400'],
+        specs: device.specs || {},
+        pricePerDay: Number(device.pricePerDay ?? device.dailyRate) || 0,
+        dailyRate: Number(device.dailyRate ?? device.pricePerDay) || 0,
+        depositAmount: Number(device.depositAmount ?? device.depositValue) || 0,
+        depositValue: Number(device.depositValue ?? device.depositAmount) || 0,
+        status: device.status || 'hidden',
+        moderationStatus: device.moderationStatus || 'approved',
+        moderationReason: device.moderationReason || device.rejectReason || '',
+        rejectReason: device.rejectReason || device.moderationReason || '',
+        moderatedBy: device.moderatedBy || device.reviewedBy || null,
+        moderatedAt: device.moderatedAt || device.reviewedAt || null,
+        address: device.address || '',
+        location: device.location || { type: 'Point', coordinates: [105.7826, 21.0285] },
+        createdAt: device.createdAt || new Date(),
+        owner: owner || {
+          name: 'Đối tác TechShare',
+          phone: '0901234567',
+          email: 'owner@techshare.vn',
+          trustScore: 100,
+          isVerified: true,
+        },
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * 4.2. PATCH /api/admin/devices/:id/moderate
+ * Phê duyệt đưa máy lên sàn hoặc Từ chối kèm lý do & gửi thông báo cho Owner
+ */
+export const moderateDevice = async (req, res, next) => {
+  try {
+    const { devicesCol } = getCollections();
+    const { id } = req.params;
+    const { action, reason } = req.body;
+
+    if (!['approve', 'reject'].includes(action)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Hành động không hợp lệ. Vui lòng chọn "approve" hoặc "reject".',
+      });
+    }
+
+    let objectId;
+    try {
+      objectId = new mongoose.Types.ObjectId(id);
+    } catch {
+      return res.status(400).json({ success: false, message: 'ID thiết bị không hợp lệ' });
+    }
+
+    const device = await devicesCol.findOne({ _id: objectId, isDeleted: { $ne: true } });
+    if (!device) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy thiết bị cần kiểm duyệt' });
+    }
+
+    const adminDoc = await resolveAdminProfile(req);
+    const reviewerId = adminDoc?._id || req.user?.userId || null;
+    const now = new Date();
+
+    const isApproved = action === 'approve';
+    const finalReason = isApproved
+      ? ''
+      : reason?.trim() || 'Hình ảnh hoặc thông số không đáp ứng quy chuẩn kiểm duyệt của TechShare.';
+
+    const updateDoc = {
+      moderationStatus: isApproved ? 'approved' : 'rejected',
+      status: isApproved ? 'available' : 'hidden',
+      moderationReason: finalReason,
+      rejectReason: finalReason,
+      moderatedBy: reviewerId,
+      reviewedBy: reviewerId,
+      moderatedAt: now,
+      reviewedAt: now,
+      updatedAt: now,
+    };
+
+    await devicesCol.updateOne({ _id: objectId }, { $set: updateDoc });
+
+    // Gửi thông báo đến Owner qua Notification service (MongoDB, Firestore, FCM & Socket)
+    const targetOwnerId = device.ownerId || device.owner;
+    if (targetOwnerId) {
+      try {
+        const notifTitle = isApproved
+          ? 'Thiết bị của bạn đã được phê duyệt! 🎉'
+          : 'Thiết bị không được phê duyệt';
+        const notifBody = isApproved
+          ? `Thiết bị "${device.name || device.title}" đã được kiểm duyệt thành công và hiện đã hiển thị trên sàn cho thuê.`
+          : `Thiết bị "${device.name || device.title}" bị từ chối phê duyệt. Lý do: ${finalReason}. Bạn có thể chỉnh sửa và gửi duyệt lại.`;
+
+        await notificationService.createAndSendNotification({
+          userId: targetOwnerId.toString(),
+          title: notifTitle,
+          body: notifBody,
+          type: 'system',
+          relatedId: device._id.toString(),
+        });
+      } catch (notifErr) {
+        console.warn('⚠️ Không thể gửi thông báo cho Owner:', notifErr.message);
+      }
+    }
+
+    return res.json({
+      success: true,
+      message: isApproved
+        ? 'Đã phê duyệt thiết bị thành công và đưa lên sàn!'
+        : 'Đã từ chối bài đăng và gửi thông báo kèm lý do cho chủ thiết bị.',
+      data: {
+        deviceId: id,
+        moderationStatus: updateDoc.moderationStatus,
+        status: updateDoc.status,
+        moderationReason: updateDoc.moderationReason,
+        moderatedAt: now,
+      },
     });
   } catch (error) {
     next(error);

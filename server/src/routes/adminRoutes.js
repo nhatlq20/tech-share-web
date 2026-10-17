@@ -4,6 +4,8 @@ import {
   getAdminUsers,
   toggleUserStatus,
   getAdminDevices,
+  getAdminDeviceDetails,
+  moderateDevice,
   removeDevice,
   getAdminEkycRequests,
   approveEkycRequest,
@@ -22,6 +24,10 @@ router.patch('/users/:id/status', toggleUserStatus);
 
 // 3. Device Moderation
 router.get('/devices', getAdminDevices);
+router.get('/devices/moderation', getAdminDevices);
+router.get('/devices/:id', getAdminDeviceDetails);
+router.patch('/devices/:id/moderate', moderateDevice);
+router.post('/devices/:id/moderate', moderateDevice);
 router.delete('/devices/:id', removeDevice);
 
 // 4. eKYC Verification
