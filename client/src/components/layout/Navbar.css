@@ -108,6 +108,25 @@
   border-color: #fbbf24;
 }
 
+/* Link Admin – chỉ hiện với role admin trong nav menu */
+.navbar-link-admin {
+  color: #4f46e5;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background-color: #eef2ff;
+  border: 1px solid #c7d2fe;
+  transition: all 0.2s;
+}
+.navbar-link-admin:hover {
+  color: #3730a3;
+  background-color: #e0e7ff;
+  border-color: #a5b4fc;
+}
+
 .navbar-actions {
   display: flex;
   align-items: center;

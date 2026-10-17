@@ -12,8 +12,17 @@ export const AuthProvider = ({ children }) => {
 
   const [user, setUser] = useState(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEYS.USER_DATA);
-      return saved ? JSON.parse(saved) : null;
+      const savedUser = localStorage.getItem(STORAGE_KEYS.USER_DATA);
+      const savedAccount = localStorage.getItem('techshare_account');
+      if (savedUser) {
+        const parsed = JSON.parse(savedUser);
+        if (!parsed.role && savedAccount) {
+          const acc = JSON.parse(savedAccount);
+          parsed.role = acc.role || acc.roleId?.code;
+        }
+        return parsed;
+      }
+      return null;
     } catch {
       return null;
     }
@@ -38,13 +47,19 @@ export const AuthProvider = ({ children }) => {
       setToken(newToken);
       localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, newToken);
     }
-    if (newUser) {
-      setUser(newUser);
-      localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(newUser));
-    }
     if (newAccount) {
       setAccount(newAccount);
       localStorage.setItem('techshare_account', JSON.stringify(newAccount));
+    }
+    if (newUser) {
+      if (!newUser.role && newAccount?.role) {
+        newUser.role = newAccount.role;
+      }
+      if (!newUser.role && newAccount?.roleId?.code) {
+        newUser.role = newAccount.roleId.code;
+      }
+      setUser(newUser);
+      localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(newUser));
     }
   };
 
@@ -71,13 +86,20 @@ export const AuthProvider = ({ children }) => {
       });
 
       if (res?.success && res?.user) {
-        setUser(res.user);
-        localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(res.user));
+        const u = res.user;
+        if (!u.role && res.account?.role) {
+          u.role = res.account.role;
+        }
+        if (!u.role && res.account?.roleId?.code) {
+          u.role = res.account.roleId.code;
+        }
+        setUser(u);
+        localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(u));
         if (res.account) {
           setAccount(res.account);
           localStorage.setItem('techshare_account', JSON.stringify(res.account));
         }
-        return res.user;
+        return u;
       }
     } catch (err) {
       console.warn('Không thể làm mới profile tự động:', err.message);
