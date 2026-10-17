@@ -1,30 +1,30 @@
 /* ==========================================================================
    AdminLoginPage.css
-   Dùng lại toàn bộ styles từ LoginPage.css
-   Chỉ override badge màu để phân biệt Admin Portal
+   Kế thừa styles từ LoginPage.css và đồng bộ màu sắc thương hiệu TechShare (#67BEC3)
+   giống với trang đăng nhập người dùng (LoginPage)
    ========================================================================== */
 @import './LoginPage.css';
 
-/* Badge Admin – đổi màu sang tím/indigo thay vì teal để phân biệt */
+/* Badge Admin – đồng bộ tone màu Teal */
 .admin-login-badge-pill {
-  background-color: #ede9fe;
-  color: #5b21b6;
+  background-color: #e8f6f7;
+  color: #286E74;
 }
 
-/* Thanh accent trên đầu card – đổi sang indigo */
+/* Thanh accent trên đầu card – dải màu Teal */
 .admin-login-card::before {
-  background: linear-gradient(90deg, #7c3aed, #5b21b6, #7c3aed);
+  background: linear-gradient(90deg, #67BEC3, #4CA6AC, #388E94);
 }
 
-/* Nút submit admin màu tím */
+/* Nút submit admin đồng bộ màu Teal */
 .admin-btn-submit {
-  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%) !important;
-  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3) !important;
+  background: linear-gradient(135deg, #67BEC3 0%, #4CA6AC 100%) !important;
+  box-shadow: 0 4px 12px rgba(103, 190, 195, 0.3) !important;
 }
 
 .admin-btn-submit:hover:not(:disabled) {
-  background: linear-gradient(135deg, #6d28d9 0%, #5b21b6 100%) !important;
-  box-shadow: 0 6px 16px rgba(124, 58, 237, 0.4) !important;
+  background: linear-gradient(135deg, #4CA6AC 0%, #388E94 100%) !important;
+  box-shadow: 0 6px 16px rgba(103, 190, 195, 0.4) !important;
 }
 
 /* Nút quay lại trang login thông thường */
@@ -48,7 +48,7 @@
 }
 
 .admin-back-switch-btn:hover {
-  color: #5b21b6;
-  background-color: #ede9fe;
+  color: #286E74;
+  background-color: #e8f6f7;
 }
 
