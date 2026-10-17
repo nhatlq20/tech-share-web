@@ -121,7 +121,7 @@ export const MyBookingsPage = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-xs text-slate-500 mb-6" aria-label="Breadcrumb">
           <Link to={ROUTES.HOME} className="hover:text-brand-600 transition-colors">
@@ -241,15 +241,15 @@ export const MyBookingsPage = () => {
           {showList && (
             <>
               {/* Desktop table */}
-              <div className="hidden md:block bg-white rounded-2xl shadow-sm overflow-hidden">
-                <table className="w-full text-left">
+              <div className="hidden md:block bg-white rounded-2xl shadow-sm border border-slate-100 overflow-x-auto">
+                <table className="w-full text-left min-w-[780px]">
                   <thead className="bg-slate-50 text-xs font-semibold text-slate-500">
                     <tr>
-                      <th scope="col" className="px-6 py-3">{T.columns.device}</th>
-                      <th scope="col" className="px-6 py-3">{T.columns.period}</th>
-                      <th scope="col" className="px-6 py-3">{T.columns.total}</th>
-                      <th scope="col" className="px-6 py-3">{T.columns.status}</th>
-                      <th scope="col" className="px-6 py-3 text-right">{T.columns.actions}</th>
+                      <th scope="col" className="px-5 py-3.5">{T.columns.device}</th>
+                      <th scope="col" className="px-4 py-3.5 whitespace-nowrap">{T.columns.period}</th>
+                      <th scope="col" className="px-4 py-3.5 whitespace-nowrap">{T.columns.total}</th>
+                      <th scope="col" className="px-4 py-3.5 whitespace-nowrap">{T.columns.status}</th>
+                      <th scope="col" className="px-5 py-3.5 text-right whitespace-nowrap">{T.columns.actions}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
