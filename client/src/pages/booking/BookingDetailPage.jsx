@@ -172,20 +172,6 @@ export const BookingDetailPage = () => {
                 </p>
               </div>
             </div>
-
-            {/* Cancel action if booking is pending */}
-            {canCancel && (
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  id="cancel-booking-open-btn"
-                  onClick={handleOpenCancelModal}
-                  className="px-5 py-2.5 rounded-full bg-red-50 text-red-600 font-bold text-xs hover:bg-red-100 border border-red-200 shadow-sm transition"
-                >
-                  {STRINGS.booking.cancel.openBtn}
-                </button>
-              </div>
-            )}
           </div>
 
           {/* Cancellation notification banner if just cancelled */}
@@ -473,13 +459,23 @@ export const BookingDetailPage = () => {
                   </div>
                 </div>
 
-                {/* Cancel hint alert */}
+                {/* Cancel Booking Action */}
                 {canCancel ? (
-                  <p className="text-[11px] text-slate-400 italic text-center mt-2">
-                    {T.cancelHint}
-                  </p>
+                  <div className="mt-4 pt-4 border-t border-slate-100 flex flex-col gap-2">
+                    <button
+                      type="button"
+                      id="cancel-booking-open-btn"
+                      onClick={handleOpenCancelModal}
+                      className="w-full py-2.5 rounded-full bg-red-50 text-red-600 font-bold text-xs hover:bg-red-100 border border-red-200 shadow-sm transition flex items-center justify-center gap-1.5"
+                    >
+                      {STRINGS.booking.cancel.openBtn}
+                    </button>
+                    <p className="text-[11px] text-slate-400 italic text-center">
+                      {T.cancelHint}
+                    </p>
+                  </div>
                 ) : (
-                  <p className="text-[11px] text-slate-400 italic text-center mt-2">
+                  <p className="text-[11px] text-slate-400 italic text-center mt-3">
                     {T.cancelLockedHint}
                   </p>
                 )}

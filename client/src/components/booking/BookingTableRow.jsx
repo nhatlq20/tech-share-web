@@ -47,50 +47,51 @@ export const BookingTableRow = ({ booking }) => {
   const row = toRowModel(booking);
 
   return (
-    <tr className="group hover:bg-brand-50 transition-colors">
-      <td className="px-6 py-4">
-        <div className="flex items-center gap-4 min-w-0">
+    <tr className="group hover:bg-brand-50/60 transition-colors">
+      <td className="px-5 py-4">
+        <div className="flex items-center gap-3.5 min-w-0 max-w-[320px]">
           <DeviceThumb image={row.image} title={row.title} />
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <Link
               to={row.detailPath}
               className="block text-sm font-bold text-slate-800 truncate hover:text-brand-600 transition-colors"
+              title={row.title}
             >
               {row.title}
             </Link>
             <div className="flex items-center gap-2 mt-1 text-xs text-slate-500">
-              {row.brand && <span className="truncate">{row.brand}</span>}
-              {row.brand && <span className="w-1 h-1 rounded-full bg-slate-300" aria-hidden="true" />}
-              <span className="font-mono text-slate-600">
+              {row.brand && <span className="truncate max-w-[90px]">{row.brand}</span>}
+              {row.brand && <span className="w-1 h-1 rounded-full bg-slate-300 flex-shrink-0" aria-hidden="true" />}
+              <span className="font-mono text-slate-600 truncate">
                 {T.bookingCodePrefix}: {row.bookingCode}
               </span>
             </div>
           </div>
         </div>
       </td>
-      <td className="px-6 py-4">
-        <div className="flex items-center gap-2 text-sm text-slate-700 whitespace-nowrap">
-          <CalendarDays className="w-4 h-4 text-slate-400" aria-hidden="true" />
+      <td className="px-4 py-4 whitespace-nowrap">
+        <div className="flex items-center gap-2 text-sm text-slate-700">
+          <CalendarDays className="w-4 h-4 text-slate-400 flex-shrink-0" aria-hidden="true" />
           <span>{row.startDate}</span>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-300" aria-hidden="true" />
+          <ChevronRight className="w-3.5 h-3.5 text-slate-300 flex-shrink-0" aria-hidden="true" />
           <span>{row.endDate}</span>
         </div>
         <p className="text-xs text-slate-500 mt-1">{T.daysSuffix(row.totalDays)}</p>
       </td>
-      <td className="px-6 py-4 whitespace-nowrap">
+      <td className="px-4 py-4 whitespace-nowrap">
         <span className="text-sm font-bold text-brand-800">{row.totalAmount}</span>
         <p className="text-xs text-slate-400 mt-1">
           {T.createdAtPrefix} {row.createdAt}
         </p>
       </td>
-      <td className="px-6 py-4">
+      <td className="px-4 py-4 whitespace-nowrap">
         <BookingStatusBadge status={row.status} />
       </td>
-      <td className="px-6 py-4 text-right">
+      <td className="px-5 py-4 text-right whitespace-nowrap">
         <Link
           to={row.detailPath}
           id={`booking-detail-link-${row.bookingKey}`}
-          className="inline-flex items-center gap-1 px-4 py-2 rounded-full text-xs font-semibold text-brand-700 bg-brand-100 hover:bg-brand-500 hover:text-white transition-colors"
+          className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full text-xs font-semibold text-brand-700 bg-brand-100 hover:bg-brand-500 hover:text-white transition-colors whitespace-nowrap flex-shrink-0"
         >
           {T.viewDetailBtn}
           <ChevronRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
