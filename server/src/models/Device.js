@@ -231,6 +231,9 @@ deviceSchema.pre('save', function (next) {
 deviceSchema.index({ location: '2dsphere' });
 deviceSchema.index({ category: 1, status: 1, isDeleted: 1 });
 deviceSchema.index({ name: 'text', brand: 'text', description: 'text' });
+deviceSchema.index({ isDeleted: 1, moderationStatus: 1, createdAt: -1 });
+deviceSchema.index({ isDeleted: 1, category: 1, moderationStatus: 1, createdAt: -1 });
+deviceSchema.index({ isDeleted: 1, name: 1, brand: 1 });
 
 export const Device = mongoose.models.Device || mongoose.model('Device', deviceSchema, 'devices');
 export default Device;

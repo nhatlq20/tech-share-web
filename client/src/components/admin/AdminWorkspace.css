@@ -205,14 +205,14 @@
 }
 
 .admin-nav-item.active {
-  background-color: #E6F7F8;
-  color: #0D9488;
+  background-color: #E8F6F7;
+  color: #286E74;
   font-weight: 700;
-  border-left: 3.5px solid #0D9488;
+  border-left: 3.5px solid #67BEC3;
 }
 
 .admin-nav-item.active svg {
-  color: #0D9488;
+  color: #67BEC3;
 }
 
 .admin-nav-badge {
@@ -965,6 +965,105 @@
   margin-bottom: 18px;
 }
 
+/* Refactored Moderation Modal (Desktop 2-Column with Sticky Header & Sticky Footer) */
+.admin-moderation-modal-card {
+  max-width: 860px !important;
+  width: 100% !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  max-height: 90vh !important;
+  border-radius: 20px !important;
+  background-color: #FFFFFF !important;
+  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.35) !important;
+}
+
+.admin-moderation-modal-header {
+  padding: 16px 24px !important;
+  border-bottom: 1px solid #E2E8F0 !important;
+  background-color: #FFFFFF !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  flex-shrink: 0 !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 20 !important;
+  margin-bottom: 0 !important;
+}
+
+.admin-moderation-modal-body {
+  padding: 24px !important;
+  overflow-y: auto !important;
+  max-height: calc(90vh - 140px) !important;
+  flex: 1 1 auto !important;
+}
+
+.admin-moderation-modal-grid {
+  display: grid !important;
+  grid-template-columns: 5fr 7fr !important;
+  gap: 24px !important;
+  align-items: start !important;
+}
+
+@media (max-width: 860px) {
+  .admin-moderation-modal-grid {
+    grid-template-columns: 1fr !important;
+    gap: 20px !important;
+  }
+}
+
+.admin-moderation-modal-footer {
+  padding: 16px 24px !important;
+  border-top: 1px solid #E2E8F0 !important;
+  background-color: #FFFFFF !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 12px !important;
+  flex-shrink: 0 !important;
+  position: sticky !important;
+  bottom: 0 !important;
+  z-index: 20 !important;
+}
+
+/* Thin custom scrollbar for modal body */
+.admin-moderation-modal-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.admin-moderation-modal-body::-webkit-scrollbar-track {
+  background: #F1F5F9;
+  border-radius: 4px;
+}
+
+.admin-moderation-modal-body::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 4px;
+}
+
+.admin-moderation-modal-body::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
+
+/* Thumbnail strip scrollbar */
+.admin-thumbnail-strip::-webkit-scrollbar {
+  height: 4px;
+}
+.admin-thumbnail-strip::-webkit-scrollbar-track {
+  background: #F8FAFC;
+}
+.admin-thumbnail-strip::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 4px;
+}
+
+/* Prevent any stray floating close button outside the modal card */
+.admin-modal-overlay > button:not(.admin-modal-card button) {
+  display: none !important;
+}
+
 .admin-modal-title {
   font-size: 17px;
   font-weight: 700;
@@ -1031,4 +1130,357 @@
     opacity: 1;
   }
 }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   SHIMMER LOADING ANIMATION (Device Manager & Admin Tables)
+   ───────────────────────────────────────────────────────────────────────────── */
+@keyframes adminShimmerWave {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.admin-shimmer {
+  background: linear-gradient(
+    90deg,
+    #F1F5F9 0%,
+    #E2E8F0 35%,
+    #F8FAFC 50%,
+    #E2E8F0 65%,
+    #F1F5F9 100%
+  );
+  background-size: 300% 100%;
+  animation: adminShimmerWave 1.6s ease-in-out infinite;
+  display: block;
+}
+
+.admin-table-shimmer-row td {
+  padding: 12px 14px;
+  vertical-align: middle;
+  border-bottom: 1px solid #F1F5F9;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   BUTTON CLICK MICRO-INTERACTIONS (ONLY ON CLICK / ACTIVE)
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* Click transition & touch feedback */
+button:not(:disabled),
+.admin-btn:not(:disabled),
+.admin-tab-pill:not(:disabled),
+.admin-cat-pill:not(:disabled),
+.admin-moderation-tab-btn:not(:disabled),
+.admin-pagination-btn:not(:disabled),
+.admin-pagination-page:not(:disabled),
+.admin-reject-chip:not(:disabled) {
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.08s ease-out, box-shadow 0.1s ease-out, background-color 0.1s ease-out, filter 0.08s ease-out;
+}
+
+/* Remove hover lifts/animations on buttons */
+button:hover,
+.admin-btn:hover,
+.admin-tab-pill:hover,
+.admin-cat-pill:hover,
+.admin-moderation-tab-btn:hover,
+.admin-pagination-btn:hover,
+.admin-pagination-page:hover,
+.admin-reject-chip:hover,
+.admin-modal-close-btn:hover,
+.admin-action-btn-view:hover,
+.admin-action-btn-approve:hover,
+.admin-action-btn-reject:hover,
+.admin-action-btn-remove:hover,
+.admin-modal-footer-approve:hover,
+.admin-modal-footer-reject:hover,
+.admin-thumbnail-btn:hover {
+  transform: none !important;
+}
+
+/* Base button click effect: snappy scale press */
+.admin-btn:not(:disabled):active {
+  transform: scale(0.94) !important;
+}
+
+.admin-btn-primary:not(:disabled):active {
+  transform: scale(0.94) !important;
+  box-shadow: 0 0 0 3px rgba(103, 190, 195, 0.35);
+  background-color: #3D959B;
+}
+
+.admin-btn-danger:not(:disabled):active {
+  transform: scale(0.94) !important;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.35);
+  background-color: #991B1B;
+}
+
+.admin-btn-outline:not(:disabled):active {
+  transform: scale(0.94) !important;
+  box-shadow: 0 0 0 2px rgba(103, 190, 195, 0.25);
+  background-color: #E8F6F7;
+}
+
+/* 1. Nút Thẩm định (View details in table) */
+.admin-action-btn-view {
+  padding: 5px 8px;
+  font-size: 11.5px;
+  border-radius: 7px;
+  color: #286E74;
+  border: 1px solid #CBD5E1;
+  background-color: #FFFFFF;
+  width: 78px;
+  flex: 0 0 78px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-weight: 600;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.admin-action-btn-view:active:not(:disabled) {
+  transform: scale(0.93) !important;
+  background-color: #CCFBF1;
+  box-shadow: 0 0 0 2px rgba(103, 190, 195, 0.3);
+}
+
+/* 2. Nút Duyệt / Duyệt lại (Approve in table) */
+.admin-action-btn-approve {
+  padding: 5px 8px;
+  font-size: 11.5px;
+  border-radius: 7px;
+  background-color: #10B981;
+  color: #FFFFFF;
+  border: 1px solid #10B981;
+  font-weight: 600;
+  width: 74px;
+  flex: 0 0 74px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.admin-action-btn-approve:active:not(:disabled) {
+  transform: scale(0.93) !important;
+  background-color: #047857;
+  border-color: #047857;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.35);
+}
+
+/* 3. Nút Từ chối / Thu hồi (Reject in table) */
+.admin-action-btn-reject {
+  padding: 5px 8px;
+  font-size: 11.5px;
+  border-radius: 7px;
+  border: 1px solid #FECACA;
+  background-color: #FEF2F2;
+  color: #DC2626;
+  width: 68px;
+  flex: 0 0 68px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-weight: 600;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.admin-action-btn-reject:active:not(:disabled) {
+  transform: scale(0.93) !important;
+  background-color: #FECACA;
+  border-color: #F87171;
+  color: #991B1B;
+  box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.3);
+}
+
+/* 4. Nút Gỡ tin (Remove device in table) */
+.admin-action-btn-remove {
+  padding: 5px 8px;
+  font-size: 11.5px;
+  border-radius: 7px;
+  border: 1px solid #E2E8F0;
+  background-color: #F8FAFC;
+  color: #64748B;
+  width: 68px;
+  flex: 0 0 68px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-weight: 500;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.admin-action-btn-remove:active:not(:disabled) {
+  transform: scale(0.93) !important;
+  background-color: #FEE2E2;
+  border-color: #FCA5A5;
+  color: #DC2626;
+  box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.25);
+}
+
+
+
+/* 6. Category Filter Pills */
+.admin-cat-pill:active {
+  transform: scale(0.93) !important;
+  box-shadow: 0 0 0 2px rgba(103, 190, 195, 0.25);
+}
+
+/* 7. Pagination Buttons */
+.admin-pagination-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 14px;
+  font-size: 12.5px;
+  font-weight: 600;
+  border-radius: 8px;
+  border: 1px solid #E2E8F0;
+  background-color: #FFFFFF;
+  color: #334155;
+  cursor: pointer;
+}
+
+.admin-pagination-btn:active:not(:disabled) {
+  transform: scale(0.92) !important;
+  box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.25) !important;
+  background-color: #CCFBF1 !important;
+}
+
+.admin-pagination-page {
+  min-width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12.5px;
+  font-weight: 600;
+  border-radius: 8px;
+  border: 1px solid #E2E8F0;
+  background-color: #FFFFFF;
+  color: #334155;
+  cursor: pointer;
+}
+
+.admin-pagination-page.active {
+  border: 1px solid #67BEC3 !important;
+  background-color: #67BEC3 !important;
+  color: #FFFFFF !important;
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(103, 190, 195, 0.35);
+  cursor: default;
+}
+
+.admin-pagination-page:active:not(:disabled):not(.active) {
+  transform: scale(0.90) !important;
+  box-shadow: 0 0 0 2px rgba(103, 190, 195, 0.25) !important;
+}
+
+/* 8. Suggestion Chips in Reject Modal */
+.admin-reject-chip {
+  font-size: 11px;
+  font-weight: 600;
+  background-color: #F8FAFC;
+  color: #334155;
+  border: 1px solid #CBD5E1;
+  border-radius: 9999px;
+  padding: 4px 10px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.admin-reject-chip:active {
+  transform: scale(0.95) !important;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.25);
+  background-color: #FECACA;
+}
+
+/* 9. Modal Close Button */
+.admin-modal-close-btn {
+  cursor: pointer;
+  color: #94A3B8;
+  border: none;
+  background: none;
+  padding: 6px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-modal-close-btn:active {
+  transform: scale(0.85) !important;
+  background-color: #E2E8F0;
+}
+
+/* 10. Modal Footer Actions (Approve / Reject) */
+.admin-modal-footer-approve {
+  padding: 8px 20px;
+  font-size: 13px;
+  font-weight: 700;
+  background-color: #059669;
+  color: #FFFFFF;
+  border: 1px solid #059669;
+  border-radius: 10px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 1px 3px rgba(5, 150, 105, 0.25);
+}
+
+.admin-modal-footer-approve:active:not(:disabled) {
+  transform: scale(0.94) !important;
+  background-color: #065F46;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.35);
+}
+
+.admin-modal-footer-reject {
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  background-color: #FEF2F2;
+  color: #DC2626;
+  border: 1px solid #FECACA;
+  border-radius: 10px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.admin-modal-footer-reject:active:not(:disabled) {
+  transform: scale(0.94) !important;
+  background-color: #FECACA;
+  box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.25);
+}
+
+/* 11. Thumbnail Strip Buttons */
+.admin-thumbnail-btn {
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  border-radius: 6px;
+  overflow: hidden;
+  padding: 0;
+  cursor: pointer;
+  flex-shrink: 0;
+  background-color: #F8FAFC;
+}
+
+.admin-thumbnail-btn:active {
+  transform: scale(0.92) !important;
+}
+
 

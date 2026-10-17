@@ -473,9 +473,10 @@ export const AdminDashboardScreen = () => {
   const handleModerateDevice = (deviceId, action, reason) => {
     let prevStatus = 'pending';
     setDevices(prev => {
-      const target = prev.find(d => d._id === deviceId);
+      const arr = Array.isArray(prev) ? prev : [];
+      const target = arr.find(d => d._id === deviceId);
       if (target) prevStatus = target.moderationStatus || 'pending';
-      return prev.map(d => d._id === deviceId ? {
+      return arr.map(d => d._id === deviceId ? {
         ...d,
         moderationStatus: action === 'approve' ? 'approved' : 'rejected',
         status: action === 'approve' ? 'available' : 'hidden',

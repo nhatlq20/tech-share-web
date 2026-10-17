@@ -353,7 +353,11 @@ export const toggleUserStatus = async (req, res, next) => {
 export const getAdminDevices = async (req, res, next) => {
   try {
     const { devicesCol, usersCol } = getCollections();
-    const { search, category, status, moderationStatus } = req.query;
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limit = Math.max(1, Math.min(100, parseInt(req.query.limit, 10) || 10));
+    const skip = (page - 1) * limit;
+
+    const { search, keyword, category, status, moderationStatus } = req.query;
 
     const query = { isDeleted: { $ne: true } };
     const andConditions = [];
@@ -361,22 +365,21 @@ export const getAdminDevices = async (req, res, next) => {
     if (category && category !== 'all') {
       query.category = category;
     }
-    if (status && status !== 'all') {
-      query.status = status;
-    }
 
-    if (moderationStatus && moderationStatus !== 'all') {
-      if (moderationStatus === 'approved') {
+    const modStatus = moderationStatus || status;
+    if (modStatus && modStatus !== 'all') {
+      if (modStatus === 'approved') {
         andConditions.push({
           $or: [{ moderationStatus: 'approved' }, { moderationStatus: { $exists: false } }],
         });
       } else {
-        query.moderationStatus = moderationStatus;
+        query.moderationStatus = modStatus;
       }
     }
 
-    if (search && search.trim()) {
-      const regex = new RegExp(search.trim(), 'i');
+    const searchVal = search || keyword;
+    if (searchVal && searchVal.trim() !== '') {
+      const regex = new RegExp(searchVal.trim(), 'i');
       andConditions.push({
         $or: [{ name: regex }, { title: regex }, { brand: regex }],
       });
@@ -386,58 +389,105 @@ export const getAdminDevices = async (req, res, next) => {
       query.$and = andConditions;
     }
 
-    // Tab counts for moderation UI badges
-    const totalCount = await devicesCol.countDocuments({ isDeleted: { $ne: true } });
-    const pendingCount = await devicesCol.countDocuments({
-      isDeleted: { $ne: true },
-      moderationStatus: 'pending',
-    });
-    const approvedCount = await devicesCol.countDocuments({
-      isDeleted: { $ne: true },
-      $or: [{ moderationStatus: 'approved' }, { moderationStatus: { $exists: false } }],
-    });
-    const rejectedCount = await devicesCol.countDocuments({
-      isDeleted: { $ne: true },
-      moderationStatus: 'rejected',
-    });
-
-    const requestedLimit = req.query.limit === 'all' ? 1000 : parseInt(req.query.limit, 10);
-    const limitNum = Number.isInteger(requestedLimit) && requestedLimit > 0 ? requestedLimit : 500;
-
-    const devices = await devicesCol
-      .aggregate([
-        { $match: query },
-        {
-          $addFields: {
-            priorityOrder: {
-              $switch: {
-                branches: [
-                  { case: { $eq: ['$moderationStatus', 'pending'] }, then: 1 },
-                  { case: { $eq: ['$moderationStatus', 'rejected'] }, then: 2 },
-                  { case: { $eq: ['$moderationStatus', 'approved'] }, then: 3 },
-                ],
-                default: 3,
+    // 2. Chạy đồng thời đếm tổng số bản ghi và truy vấn trang hiện tại
+    const [
+      totalCount,
+      pendingCount,
+      approvedCount,
+      rejectedCount,
+      totalDevices,
+      devices,
+    ] = await Promise.all([
+      devicesCol.countDocuments({ isDeleted: { $ne: true } }),
+      devicesCol.countDocuments({
+        isDeleted: { $ne: true },
+        moderationStatus: 'pending',
+      }),
+      devicesCol.countDocuments({
+        isDeleted: { $ne: true },
+        $or: [{ moderationStatus: 'approved' }, { moderationStatus: { $exists: false } }],
+      }),
+      devicesCol.countDocuments({
+        isDeleted: { $ne: true },
+        moderationStatus: 'rejected',
+      }),
+      devicesCol.countDocuments(query),
+      devicesCol
+        .aggregate([
+          { $match: query },
+          {
+            $addFields: {
+              priorityOrder: {
+                $switch: {
+                  branches: [
+                    { case: { $eq: ['$moderationStatus', 'pending'] }, then: 1 },
+                    { case: { $eq: ['$moderationStatus', 'rejected'] }, then: 2 },
+                    { case: { $eq: ['$moderationStatus', 'approved'] }, then: 3 },
+                  ],
+                  default: 3,
+                },
               },
             },
           },
-        },
-        { $sort: { priorityOrder: 1, createdAt: -1 } },
-        { $limit: limitNum },
-      ])
-      .toArray();
+          { $sort: { priorityOrder: 1, createdAt: -1 } },
+          { $skip: skip },
+          { $limit: limit },
+          {
+            $project: {
+              _id: 1,
+              name: 1,
+              title: 1,
+              brand: 1,
+              category: 1,
+              condition: 1,
+              pricePerDay: 1,
+              dailyRate: 1,
+              depositAmount: 1,
+              depositValue: 1,
+              status: 1,
+              moderationStatus: 1,
+              moderationReason: 1,
+              rejectReason: 1,
+              images: { $slice: ['$images', 1] },
+              ownerId: 1,
+              owner: 1,
+              createdAt: 1,
+              ratingAvg: 1,
+              rentalCount: 1,
+            },
+          },
+        ])
+        .toArray(),
+    ]);
 
-    // Map owner information
+    const totalPages = Math.ceil(totalDevices / limit) || 1;
+
+    // Map owner information for current page items (chỉ lấy các trường cần thiết)
     const ownerIds = [
       ...new Set(devices.map((d) => d.ownerId || d.owner).filter(Boolean)),
     ];
     const owners = await usersCol
-      .find({
-        _id: {
-          $in: ownerIds.map((id) =>
-            mongoose.isValidObjectId(id) ? new mongoose.Types.ObjectId(id) : id
-          ),
+      .find(
+        {
+          _id: {
+            $in: ownerIds.map((id) =>
+              mongoose.isValidObjectId(id) ? new mongoose.Types.ObjectId(id) : id
+            ),
+          },
         },
-      })
+        {
+          projection: {
+            _id: 1,
+            name: 1,
+            email: 1,
+            phone: 1,
+            avatar: 1,
+            avatarUrl: 1,
+            trustScore: 1,
+            isVerified: 1,
+          },
+        }
+      )
       .toArray();
 
     const ownerMap = new Map();
@@ -494,16 +544,24 @@ export const getAdminDevices = async (req, res, next) => {
       };
     });
 
-    return res.json({
+    return res.status(200).json({
       success: true,
-      total: formattedDevices.length,
+      data: formattedDevices,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalDevices,
+        limit,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      },
       counts: {
         all: totalCount,
         pending: pendingCount,
         approved: approvedCount,
         rejected: rejectedCount,
       },
-      data: formattedDevices,
+      total: totalDevices,
     });
   } catch (error) {
     next(error);
