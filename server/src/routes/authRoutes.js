@@ -8,6 +8,10 @@ import {
   registerInit,
   registerVerifyOtp,
   resendRegisterOtp,
+  forgotPasswordInit,
+  forgotPasswordVerifyOtp,
+  forgotPasswordReset,
+  resendForgotPasswordOtp,
 } from '../controllers/authController.js';
 import { protect } from '../middlewares/authMiddleware.js';
 
@@ -20,6 +24,12 @@ router.post('/login', login);
 router.post('/register-init', registerInit);
 router.post('/register-verify-otp', registerVerifyOtp);
 router.post('/resend-otp', resendRegisterOtp);
+
+// Quên mật khẩu (Luồng xác thực OTP Email qua Google App Password)
+router.post('/forgot-password-init', forgotPasswordInit);
+router.post('/forgot-password-verify-otp', forgotPasswordVerifyOtp);
+router.post('/forgot-password-reset', forgotPasswordReset);
+router.post('/forgot-password-resend-otp', resendForgotPasswordOtp);
 
 // Lấy thông tin user hiện tại (cần Token)
 router.get('/me', protect, getCurrentUser);

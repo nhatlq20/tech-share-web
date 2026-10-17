@@ -5,7 +5,7 @@ import { Account } from '../models/Account.js';
 import { User } from '../models/User.js';
 import { Role } from '../models/Role.js';
 import { Otp } from '../models/Otp.js';
-import { sendOtpEmail } from '../services/emailService.js';
+import { sendOtpEmail, sendResetPasswordOtpEmail } from '../services/emailService.js';
 import { uploadToCloudinary, deleteFromCloudinary } from '../services/cloudinaryService.js';
 
 /**
@@ -835,6 +835,328 @@ export const updateProfile = async (req, res) => {
     });
   }
 };
+
+/**
+ * 9. POST /api/auth/forgot-password-init
+ * Tìm tài khoản qua username hoặc email và gửi mã OTP 6 số qua Google App Password
+ */
+export const forgotPasswordInit = async (req, res) => {
+  try {
+    const { identifier } = req.body;
+    const cleanIdentifier = (identifier || '').trim().toLowerCase();
+
+    if (!cleanIdentifier) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please enter your username or email address.',
+      });
+    }
+
+    // 1. Tìm account trong collection accounts
+    let account = await Account.findOne({
+      $or: [
+        { username: cleanIdentifier },
+        { email: cleanIdentifier },
+      ],
+    });
+
+    let userDoc = null;
+
+    // 2. Nếu không thấy, tìm kiếm trong users collection
+    if (!account) {
+      userDoc = await User.findOne({
+        $or: [
+          { email: cleanIdentifier },
+          { username: cleanIdentifier },
+        ],
+      });
+      if (userDoc?.accountId) {
+        account = await Account.findById(userDoc.accountId);
+      }
+    } else {
+      userDoc = (await User.findOne({ accountId: account._id })) || 
+                (account.userId ? await User.findById(account.userId) : null);
+    }
+
+    if (!account) {
+      return res.status(404).json({
+        success: false,
+        message: 'No account found matching this username or email.',
+      });
+    }
+
+    const targetEmail = (account.email || userDoc?.email || '').trim().toLowerCase();
+    if (!targetEmail) {
+      return res.status(400).json({
+        success: false,
+        message: 'This account does not have an associated email address.',
+      });
+    }
+
+    // 3. Tạo mã OTP ngẫu nhiên 6 chữ số
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // 4. Lưu mã OTP vào otps collection (hết hạn sau 5 phút)
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+    await Otp.findOneAndUpdate(
+      { email: targetEmail, type: 'forgot_password' },
+      {
+        email: targetEmail,
+        otp: otpCode,
+        type: 'forgot_password',
+        payload: {
+          accountId: account._id,
+          username: account.username,
+          email: targetEmail,
+        },
+        expiresAt,
+      },
+      { upsert: true, new: true }
+    );
+
+    // 5. Gửi email qua Gmail App Password
+    const displayName = userDoc?.name || account.username;
+    await sendResetPasswordOtpEmail(targetEmail, otpCode, displayName);
+
+    // Che một phần email để bảo mật
+    const maskEmail = (mail) => {
+      const parts = mail.split('@');
+      if (parts.length !== 2) return mail;
+      const [name, domain] = parts;
+      if (name.length <= 2) return `${name[0]}*@${domain}`;
+      const first = name.slice(0, 2);
+      const last = name.slice(-1);
+      return `${first}${'*'.repeat(Math.max(1, name.length - 3))}${last}@${domain}`;
+    };
+
+    return res.status(200).json({
+      success: true,
+      message: `A 6-digit verification code has been sent to ${maskEmail(targetEmail)}.`,
+      email: targetEmail,
+      maskedEmail: maskEmail(targetEmail),
+      username: account.username,
+    });
+  } catch (error) {
+    console.error('Error in forgotPasswordInit:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Unable to process your request. Please try again later.',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * 10. POST /api/auth/forgot-password-verify-otp
+ * Xác nhận mã OTP 6 số để nhận resetToken
+ */
+export const forgotPasswordVerifyOtp = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    const cleanEmail = (email || '').trim().toLowerCase();
+    const cleanOtp = (otp || '').trim();
+
+    if (!cleanEmail || !cleanOtp) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide both email and the 6-digit OTP code.',
+      });
+    }
+
+    const otpRecord = await Otp.findOne({
+      email: cleanEmail,
+      type: 'forgot_password',
+    });
+
+    if (!otpRecord) {
+      return res.status(400).json({
+        success: false,
+        message: 'Verification code not found or expired. Please request a new code.',
+      });
+    }
+
+    if (new Date() > new Date(otpRecord.expiresAt)) {
+      await Otp.deleteOne({ _id: otpRecord._id });
+      return res.status(400).json({
+        success: false,
+        message: 'OTP code has expired. Please request a new code.',
+      });
+    }
+
+    if (otpRecord.otp !== cleanOtp) {
+      return res.status(400).json({
+        success: false,
+        message: 'Incorrect OTP code. Please check and try again.',
+      });
+    }
+
+    // Tạo resetToken an toàn có thời hạn 10 phút
+    const resetToken = jwt.sign(
+      {
+        accountId: otpRecord.payload?.accountId,
+        email: cleanEmail,
+        purpose: 'reset_password',
+      },
+      process.env.JWT_SECRET || 'techshare_mma301_super_secret_jwt_key_2026',
+      { expiresIn: '10m' }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: 'OTP verified successfully. You may now set your new password.',
+      resetToken,
+      email: cleanEmail,
+    });
+  } catch (error) {
+    console.error('Error in forgotPasswordVerifyOtp:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'A server error occurred while verifying the OTP code.',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * 11. POST /api/auth/forgot-password-reset
+ * Đặt lại mật khẩu mới cho tài khoản
+ */
+export const forgotPasswordReset = async (req, res) => {
+  try {
+    const { resetToken, email, otp, newPassword } = req.body;
+
+    if (!newPassword || newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password must be at least 6 characters long.',
+      });
+    }
+
+    let accountId = null;
+    let targetEmail = (email || '').trim().toLowerCase();
+
+    if (resetToken) {
+      try {
+        const decoded = jwt.verify(
+          resetToken,
+          process.env.JWT_SECRET || 'techshare_mma301_super_secret_jwt_key_2026'
+        );
+        if (decoded.purpose !== 'reset_password') {
+          return res.status(400).json({
+            success: false,
+            message: 'Invalid reset token purpose.',
+          });
+        }
+        accountId = decoded.accountId;
+        targetEmail = decoded.email || targetEmail;
+      } catch (err) {
+        return res.status(400).json({
+          success: false,
+          message: 'Reset token has expired or is invalid. Please request a new OTP code.',
+        });
+      }
+    } else if (targetEmail && otp) {
+      const otpRecord = await Otp.findOne({
+        email: targetEmail,
+        otp: (otp || '').trim(),
+        type: 'forgot_password',
+      });
+      if (!otpRecord) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid or expired OTP code.',
+        });
+      }
+      accountId = otpRecord.payload?.accountId;
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing verification credentials for resetting password.',
+      });
+    }
+
+    // Hash mật khẩu mới
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(newPassword, salt);
+
+    // Cập nhật tài khoản
+    const updatedAccount = await Account.findByIdAndUpdate(
+      accountId,
+      { $set: { passwordHash } },
+      { new: true }
+    );
+
+    if (!updatedAccount) {
+      return res.status(404).json({
+        success: false,
+        message: 'Account not found.',
+      });
+    }
+
+    // Xóa OTP liên quan
+    if (targetEmail) {
+      await Otp.deleteMany({ email: targetEmail, type: 'forgot_password' });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Your password has been reset successfully. You can now log in with your new password.',
+    });
+  } catch (error) {
+    console.error('Error in forgotPasswordReset:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to reset password. Please try again later.',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * 12. POST /api/auth/forgot-password-resend-otp
+ * Gửi lại mã OTP reset password
+ */
+export const resendForgotPasswordOtp = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const cleanEmail = (email || '').trim().toLowerCase();
+
+    if (!cleanEmail) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide an email address.',
+      });
+    }
+
+    const otpRecord = await Otp.findOne({ email: cleanEmail, type: 'forgot_password' });
+    if (!otpRecord) {
+      return res.status(400).json({
+        success: false,
+        message: 'No pending password reset request found. Please start over.',
+      });
+    }
+
+    const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    otpRecord.otp = newOtp;
+    otpRecord.expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+    await otpRecord.save();
+
+    await sendResetPasswordOtpEmail(cleanEmail, newOtp, otpRecord.payload?.username || '');
+
+    return res.status(200).json({
+      success: true,
+      message: `A new verification code has been sent to your email.`,
+    });
+  } catch (error) {
+    console.error('Error in resendForgotPasswordOtp:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Unable to resend OTP code. Please try again later.',
+      error: error.message,
+    });
+  }
+};
+
 
 
 

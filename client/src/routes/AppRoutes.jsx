@@ -15,6 +15,7 @@ import { BookingDetailPage } from '../pages/booking/BookingDetailPage.jsx';
 import { NearbyPage } from '../pages/NearbyPage.jsx';
 import { LoginPage } from '../pages/LoginPage.jsx';
 import { RegisterPage } from '../pages/RegisterPage.jsx';
+import { ForgotPasswordPage } from '../pages/ForgotPasswordPage.jsx';
 import { NotFoundPage } from '../pages/NotFoundPage.jsx';
 
 // Auth-required pages
@@ -217,6 +218,7 @@ export const AppRoutes = () => {
         <Route path={ROUTES.NEARBY}             element={<NearbyPage />} />
         <Route path={ROUTES.LOGIN}              element={<LoginPage />} />
         <Route path={ROUTES.REGISTER}           element={<RegisterPage />} />
+        <Route path={ROUTES.FORGOT_PASSWORD}    element={<ForgotPasswordPage />} />
 
         {/* Cần đăng nhập (bất kỳ role) */}
         <Route

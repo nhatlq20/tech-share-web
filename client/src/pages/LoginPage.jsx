@@ -179,16 +179,12 @@ export const LoginPage = () => {
           </div>
 
           <div className="login-options-row">
-            <a
-              href="#forgot"
-              onClick={(e) => {
-                e.preventDefault();
-                alert('Please contact an administrator to recover your password.');
-              }}
+            <Link
+              to={ROUTES.FORGOT_PASSWORD}
               className="login-forgot-link"
             >
               Forgot password?
-            </a>
+            </Link>
           </div>
 
           <button

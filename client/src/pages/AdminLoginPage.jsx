@@ -166,6 +166,15 @@ export const AdminLoginPage = () => {
             </div>
           </div>
 
+          <div className="login-options-row">
+            <Link
+              to={ROUTES.FORGOT_PASSWORD}
+              className="login-forgot-link"
+            >
+              Forgot password?
+            </Link>
+          </div>
+
           <button
             type="submit"
             className="login-btn-submit admin-btn-submit"
