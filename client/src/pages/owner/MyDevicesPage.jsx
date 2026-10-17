@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import "./MyDevicesPage.css";
 import {
   deleteMyDevice,
@@ -26,7 +26,7 @@ function DeviceIcon() {
     </svg>
   );
 }
-
+const Page = 6;
 function MyDevicesPage() {
   const [devices, setDevices] = useState([]);
   const [errorMessage, setErrorMessage] = useState("");
@@ -34,7 +34,32 @@ function MyDevicesPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [updatingDeviceId, setUpdatingDeviceId] = useState(null);
   const [statusError, setStatusError] = useState("");
+  const [devicePage, setDevicePage] = useState(1);
+  const totalPage = Math.ceil(devices.length / Page);
+  const pageCount = Math.max(totalPage, 1);
+  const listDevice = devices.slice((devicePage - 1) * Page, devicePage * Page);
   const navigation = useNavigate();
+  const listRef = useRef(null);
+
+  const handlePageChange = (page) => {
+    if (page < 1 || page > pageCount || page === devicePage) return;
+
+    setDevicePage(page);
+
+    listRef.current?.scrollIntoView({
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "auto"
+        : "smooth",
+      block: "start",
+    });
+  };
+
+  useEffect(() => {
+    if (totalPage > 0 && devicePage > totalPage) {
+      setDevicePage(totalPage);
+    }
+  }, [devicePage, totalPage]);
+
   useEffect(() => {
     const fetchDevices = async () => {
       try {
@@ -162,14 +187,17 @@ function MyDevicesPage() {
               {errorMessage}
             </p>
           ) : devices.length > 0 ? (
-            <>
+            <div ref={listRef}>
               {statusError && (
                 <p className="my-devices-error" role="alert">
                   {statusError}
                 </p>
               )}
-              <div className="my-devices-grid">
-                {devices.map((device) => (
+              <div
+                className="my-devices-grid device-list"
+                key={`device-page-${devicePage}`}
+              >
+                {listDevice.map((device) => (
                   <article
                     className="my-device-card"
                     key={device._id || device.id}
@@ -251,6 +279,14 @@ function MyDevicesPage() {
                           className="my-device-icon-button"
                           type="button"
                           aria-label="Edit device"
+                          title="Edit device"
+                          onClick={() =>
+                            navigation(
+                              ROUTES.OWNER_DEVICE_EDIT_PATH(
+                                device._id || device.id,
+                              ),
+                            )
+                          }
                         >
                           <svg
                             aria-hidden="true"
@@ -292,7 +328,31 @@ function MyDevicesPage() {
                   </article>
                 ))}
               </div>
-            </>
+
+              <nav className="cotainer-page" aria-label="Device list pages">
+                <button
+                  className="button-container"
+                  type="button"
+                  onClick={() => handlePageChange(devicePage - 1)}
+                  disabled={devicePage === 1}
+                  aria-label="Previous page"
+                >
+                  Previous
+                </button>
+                <p className="title-page">
+                  {devicePage}/{pageCount}
+                </p>
+                <button
+                  className="button-container"
+                  type="button"
+                  onClick={() => handlePageChange(devicePage + 1)}
+                  disabled={devicePage >= pageCount}
+                  aria-label="Next page"
+                >
+                  Next
+                </button>
+              </nav>
+            </div>
           ) : (
             <div className="my-devices-empty-state">
               <span className="my-devices-empty-icon">

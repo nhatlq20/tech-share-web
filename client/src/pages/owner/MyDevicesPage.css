@@ -55,7 +55,10 @@
   color: #fff;
   font-size: 13px;
   font-weight: 650;
-  transition: background 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+  transition:
+    background 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
 }
 
 .my-devices-primary-button:hover {
@@ -187,7 +190,9 @@
   border-radius: 16px;
   background: #fff;
   box-shadow: 0 5px 18px rgba(15, 23, 42, 0.045);
-  transition: transform 180ms ease, box-shadow 180ms ease;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease;
 }
 
 .my-device-card:hover {
@@ -363,7 +368,10 @@
   color: #526273;
   font-size: 11px;
   font-weight: 650;
-  transition: border-color 150ms ease, background 150ms ease, color 150ms ease;
+  transition:
+    border-color 150ms ease,
+    background 150ms ease,
+    color 150ms ease;
 }
 
 .my-device-actions button:hover,
@@ -495,7 +503,9 @@
   border-radius: 9px;
   font-size: 12px;
   font-weight: 650;
-  transition: background 150ms ease, border-color 150ms ease;
+  transition:
+    background 150ms ease,
+    border-color 150ms ease;
 }
 
 .delete-device-cancel-button {
@@ -525,13 +535,23 @@
 }
 
 @keyframes delete-device-fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes delete-device-pop-in {
-  from { opacity: 0; transform: translateY(6px) scale(0.98); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .my-devices-empty-state {
@@ -576,6 +596,81 @@
   font-size: 12px;
 }
 
+.cotainer-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin-top: 20px;
+}
+.button-container {
+  display: inline-flex;
+  min-width: 88px;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 14px;
+  background-color: #28b1ba;
+  border-radius: 8px;
+  border: 0;
+  color: #fff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  transition:
+    background-color 180ms ease,
+    transform 180ms ease,
+    opacity 180ms ease;
+}
+.button-container:not(:disabled):hover {
+  background-color: #058891;
+  cursor: pointer;
+  transform: translateY(-6px);
+}
+
+.button-container:disabled {
+  background-color: #94cdd0;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+.device-list {
+  animation: fadeSlide 0.3s ease-in-out;
+  animation-fill-mode: both;
+}
+
+@keyframes fadeSlide {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.title-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  min-width: 65px;
+  height: 38px;
+  padding: 0 14px;
+
+  background-color: #eff6ff;
+  color: #2563eb;
+
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+
+  margin: 0;
+  user-select: none;
+}
 @media (max-width: 900px) {
   .my-devices-page {
     padding: 32px 22px 50px;
@@ -655,7 +750,10 @@
   .my-device-card,
   .my-device-image,
   .my-device-actions button,
-  .my-device-availability-button {
+  .my-device-availability-button,
+  .button-container,
+  .device-list {
     transition: none;
+    animation: none;
   }
 }

@@ -394,6 +394,10 @@ export const createDevice = async (req, res) => {
       depositAmount,
       depositValue,
       addressText,
+      address,
+      location,
+      latitude,
+      longitude,
       specs,
       images,
     } = req.body;
@@ -440,6 +444,47 @@ export const createDevice = async (req, res) => {
         message: "Invalid deposit amount",
       });
     }
+
+    const coordinates = location?.coordinates;
+    const hasMalformedCoordinates =
+      coordinates !== undefined &&
+      (!Array.isArray(coordinates) || coordinates.length !== 2);
+    const longitudeValue = coordinates?.[0] ?? longitude;
+    const latitudeValue = coordinates?.[1] ?? latitude;
+    const parsedLongitude = Number(longitudeValue);
+    const parsedLatitude = Number(latitudeValue);
+    const deviceAddress = location?.addressText ?? addressText ?? address;
+
+    if (
+      (location?.type && location.type !== "Point") ||
+      hasMalformedCoordinates ||
+      !["number", "string"].includes(typeof longitudeValue) ||
+      !["number", "string"].includes(typeof latitudeValue) ||
+      longitudeValue == null ||
+      longitudeValue === "" ||
+      latitudeValue == null ||
+      latitudeValue === "" ||
+      !Number.isFinite(parsedLongitude) ||
+      parsedLongitude < -180 ||
+      parsedLongitude > 180 ||
+      !Number.isFinite(parsedLatitude) ||
+      parsedLatitude < -90 ||
+      parsedLatitude > 90
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Valid device location is required (longitude -180 to 180, latitude -90 to 90)",
+      });
+    }
+
+    if (typeof deviceAddress !== "string" || !deviceAddress.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Device address is required",
+      });
+    }
+
     let parsedSpecs = specs;
 
     if (typeof specs === "string") {
@@ -508,7 +553,7 @@ export const createDevice = async (req, res) => {
     }
 
     const device = await Device.create({
-      owner: ownerId,
+      ownerId,
       name,
       title,
       category,
@@ -519,7 +564,11 @@ export const createDevice = async (req, res) => {
       dailyRate: price,
       pricePerDay: price,
       depositValue: deposit,
-      address: addressText ?? address,
+      location: {
+        type: "Point",
+        coordinates: [parsedLongitude, parsedLatitude],
+        addressText: deviceAddress.trim(),
+      },
       specs: parsedSpecs,
       images: imageUrls,
     });
@@ -575,24 +624,51 @@ export const myDevices = async (req, res) => {
   }
 };
 
-export const deleteOwner = async (req,res) => {
+export const deleteOwner = async (req, res) => {
   try {
     const { deviceId } = req.params;
-    const ownerId = req.user.userId;
-    const device = await Device.findOne({
-      _id: deviceId,
-      owner: ownerId,
-      isDeleted: false,
-    });
+    const ownerId = req.user?.userId || req.user?.id || req.user?._id;
 
-    if (!device) {
+    if (!ownerId) {
+      return res.status(401).json({
+        success: false,
+        message: "Không xác định được tài khoản chủ thiết bị.",
+      });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(deviceId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid device ID",
+      });
+    }
+
+    const ownerValues = mongoose.Types.ObjectId.isValid(ownerId)
+      ? [new mongoose.Types.ObjectId(ownerId), ownerId.toString()]
+      : [ownerId.toString()];
+    const result = await Device.collection.updateOne(
+      {
+        _id: new mongoose.Types.ObjectId(deviceId),
+        $or: [
+          ...ownerValues.map((value) => ({ ownerId: value })),
+          ...ownerValues.map((value) => ({ owner: value })),
+        ],
+        isDeleted: { $ne: true },
+      },
+      {
+        $set: {
+          isDeleted: true,
+          updatedAt: new Date(),
+        },
+      },
+    );
+
+    if (result.matchedCount === 0) {
       return res.status(404).json({
         success: false,
         message: "Không tìm thấy thiết bị",
       });
     }
-    device.isDeleted = true;
-    await device.save();
 
     return res.status(200).json({
       success: true,

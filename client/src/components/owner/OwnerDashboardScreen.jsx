@@ -10,6 +10,7 @@ import { OwnerWalletTab } from "./OwnerWalletTab";
 import { OwnerAIAssistantTab } from "./OwnerAIAssistantTab";
 import PostDevicePage from "../../pages/PostDevicePage";
 import MyDevicesPage from "../../pages/owner/MyDevicesPage";
+import EditDevicePage from "../../pages/owner/EditDevicePage";
 import MessagesPage from "../../pages/MessagesPage";
 import { NotificationDropdown } from "../notifications/NotificationDropdown";
 import { ROUTES } from "../../routes/routes";
@@ -50,6 +51,9 @@ export const OwnerDashboardScreen = () => {
 
   // Determine current active path
   const currentPath = location.pathname;
+  const editDeviceMatch = currentPath.match(
+    /^\/owner\/devices\/([^/]+)\/edit$/,
+  );
 
   // Sync route navigation
   const handleNavigate = (path) => {
@@ -387,6 +391,7 @@ export const OwnerDashboardScreen = () => {
           {currentPath === ROUTES.OWNER_DEVICES && (
             <MyDevicesPage />
           )}
+          {editDeviceMatch && <EditDevicePage />}
 
           {/* C. /owner/bookings */}
           {currentPath === ROUTES.OWNER_BOOKINGS && (

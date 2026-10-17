@@ -19,6 +19,8 @@ export const API_CONFIG = {
     ADMIN_REJECT_EKYC: (requestId) => `/admin/ekyc/${requestId}/reject`,
     OWNER_KPI: "/owner/kpi",
     OWNER_DEVICES: "/owner/devices",
+    OWNER_DEVICE_BY_ID: (deviceId) => `/owner/devices/${deviceId}`,
+    OWNER_UPDATE_DEVICE: (deviceId) => `/owner/devices/${deviceId}`,
     DELETE_DEVICE: "/devices/:deviceId",
     OWNER_TOGGLE_DEVICE: (deviceId) => `/owner/devices/${deviceId}/status`,
     OWNER_BLOCKED_DATES: (deviceId) => `/devices/${deviceId}/blocked-dates`,

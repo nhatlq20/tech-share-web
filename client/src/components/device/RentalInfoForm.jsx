@@ -5,7 +5,7 @@ const formatVnd = (value) => {
   return new Intl.NumberFormat('vi-VN').format(Number(value));
 };
 
-const RentalInfoForm = ({ values, errors, onChange }) => {
+const RentalInfoForm = ({ values, errors, onChange, onGetCurrentLocation }) => {
   const handlePriceChange = (field, value) => {
     onChange(field, value.replace(/\D/g, ''));
   };
@@ -54,6 +54,55 @@ const RentalInfoForm = ({ values, errors, onChange }) => {
         {errors.addressText && <small className="post-device-error">{errors.addressText}</small>}
         <small className="post-device-hint">Nhập địa chỉ nhận/trả thiết bị.</small>
       </label>
+
+      <div className="post-device-location-heading post-device-field-wide">
+        <div>
+          <span>Tọa độ vị trí <b>*</b></span>
+          <small className="post-device-hint">
+            Cần tọa độ để hiển thị thiết bị trên bản đồ và tìm kiếm gần đây.
+          </small>
+        </div>
+        <button type="button" onClick={onGetCurrentLocation}>
+          Lấy vị trí hiện tại
+        </button>
+      </div>
+
+      <label className="post-device-field">
+        <span>Vĩ độ (latitude) <b>*</b></span>
+        <input
+          type="number"
+          step="any"
+          min="-90"
+          max="90"
+          className={errors.latitude ? 'has-error' : ''}
+          value={values.latitude}
+          onChange={(event) => onChange('latitude', event.target.value)}
+          placeholder="Ví dụ: 21.0285"
+          aria-invalid={Boolean(errors.latitude)}
+        />
+        {errors.latitude && <small className="post-device-error">{errors.latitude}</small>}
+      </label>
+
+      <label className="post-device-field">
+        <span>Kinh độ (longitude) <b>*</b></span>
+        <input
+          type="number"
+          step="any"
+          min="-180"
+          max="180"
+          className={errors.longitude ? 'has-error' : ''}
+          value={values.longitude}
+          onChange={(event) => onChange('longitude', event.target.value)}
+          placeholder="Ví dụ: 105.8542"
+          aria-invalid={Boolean(errors.longitude)}
+        />
+        {errors.longitude && <small className="post-device-error">{errors.longitude}</small>}
+      </label>
+      {errors.location && (
+        <small className="post-device-error post-device-field-wide">
+          {errors.location}
+        </small>
+      )}
     </div>
   );
 };

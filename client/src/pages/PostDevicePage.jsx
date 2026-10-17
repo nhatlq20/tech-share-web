@@ -42,6 +42,8 @@ const PostDevicePage = ({ onBack, onDeviceCreated }) => {
     pricePerDay: "",
     depositAmount: "",
     addressText: "",
+    latitude: "",
+    longitude: "",
     specs: [],
   });
   const [errors, setErrors] = useState({});
@@ -58,6 +60,7 @@ const PostDevicePage = ({ onBack, onDeviceCreated }) => {
     setErrors((previousErrors) => ({
       ...previousErrors,
       [name]: "",
+      ...(name === "latitude" || name === "longitude" ? { location: "" } : {}),
     }));
     setSubmissionModal(null);
   };
@@ -151,6 +154,25 @@ const PostDevicePage = ({ onBack, onDeviceCreated }) => {
       if (!formData.addressText.trim()) {
         nextErrors.addressText = "Vui lòng nhập địa chỉ thiết bị.";
       }
+
+      const latitude = Number(formData.latitude);
+      const longitude = Number(formData.longitude);
+      if (
+        formData.latitude === "" ||
+        !Number.isFinite(latitude) ||
+        latitude < -90 ||
+        latitude > 90
+      ) {
+        nextErrors.latitude = "Vui lòng nhập vĩ độ hợp lệ từ -90 đến 90.";
+      }
+      if (
+        formData.longitude === "" ||
+        !Number.isFinite(longitude) ||
+        longitude < -180 ||
+        longitude > 180
+      ) {
+        nextErrors.longitude = "Vui lòng nhập kinh độ hợp lệ từ -180 đến 180.";
+      }
     }
 
     if (currentStep === 3) {
@@ -194,6 +216,44 @@ const PostDevicePage = ({ onBack, onDeviceCreated }) => {
     }
 
     setCurrentStep((step) => Math.max(step - 1, 1));
+  };
+
+  const handleGetCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      setErrors((previousErrors) => ({
+        ...previousErrors,
+        location: "Trình duyệt không hỗ trợ lấy vị trí hiện tại.",
+      }));
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => {
+        setFormData((previousData) => ({
+          ...previousData,
+          latitude: String(coords.latitude),
+          longitude: String(coords.longitude),
+        }));
+        setErrors((previousErrors) => ({
+          ...previousErrors,
+          latitude: "",
+          longitude: "",
+          location: "",
+        }));
+      },
+      (error) => {
+        const messages = {
+          1: "Bạn cần cho phép truy cập vị trí để sử dụng tính năng này.",
+          2: "Không xác định được vị trí. Vui lòng thử lại hoặc nhập tọa độ.",
+          3: "Lấy vị trí quá lâu. Vui lòng thử lại.",
+        };
+        setErrors((previousErrors) => ({
+          ...previousErrors,
+          location: messages[error.code] || "Không thể lấy vị trí hiện tại.",
+        }));
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 },
+    );
   };
 
   const handleSubmit = async () => {
@@ -253,6 +313,14 @@ const PostDevicePage = ({ onBack, onDeviceCreated }) => {
           pricePerDay: Number(formData.pricePerDay),
           depositAmount: Number(formData.depositAmount),
           addressText: formData.addressText.trim(),
+          location: {
+            type: "Point",
+            coordinates: [
+              Number(formData.longitude),
+              Number(formData.latitude),
+            ],
+            addressText: formData.addressText.trim(),
+          },
           specs: specifications,
           images: imageData,
         },
@@ -362,6 +430,7 @@ const PostDevicePage = ({ onBack, onDeviceCreated }) => {
                 values={formData}
                 errors={errors}
                 onChange={handleChange}
+                onGetCurrentLocation={handleGetCurrentLocation}
               />
             )}
             {currentStep === 3 && (
