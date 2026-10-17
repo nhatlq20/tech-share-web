@@ -9,6 +9,7 @@ import {
   ArrowRight,
   AlertCircle,
   CheckCircle2,
+  ShieldCheck,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { api } from '../services/api.js';
@@ -49,10 +50,23 @@ export const LoginPage = () => {
       const res = await api.post('/auth/login', {
         identifier: identifier.trim(),
         password,
+        portal: 'client',
       });
 
       if (res?.success) {
         const role = res.user?.role;
+
+        // Chặn admin đăng nhập ở trang login thường
+        if (role === 'admin') {
+          setErrorMessage('Invalid username or password.');
+          return;
+        }
+
+        // Chỉ cho phép owner và renter
+        if (role !== 'owner' && role !== 'renter') {
+          setErrorMessage('Invalid username or password.');
+          return;
+        }
 
         login({
           token: res.token,
@@ -63,9 +77,7 @@ export const LoginPage = () => {
         setSuccessMessage('Login successful! Redirecting...');
         setTimeout(() => {
           // Phân quyền điều hướng theo role
-          if (role === 'admin') {
-            navigate(ROUTES.ADMIN, { replace: true });
-          } else if (role === 'owner') {
+          if (role === 'owner') {
             navigate(ROUTES.OWNER, { replace: true });
           } else {
             // Renter: điều hướng về trang home (hoặc route người thuê trước đó)
@@ -74,13 +86,13 @@ export const LoginPage = () => {
           }
         }, 600);
       } else {
-        setErrorMessage(res?.message || 'Login failed. Please check your credentials.');
+        setErrorMessage(res?.message || 'Invalid username or password.');
       }
     } catch (err) {
       const msg =
         err.data?.message ||
         err.message ||
-        'Unable to connect to server. Please try again later.';
+        'Invalid username or password.';
       setErrorMessage(msg);
     } finally {
       setIsLoading(false);
@@ -200,6 +212,18 @@ export const LoginPage = () => {
           Don't have an account?
           <Link to={ROUTES.REGISTER} className="login-footer-link">
             Register now
+          </Link>
+        </div>
+
+        {/* Admin Portal Switch Section */}
+        <div className="login-admin-divider">
+          <span>Are you an administrator?</span>
+        </div>
+
+        <div className="login-admin-switch-container">
+          <Link to={ROUTES.ADMIN_LOGIN} className="login-admin-switch-btn">
+            <ShieldCheck size={18} />
+            <span>Admin Portal Sign In</span>
           </Link>
         </div>
       </div>

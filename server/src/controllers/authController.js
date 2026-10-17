@@ -55,7 +55,7 @@ export const login = async (req, res) => {
     if (!loginKey || !password) {
       return res.status(400).json({
         success: false,
-        message: 'Vui lòng nhập tên đăng nhập/email và mật khẩu.',
+        message: 'Please enter your username or email and password.',
       });
     }
 
@@ -72,14 +72,14 @@ export const login = async (req, res) => {
     if (!account) {
       return res.status(401).json({
         success: false,
-        message: 'Tên đăng nhập/email hoặc mật khẩu không chính xác.',
+        message: 'Invalid username or password.',
       });
     }
 
     if (!account.isActive) {
       return res.status(403).json({
         success: false,
-        message: 'Tài khoản của bạn đang bị khóa hoặc chưa được kích hoạt.',
+        message: 'Your account is inactive or suspended. Please contact support.',
       });
     }
 
@@ -88,7 +88,7 @@ export const login = async (req, res) => {
     if (!isMatch) {
       return res.status(401).json({
         success: false,
-        message: 'Tên đăng nhập/email hoặc mật khẩu không chính xác.',
+        message: 'Invalid username or password.',
       });
     }
 
@@ -109,6 +109,21 @@ export const login = async (req, res) => {
 
     // Tra cứu mã quyền thực tế từ roleId (trong collection roles)
     const roleCode = await resolveRoleCode(account, user);
+
+    const { portal } = req.body;
+    if (portal === 'admin' && roleCode !== 'admin') {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid username or password.',
+      });
+    }
+
+    if ((portal === 'client' || portal === 'user') && roleCode === 'admin') {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid username or password.',
+      });
+    }
 
     const finalUserId = user?._id || account.userId || account._id;
 
@@ -155,16 +170,16 @@ export const login = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: 'Đăng nhập thành công!',
+      message: 'Login successful!',
       token,
       account: safeAccount,
       user: safeUser,
     });
   } catch (error) {
-    console.error('Lỗi đăng nhập:', error);
+    console.error('Error during login:', error);
     return res.status(500).json({
       success: false,
-      message: 'Đã xảy ra lỗi máy chủ trong quá trình đăng nhập.',
+      message: 'Internal server error during authentication.',
       error: error.message,
     });
   }
