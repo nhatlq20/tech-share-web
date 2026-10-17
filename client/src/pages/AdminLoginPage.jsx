@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import {
   User,
   Lock,
@@ -7,6 +7,7 @@ import {
   EyeOff,
   ShieldCheck,
   ArrowRight,
+  ArrowLeft,
   AlertCircle,
   CheckCircle2,
 } from 'lucide-react';
@@ -52,10 +53,11 @@ export const AdminLoginPage = () => {
       const res = await api.post('/auth/login', {
         identifier: identifier.trim(),
         password,
+        portal: 'admin',
       });
 
       if (res?.success) {
-        // Only allow admin role here
+        // Chỉ cho phép admin đăng nhập tại cổng này
         if (res.user?.role !== 'admin') {
           setErrorMessage('Invalid username or password.');
           return;
@@ -72,13 +74,13 @@ export const AdminLoginPage = () => {
           navigate(ROUTES.ADMIN, { replace: true });
         }, 600);
       } else {
-        setErrorMessage(res?.message || 'Login failed. Please check your credentials.');
+        setErrorMessage(res?.message || 'Invalid username or password.');
       }
     } catch (err) {
       const msg =
         err.data?.message ||
         err.message ||
-        'Unable to connect to server. Please try again later.';
+        'Invalid username or password.';
       setErrorMessage(msg);
     } finally {
       setIsLoading(false);
@@ -166,19 +168,27 @@ export const AdminLoginPage = () => {
 
           <button
             type="submit"
-            className="login-btn-submit"
+            className="login-btn-submit admin-btn-submit"
             disabled={isLoading}
           >
             {isLoading ? (
               <span>Authenticating...</span>
             ) : (
               <>
-                <span>Sign In</span>
+                <span>Sign In as Admin</span>
                 <ArrowRight size={18} />
               </>
             )}
           </button>
         </form>
+
+        {/* Back to User Login link */}
+        <div className="admin-back-switch-container">
+          <Link to={ROUTES.LOGIN} className="admin-back-switch-btn">
+            <ArrowLeft size={16} />
+            <span>Return to Owner &amp; Renter Login</span>
+          </Link>
+        </div>
       </div>
     </div>
   );

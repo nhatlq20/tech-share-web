@@ -15,3 +15,40 @@
 .admin-login-card::before {
   background: linear-gradient(90deg, #7c3aed, #5b21b6, #7c3aed);
 }
+
+/* Nút submit admin màu tím */
+.admin-btn-submit {
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%) !important;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3) !important;
+}
+
+.admin-btn-submit:hover:not(:disabled) {
+  background: linear-gradient(135deg, #6d28d9 0%, #5b21b6 100%) !important;
+  box-shadow: 0 6px 16px rgba(124, 58, 237, 0.4) !important;
+}
+
+/* Nút quay lại trang login thông thường */
+.admin-back-switch-container {
+  margin-top: 24px;
+  display: flex;
+  justify-content: center;
+}
+
+.admin-back-switch-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.admin-back-switch-btn:hover {
+  color: #5b21b6;
+  background-color: #ede9fe;
+}
+
