@@ -116,8 +116,9 @@ const deviceSchema = new mongoose.Schema(
 
     // 6. Nhóm Thống kê Hiệu quả Kinh doanh
     stats: {
-      ratingAvg: { type: Number, default: 5.0, min: 1.0, max: 5.0 },
+      ratingAvg: { type: Number, default: 0, min: 0, max: 5 },
       ratingCount: { type: Number, default: 0 },
+      reviewRevision: { type: Number, default: 0 },
       rentalCount: { type: Number, default: 0 },
       revenueTotal: { type: Number, default: 0 },
     },
@@ -153,11 +154,11 @@ deviceSchema.virtual('address')
   .set(function (v) { this.set('location.addressText', v); });
 
 deviceSchema.virtual('ratingAvg')
-  .get(function () { return this.stats?.ratingAvg ?? 5.0; })
+  .get(function () { return this.stats?.ratingAvg ?? 0; })
   .set(function (v) { this.set('stats.ratingAvg', v); });
 
 deviceSchema.virtual('rating')
-  .get(function () { return this.stats?.ratingAvg ?? 5.0; })
+  .get(function () { return this.stats?.ratingAvg ?? 0; })
   .set(function (v) { this.set('stats.ratingAvg', v); });
 
 deviceSchema.virtual('ratingCount')

@@ -46,18 +46,28 @@ const reviewSchema = new mongoose.Schema(
       min: 1,
       max: 5,
       required: true,
+      validate: { validator: Number.isInteger, message: 'Rating must be an integer from 1 to 5.' },
     },
     comment: {
       type: String,
       required: true,
       trim: true,
+      maxlength: 2000,
+    },
+    ownerReply: {
+      type: new mongoose.Schema({
+        ownerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+        comment: { type: String, required: true, trim: true, maxlength: 2000 },
+        updatedAt: { type: Date, required: true },
+      }, { _id: false }),
+      default: undefined,
     },
     images: [{
       type: String,
     }],
   },
   {
-    timestamps: { createdAt: true, updatedAt: false },
+    timestamps: true,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
     collection: 'reviews',

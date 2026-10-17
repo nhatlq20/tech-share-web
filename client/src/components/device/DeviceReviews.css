@@ -1,0 +1,74 @@
+.device-reviews { min-width: 0; padding: 22px; border: 1px solid #e2e8f0; border-radius: 16px; background: #fff; color: #334155; font-size: 14px; }
+.review-section-heading, .review-list-toolbar, .review-item header, .review-actions, .review-pagination { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.review-section-heading, .review-list-toolbar { justify-content: space-between; }
+.review-section-heading { margin-bottom: 22px; }
+.review-section-heading h2 { color: #0f172a; font-size: 20px; font-weight: 650; margin: 0; }
+.review-count-badge { padding: 3px 9px; border-radius: 20px; background: #f1f3f5; color: #334155; font-size: 12px; font-weight: 500; }
+.review-overview { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 24px; padding: 0 0 24px; }
+.review-average { display: flex; flex-direction: column; gap: 4px; align-items: center; justify-content: center; text-align: center; }
+.review-summary-stars, .review-stars, .review-star-picker { color: #efa900; }
+.review-summary-stars { display: flex; gap: 3px; margin: 3px 0 10px; }
+.review-average strong { font-size: 30px; color: #0f172a; line-height: 1.2; font-weight: 600; }
+.review-average small { font-size: 15px; color: #64748b; font-weight: 400; }
+.review-average > span { color: #64748b; font-size: 12px; }
+.review-distribution { display: grid; align-content: center; gap: 10px; }
+.review-distribution > div { display: grid; grid-template-columns: 30px minmax(0, 1fr) 24px; align-items: center; gap: 8px; font-size: 12px; }
+.review-distribution span { display: flex; align-items: center; gap: 3px; }
+.review-distribution progress { width: 100%; height: 7px; border: 0; border-radius: 8px; overflow: hidden; background: #f1f3f5; accent-color: #55adb2; }
+.review-distribution progress::-webkit-progress-bar { background: #f1f3f5; }
+.review-distribution progress::-webkit-progress-value { background: #55adb2; }
+.review-distribution progress::-moz-progress-bar { background: #55adb2; }
+.review-eligibility { margin: 0 0 18px; color: #64748b; font-size: 12px; }
+.device-reviews a { color: #0f766e; text-decoration: underline; }
+.device-reviews button { cursor: pointer; border: 1px solid #cbd5e1; border-radius: 8px; padding: 7px 12px; font-size: 12px; font-weight: 600; background: #fff; color: #334155; }
+.device-reviews button:hover { background: #f0fdfa; border-color: #0d9488; }
+.device-reviews button:disabled { opacity: .5; cursor: not-allowed; }
+.device-reviews button:focus-visible, .device-reviews select:focus-visible, .device-reviews textarea:focus-visible { outline: 2px solid #0d9488; outline-offset: 3px; }
+.device-reviews .review-primary { background: #0f766e; border-color: #0f766e; color: #fff; }
+.review-list-toolbar { border-top: 1px solid #edf0f2; padding: 24px 0 12px; }
+.review-list-toolbar h3 { font-size: 17px; color: #0f172a; }
+.review-list-toolbar h3, .review-form h3 { font-weight: 700; }
+.review-list-toolbar label { display: flex; align-items: center; gap: 7px; font-size: 12px; }
+.device-reviews select { border: 1px solid #cbd5e1; border-radius: 8px; padding: 7px; background: #fff; max-width: 100%; }
+.review-item { padding: 24px 12px; border-bottom: 1px solid #edf0f2; min-width: 0; }
+.review-avatar { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+.review-avatar-placeholder { display: grid; place-items: center; background: #e4f1f2; color: #334155; }
+.review-author { display: flex; flex-direction: column; min-width: 0; flex: 1; overflow-wrap: anywhere; }
+.review-author strong { color: #0f172a; font-weight: 600; font-size: 16px; }
+.review-date { color: #64748b; font-size: 12px; margin-left: auto; white-space: nowrap; }
+.review-verified { display: inline-flex; align-items: center; gap: 4px; color: #64748b; margin-top: 3px; font-size: 12px; }
+.review-verified svg { color: #10b981; }
+.review-stars { display: flex; gap: 3px; margin: 14px 0 22px; }
+.review-comment, .review-owner-reply p { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.7; }
+.review-owner-reply { margin: 14px 0; border-left: 3px solid #14b8a6; background: #f8fafc; padding: 12px 16px; border-radius: 0 8px 8px 0; font-size: 13px; }
+.review-owner-reply strong { color: #0f766e; font-size: 12px; }
+.review-actions { margin-top: 12px; gap: 8px; }
+.review-form { background: #f8fafc; border: 1px solid #e2e8f0; padding: 16px; border-radius: 12px; margin: 16px 0; }
+.review-form fieldset { border: 0; min-width: 0; padding: 0; margin-top: 10px; }
+.review-form label { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; font-size: 13px; }
+.review-form textarea { width: 100%; box-sizing: border-box; resize: vertical; min-height: 110px; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; color: #334155; }
+.review-form small { color: #64748b; display: block; text-align: right; }
+.review-star-picker { display: flex; gap: 2px; align-items: center; flex-wrap: wrap; }
+.review-star-picker button { border: none; padding: 5px; color: inherit; background: transparent; }
+.review-star-picker span { font-size: 12px; color: #64748b; margin-left: 6px; }
+.review-error { color: #b91c1c; margin: 12px 0; }
+.review-notice { color: #0f766e; background: #f0fdfa; padding: 10px; border-radius: 8px; }
+.review-delete-confirm { background: #fff7ed; border-radius: 8px; padding: 12px; margin-top: 10px; }
+.review-empty { text-align: center; padding: 32px 8px; color: #64748b; }
+.review-empty svg { margin: 0 auto 10px; color: #0d9488; }
+.review-empty h3 { color: #334155; font-weight: 700; margin-bottom: 5px; }
+.review-pagination { justify-content: center; margin-top: 24px; font-size: 12px; }
+.review-pagination button { border-radius: 999px; padding: 8px 18px; }
+.review-list-toolbar select { border: 0; color: #64748b; background: transparent; }
+.review-item-actions { border-top: 1px solid #edf0f2; padding-top: 14px; margin-top: 20px; }
+.review-item-actions button { border: 0; padding: 4px 0; color: #64748b; font-weight: 400; }
+.review-reply-button { display: inline-flex; align-items: center; gap: 5px; margin-left: auto; }
+@media (max-width: 480px) {
+  .device-reviews { padding: 16px; }
+  .review-overview { grid-template-columns: 82px minmax(0, 1fr); gap: 12px; padding: 0 0 20px; }
+  .review-item { padding: 20px 0; }
+  .review-date { flex-basis: 100%; margin-left: 56px; }
+  .review-section-heading h2 { font-size: 18px; }
+  .review-distribution > div { grid-template-columns: 24px minmax(0, 1fr) 16px; gap: 4px; }
+  .review-list-toolbar { align-items: flex-start; }
+}

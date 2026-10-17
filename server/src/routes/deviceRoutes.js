@@ -17,6 +17,8 @@ import {
 import { getDeviceAvailability } from "../controllers/bookingController.js";
 import { protect } from "../middlewares/authMiddleware.js";
 import { requireOwner } from "../middlewares/roleMiddleware.js";
+import { getDeviceReviews, getDeviceRatingSummary, getReviewEligibility, createReview,
+  updateReview, deleteReview, replyToReview } from '../controllers/reviewController.js';
 
 const router = express.Router();
 
@@ -36,6 +38,13 @@ router.patch("/:id/status", toggleDeviceStatus);
 router.patch("/:id/blocked-dates", toggleBlockedDate);
 
 // Parameterized device detail route
+router.get('/:id/reviews/summary', getDeviceRatingSummary);
+router.get('/:id/reviews/eligibility', protect, getReviewEligibility);
+router.get('/:id/reviews', getDeviceReviews);
+router.post('/:id/reviews', protect, createReview);
+router.patch('/:id/reviews/:reviewId', protect, updateReview);
+router.delete('/:id/reviews/:reviewId', protect, deleteReview);
+router.put('/:id/reviews/:reviewId/reply', protect, replyToReview);
 router.get("/:id", getDeviceById);
 
 router.post("/", protect, requireOwner, createDevice);
