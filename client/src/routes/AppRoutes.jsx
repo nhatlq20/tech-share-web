@@ -14,7 +14,7 @@ import { MyBookingsPage } from '../pages/booking/MyBookingsPage.jsx';
 import { BookingDetailPage } from '../pages/booking/BookingDetailPage.jsx';
 import { NearbyPage } from '../pages/NearbyPage.jsx';
 import { LoginPage } from '../pages/LoginPage.jsx';
-import { RegisterPage } from '../pages/RegisterPage.tsx';
+import { RegisterPage } from '../pages/RegisterPage.jsx';
 import { NotFoundPage } from '../pages/NotFoundPage.jsx';
 
 // Auth-required pages

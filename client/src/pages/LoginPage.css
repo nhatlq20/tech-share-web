@@ -318,10 +318,10 @@
 }
 
 .login-admin-switch-btn:hover {
-  background-color: #ede9fe;
-  border-color: #c4b5fd;
-  color: #5b21b6;
+  background-color: #e8f6f7;
+  border-color: #b3e3e6;
+  color: #286E74;
   transform: translateY(-1px);
-  box-shadow: 0 4px 10px rgba(124, 58, 237, 0.12);
+  box-shadow: 0 4px 10px rgba(103, 190, 195, 0.18);
 }
 
