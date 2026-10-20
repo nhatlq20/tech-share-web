@@ -99,6 +99,7 @@ export const subscribeUserNotifications = (userId, callback, onError) => {
             body: data.body || '',
             type: data.type || 'system',
             relatedId: data.relatedId || undefined,
+            url: data.url || undefined,
             isRead: Boolean(data.isRead),
             createdAt: data.createdAt || new Date().toISOString(),
           });

@@ -29,6 +29,11 @@ const notificationSchema = new mongoose.Schema(
       default: 'system',
       index: true,
     },
+    url: {
+      type: String,
+      default: null,
+      trim: true,
+    },
     relatedId: {
       type: String,
       default: null,

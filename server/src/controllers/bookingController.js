@@ -1,7 +1,9 @@
 import mongoose from 'mongoose';
 import Device from '../models/Device.js';
 import Booking from '../models/Booking.js';
-import '../models/User.js';
+import User from '../models/User.js';
+import { createAndSendNotification } from '../services/notificationService.js';
+import { getIO } from '../socket.js';
 
 /**
  * My Bookings hub tabs. Each tab maps to one or more persisted booking statuses.
@@ -560,6 +562,47 @@ export const createBooking = async (req, res, next) => {
 
     await newBooking.save();
 
+    // 4. Send real-time notification & Socket.IO event to device owner
+    if (effectiveOwnerId) {
+      const ownerTargetId = effectiveOwnerId.toString();
+      const renterDisplayName =
+        (typeof renterInfo === 'object' ? renterInfo?.name : '') ||
+        recipientName ||
+        req.user?.name ||
+        req.user?.username ||
+        'Khách thuê';
+      const bookedDeviceName = device.name || device.title || 'Thiết bị';
+
+      try {
+        await createAndSendNotification({
+          userId: ownerTargetId,
+          title: 'Yêu cầu thuê thiết bị mới',
+          body: `${renterDisplayName} vừa gửi yêu cầu thuê "${bookedDeviceName}" (Mã: ${bookingCode}). Vui lòng kiểm tra và duyệt đơn.`,
+          type: 'order',
+          relatedId: newBooking._id.toString(),
+          url: '/owner/bookings',
+        });
+      } catch (notifErr) {
+        console.warn('⚠️ Gửi thông báo yêu cầu thuê tới chủ thiết bị thất bại:', notifErr.message);
+      }
+
+      try {
+        const io = getIO();
+        if (io) {
+          io.to(`user_${ownerTargetId}`).emit('new_booking_request', {
+            bookingId: newBooking._id.toString(),
+            bookingCode: newBooking.bookingCode,
+            deviceId: device._id.toString(),
+            deviceName: bookedDeviceName,
+            renterName: renterDisplayName,
+            status: 'pending',
+          });
+        }
+      } catch (ioErr) {
+        console.warn('⚠️ Socket emit new_booking_request error:', ioErr.message);
+      }
+    }
+
     return res.status(201).json({
       success: true,
       message: 'Device booked successfully! Awaiting owner approval.',
@@ -783,6 +826,37 @@ export const cancelBooking = async (req, res, next) => {
         success: false,
         message: 'This booking was just updated by the owner and can no longer be cancelled.',
       });
+    }
+
+    // Notify owner about renter cancellation
+    const ownerTargetId = (updated.ownerId?._id || updated.ownerId || updated.owner?._id || updated.owner)?.toString();
+    if (ownerTargetId) {
+      const devName = updated.device?.name || updated.device?.title || updated.deviceName || 'Thiết bị';
+      try {
+        await createAndSendNotification({
+          userId: ownerTargetId,
+          title: 'Yêu cầu thuê đã bị hủy',
+          body: `Khách thuê đã hủy yêu cầu thuê "${devName}" (Mã đơn: ${updated.bookingCode || id}).`,
+          type: 'order',
+          relatedId: updated._id.toString(),
+          url: '/owner/bookings',
+        });
+      } catch (notifErr) {
+        console.warn('⚠️ Gửi thông báo hủy đơn cho chủ thiết bị thất bại:', notifErr.message);
+      }
+
+      try {
+        const io = getIO();
+        if (io) {
+          io.to(`user_${ownerTargetId}`).emit('booking_status_updated', {
+            bookingId: updated._id.toString(),
+            bookingCode: updated.bookingCode,
+            status: 'cancelled',
+          });
+        }
+      } catch (ioErr) {
+        console.warn('⚠️ Socket emit warning:', ioErr.message);
+      }
     }
 
     return res.status(200).json({

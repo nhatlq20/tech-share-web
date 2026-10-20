@@ -20,6 +20,7 @@ import {
   Truck,
   MessageSquare,
 } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext.jsx';
 import { STRINGS } from '../../constants/strings.js';
 import { ROUTES } from '../../routes/routes.js';
 import { fetchBookingById, cancelBooking } from '../../services/bookingService.js';
@@ -35,6 +36,7 @@ const T = STRINGS.booking.detail;
 export const BookingDetailPage = () => {
   const { bookingId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [booking, setBooking] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -128,12 +130,23 @@ export const BookingDetailPage = () => {
         </div>
         <h2 className="text-xl font-bold text-slate-800">{T.notFoundTitle}</h2>
         <p className="text-sm text-slate-500 max-w-md mt-1 mb-6">{error || T.notFoundDesc}</p>
-        <Link
-          to={ROUTES.MY_BOOKINGS}
-          className="px-5 py-2.5 rounded-full bg-brand-500 text-white font-semibold text-sm hover:bg-brand-600 transition shadow-sm"
-        >
-          &larr; {T.backBtn}
-        </Link>
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          {user?.role === 'owner' ? (
+            <Link
+              to={ROUTES.OWNER_BOOKINGS}
+              className="px-5 py-2.5 rounded-full bg-teal-600 text-white font-semibold text-sm hover:bg-teal-700 transition shadow-sm"
+            >
+              &larr; Quản lý đơn thuê (Chủ thiết bị)
+            </Link>
+          ) : (
+            <Link
+              to={ROUTES.MY_BOOKINGS}
+              className="px-5 py-2.5 rounded-full bg-brand-500 text-white font-semibold text-sm hover:bg-brand-600 transition shadow-sm"
+            >
+              &larr; {T.backBtn}
+            </Link>
+          )}
+        </div>
       </div>
     );
   }

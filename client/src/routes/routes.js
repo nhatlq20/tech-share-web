@@ -12,6 +12,8 @@ export const ROUTES = {
   MY_BOOKINGS: '/my-bookings',
   MY_BOOKINGS_TAB_PATH: (status) => `/my-bookings?status=${encodeURIComponent(status)}`,
   BOOKING_DETAIL: '/my-bookings/:bookingId',
+  BOOKINGS_ALIAS: '/bookings/:bookingId',
+  BOOKINGS_ALIAS_PATH: (bookingId) => `/bookings/${encodeURIComponent(bookingId)}`,
   BOOKING_DETAIL_PATH: (bookingId) => `/my-bookings/${encodeURIComponent(bookingId)}`,
   NEARBY: '/nearby',
   LOGIN: '/login',

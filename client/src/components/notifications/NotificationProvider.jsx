@@ -1,7 +1,16 @@
 import React, { useEffect, useRef } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
-import { Package, Clock, ShieldAlert, Star, Tag, X } from 'lucide-react';
+import {
+  CheckCircle2,
+  XCircle,
+  Bell,
+  Package,
+  Clock,
+  Star,
+  Tag,
+  X,
+} from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useAppDispatch } from '../../store/store';
 import {
@@ -22,54 +31,109 @@ import { connectSocket } from '../../services/socketService.js';
 /**
  * Modern Glassmorphic Toast Notification Banner
  */
-const renderCustomToast = (notification, navigate, dispatch) => {
+const renderCustomToast = (notification, navigate, dispatch, currentUser = null) => {
   const getTypeTheme = () => {
-    switch (notification.type) {
-      case 'order':
-        return {
-          icon: <Package size={18} className="text-teal-600" />,
-          badgeBg: 'bg-teal-50 border-teal-200/80',
-          accent: 'border-l-teal-500',
-          label: 'Order',
-          labelColor: 'text-teal-700 bg-teal-50',
-        };
-      case 'reminder':
-        return {
-          icon: <Clock size={18} className="text-amber-600" />,
-          badgeBg: 'bg-amber-50 border-amber-200/80',
-          accent: 'border-l-amber-500',
-          label: 'Reminder',
-          labelColor: 'text-amber-700 bg-amber-50',
-        };
-      case 'review':
-        return {
-          icon: <Star size={18} className="text-yellow-600" />,
-          badgeBg: 'bg-yellow-50 border-yellow-200/80',
-          accent: 'border-l-yellow-500',
-          label: 'Review',
-          labelColor: 'text-yellow-700 bg-yellow-50',
-        };
-      case 'promo':
-        return {
-          icon: <Tag size={18} className="text-pink-600" />,
-          badgeBg: 'bg-pink-50 border-pink-200/80',
-          accent: 'border-l-pink-500',
-          label: 'Promotion',
-          labelColor: 'text-pink-700 bg-pink-50',
-        };
-      case 'system':
-      default:
-        return {
-          icon: <ShieldAlert size={18} className="text-indigo-600" />,
-          badgeBg: 'bg-indigo-50 border-indigo-200/80',
-          accent: 'border-l-indigo-500',
-          label: 'System',
-          labelColor: 'text-indigo-700 bg-indigo-50',
-        };
+    const lowerTitle = (notification?.title || '').toLowerCase();
+    const lowerType = (notification?.type || '').toLowerCase();
+
+    // 1. Đơn bị từ chối / Đã hủy
+    if (
+      lowerTitle.includes('từ chối') ||
+      lowerTitle.includes('hủy') ||
+      lowerType === 'booking_rejected' ||
+      lowerType === 'booking_cancelled'
+    ) {
+      return {
+        icon: <XCircle size={18} className="text-rose-600" />,
+        badgeBg: 'bg-rose-50 border-rose-200/80',
+        accent: 'border-l-rose-500',
+        label: 'Từ chối',
+        labelColor: 'text-rose-700 bg-rose-50',
+      };
     }
+
+    // 2. Đơn được duyệt / Thành công
+    if (
+      lowerTitle.includes('duyệt') ||
+      lowerTitle.includes('thành công') ||
+      lowerType === 'booking_approved'
+    ) {
+      return {
+        icon: <CheckCircle2 size={18} className="text-emerald-600" />,
+        badgeBg: 'bg-emerald-50 border-emerald-200/80',
+        accent: 'border-l-emerald-500',
+        label: 'Đã duyệt',
+        labelColor: 'text-emerald-700 bg-emerald-50',
+      };
+    }
+
+    // 3. Đơn thuê mới / Đơn đặt hàng
+    if (
+      lowerTitle.includes('yêu cầu thuê') ||
+      lowerTitle.includes('đơn thuê') ||
+      lowerType === 'order' ||
+      lowerType === 'booking'
+    ) {
+      return {
+        icon: <Package size={18} className="text-teal-600" />,
+        badgeBg: 'bg-teal-50 border-teal-200/80',
+        accent: 'border-l-teal-500',
+        label: 'Đơn thuê',
+        labelColor: 'text-teal-700 bg-teal-50',
+      };
+    }
+
+    // 4. Nhắc nhở / Hạn trả
+    if (
+      lowerTitle.includes('nhắc nhở') ||
+      lowerTitle.includes('hạn trả') ||
+      lowerType === 'reminder'
+    ) {
+      return {
+        icon: <Clock size={18} className="text-amber-600" />,
+        badgeBg: 'bg-amber-50 border-amber-200/80',
+        accent: 'border-l-amber-500',
+        label: 'Nhắc nhở',
+        labelColor: 'text-amber-700 bg-amber-50',
+      };
+    }
+
+    // 5. Đánh giá
+    if (lowerType === 'review') {
+      return {
+        icon: <Star size={18} className="text-yellow-600" />,
+        badgeBg: 'bg-yellow-50 border-yellow-200/80',
+        accent: 'border-l-yellow-500',
+        label: 'Đánh giá',
+        labelColor: 'text-yellow-700 bg-yellow-50',
+      };
+    }
+
+    // 6. Ưu đãi
+    if (lowerType === 'promo') {
+      return {
+        icon: <Tag size={18} className="text-pink-600" />,
+        badgeBg: 'bg-pink-50 border-pink-200/80',
+        accent: 'border-l-pink-500',
+        label: 'Ưu đãi',
+        labelColor: 'text-pink-700 bg-pink-50',
+      };
+    }
+
+    // 7. Mặc định / Hệ thống
+    return {
+      icon: <Bell size={18} className="text-teal-600" />,
+      badgeBg: 'bg-teal-50 border-teal-200/80',
+      accent: 'border-l-teal-500',
+      label: 'Hệ thống',
+      labelColor: 'text-teal-700 bg-teal-50',
+    };
   };
 
   const theme = getTypeTheme();
+  const cleanTitle = (notification?.title || '')
+    .replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}❌🎉📦🔔!]/gu, '')
+    .trim();
 
   toast.custom(
     (t) => (
@@ -82,12 +146,42 @@ const renderCustomToast = (notification, navigate, dispatch) => {
           dispatch(markNotificationAsRead(notification._id));
           markAsReadApi(notification._id).catch(() => {});
 
-          if (notification.relatedId) {
-            if (notification.type === 'order') {
-              navigate(`/bookings/${notification.relatedId}`);
-            } else {
-              navigate(`/devices/${notification.relatedId}`);
+          let targetUrl = notification.url;
+          const isOwner = currentUser?.role === 'owner';
+          const lowerTitle = (notification?.title || '').toLowerCase();
+
+          if (isOwner) {
+            if (
+              notification.type === 'order' ||
+              lowerTitle.includes('thuê') ||
+              lowerTitle.includes('đơn') ||
+              lowerTitle.includes('duyệt')
+            ) {
+              targetUrl = '/owner/bookings';
+            } else if (lowerTitle.includes('thiết bị')) {
+              targetUrl = '/owner/devices';
             }
+          }
+
+          if (!targetUrl) {
+            if (notification.relatedId) {
+              if (notification.type === 'order') {
+                targetUrl = isOwner ? '/owner/bookings' : `/my-bookings/${notification.relatedId}`;
+              } else {
+                targetUrl = isOwner ? '/owner/devices' : `/device/${notification.relatedId}`;
+              }
+            } else {
+              targetUrl = isOwner ? '/owner/bookings' : '/my-bookings';
+            }
+          }
+
+          // Chuẩn hóa đường dẫn
+          if (targetUrl && targetUrl.startsWith('/bookings/')) {
+            targetUrl = targetUrl.replace('/bookings/', '/my-bookings/');
+          }
+
+          if (targetUrl) {
+            navigate(targetUrl);
           }
         }}
       >
@@ -101,11 +195,11 @@ const renderCustomToast = (notification, navigate, dispatch) => {
               <span className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md ${theme.labelColor}`}>
                 {theme.label}
               </span>
-              <span className="text-[10px] text-slate-400 font-medium">Just now</span>
+              <span className="text-[10px] text-slate-400 font-medium">Vừa xong</span>
             </div>
 
             <p className="text-xs font-bold text-slate-900 leading-snug truncate">
-              {notification.title}
+              {cleanTitle || notification.title}
             </p>
 
             <p className="mt-1 text-xs text-slate-600 line-clamp-2 leading-relaxed">
@@ -114,7 +208,7 @@ const renderCustomToast = (notification, navigate, dispatch) => {
 
             <div className="mt-2 flex items-center justify-between pt-1 border-t border-slate-100">
               <span className="text-[11px] font-semibold text-teal-600 group-hover:text-teal-700 group-hover:underline flex items-center gap-1">
-                View details &rarr;
+                Xem chi tiết &rarr;
               </span>
             </div>
           </div>
@@ -187,7 +281,7 @@ export const NotificationProvider = ({ children }) => {
           // Các lần sau: nếu có thông báo mới chưa đọc, bắn Toast banner nổi ngay lập tức
           notifications.forEach((item) => {
             if (!knownIdsRef.current.has(item._id) && !item.isRead) {
-              renderCustomToast(item, navigate, dispatch);
+              renderCustomToast(item, navigate, dispatch, user);
               knownIdsRef.current.add(item._id);
             }
           });
@@ -206,11 +300,12 @@ export const NotificationProvider = ({ children }) => {
           body: payload.body,
           type: payload.data?.type || 'system',
           relatedId: payload.data?.relatedId,
+          url: payload.data?.url || null,
           isRead: false,
           createdAt: new Date().toISOString(),
         };
         dispatch(addNotification(dummyNotification));
-        renderCustomToast(dummyNotification, navigate, dispatch);
+        renderCustomToast(dummyNotification, navigate, dispatch, user);
       }
     }).then((unsub) => {
       unsubscribeForeground = unsub;
@@ -229,6 +324,7 @@ export const NotificationProvider = ({ children }) => {
           body: data.body || '',
           type: data.type || 'system',
           relatedId: data.relatedId || data.metadata?.bookingId,
+          url: data.url || null,
           isRead: false,
           createdAt: data.createdAt || new Date().toISOString(),
         };
@@ -236,7 +332,7 @@ export const NotificationProvider = ({ children }) => {
         dispatch(addNotification(newNotif));
         // Nếu không phải dạng tin nhắn chat thuần (đã có InAppNotificationBanner lo)
         if (data.type !== 'chat') {
-          renderCustomToast(newNotif, navigate, dispatch);
+          renderCustomToast(newNotif, navigate, dispatch, user);
         }
       }
     };
@@ -270,7 +366,7 @@ export const NotificationProvider = ({ children }) => {
         socket.off('notifications_read_all', handleSocketNotificationsReadAll);
       }
     };
-  }, [isAuthenticated, user?._id, user?.id, dispatch, navigate]);
+  }, [isAuthenticated, user, dispatch, navigate]);
 
   return (
     <>
@@ -298,4 +394,3 @@ export const NotificationProvider = ({ children }) => {
 };
 
 export default NotificationProvider;
-

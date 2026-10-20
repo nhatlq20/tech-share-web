@@ -19,6 +19,7 @@ import { API_CONFIG } from "../../constants/config";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useChat } from "../../context/ChatContext.jsx";
 import "./OwnerWorkspace.css";
+import { connectSocket } from "../../services/socketService.js";
 
 
 export const OwnerDashboardScreen = () => {
@@ -65,7 +66,7 @@ export const OwnerDashboardScreen = () => {
   const fetchOwnerData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const token = localStorage.getItem("techshare_token");
+      const token = localStorage.getItem("techshare_token") || localStorage.getItem("techshare_auth_token");
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
       // 1. Fetch overview, KPI & charts
@@ -130,6 +131,26 @@ export const OwnerDashboardScreen = () => {
     fetchOwnerData();
   }, [fetchOwnerData]);
 
+  // Real-time synchronization: refresh owner dashboard on new booking request or notification
+  useEffect(() => {
+    const socket = connectSocket();
+    if (!socket) return;
+
+    const handleRealtimeUpdate = () => {
+      fetchOwnerData();
+    };
+
+    socket.on('new_booking_request', handleRealtimeUpdate);
+    socket.on('new_notification', handleRealtimeUpdate);
+    socket.on('booking_status_updated', handleRealtimeUpdate);
+
+    return () => {
+      socket.off('new_booking_request', handleRealtimeUpdate);
+      socket.off('new_notification', handleRealtimeUpdate);
+      socket.off('booking_status_updated', handleRealtimeUpdate);
+    };
+  }, [fetchOwnerData]);
+
   const handleDeviceCreated = (device) => {
     const newDevice = {
       ...device,
@@ -160,7 +181,7 @@ export const OwnerDashboardScreen = () => {
       prev.map((b) => (b._id === bookingId ? { ...b, status: "approved" } : b)),
     );
     try {
-      const token = localStorage.getItem("techshare_token");
+      const token = localStorage.getItem("techshare_token") || localStorage.getItem("techshare_auth_token");
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
       await fetch(
         `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.OWNER_APPROVE_BOOKING(bookingId)}`,
@@ -185,7 +206,7 @@ export const OwnerDashboardScreen = () => {
       ),
     );
     try {
-      const token = localStorage.getItem("techshare_token");
+      const token = localStorage.getItem("techshare_token") || localStorage.getItem("techshare_auth_token");
       const headers = {
         "Content-Type": "application/json",
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -210,7 +231,7 @@ export const OwnerDashboardScreen = () => {
       prev.map((b) => (b._id === bookingId ? { ...b, status: "active" } : b)),
     );
     try {
-      const token = localStorage.getItem("techshare_token");
+      const token = localStorage.getItem("techshare_token") || localStorage.getItem("techshare_auth_token");
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
       await fetch(
         `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.OWNER_HANDOVER_QR(bookingId)}`,
@@ -233,7 +254,7 @@ export const OwnerDashboardScreen = () => {
       ),
     );
     try {
-      const token = localStorage.getItem("techshare_token");
+      const token = localStorage.getItem("techshare_token") || localStorage.getItem("techshare_auth_token");
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
       await fetch(
         `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.OWNER_COMPLETE_BOOKING(bookingId)}`,
