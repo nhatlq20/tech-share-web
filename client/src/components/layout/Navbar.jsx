@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { MessageSquare } from 'lucide-react';
+import { ArrowLeftRight, MessageSquare } from 'lucide-react';
 import { ROUTES } from '../../routes/routes.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useChat } from '../../context/ChatContext.jsx';
@@ -43,9 +43,6 @@ export const Navbar = () => {
           <Link to={ROUTES.NEARBY} className="navbar-link">
             Nearby
           </Link>
-          <Link to={ROUTES.COMPARE || '/compare'} className="navbar-link">
-            Compare
-          </Link>
           {isAuthenticated && (
             <Link to={ROUTES.MY_BOOKINGS} className="navbar-link">
               My Bookings
@@ -67,6 +64,14 @@ export const Navbar = () => {
 
         {/* Auth Actions */}
         <div className="navbar-actions">
+          <Link
+            to={ROUTES.COMPARE_DEVICES}
+            className="navbar-btn-compare"
+            aria-label="Compare Devices"
+          >
+            <ArrowLeftRight size={16} aria-hidden="true" />
+            <span>Compare Devices</span>
+          </Link>
           {isAuthenticated ? (
             <div className="navbar-user-section">
               {/* Messages Chat Link */}

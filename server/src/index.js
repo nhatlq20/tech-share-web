@@ -14,7 +14,7 @@ import notificationRoutes from './routes/notificationRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
 import { initSocket } from './socket.js';
 import { errorHandler, notFound } from './middlewares/errorMiddleware.js';
-
+import aiCompareRoutes from "../src/routes/aiRoutes.js";
 const app = express();
 const PORT = Number(process.env.PORT) || 5000;
 
@@ -43,7 +43,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/owner', ownerRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/chats', chatRoutes);
-
+app.use("/api/ai", aiCompareRoutes);
 // Error handlers
 app.use(notFound);
 app.use(errorHandler);
