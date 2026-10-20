@@ -10,11 +10,16 @@ import {
   Camera, 
   UserCheck,
   MessageSquare,
+  Eye,
 } from 'lucide-react';
 import { STRINGS } from '../../constants/strings';
 import { COLORS } from '../../constants/colors';
 import { ROUTES } from '../../routes/routes.js';
 import { CountdownBadge } from '../booking/CountdownBadge.jsx';
+import { OwnerBookingDetailModal } from './OwnerBookingDetailModal.jsx';
+
+const formatVND = (amount) =>
+  new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0);
 
 export const OwnerBookingsTab = ({ 
   bookings = [], 
@@ -24,7 +29,6 @@ export const OwnerBookingsTab = ({
   onCompleteReturn 
 }) => {
   const t = STRINGS.owner.bookings;
-  const tc = STRINGS.common;
   const navigate = useNavigate();
 
   // Tabs: 'all' | 'pending' | 'approved' | 'active' | 'completed' | 'rejected'
@@ -40,6 +44,9 @@ export const OwnerBookingsTab = ({
   const [scanSuccess, setScanSuccess] = useState(false);
 
   const [returnBooking, setReturnBooking] = useState(null);
+
+  // Detail modal state
+  const [selectedBooking, setSelectedBooking] = useState(null);
 
   // Filtered Bookings
   const filteredBookings = useMemo(() => {
@@ -87,6 +94,13 @@ export const OwnerBookingsTab = ({
     }, 1200);
   };
 
+  const getStatusLabel = (status) =>
+    status === 'pending' ? t.status.pending :
+    status === 'approved' ? t.status.approved :
+    status === 'active' ? t.status.active :
+    status === 'completed' ? t.status.completed :
+    status === 'rejected' ? t.status.rejected : status;
+
   return (
     <div className="owner-bookings-container">
       {/* 1. Header */}
@@ -124,179 +138,174 @@ export const OwnerBookingsTab = ({
         </div>
       </div>
 
-      {/* 3. Bookings Table */}
-      <div className="owner-card p-0 overflow-hidden">
-        <div className="owner-table-container border-0">
-          <table className="owner-table">
-            <thead>
+      {/* 3. Bookings Table — 4-column compact, table-fixed, zero horizontal scrollbar */}
+      <div className="owner-card p-0 overflow-hidden shadow-xs border border-slate-200/80">
+        <table className="w-full table-fixed text-left border-collapse">
+          <thead>
+            <tr className="border-b border-slate-200/80 bg-slate-50/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+              <th className="px-4 py-3 w-[32%]">Thiết bị &amp; Mã đơn</th>
+              <th className="px-4 py-3 w-[24%]">Khách thuê</th>
+              <th className="px-4 py-3 w-[22%]">Thời gian &amp; Doanh thu</th>
+              <th className="px-4 py-3 w-[22%] text-right">Trạng thái &amp; Hành động</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {filteredBookings.length === 0 ? (
               <tr>
-                <th>{t.table.colCode}</th>
-                <th>{t.table.colDevice}</th>
-                <th>{t.table.colRenter}</th>
-                <th>{t.table.colDates}</th>
-                <th>{t.table.colTotal}</th>
-                <th>{t.table.colStatus}</th>
-                <th style={{ textAlign: 'right' }}>{t.table.colActions}</th>
+                <td colSpan={4} className="text-center py-14 text-slate-400 font-medium text-sm">
+                  {t.table.emptyMessage}
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {filteredBookings.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="text-center py-10 text-slate-500">
-                    {t.table.emptyMessage}
+            ) : (
+              filteredBookings.map((b) => (
+                <tr
+                  key={b._id}
+                  onClick={() => setSelectedBooking(b)}
+                  className="hover:bg-teal-50/20 active:bg-teal-50/30 cursor-pointer transition-colors border-b border-slate-100 last:border-b-0 group"
+                  title="Nhấn vào hàng để xem chi tiết đơn thuê"
+                >
+                  {/* Col 1: Device & Order Code */}
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2.5">
+                      <img
+                        src={b.deviceImage || b.device?.images?.[0] || '/placeholder.png'}
+                        alt={b.deviceName}
+                        className="w-10 h-10 rounded-lg object-cover bg-slate-100 shrink-0 border border-slate-200/60 group-hover:border-teal-300 transition"
+                      />
+                      <div className="min-w-0">
+                        <div className="font-semibold text-slate-800 text-sm truncate group-hover:text-teal-900 transition" title={b.deviceName}>
+                          {b.deviceName}
+                        </div>
+                        <span className="font-mono text-[11px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
+                          #{b.bookingCode}
+                        </span>
+                      </div>
+                    </div>
                   </td>
-                </tr>
-              ) : (
-                filteredBookings.map((b) => (
-                  <tr key={b._id}>
-                    {/* Booking Code */}
-                    <td>
-                      <span className="font-bold text-slate-700">#{b.bookingCode}</span>
-                    </td>
 
-                    {/* Device info */}
-                    <td>
-                      <div className="flex items-center gap-3">
-                        <img
-                          src={b.deviceImage}
-                          alt={b.deviceName}
-                          className="w-11 h-11 rounded-xl object-cover border border-slate-200"
-                        />
-                        <div>
-                          <div className="font-semibold text-slate-800 text-sm line-clamp-1">{b.deviceName}</div>
-                          <div className="text-xs text-slate-500 capitalize">{b.deviceCategory}</div>
+                  {/* Col 2: Renter */}
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <img
+                        src={b.renter?.avatar || '/placeholder-avatar.png'}
+                        alt={b.renter?.name || 'Renter'}
+                        className="w-7 h-7 rounded-full shrink-0 border border-slate-200 object-cover"
+                      />
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1">
+                          <span className="font-medium text-slate-800 text-sm truncate">{b.renter?.name}</span>
+                          {b.renter?.isVerified && (
+                            <UserCheck size={12} color={COLORS.primary.DEFAULT} className="shrink-0" />
+                          )}
+                        </div>
+                        <div className="text-[11px] text-slate-400 flex items-center gap-1">
+                          <ShieldCheck size={11} color={COLORS.primary.dark} className="shrink-0" />
+                          <span>{b.renter?.trustScore ?? 100}</span>
                         </div>
                       </div>
-                    </td>
+                    </div>
+                  </td>
 
-                    {/* Renter & Trust Score */}
-                    <td>
-                      <div className="flex items-center gap-2.5">
-                        <img
-                          src={b.renter?.avatar}
-                          alt={b.renter?.name}
-                          className="w-9 h-9 rounded-full object-cover border-2 border-slate-200"
-                        />
-                        <div>
-                          <div className="flex items-center gap-1 font-semibold text-xs text-slate-800">
-                            <span>{b.renter?.name}</span>
-                            {b.renter?.isVerified && (
-                              <UserCheck size={13} color={COLORS.primary.DEFAULT} title="eKYC Verified" />
-                            )}
-                          </div>
-                          <div className="text-[11px] text-slate-500 flex items-center gap-1">
-                            <ShieldCheck size={12} color={COLORS.primary.dark} />
-                            <span>Trust Score: <b>{b.renter?.trustScore}</b>/100</span>
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-
-                    {/* Rental Dates */}
-                    <td>
-                      <div className="text-xs font-medium text-slate-700">
-                        {b.startDate} → {b.endDate}
-                      </div>
-                      <div className="text-[11px] text-slate-500">
-                        {b.totalDays} {tc.day || 'days'} • {b.deliveryMethod === 'pickup' ? 'Store Pickup' : 'Home Delivery'}
-                      </div>
-                    </td>
-
-                    {/* Total Price & Deposit */}
-                    <td>
-                      <div className="text-sm font-bold text-emerald-600">
-                        {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(b.totalRentalPrice)}
-                      </div>
-                      <div className="text-[11px] text-slate-500">
-                        Deposit: {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(b.depositAmount)}
-                      </div>
-                    </td>
-
-                    {/* Status Badge */}
-                    <td>
-                      <span className={`owner-badge owner-badge-${b.status}`}>
-                        {b.status === 'pending' ? t.status.pending :
-                         b.status === 'approved' ? t.status.approved :
-                         b.status === 'active' ? t.status.active :
-                         b.status === 'completed' ? t.status.completed :
-                         b.status === 'rejected' ? t.status.rejected : b.status}
+                  {/* Col 3: Period & Revenue */}
+                  <td className="px-4 py-3">
+                    <div className="font-medium text-slate-800 text-xs whitespace-nowrap">
+                      {b.startDate} → {b.endDate}
+                    </div>
+                    <div className="flex items-center gap-1 mt-0.5">
+                      <span className="text-emerald-600 font-bold text-xs whitespace-nowrap">
+                        {formatVND(b.totalRentalPrice)}
                       </span>
-                      {b.status === 'active' && (b.rawEndDate || b.endDate) && (
-                        <div className="mt-1">
-                          <CountdownBadge startDate={b.rawStartDate || b.startDate} targetDate={b.rawEndDate || b.endDate} size="sm" />
-                        </div>
-                      )}
-                    </td>
+                      <span className="text-[11px] text-slate-400 whitespace-nowrap">• {b.totalDays} ngày</span>
+                    </div>
+                  </td>
 
-                    {/* Action Buttons */}
-                    <td style={{ textAlign: 'right' }}>
-                      <div className="flex items-center justify-end gap-2">
-                        {/* Pending -> Approve / Reject */}
+                  {/* Col 4: Status & Actions */}
+                  <td className="px-4 py-3 text-right">
+                    <div className="flex flex-col items-end gap-1.5">
+                      <div className="flex items-center gap-1.5 justify-end flex-wrap">
+                        <span className={`owner-badge owner-badge-${b.status} text-[11px] px-2.5 py-0.5 rounded-full font-semibold whitespace-nowrap`}>
+                          {getStatusLabel(b.status)}
+                        </span>
+                        {b.status === 'active' && (b.rawEndDate || b.endDate) && (
+                          <CountdownBadge startDate={b.rawStartDate || b.startDate} targetDate={b.rawEndDate || b.endDate} size="sm" />
+                        )}
+                      </div>
+                      
+                      {/* Action buttons */}
+                      <div
+                        className="flex items-center justify-end gap-1.5"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {/* Chi tiết button */}
+                        <button
+                          type="button"
+                          className="inline-flex items-center gap-1 py-1 px-2 rounded-lg text-xs font-medium text-teal-800 bg-teal-50 border border-teal-200/70 hover:bg-teal-100 transition whitespace-nowrap"
+                          onClick={() => setSelectedBooking(b)}
+                          title="Xem chi tiết đơn thuê"
+                        >
+                          <Eye size={12} />
+                          <span>Chi tiết</span>
+                        </button>
+
                         {b.status === 'pending' && (
                           <>
                             <button
                               type="button"
-                              className="owner-btn-primary py-1 px-3 text-xs"
+                              className="inline-flex items-center gap-1 py-1 px-2.5 rounded-lg text-xs font-medium bg-teal-600 text-white hover:bg-teal-700 transition shadow-2xs whitespace-nowrap"
                               onClick={() => onApprove(b._id)}
-                              title={t.actions.approve}
                             >
-                              <Check size={13} />
+                              <Check size={12} />
                               <span>{t.actions.approve}</span>
                             </button>
                             <button
                               type="button"
-                              className="owner-btn-outline py-1 px-2.5 text-xs text-rose-600 hover:bg-rose-50"
+                              className="inline-flex items-center justify-center p-1 rounded-lg text-xs font-medium text-rose-600 border border-rose-200 hover:bg-rose-50 transition"
                               onClick={() => setRejectingBooking(b)}
-                              title={t.actions.reject}
                             >
-                              <X size={13} />
+                              <X size={12} />
                             </button>
                           </>
                         )}
 
-                        {/* Approved -> QR Handover */}
                         {b.status === 'approved' && (
                           <button
                             type="button"
-                            className="owner-btn-primary py-1 px-3 text-xs"
+                            className="inline-flex items-center gap-1 py-1 px-2.5 rounded-lg text-xs font-medium bg-teal-600 text-white hover:bg-teal-700 transition shadow-2xs whitespace-nowrap"
                             onClick={() => setQrScanningBooking(b)}
                           >
-                            <QrCode size={13} />
+                            <QrCode size={12} />
                             <span>{t.actions.scanQr}</span>
                           </button>
                         )}
 
-                        {/* Active -> Inspect return & complete */}
                         {b.status === 'active' && (
                           <button
                             type="button"
-                            className="owner-btn-outline py-1 px-3 text-xs text-brand-700 bg-brand-50 border-brand-200"
-                            style={{ color: COLORS.primary.dark, borderColor: COLORS.primary.border }}
+                            className="inline-flex items-center gap-1 py-1 px-2 rounded-lg text-xs font-medium text-teal-800 bg-teal-50 border border-teal-200 hover:bg-teal-100 transition whitespace-nowrap"
                             onClick={() => setReturnBooking(b)}
                           >
-                            <Camera size={13} />
+                            <Camera size={12} />
                             <span>{t.actions.inspectReturn}</span>
                           </button>
                         )}
 
-                        {/* Chat with Customer */}
                         <button
                           type="button"
-                          className="owner-btn-outline py-1 px-2.5 text-xs text-teal-700 bg-teal-50 border-teal-200 hover:bg-teal-100 flex items-center gap-1"
+                          className="inline-flex items-center gap-1 py-1 px-2 rounded-lg text-xs font-medium text-slate-700 bg-slate-50 border border-slate-200 hover:bg-slate-100 transition"
                           onClick={() => navigate(ROUTES.MESSAGES_PATH(b._id || b.id))}
-                          title="Chat with customer"
+                          title="Nhắn tin với khách"
                         >
-                          <MessageSquare size={13} className="text-teal-600" />
+                          <MessageSquare size={12} className="text-slate-500" />
                           <span>Chat</span>
                         </button>
                       </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
       </div>
 
       {/* MODAL 1: Từ chối đơn thuê (N-01) */}
@@ -541,9 +550,36 @@ export const OwnerBookingsTab = ({
           </div>
         </div>
       )}
+
+      {/* MODAL 4: Chi tiết đơn thuê Đẳng cấp & Layout Chuyên nghiệp */}
+      {selectedBooking && (
+        <OwnerBookingDetailModal
+          booking={selectedBooking}
+          onClose={() => setSelectedBooking(null)}
+          onApprove={(id) => {
+            onApprove(id);
+            setSelectedBooking(null);
+          }}
+          onReject={(b) => {
+            setRejectingBooking(b);
+            setSelectedBooking(null);
+          }}
+          onHandover={(b) => {
+            setQrScanningBooking(b);
+            setSelectedBooking(null);
+          }}
+          onReturn={(b) => {
+            setReturnBooking(b);
+            setSelectedBooking(null);
+          }}
+          onChat={(b) => {
+            navigate(ROUTES.MESSAGES_PATH(b._id || b.id));
+            setSelectedBooking(null);
+          }}
+        />
+      )}
     </div>
   );
 };
 
 export default OwnerBookingsTab;
-

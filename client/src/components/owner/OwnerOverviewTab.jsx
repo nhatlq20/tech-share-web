@@ -23,6 +23,7 @@ import {
 } from 'recharts';
 import { STRINGS } from '../../constants/strings';
 import { ROUTES } from '../../routes/routes';
+import { OwnerBookingDetailModal } from './OwnerBookingDetailModal.jsx';
 
 const formatVND = (amount = 0) => {
   return new Intl.NumberFormat('vi-VN', {
@@ -57,6 +58,7 @@ const normalizeRentalItem = (item) => ({
   },
   totalPrice: item.totalPrice ?? item.totalRentalPrice ?? 0,
   status: item.status === 'active' ? 'renting' : item.status || 'pending',
+  raw: item,
 });
 
 // Soft UI Tooltip for Recharts
@@ -132,6 +134,7 @@ export const OwnerOverviewTab = ({
 }) => {
   const t = STRINGS.owner.overview;
   const [revenueTimeRange, setRevenueTimeRange] = useState('month');
+  const [selectedBooking, setSelectedBooking] = useState(null);
 
   // Safe fallback KPI values from live DB
   const safeKpi = {
@@ -509,13 +512,13 @@ export const OwnerOverviewTab = ({
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-slate-100 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                  <th className="pb-3 px-3">{t.recentBookings.colOrder}</th>
-                  <th className="pb-3 px-3">{t.recentBookings.colDevice}</th>
-                  <th className="pb-3 px-3">{t.recentBookings.colRenter}</th>
-                  <th className="pb-3 px-3">{t.recentBookings.colPeriod}</th>
-                  <th className="pb-3 px-3">{t.recentBookings.colAmount}</th>
-                  <th className="pb-3 px-3">{t.recentBookings.colStatus}</th>
-                  <th className="pb-3 px-3 text-right">
+                  <th className="py-2.5 px-3.5 w-28 shrink-0 whitespace-nowrap">{t.recentBookings.colOrder}</th>
+                  <th className="py-2.5 px-3.5 min-w-[190px] max-w-[220px] whitespace-nowrap">{t.recentBookings.colDevice}</th>
+                  <th className="py-2.5 px-3.5 min-w-[150px] whitespace-nowrap">{t.recentBookings.colRenter}</th>
+                  <th className="py-2.5 px-3.5 min-w-[150px] whitespace-nowrap">{t.recentBookings.colPeriod}</th>
+                  <th className="py-2.5 px-3.5 min-w-[130px] whitespace-nowrap">{t.recentBookings.colAmount}</th>
+                  <th className="py-2.5 px-3.5 min-w-[110px] whitespace-nowrap">{t.recentBookings.colStatus}</th>
+                  <th className="py-2.5 px-3.5 text-right shrink-0 whitespace-nowrap">
                     {t.recentBookings.colActions}
                   </th>
                 </tr>
@@ -524,15 +527,17 @@ export const OwnerOverviewTab = ({
                 {normalizedBookings.map((item) => (
                   <tr
                     key={item.id}
-                    className="hover:bg-slate-50/70 transition-colors"
+                    onClick={() => setSelectedBooking(item.raw || item)}
+                    className="hover:bg-teal-50/20 active:bg-teal-50/30 cursor-pointer transition-colors group"
+                    title="Nhấn để xem chi tiết đơn"
                   >
                     {/* Order ID */}
-                    <td className="py-3 px-3 font-mono font-bold text-slate-700 whitespace-nowrap">
+                    <td className="py-3 px-3.5 font-mono font-bold text-slate-700 whitespace-nowrap">
                       {item.id}
                     </td>
 
                     {/* Equipment */}
-                    <td className="py-3 px-3 whitespace-nowrap">
+                    <td className="py-3 px-3.5 whitespace-nowrap">
                       <div className="flex items-center gap-3">
                         <img
                           src={item.device.imageUrl}
@@ -554,7 +559,7 @@ export const OwnerOverviewTab = ({
                     </td>
 
                     {/* Customer */}
-                    <td className="py-3 px-3 whitespace-nowrap">
+                    <td className="py-3 px-3.5 whitespace-nowrap">
                       <div className="flex items-center gap-2.5">
                         <img
                           src={item.renter.avatarUrl}
@@ -575,7 +580,7 @@ export const OwnerOverviewTab = ({
                     </td>
 
                     {/* Rental Period */}
-                    <td className="py-3 px-3 whitespace-nowrap text-slate-600">
+                    <td className="py-3 px-3.5 whitespace-nowrap text-slate-600">
                       <div>
                         {item.rentalPeriod.startDate} →{' '}
                         {item.rentalPeriod.endDate}
@@ -587,20 +592,23 @@ export const OwnerOverviewTab = ({
                     </td>
 
                     {/* Total Amount */}
-                    <td className="py-3 px-3 whitespace-nowrap font-bold text-[#286E74]">
+                    <td className="py-3 px-3.5 whitespace-nowrap font-bold text-[#286E74]">
                       {formatVND(item.totalPrice)}
                     </td>
 
                     {/* Status */}
-                    <td className="py-3 px-3 whitespace-nowrap">
+                    <td className="py-3 px-3.5 whitespace-nowrap">
                       {renderStatusBadge(item.status)}
                     </td>
 
                     {/* Actions */}
-                    <td className="py-3 px-3 whitespace-nowrap text-right">
+                    <td className="py-3 px-3.5 whitespace-nowrap text-right">
                       <button
                         type="button"
-                        onClick={() => onNavigate(ROUTES.OWNER_BOOKINGS)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedBooking(item.raw || item);
+                        }}
                         className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-[#EEF8F8] hover:text-[#286E74] hover:border-[#67BEC3] font-semibold transition-all cursor-pointer shadow-2xs"
                         title={t.recentBookings.detailsBtn}
                       >
@@ -615,6 +623,32 @@ export const OwnerOverviewTab = ({
           </div>
         )}
       </div>
+      {selectedBooking && (
+        <OwnerBookingDetailModal
+          booking={selectedBooking}
+          onClose={() => setSelectedBooking(null)}
+          onApprove={() => {
+            onNavigate(ROUTES.OWNER_BOOKINGS);
+            setSelectedBooking(null);
+          }}
+          onReject={() => {
+            onNavigate(ROUTES.OWNER_BOOKINGS);
+            setSelectedBooking(null);
+          }}
+          onHandover={() => {
+            onNavigate(ROUTES.OWNER_BOOKINGS);
+            setSelectedBooking(null);
+          }}
+          onReturn={() => {
+            onNavigate(ROUTES.OWNER_BOOKINGS);
+            setSelectedBooking(null);
+          }}
+          onChat={(b) => {
+            onNavigate(ROUTES.MESSAGES_PATH(b._id || b.id));
+            setSelectedBooking(null);
+          }}
+        />
+      )}
     </div>
   );
 };
