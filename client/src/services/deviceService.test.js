@@ -33,3 +33,29 @@ test('nearby uses its own endpoint and preserves the 10000 meter radius', async 
 test.each([{ lat: Infinity, lng: 105 }, { lat: 91, lng: 105 }, { lat: 21, lng: -181 }])('nearby rejects invalid coordinates %s', async params => {
   await expect(getNearbyDevices(params)).rejects.toThrow(); expect(api.get).not.toHaveBeenCalled();
 });
+
+test('search q keyword is sent to recommended API with coordinates and limit 12', async () => {
+  await getRecommendedDevices({ lat: 21.0285, lng: 105.8542, q: 'sony' });
+  expect(api.get).toHaveBeenCalledWith('/devices/recommended', {
+    params: { lat: 21.0285, lng: 105.8542, page: 1, limit: 12, q: 'sony' },
+  });
+});
+
+test('search q combined with category is sent to recommended API', async () => {
+  await getRecommendedDevices({ lat: 21.0285, lng: 105.8542, category: 'camera', q: 'sony', page: 1, limit: 12 });
+  expect(api.get).toHaveBeenCalledWith('/devices/recommended', {
+    params: { lat: 21.0285, lng: 105.8542, category: 'camera', page: 1, limit: 12, q: 'sony' },
+  });
+});
+
+test('search q keyword is trimmed', async () => {
+  await getRecommendedDevices({ lat: 21.0285, lng: 105.8542, q: '  macbook  ' });
+  expect(api.get).toHaveBeenCalledWith('/devices/recommended', {
+    params: { lat: 21.0285, lng: 105.8542, page: 1, limit: 12, q: 'macbook' },
+  });
+});
+
+test.each(['', '   ', undefined, null])('empty/whitespace search q %s is omitted from params', async emptyQ => {
+  await getRecommendedDevices({ lat: 21.0285, lng: 105.8542, q: emptyQ });
+  expect(api.get.mock.calls[0][1].params).not.toHaveProperty('q');
+});

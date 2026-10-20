@@ -7,7 +7,19 @@ import { useUserLocation, LOCATION_CACHE_KEY, LOCATION_FRESH_MS } from '../hooks
 jest.mock('../services/deviceService.js', () => ({ deviceService: {
   getRecommendedDevices: jest.fn(), getNearbyDevices: jest.fn(), getDevices: jest.fn(),
 } }));
-jest.mock('../components/home/HeroSection', () => ({ HeroSection: () => null }));
+jest.mock('../components/home/HeroSection', () => ({
+  HeroSection: ({ searchInput, onSearchChange, onSearchSubmit, onClearSearch }) => (
+    <div data-testid="mock-hero">
+      <input
+        aria-label="Search devices input"
+        value={searchInput || ''}
+        onChange={(e) => onSearchChange?.(e.target.value)}
+      />
+      <button type="button" onClick={() => onSearchSubmit?.(searchInput)}>Search Submit</button>
+      <button type="button" onClick={() => onClearSearch?.()}>Search Clear</button>
+    </div>
+  ),
+}));
 jest.mock('react-router-dom', () => ({ Link: ({ to, children, ...props }) => <a href={to} {...props}>{children}</a> }));
 
 let container, root, success, failure, hook;
@@ -549,4 +561,179 @@ test('Allow after permission prompt does not duplicate a pending location reques
   status.state = 'granted'; await act(async () => change());
   expect(navigator.geolocation.getCurrentPosition).toHaveBeenCalledTimes(1);
   await allow(); expect(container.querySelectorAll('article')).toHaveLength(1);
+});
+
+const typeSearch = async (text) => {
+  const input = container.querySelector('[aria-label="Search devices input"]');
+  await act(async () => {
+    const nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+    nativeSetter.call(input, text);
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+};
+
+test('typing search keyword debounces by 400ms before calling API', async () => {
+  jest.useFakeTimers();
+  save();
+  await mount();
+  expect(deviceService.getRecommendedDevices).toHaveBeenCalledTimes(1);
+
+  await typeSearch('sony');
+  // Before 400ms: no new API call
+  expect(deviceService.getRecommendedDevices).toHaveBeenCalledTimes(1);
+
+  // Advance timers by 400ms
+  await act(async () => {
+    jest.advanceTimersByTime(400);
+  });
+  expect(deviceService.getRecommendedDevices).toHaveBeenCalledTimes(2);
+  expect(deviceService.getRecommendedDevices).toHaveBeenLastCalledWith(
+    expect.objectContaining({ q: 'sony', lat: 21.0285, lng: 105.8542 })
+  );
+});
+
+test('submitting search calls recommended API immediately with q keyword without waiting for debounce', async () => {
+  save();
+  await mount();
+  expect(deviceService.getRecommendedDevices).toHaveBeenCalledTimes(1);
+
+  await typeSearch('macbook');
+  await click('Search Submit');
+
+  expect(deviceService.getRecommendedDevices).toHaveBeenCalledTimes(2);
+  expect(deviceService.getRecommendedDevices).toHaveBeenLastCalledWith(
+    expect.objectContaining({ q: 'macbook', lat: 21.0285, lng: 105.8542 })
+  );
+});
+
+test('search combined with category filter sends both category and q', async () => {
+  save();
+  await mount();
+  await click('Cameras');
+  expect(deviceService.getRecommendedDevices).toHaveBeenLastCalledWith(
+    expect.objectContaining({ category: 'camera' })
+  );
+
+  await typeSearch('sony');
+  await click('Search Submit');
+
+  expect(deviceService.getRecommendedDevices).toHaveBeenLastCalledWith(
+    expect.objectContaining({ category: 'camera', q: 'sony' })
+  );
+});
+
+test('switching category while searching retains q keyword', async () => {
+  save();
+  await mount();
+  await typeSearch('sony');
+  await click('Search Submit');
+
+  await click('Laptops');
+  expect(deviceService.getRecommendedDevices).toHaveBeenLastCalledWith(
+    expect.objectContaining({ category: 'laptop', q: 'sony' })
+  );
+
+  await click('All');
+  expect(deviceService.getRecommendedDevices).toHaveBeenLastCalledWith(
+    expect.objectContaining({ q: 'sony' })
+  );
+  expect(deviceService.getRecommendedDevices.mock.calls.at(-1)[0]).not.toHaveProperty('category');
+});
+
+test('clearing search resets keyword and calls API without q', async () => {
+  save();
+  await mount();
+  await typeSearch('sony');
+  await click('Search Submit');
+  expect(deviceService.getRecommendedDevices).toHaveBeenLastCalledWith(
+    expect.objectContaining({ q: 'sony' })
+  );
+
+  await click('Search Clear');
+  expect(deviceService.getRecommendedDevices).toHaveBeenLastCalledWith(
+    expect.not.objectContaining({ q: 'sony' })
+  );
+  expect(deviceService.getRecommendedDevices.mock.calls.at(-1)[0]).not.toHaveProperty('q');
+});
+
+test('empty search results render search empty message and Clear Search button', async () => {
+  save();
+  deviceService.getRecommendedDevices.mockResolvedValueOnce(result());
+  await mount();
+
+  deviceService.getRecommendedDevices.mockResolvedValueOnce({ data: [], pagination: { total: 0 } });
+  await typeSearch('nonexistent123');
+  await click('Search Submit');
+
+  expect(container.textContent).toContain('No devices found for your search.');
+  expect(container.textContent).toContain('Clear Search');
+});
+
+test('clicking Clear Search button in empty state clears query and re-renders recommended devices', async () => {
+  save();
+  deviceService.getRecommendedDevices.mockResolvedValueOnce(result('Initial device'));
+  await mount();
+
+  deviceService.getRecommendedDevices.mockResolvedValueOnce({ data: [], pagination: { total: 0 } });
+  await typeSearch('nonexistent123');
+  await click('Search Submit');
+  expect(container.textContent).toContain('No devices found for your search.');
+
+  deviceService.getRecommendedDevices.mockResolvedValueOnce(result('Cleared device'));
+  await click('Clear Search');
+
+  expect(deviceService.getRecommendedDevices.mock.calls.at(-1)[0]).not.toHaveProperty('q');
+  expect(container.textContent).toContain('Cleared device');
+});
+
+test('search API error displays "Unable to search devices." and Try Again preserves query', async () => {
+  save();
+  deviceService.getRecommendedDevices.mockResolvedValueOnce(result('Initial device'));
+  await mount();
+
+  deviceService.getRecommendedDevices.mockRejectedValueOnce(new Error('Search server error'));
+  await typeSearch('canon');
+  await click('Search Submit');
+
+  expect(container.textContent).toContain('Unable to search devices.');
+  expect(container.textContent).toContain('Try Again');
+
+  deviceService.getRecommendedDevices.mockResolvedValueOnce(result('Canon device'));
+  await click('Try Again');
+
+  expect(deviceService.getRecommendedDevices).toHaveBeenLastCalledWith(
+    expect.objectContaining({ q: 'canon' })
+  );
+  expect(container.textContent).toContain('Canon device');
+});
+
+test('race condition protection: stale earlier search response does not overwrite newer result', async () => {
+  save();
+  let resolveSony;
+  deviceService.getRecommendedDevices
+    .mockResolvedValueOnce(result('Initial'))
+    .mockImplementationOnce(() => new Promise((resolve) => { resolveSony = resolve; }))
+    .mockResolvedValueOnce(result('Canon Device'));
+
+  await mount();
+
+  // Search Sony (delayed)
+  await typeSearch('sony');
+  await click('Search Submit');
+
+  // Immediately search Canon (fast)
+  await typeSearch('canon');
+  await click('Search Submit');
+
+  expect(container.textContent).toContain('Canon Device');
+
+  // Now resolve the delayed Sony response
+  await act(async () => {
+    resolveSony(result('Sony Stale Device'));
+  });
+
+  // Stale response must be dropped, Canon must remain displayed
+  expect(container.textContent).toContain('Canon Device');
+  expect(container.textContent).not.toContain('Sony Stale Device');
 });

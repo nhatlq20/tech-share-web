@@ -32,6 +32,10 @@ const geoPaginationStages = (page, limit) => [
   },
 ];
 
+/** Helper to escape special regex characters safely */
+const escapeRegex = (string) =>
+  string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 /** Home discovery: exact distance first, with stable tie-breaks and a 100 km safety cap. */
 export const getRecommendedDevices = async (req, res, next) => {
   try {
@@ -39,19 +43,39 @@ export const getRecommendedDevices = async (req, res, next) => {
       lat,
       lng,
       category,
+      q,
+      keyword,
       page = RECOMMENDATION_DEFAULT_PAGE,
-      limit = RECOMMENDATION_PAGE_SIZE,
+      limit,
     } = req.query;
     const userLat = Number(lat);
     const userLng = Number(lng);
     const pageNum = Number(page);
-    const requestedLimit = Number(limit);
-    const limitNum = Math.min(requestedLimit, RECOMMENDATION_PAGE_SIZE);
+
+    // Validate optional search keyword
+    const rawKeyword = q !== undefined ? q : keyword;
+    if (rawKeyword !== undefined && typeof rawKeyword !== "string") {
+      return res.status(400).json({
+        success: false,
+        message: "Valid search keyword is required.",
+      });
+    }
+    const cleanKeyword = rawKeyword ? rawKeyword.trim() : "";
+    if (cleanKeyword.length > 100) {
+      return res.status(400).json({
+        success: false,
+        message: "Search keyword must not exceed 100 characters.",
+      });
+    }
+
+    const defaultLimit = cleanKeyword ? 12 : RECOMMENDATION_PAGE_SIZE;
+    const requestedLimit = limit !== undefined ? Number(limit) : defaultLimit;
+    const limitNum = Math.min(requestedLimit, cleanKeyword ? 12 : RECOMMENDATION_PAGE_SIZE);
     const skip = (pageNum - RECOMMENDATION_DEFAULT_PAGE) * limitNum;
     const validCoordinates = isNumericQueryValue(lat) && isNumericQueryValue(lng) &&
       Math.abs(userLat) <= MAX_LATITUDE && Math.abs(userLng) <= MAX_LONGITUDE;
     const validPagination = Number.isSafeInteger(pageNum) && pageNum >= RECOMMENDATION_DEFAULT_PAGE &&
-      Number.isSafeInteger(requestedLimit) && requestedLimit >= RECOMMENDATION_DEFAULT_PAGE &&
+      Number.isSafeInteger(requestedLimit) && requestedLimit >= 1 &&
       Number.isSafeInteger(skip);
 
     if (!validCoordinates || !validPagination) {
@@ -90,6 +114,21 @@ export const getRecommendedDevices = async (req, res, next) => {
     };
     // Filter before sorting/pagination so totals and every page belong to this category.
     if (categoryFilter && categoryFilter !== "all") deviceFilter.category = categoryFilter;
+
+    // Filter by search keyword (name, title, brand, description)
+    if (cleanKeyword) {
+      const searchRegex = new RegExp(escapeRegex(cleanKeyword), "i");
+      deviceFilter.$and = [
+        {
+          $or: [
+            { name: searchRegex },
+            { title: searchRegex },
+            { brand: searchRegex },
+            { description: searchRegex },
+          ],
+        },
+      ];
+    }
 
     const [result] = await getDevicesCollection()
       .aggregate([
