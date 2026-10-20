@@ -6,6 +6,7 @@ import { PublicLayout } from '../layouts/PublicLayout.jsx';
 
 // Public pages
 import { HomePage } from '../pages/HomePage.jsx';
+import { AiDeviceComparePage } from '../pages/AiDeviceComparePage.jsx';
 import { CatalogPage } from '../pages/CatalogPage.jsx';
 import { DeviceDetailPage } from '../pages/DeviceDetailPage.jsx';
 // eslint-disable-next-line no-unused-vars
@@ -211,6 +212,7 @@ export const AppRoutes = () => {
       <Route element={<PublicLayout />}>
         {/* Trang công khai – ai cũng vào được */}
         <Route path={ROUTES.HOME}               element={<HomePage />} />
+        <Route path={ROUTES.COMPARE_DEVICES}    element={<AiDeviceComparePage />} />
         <Route path={ROUTES.EXPLORE}            element={<CatalogPage />} />
         <Route path={ROUTES.DEVICE_DETAIL}      element={<DeviceDetailPage />} />
         <Route path={ROUTES.DEVICE_DETAIL_LEGACY} element={<DeviceDetailPage />} />

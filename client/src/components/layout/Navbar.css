@@ -133,6 +133,27 @@
   gap: 12px;
 }
 
+.navbar-btn-compare {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 8px 12px;
+  border: 1px solid #c8e8e9;
+  border-radius: 8px;
+  background: #eef8f8;
+  color: #287f84;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.navbar-btn-compare:hover {
+  background: #dff2f2;
+  border-color: #67BEC3;
+}
+
 .navbar-btn-login {
   font-size: 14px;
   padding: 8px 16px;
@@ -287,4 +308,21 @@
   color: #ffffff;
 }
 
+@media (max-width: 520px) {
+  .navbar-actions {
+    gap: 7px;
+  }
 
+  .navbar-btn-compare {
+    padding: 8px;
+  }
+
+  .navbar-btn-compare span {
+    display: none;
+  }
+
+  .navbar-btn-login,
+  .navbar-btn-register {
+    padding: 8px 10px;
+  }
+}
