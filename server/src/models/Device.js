@@ -96,14 +96,42 @@ const deviceSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: ['available', 'maintenance', 'hidden', 'rented'],
-      default: 'available',
+      default: 'hidden',
       index: true,
     },
     moderationStatus: {
       type: String,
       enum: ['pending', 'approved', 'rejected'],
-      default: 'approved',
+      default: 'pending',
       index: true,
+    },
+    moderationReason: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    rejectReason: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    moderatedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    reviewedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    moderatedAt: {
+      type: Date,
+      default: null,
+    },
+    reviewedAt: {
+      type: Date,
+      default: null,
     },
     blockedDates: [
       {
@@ -204,6 +232,9 @@ deviceSchema.pre('save', function (next) {
 deviceSchema.index({ location: '2dsphere' });
 deviceSchema.index({ category: 1, status: 1, isDeleted: 1 });
 deviceSchema.index({ name: 'text', brand: 'text', description: 'text' });
+deviceSchema.index({ isDeleted: 1, moderationStatus: 1, createdAt: -1 });
+deviceSchema.index({ isDeleted: 1, category: 1, moderationStatus: 1, createdAt: -1 });
+deviceSchema.index({ isDeleted: 1, name: 1, brand: 1 });
 
 export const Device = mongoose.models.Device || mongoose.model('Device', deviceSchema, 'devices');
 export default Device;

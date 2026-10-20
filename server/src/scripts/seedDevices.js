@@ -377,7 +377,16 @@ export const seedDevelopmentDevices = async () => {
     console.log(`🧹 Cleaned ${deleteResult.deletedCount} existing devices from development database.`);
 
     // Insert curated devices
-    const inserted = await Device.insertMany(DEVELOPMENT_DEVICES);
+    const devicesToInsert = DEVELOPMENT_DEVICES.map((d) => ({
+      ...d,
+      status: 'available',
+      moderationStatus: 'approved',
+      moderationReason: '',
+      rejectReason: '',
+      moderatedBy: null,
+      moderatedAt: new Date(),
+    }));
+    const inserted = await Device.insertMany(devicesToInsert);
     console.log(`🎉 Successfully inserted ${inserted.length} development devices!`);
 
     // Verify summary by category

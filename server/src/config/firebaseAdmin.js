@@ -3,6 +3,7 @@ import { getMessaging } from 'firebase-admin/messaging';
 import { getFirestore } from 'firebase-admin/firestore';
 
 let appInstance = null;
+let hasAdminCredentials = false;
 
 /**
  * Khởi tạo Firebase Admin SDK theo chuẩn Modular ES Modules Node.js
@@ -25,6 +26,7 @@ export const initFirebaseAdmin = () => {
           credential: cert(serviceAccount),
           projectId,
         });
+        hasAdminCredentials = true;
         console.log('✅ Firebase Admin initialized with service account.');
         return appInstance;
       } catch (err) {
@@ -42,15 +44,17 @@ export const initFirebaseAdmin = () => {
         }),
         projectId,
       });
+      hasAdminCredentials = true;
       console.log('✅ Firebase Admin initialized with client email & private key.');
       return appInstance;
     }
 
-    // 3. Khởi tạo mặc định với Project ID
+    // 3. Khởi tạo mặc định với Project ID (chỉ dùng cho client identification, không có private key)
     appInstance = initializeApp({
       projectId,
     });
-    console.log(`✅ Firebase Admin initialized for project: ${projectId}`);
+    hasAdminCredentials = false;
+    console.log(`ℹ️ Firebase Admin initialized for project: ${projectId} (running without private key; Firestore & FCM server push disabled in local dev)`);
   } catch (error) {
     console.warn('⚠️ Firebase Admin init notice:', error.message);
   }
@@ -62,6 +66,9 @@ export const initFirebaseAdmin = () => {
 initFirebaseAdmin();
 
 export const getAdminMessaging = () => {
+  if (!hasAdminCredentials) {
+    return null;
+  }
   try {
     const app = appInstance || (getApps().length > 0 ? getApp() : initFirebaseAdmin());
     return app ? getMessaging(app) : null;
@@ -72,6 +79,9 @@ export const getAdminMessaging = () => {
 };
 
 export const getAdminFirestore = () => {
+  if (!hasAdminCredentials) {
+    return null;
+  }
   try {
     const app = appInstance || (getApps().length > 0 ? getApp() : initFirebaseAdmin());
     return app ? getFirestore(app) : null;

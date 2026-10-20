@@ -338,7 +338,7 @@ const PostDevicePage = ({ onBack, onDeviceCreated }) => {
       onDeviceCreated(response.data);
       setSubmissionModal({
         title: "Đăng thiết bị thành công",
-        message: "Thiết bị và ảnh đã được lưu vào kho thiết bị.",
+        message: "Bài đăng của bạn đang chờ Admin kiểm duyệt trước khi hiển thị công khai trên sàn cho thuê.",
         isSuccess: true,
       });
     } catch (error) {

@@ -48,12 +48,31 @@ app.use('/api/chats', chatRoutes);
 app.use(notFound);
 app.use(errorHandler);
 
+// Process Safety Handlers
+process.on('unhandledRejection', (reason) => {
+  console.warn('⚠️ [SERVER] Unhandled Rejection:', reason?.message || reason);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('❌ [SERVER] Uncaught Exception:', err?.message || err);
+});
+
 // Start server
 const startServer = async () => {
   await connectDB();
 
   const httpServer = http.createServer(app);
   initSocket(httpServer);
+
+  httpServer.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`❌ [SERVER] Cổng ${PORT} đang bị chiếm dụng bởi tiến trình khác (EADDRINUSE).`);
+      console.error(`👉 Hãy kiểm tra và đóng tiến trình đang chiếm cổng ${PORT}, hoặc đổi PORT trong .env.`);
+    } else {
+      console.error('❌ [SERVER] Lỗi khởi động HTTP Server:', err);
+    }
+    process.exit(1);
+  });
 
   httpServer.listen(PORT, () => {
     console.log(`🚀 TechShare Server running on http://localhost:${PORT} (Socket.IO enabled)`);
