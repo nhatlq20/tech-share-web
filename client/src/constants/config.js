@@ -11,6 +11,9 @@ export const API_CONFIG = {
   ENDPOINTS: {
     ADMIN_KPI: "/admin/kpi",
     ADMIN_DEVICES: "/admin/devices",
+    ADMIN_MODERATION_DEVICES: "/admin/devices",
+    ADMIN_DEVICE_DETAILS: (deviceId) => `/admin/devices/${deviceId}`,
+    ADMIN_MODERATE_DEVICE: (deviceId) => `/admin/devices/${deviceId}/moderate`,
     ADMIN_USERS: "/admin/users",
     ADMIN_EKYC: "/admin/ekyc",
     ADMIN_TOGGLE_USER: (userId) => `/admin/users/${userId}/status`,
@@ -125,6 +128,12 @@ export const BOOKING_STATUS = {
   ACTIVE: 'active',
   COMPLETED: 'completed',
   CANCELLED: 'cancelled',
+  REJECTED: 'rejected',
+};
+
+export const MODERATION_STATUS = {
+  PENDING: 'pending',
+  APPROVED: 'approved',
   REJECTED: 'rejected',
 };
 

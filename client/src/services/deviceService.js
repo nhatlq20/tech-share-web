@@ -232,6 +232,39 @@ export const updateMyDeviceStatus = async (deviceId, status) => {
   return response;
 };
 
+export const createDevice = async (deviceData) => {
+  const response = await api.post("/devices", deviceData);
+  return response;
+};
+
+export const updateDevice = async (deviceId, deviceData) => {
+  const response = await api.put(`/devices/${encodeURIComponent(deviceId)}`, deviceData);
+  return response;
+};
+
+export const getAdminModerationDevices = async (params = {}) => {
+  const response = await api.get(API_CONFIG.ENDPOINTS.ADMIN_MODERATION_DEVICES, { params });
+  return response;
+};
+
+export const getAdminDeviceDetails = async (deviceId) => {
+  const response = await api.get(API_CONFIG.ENDPOINTS.ADMIN_DEVICE_DETAILS(deviceId));
+  return response;
+};
+
+export const moderateDevice = async (deviceId, action, reason = "") => {
+  const response = await api.patch(API_CONFIG.ENDPOINTS.ADMIN_MODERATE_DEVICE(deviceId), {
+    action,
+    reason,
+  });
+  return response;
+};
+
+export const deleteAdminDevice = async (deviceId) => {
+  const response = await api.delete(API_CONFIG.ENDPOINTS.ADMIN_DELETE_DEVICE(deviceId));
+  return response;
+};
+
 export const deviceService = {
   getDevices,
   getDeviceById,
@@ -240,6 +273,12 @@ export const deviceService = {
   getMyDevices,
   deleteMyDevice,
   updateMyDeviceStatus,
+  createDevice,
+  updateDevice,
+  getAdminModerationDevices,
+  getAdminDeviceDetails,
+  moderateDevice,
+  deleteAdminDevice,
 };
 
 export default deviceService;

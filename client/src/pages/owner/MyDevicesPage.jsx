@@ -5,7 +5,7 @@ import {
   getMyDevices,
   updateMyDeviceStatus,
 } from "../../services/deviceService";
-import { Wrench } from "lucide-react";
+import { AlertTriangle, Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ROUTES from "../../routes/routes";
 import DeleteDeviceModal from "../../components/owner/DeleteDeviceModal";
@@ -124,9 +124,11 @@ function MyDevicesPage() {
     }
   };
   const availableDevices = devices.filter(
-    (device) => device.status === "available",
+    (device) => device.status === "available" && (device.moderationStatus === "approved" || !device.moderationStatus),
   ).length;
-  const maintenance = devices.filter((p) => p.status === "maintenance").length;
+  const pendingModeration = devices.filter(
+    (device) => device.moderationStatus === "pending",
+  ).length;
   const hidden = devices.filter((p) => p.status === "hidden").length;
 
   return (
@@ -136,7 +138,7 @@ function MyDevicesPage() {
           <div>
             <p className="my-devices-eyebrow">OWNER DASHBOARD</p>
             <h1>My Devices</h1>
-            <p className="my-devices-subtitle">Manage your rental devices</p>
+            <p className="my-devices-subtitle">Manage your rental devices & moderation status</p>
           </div>
         </header>
 
@@ -149,25 +151,36 @@ function MyDevicesPage() {
               <p>Available Devices</p>
               <strong>{availableDevices}</strong>
             </div>
-            <span className="my-devices-stat-caption">On your account</span>
+            <span className="my-devices-stat-caption">Live on marketplace</span>
           </article>
           <article className="my-devices-stat-card">
-            <Wrench size={20} color="#f59e0b" />
-            <div>
-              <p>Maintenance Devices</p>
-              <strong>{maintenance}</strong>
+            <div style={{
+              width: "42px",
+              height: "42px",
+              borderRadius: "12px",
+              backgroundColor: "#FEF3C7",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}>
+              <Clock size={20} color="#D97706" />
             </div>
-            <span className="my-devices-stat-caption">Ready to rent</span>
+            <div>
+              <p>Pending Moderation</p>
+              <strong style={{ color: "#D97706" }}>{pendingModeration}</strong>
+            </div>
+            <span className="my-devices-stat-caption">Awaiting review</span>
           </article>
           <article className="my-devices-stat-card">
             <span className="my-devices-stat-icon my-devices-stat-icon-unavailable">
               <span aria-hidden="true">−</span>
             </span>
             <div>
-              <p>Unavailable Devices</p>
+              <p>Unavailable / Paused</p>
               <strong>{hidden}</strong>
             </div>
-            <span className="my-devices-stat-caption">Currently paused</span>
+            <span className="my-devices-stat-caption">Currently hidden</span>
           </article>
         </section>
 
@@ -212,15 +225,23 @@ function MyDevicesPage() {
                         alt={device.name || device.title}
                       />
                       <span
-                        className={`my-device-status ${
-                          device.status === "available"
+                        className={`my-device-moderation-badge is-${device.moderationStatus || "approved"}`}
+                      >
+                        {device.moderationStatus === "pending"
+                          ? "⏳ Chờ duyệt"
+                          : device.moderationStatus === "rejected"
+                            ? "✕ Bị từ chối"
+                            : "✓ Đã duyệt"}
+                      </span>
+                      <span
+                        className={`my-device-status ${device.status === "available"
                             ? "is-available"
                             : device.status === "maintenance"
                               ? "is-maintenance"
                               : device.status === "rented"
                                 ? "is-rented"
                                 : "is-unavailable"
-                        }`}
+                          }`}
                       >
                         <span aria-hidden="true" />
                         {device.status === "available"
@@ -245,6 +266,20 @@ function MyDevicesPage() {
                           {(device.condition || "good").replace(/_/g, " ")}
                         </span>
                       </div>
+
+                      {device.moderationStatus === "rejected" && (
+                        <div className="my-device-rejection-banner">
+                          <strong>
+                            <AlertTriangle size={14} />
+                            Lý do từ chối kiểm duyệt:
+                          </strong>
+                          <p style={{ margin: 0 }}>
+                            {device.moderationReason ||
+                              device.rejectReason ||
+                              "Không đáp ứng tiêu chuẩn kiểm duyệt thiết bị của TechShare."}
+                          </p>
+                        </div>
+                      )}
 
                       <div className="my-device-info">
                         <span>
@@ -320,9 +355,26 @@ function MyDevicesPage() {
                           }
                           disabled={
                             Boolean(updatingDeviceId) ||
-                            device.status === "rented"
+                            device.status === "rented" ||
+                            device.moderationStatus !== "approved"
                           }
                         />
+                        {device.moderationStatus &&
+                          device.moderationStatus !== "approved" && (
+                            <p
+                              style={{
+                                fontSize: "11px",
+                                color: "#D97706",
+                                margin: "6px 0 0",
+                                textAlign: "center",
+                                fontWeight: 500,
+                              }}
+                            >
+                              {device.moderationStatus === "pending"
+                                ? "⏳ Đang chờ Admin duyệt để bật cho thuê"
+                                : "✕ Bị từ chối, vui lòng chỉnh sửa và gửi duyệt lại"}
+                            </p>
+                          )}
                       </div>
                     </div>
                   </article>

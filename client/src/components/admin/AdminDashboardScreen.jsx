@@ -55,12 +55,14 @@ const DEFAULT_CHARTS = {
   ],
 };
 const DEFAULT_CATEGORIES = [
-  { id: 'smartphone', name: 'Smartphone & Tablet', count: 36, percent: 37, color: '#67BEC3' },
-  { id: 'laptop', name: 'Laptop & Workstation', count: 24, percent: 25, color: '#38BDF8' },
-  { id: 'camera', name: 'Camera & Lenses', count: 18, percent: 18, color: '#818CF8' },
-  { id: 'drone', name: 'Drone & Gimbal', count: 10, percent: 10, color: '#F472B6' },
-  { id: 'audio', name: 'Headphones & Audio', count: 6, percent: 6, color: '#FBBF24' },
-  { id: 'gaming', name: 'Gaming & VR', count: 4, percent: 4, color: '#34D399' },
+  { id: 'smartphone', name: 'Smartphone', count: 36, percent: 30, color: '#67BEC3' },
+  { id: 'tablet', name: 'Tablet & iPad', count: 18, percent: 15, color: '#A855F7' },
+  { id: 'laptop', name: 'Laptop & Workstation', count: 24, percent: 20, color: '#38BDF8' },
+  { id: 'camera', name: 'Camera & Lenses', count: 18, percent: 15, color: '#818CF8' },
+  { id: 'drone', name: 'Drone & Gimbal', count: 10, percent: 8, color: '#F472B6' },
+  { id: 'audio', name: 'Headphones & Audio', count: 6, percent: 5, color: '#FBBF24' },
+  { id: 'gaming', name: 'Gaming & VR', count: 4, percent: 3, color: '#34D399' },
+  { id: 'accessory', name: 'Phụ kiện công nghệ', count: 12, percent: 10, color: '#14B8A6' },
 ];
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 export const AdminDashboardScreen = () => {
@@ -106,6 +108,7 @@ export const AdminDashboardScreen = () => {
   const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
   const [users, setUsers] = useState([]);
   const [devices, setDevices] = useState([]);
+  const [deviceCounts, setDeviceCounts] = useState({ all: 0, pending: 0, approved: 0, rejected: 0 });
   const [ekycRequests, setEkycRequests] = useState([]);
 
   // Fetch all admin data from backend API
@@ -133,6 +136,7 @@ export const AdminDashboardScreen = () => {
             activeUsers: kpiSource.activeUsers ?? kpiSource.verifiedUsers ?? 16,
             totalDevices: kpiSource.totalDevices ?? 13,
             availableDevices: kpiSource.availableDevices ?? 11,
+            pendingDevices: kpiSource.pendingDevices ?? 0,
             activeBookings: kpiSource.activeBookings ?? 3,
             pendingEkyc: kpiSource.pendingEkyc ?? kpiSource.pendingTasks?.ekyc ?? 0,
             totalRevenue: totalRev,
@@ -180,7 +184,7 @@ export const AdminDashboardScreen = () => {
       // 2. Fetch Devices from MongoDB Atlas
       let liveDevices = [];
       try {
-        const resDevices = await fetch(`${API_BASE}/admin/devices`);
+        const resDevices = await fetch(`${API_BASE}/admin/devices?limit=500`, { headers });
         if (resDevices.ok) {
           const json = await resDevices.json();
           const items = Array.isArray(json.data) ? json.data : Array.isArray(json) ? json : [];
@@ -188,6 +192,7 @@ export const AdminDashboardScreen = () => {
             liveDevices = items.map(d => ({
               _id: d._id || d.id,
               name: d.name || d.title || 'Thiết bị công nghệ',
+              title: d.title || d.name || 'Thiết bị công nghệ',
               brand: d.brand || 'TechBrand',
               category: d.category || 'other',
               condition: d.condition || '99%',
@@ -195,8 +200,17 @@ export const AdminDashboardScreen = () => {
               images: Array.isArray(d.images) && d.images.length > 0 ? d.images : ['https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?w=400'],
               specs: d.specs || {},
               pricePerDay: typeof d.pricePerDay === 'number' ? d.pricePerDay : d.dailyRate || 100000,
+              dailyRate: typeof d.dailyRate === 'number' ? d.dailyRate : d.pricePerDay || 100000,
               depositAmount: typeof d.depositAmount === 'number' ? d.depositAmount : d.depositValue || 500000,
+              depositValue: typeof d.depositValue === 'number' ? d.depositValue : d.depositAmount || 500000,
               status: d.status || 'available',
+              moderationStatus: d.moderationStatus || 'approved',
+              moderationReason: d.moderationReason || d.rejectReason || '',
+              rejectReason: d.rejectReason || d.moderationReason || '',
+              moderatedBy: d.moderatedBy || d.reviewedBy || null,
+              moderatedAt: d.moderatedAt || d.reviewedAt || null,
+              address: d.address || '',
+              location: d.location || null,
               ratingAvg: d.ratingAvg || d.rating || 5.0,
               rentalCount: d.rentalCount || d.viewsCount || 0,
               owner: {
@@ -204,11 +218,16 @@ export const AdminDashboardScreen = () => {
                 name: d.owner?.name || d.ownerId?.name || 'Đối tác TechShare',
                 email: d.owner?.email || d.ownerId?.email || 'owner@techshare.vn',
                 phone: d.owner?.phone || d.ownerId?.phone || '0901234567',
-                avatar: d.owner?.avatar || d.ownerId?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400'
+                avatar: d.owner?.avatar || d.ownerId?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400',
+                trustScore: d.owner?.trustScore || 100,
+                isVerified: Boolean(d.owner?.isVerified),
               },
               createdAt: d.createdAt || new Date()
             }));
             setDevices(liveDevices);
+            if (json.counts) {
+              setDeviceCounts(json.counts);
+            }
           }
         }
       } catch (e) {
@@ -450,7 +469,46 @@ export const AdminDashboardScreen = () => {
       } : r));
     }
   };
+  // Action: Moderate device (Approve / Reject) in sync with DB and Sidebar
+  const handleModerateDevice = (deviceId, action, reason) => {
+    let prevStatus = 'pending';
+    setDevices(prev => {
+      const arr = Array.isArray(prev) ? prev : [];
+      const target = arr.find(d => d._id === deviceId);
+      if (target) prevStatus = target.moderationStatus || 'pending';
+      return arr.map(d => d._id === deviceId ? {
+        ...d,
+        moderationStatus: action === 'approve' ? 'approved' : 'rejected',
+        status: action === 'approve' ? 'available' : 'hidden',
+        moderationReason: reason || '',
+        rejectReason: reason || '',
+      } : d);
+    });
+
+    if (prevStatus === 'pending') {
+      setKpi(prev => ({
+        ...prev,
+        pendingDevices: Math.max(0, (prev.pendingDevices || 1) - 1),
+      }));
+    }
+
+    setDeviceCounts(prev => {
+      const nextCounts = { ...prev };
+      if (prevStatus === 'pending') nextCounts.pending = Math.max(0, (nextCounts.pending || 1) - 1);
+      else if (prevStatus === 'approved') nextCounts.approved = Math.max(0, (nextCounts.approved || 1) - 1);
+      else if (prevStatus === 'rejected') nextCounts.rejected = Math.max(0, (nextCounts.rejected || 1) - 1);
+
+      if (action === 'approve') nextCounts.approved = (nextCounts.approved || 0) + 1;
+      else nextCounts.rejected = (nextCounts.rejected || 0) + 1;
+      return nextCounts;
+    });
+  };
+
   const pendingEkycCount = ekycRequests.filter(r => r.status === 'pending').length;
+  const pendingDevicesCount =
+    kpi.pendingDevices !== undefined && kpi.pendingDevices !== null
+      ? kpi.pendingDevices
+      : devices.filter(d => d.moderationStatus === 'pending').length;
   return <div className="admin-hub-wrapper">
       {/* A. Fixed Left Sidebar */}
       <AdminSidebarContent
@@ -458,6 +516,7 @@ export const AdminDashboardScreen = () => {
         currentPath={location.pathname}
         onSelectTab={handleSelectTab}
         pendingEkycCount={pendingEkycCount}
+        pendingDevicesCount={pendingDevicesCount}
         onLogout={logout}
         admin={adminProfile || user}
         user={user}
@@ -550,7 +609,15 @@ export const AdminDashboardScreen = () => {
 
           {currentTab === 'users' && <AdminUsersTab users={users} onToggleStatus={handleToggleUserStatus} isLoading={isLoading} />}
 
-          {currentTab === 'devices' && <AdminDevicesTab devices={devices} onRemoveDevice={handleRemoveDevice} isLoading={isLoading} />}
+          {currentTab === 'devices' && (
+            <AdminDevicesTab
+              devices={devices}
+              counts={deviceCounts}
+              onRemoveDevice={handleRemoveDevice}
+              onModerateDevice={handleModerateDevice}
+              isLoading={isLoading}
+            />
+          )}
 
           {currentTab === 'ekyc' && <AdminEkycTab requests={ekycRequests} onApprove={handleApproveEkyc} onReject={handleRejectEkyc} isLoading={isLoading} />}
         </section>

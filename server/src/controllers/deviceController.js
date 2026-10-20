@@ -70,8 +70,11 @@ export const getRecommendedDevices = async (req, res, next) => {
     }
     const deviceFilter = {
       status: "available",
-      moderationStatus: "approved",
       isDeleted: { $ne: true },
+      $or: [
+        { moderationStatus: "approved" },
+        { moderationStatus: { $exists: false } },
+      ],
       "location.type": "Point",
       "location.coordinates": { $size: 2 },
       "location.coordinates.0": {
@@ -152,6 +155,15 @@ export const getDevices = async (req, res, next) => {
     // Build filter query
     const filter = {
       isDeleted: { $ne: true },
+      status: "available",
+      $and: [
+        {
+          $or: [
+            { moderationStatus: "approved" },
+            { moderationStatus: { $exists: false } },
+          ],
+        },
+      ],
     };
 
     // Category filter (ignore 'all' or empty)
@@ -167,12 +179,14 @@ export const getDevices = async (req, res, next) => {
     const searchTerm = (q || keyword || "").toString().trim();
     if (searchTerm) {
       const regex = new RegExp(searchTerm, "i");
-      filter.$or = [
-        { title: regex },
-        { name: regex },
-        { brand: regex },
-        { description: regex },
-      ];
+      filter.$and.push({
+        $or: [
+          { title: regex },
+          { name: regex },
+          { brand: regex },
+          { description: regex },
+        ],
+      });
     }
 
     // Build sort options
@@ -313,6 +327,10 @@ export const getNearbyDevices = async (req, res, next) => {
             query: {
               status: "available",
               isDeleted: { $ne: true },
+              $or: [
+                { moderationStatus: "approved" },
+                { moderationStatus: { $exists: false } },
+              ],
               "location.type": "Point",
               "location.coordinates": { $size: 2 },
               "location.coordinates.0": { $type: "number", $gte: -180, $lte: 180 },
@@ -554,7 +572,8 @@ export const createDevice = async (req, res) => {
     }
 
     const device = await Device.create({
-      ownerId,
+      owner: ownerId,
+      ownerId: ownerId,
       name,
       title,
       category,
@@ -565,17 +584,27 @@ export const createDevice = async (req, res) => {
       dailyRate: price,
       pricePerDay: price,
       depositValue: deposit,
+      depositAmount: deposit,
+      address: deviceAddress?.trim() || (addressText ?? address),
       location: {
         type: "Point",
         coordinates: [parsedLongitude, parsedLatitude],
-        addressText: deviceAddress.trim(),
+        addressText: (deviceAddress || addressText || address || "").trim(),
       },
       specs: parsedSpecs,
       images: imageUrls,
+      status: "hidden",
+      moderationStatus: "pending",
+      moderationReason: "",
+      rejectReason: "",
+      moderatedBy: null,
+      reviewedBy: null,
+      moderatedAt: null,
+      reviewedAt: null,
     });
     return res.status(201).json({
       success: true,
-      message: "Device created successfully",
+      message: "Đăng thiết bị thành công! Bài đăng đang chờ Admin kiểm duyệt trước khi hiển thị công khai trên sàn.",
       data: device,
     });
   } catch (error) {
@@ -600,9 +629,9 @@ export const myDevices = async (req, res) => {
     const ownerId = req.user.userId;
 
     const devices = await Device.find({
-      owner: ownerId,
+      $or: [{ owner: ownerId }, { ownerId: ownerId }],
       isDeleted: { $ne: true },
-    });
+    }).sort({ createdAt: -1 });
 
     if (devices.length === 0) {
       return res.status(200).json({
@@ -624,6 +653,113 @@ export const myDevices = async (req, res) => {
     });
   }
 };
+
+export const updateDevice = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const ownerId = req.user.userId;
+
+    const device = await Device.findOne({
+      _id: id,
+      $or: [{ owner: ownerId }, { ownerId: ownerId }],
+      isDeleted: { $ne: true },
+    });
+
+    if (!device) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy thiết bị hoặc bạn không có quyền chỉnh sửa.",
+      });
+    }
+
+    const {
+      name,
+      title,
+      category,
+      brand,
+      condition,
+      description,
+      pricePerDay,
+      dailyRate,
+      depositAmount,
+      depositValue,
+      specs,
+      images,
+      address,
+      addressText,
+      yearOfManufacture,
+    } = req.body;
+
+    if (name) device.name = name;
+    if (title || name) device.title = title || name;
+    if (category) device.category = category;
+    if (brand) device.brand = brand;
+    if (condition) device.condition = condition;
+    if (description !== undefined) device.description = description;
+
+    if (pricePerDay != null || dailyRate != null) {
+      const p = Number(pricePerDay ?? dailyRate);
+      if (Number.isFinite(p) && p > 0) {
+        device.pricePerDay = p;
+        device.dailyRate = p;
+      }
+    }
+    if (depositAmount != null || depositValue != null) {
+      const d = Number(depositAmount ?? depositValue);
+      if (Number.isFinite(d) && d >= 0) {
+        device.depositAmount = d;
+        device.depositValue = d;
+      }
+    }
+    if (specs) {
+      device.specs = typeof specs === "string" ? JSON.parse(specs) : specs;
+    }
+    if (Array.isArray(images) && images.length >= 2) {
+      const imageUrls = [];
+      for (const image of images) {
+        if (typeof image === "string" && image.startsWith("http")) {
+          imageUrls.push(image);
+        } else if (typeof image === "string" && image.startsWith("data:image/")) {
+          try {
+            const uploaded = await uploadToCloudinary(image, "techshare/devices");
+            imageUrls.push(uploaded.url);
+          } catch (uploadErr) {
+            console.error("Cloudinary upload err:", uploadErr);
+          }
+        }
+      }
+      if (imageUrls.length >= 2) {
+        device.images = imageUrls;
+      }
+    }
+    if (address || addressText) device.address = addressText ?? address;
+    if (yearOfManufacture) device.yearOfManufacture = Number(yearOfManufacture);
+
+    // Reset moderation status to pending upon update
+    device.moderationStatus = "pending";
+    device.status = "hidden";
+    device.moderationReason = "";
+    device.rejectReason = "";
+    device.moderatedBy = null;
+    device.reviewedBy = null;
+    device.moderatedAt = null;
+    device.reviewedAt = null;
+
+    await device.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Cập nhật thiết bị thành công! Bài đăng đang chờ Admin kiểm duyệt lại.",
+      data: device,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Lỗi máy chủ khi cập nhật thiết bị",
+    });
+  }
+};
+
 
 export const deleteOwner = async (req, res) => {
   try {
@@ -682,8 +818,13 @@ export const deleteOwner = async (req, res) => {
     });
   }
 };
+
 export default {
   getDevices,
   getNearbyDevices,
   getDeviceById,
+  createDevice,
+  myDevices,
+  updateDevice,
+  deleteOwner,
 };
