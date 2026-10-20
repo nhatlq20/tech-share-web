@@ -1,11 +1,71 @@
 import React, { useState } from 'react';
-import { Search, Sparkles, ShieldCheck, Truck, MapPin, ArrowUpRight, CornerDownLeft } from 'lucide-react';
+import { Search, Sparkles, ShieldCheck, Truck, MapPin, ArrowUpRight, CornerDownLeft, X } from 'lucide-react';
 import { STRINGS } from '../../constants/strings';
 import './HeroSection.css';
 
-export const HeroSection = ({ onSearch, initialQuery = '', popularSearches = STRINGS.home.hero.popularSearches }) => {
-  const [searchTerm, setSearchTerm] = useState(initialQuery);
-  const submit = event => { event.preventDefault(); onSearch?.(searchTerm.trim()); };
+export const HeroSection = ({
+  searchTerm: controlledSearchTerm,
+  searchInput: controlledSearchInput,
+  onSearchChange,
+  onSearchSubmit,
+  onSearch,
+  onClearSearch,
+  initialQuery = '',
+  popularSearches = STRINGS.home.hero.popularSearches,
+}) => {
+  const [internalSearchTerm, setInternalSearchTerm] = useState(initialQuery);
+
+  const isControlled = controlledSearchInput !== undefined || controlledSearchTerm !== undefined;
+  const currentSearchTerm = isControlled
+    ? (controlledSearchInput !== undefined ? controlledSearchInput : controlledSearchTerm)
+    : internalSearchTerm;
+
+  const handleInputChange = (event) => {
+    const value = event.target.value;
+    if (!isControlled) {
+      setInternalSearchTerm(value);
+    }
+    if (onSearchChange) {
+      onSearchChange(value);
+    } else if (onSearch) {
+      onSearch(value);
+    }
+  };
+
+  const submit = (event) => {
+    if (event) event.preventDefault();
+    const trimmed = (currentSearchTerm || '').trim();
+    if (onSearchSubmit) {
+      onSearchSubmit(trimmed);
+    } else if (onSearch) {
+      onSearch(trimmed);
+    }
+  };
+
+  const handleClear = () => {
+    if (!isControlled) {
+      setInternalSearchTerm('');
+    }
+    if (onClearSearch) {
+      onClearSearch();
+    } else if (onSearchChange) {
+      onSearchChange('');
+    } else if (onSearch) {
+      onSearch('');
+    }
+  };
+
+  const handlePopularClick = (tag) => {
+    if (!isControlled) {
+      setInternalSearchTerm(tag);
+    }
+    if (onSearchSubmit) {
+      onSearchSubmit(tag);
+    } else if (onSearch) {
+      onSearch(tag);
+    }
+  };
+
   return (
     <section className="tech-hero" aria-labelledby="hero-title">
       <div className="tech-hero-inner">
@@ -15,11 +75,26 @@ export const HeroSection = ({ onSearch, initialQuery = '', popularSearches = STR
           <p className="tech-hero-description">Find the perfect tech device for your lifestyle. High-quality gadgets, flexible rentals, and nearby availability.</p>
           <form className="tech-hero-search" role="search" onSubmit={submit}>
             <Search size={21} aria-hidden="true" />
-            <input aria-label={STRINGS.home.hero.searchBtn} value={searchTerm} onChange={event => setSearchTerm(event.target.value)} placeholder={STRINGS.home.hero.searchPlaceholder} />
+            <input
+              aria-label={STRINGS.home.hero.searchBtn}
+              value={currentSearchTerm}
+              onChange={handleInputChange}
+              placeholder={STRINGS.home.hero.searchPlaceholder}
+            />
+            {currentSearchTerm && (
+              <button
+                type="button"
+                className="tech-hero-search-clear"
+                aria-label="Clear search"
+                onClick={handleClear}
+              >
+                <X size={16} />
+              </button>
+            )}
             <button type="submit">Search <ArrowUpRight size={16} /></button>
           </form>
           <div className="tech-hero-popular"><span>Popular searches:</span>{popularSearches.slice(0, 4).map(tag => (
-            <button type="button" key={tag} onClick={() => { setSearchTerm(tag); onSearch?.(tag); }}>{tag}</button>
+            <button type="button" key={tag} onClick={() => handlePopularClick(tag)}>{tag}</button>
           ))}</div>
           <div className="tech-hero-benefits">
             <div><i><ShieldCheck size={23} /></i><span><strong>Verified Devices</strong><small>Quality assured listings</small></span></div>

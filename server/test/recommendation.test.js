@@ -39,7 +39,7 @@ test('recommended query uses geoNear, 100 km, eligible GeoJSON and stable neares
   assert.equal(geo.key, 'location'); assert.equal(geo.spherical, true);
   assert.equal(geo.maxDistance, 100000);
   assert.equal(geo.query.status, 'available');
-  assert.equal(geo.query.moderationStatus, 'approved');
+  assert.deepEqual(geo.query.$or, [{ moderationStatus: 'approved' }, { moderationStatus: { $exists: false } }]);
   assert.deepEqual(geo.query.isDeleted, { $ne: true });
   assert.equal(geo.query['location.type'], 'Point');
   assert.deepEqual(geo.query['location.coordinates'], { $size: 2 });
@@ -118,3 +118,78 @@ for (const category of ['invalid-category', ['camera'], { $ne: null }]) {
     assert.equal(pipeline, null);
   });
 }
+
+test('search with q filters by keyword across name, title, brand, description before pagination', async () => {
+  const result = await request({ q: 'sony' });
+  assert.equal(result.status, 200);
+  const geoQuery = pipeline[0].$geoNear.query;
+  assert.ok(Array.isArray(geoQuery.$and));
+  const searchOr = geoQuery.$and[0].$or;
+  assert.ok(searchOr.some(cond => cond.name instanceof RegExp && cond.name.test('Sony Alpha A7')));
+  assert.ok(searchOr.some(cond => cond.brand instanceof RegExp && cond.brand.test('Sony')));
+  assert.ok(searchOr.some(cond => cond.description instanceof RegExp && cond.description.test('Sony lens')));
+  // Default search limit is 12 devices per page
+  assert.deepEqual(pipeline.at(-1).$facet.data, [{ $skip: 0 }, { $limit: 12 }]);
+});
+
+test('search with q and category applies both filters simultaneously inside geoNear query', async () => {
+  const result = await request({ q: 'sony', category: 'camera' });
+  assert.equal(result.status, 200);
+  const geoQuery = pipeline[0].$geoNear.query;
+  assert.equal(geoQuery.category, 'camera');
+  assert.ok(Array.isArray(geoQuery.$and));
+  assert.equal(pipeline[0].$geoNear.maxDistance, 100000);
+});
+
+test('search escapes special regex characters safely', async () => {
+  const result = await request({ q: 'Sony (A7)+ [4K]' });
+  assert.equal(result.status, 200);
+  const searchOr = pipeline[0].$geoNear.query.$and[0].$or;
+  const regex = searchOr[0].name;
+  assert.ok(regex instanceof RegExp);
+  assert.ok(regex.test('Sony (A7)+ [4K]'));
+  assert.ok(!regex.test('Sony A7'));
+});
+
+test('search trims whitespace from keyword', async () => {
+  const result = await request({ q: '   macbook   ' });
+  assert.equal(result.status, 200);
+  const searchOr = pipeline[0].$geoNear.query.$and[0].$or;
+  assert.ok(searchOr[0].name.test('MacBook Pro'));
+});
+
+for (const emptyQ of ['', '   ']) {
+  test(`empty search q ${JSON.stringify(emptyQ)} does not add keyword filter`, async () => {
+    const result = await request({ q: emptyQ });
+    assert.equal(result.status, 200);
+    assert.equal(pipeline[0].$geoNear.query.$and, undefined);
+    assert.deepEqual(pipeline.at(-1).$facet.data, [{ $skip: 0 }, { $limit: 24 }]);
+  });
+}
+
+test('search caps limit at maximum 12 devices per page', async () => {
+  const result = await request({ q: 'sony', limit: '50' });
+  assert.equal(result.status, 200);
+  assert.deepEqual(pipeline.at(-1).$facet.data, [{ $skip: 0 }, { $limit: 12 }]);
+  assert.equal(result.body.pagination.limit, 12);
+});
+
+test('search respects smaller requested limit under 12', async () => {
+  const result = await request({ q: 'sony', limit: '6' });
+  assert.equal(result.status, 200);
+  assert.deepEqual(pipeline.at(-1).$facet.data, [{ $skip: 0 }, { $limit: 6 }]);
+  assert.equal(result.body.pagination.limit, 6);
+});
+
+test('search rejects keywords longer than 100 characters', async () => {
+  const longKeyword = 'a'.repeat(101);
+  const result = await request({ q: longKeyword });
+  assert.equal(result.status, 400);
+  assert.equal(pipeline, null);
+});
+
+test('search rejects non-string q parameter', async () => {
+  const result = await request({ q: ['sony'] });
+  assert.equal(result.status, 400);
+  assert.equal(pipeline, null);
+});

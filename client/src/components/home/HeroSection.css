@@ -33,8 +33,9 @@
 .tech-hero-search > svg { color: #20acb6; flex-shrink: 0; }
 .tech-hero-search input { min-width: 0; width: 100%; padding: 7px 0; border: 0; outline: none; background: transparent; color: #26364e; font: inherit; font-size: 13px; }
 .tech-hero-search input::placeholder { color: #8d9fb8; }
-.tech-hero-search:focus-within { outline: 2px solid #29b8bf; outline-offset: 3px; }
-.tech-hero-search button { display: flex; align-items: center; gap: 10px; border: 0; background: linear-gradient(110deg, #15b7bd, #62c3c5); border-radius: 30px; padding: 12px 25px; color: white; font: inherit; font-size: 13px; font-weight: 650; cursor: pointer; }
+.tech-hero-search-clear { border: 0; background: transparent; color: #8d9fb8; cursor: pointer; padding: 6px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: color .15s; flex-shrink: 0; }
+.tech-hero-search-clear:hover { color: #26364e; }
+.tech-hero-search button[type="submit"] { display: flex; align-items: center; gap: 10px; border: 0; background: linear-gradient(110deg, #15b7bd, #62c3c5); border-radius: 30px; padding: 12px 25px; color: white; font: inherit; font-size: 13px; font-weight: 650; cursor: pointer; flex-shrink: 0; }
 .tech-hero-popular { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin-top: 14px; color: #7188a1; font-size: 10px; }
 .tech-hero-popular button { border: 1px solid #d8eef0; border-radius: 20px; color: #378e9c; background: #f5ffffbf; padding: 6px 10px; font: inherit; font-weight: 600; cursor: pointer; }
 .tech-hero-benefits { display: flex; justify-content: space-between; gap: 12px; margin-top: 24px; }

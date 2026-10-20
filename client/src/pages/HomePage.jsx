@@ -48,7 +48,8 @@ export const HomePage = () => {
   const [devices, setDevices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
 
   const location = useUserLocation();
@@ -56,6 +57,7 @@ export const HomePage = () => {
   const [pageSelection, setPageSelection] = useState(null);
   const page = pageSelection?.locationKey === locationKey ? pageSelection.page : MAGIC_NUMBERS.HOME_RECOMMENDATIONS.INITIAL_PAGE;
   const [pagination, setPagination] = useState({ total: 0, totalPages: 1 });
+
   const handleCategoryChange = (category) => {
     if (category === selectedCategory) return;
     setSelectedCategory(category);
@@ -63,6 +65,48 @@ export const HomePage = () => {
     setLoading(true);
     setError(null);
   };
+
+  // 400ms debounce when typing in search input
+  useEffect(() => {
+    const trimmedInput = searchInput.trim();
+    if (trimmedInput === searchQuery) return;
+
+    const timer = setTimeout(() => {
+      setSearchQuery(trimmedInput);
+      setPageSelection(null);
+      setLoading(true);
+      setError(null);
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [searchInput, searchQuery]);
+
+  const handleSearchChange = (value) => {
+    setSearchInput(value);
+  };
+
+  const handleSearchSubmit = (keyword) => {
+    const raw = typeof keyword === 'string' ? keyword : searchInput;
+    const trimmed = raw.trim();
+    setSearchInput(trimmed);
+    if (trimmed !== searchQuery) {
+      setSearchQuery(trimmed);
+      setPageSelection(null);
+      setLoading(true);
+      setError(null);
+    }
+  };
+
+  const handleClearSearch = () => {
+    setSearchInput('');
+    if (searchQuery !== '') {
+      setSearchQuery('');
+      setPageSelection(null);
+      setLoading(true);
+      setError(null);
+    }
+  };
+
   const changePage = (nextPage) => {
     if (busy || nextPage === page || nextPage < 1 || nextPage > pagination.totalPages) return;
     setLoading(true);
@@ -87,9 +131,9 @@ export const HomePage = () => {
     setError(null);
     setRetrying(false);
     setLoading(true);
-    const recoveryKey = JSON.stringify([location.latitude, location.longitude, location.revision, selectedCategory, page]);
+    const recoveryKey = JSON.stringify([location.latitude, location.longitude, location.revision, selectedCategory, searchQuery, page]);
     if (recovery.current.key !== recoveryKey) recovery.current = { key: recoveryKey, failures: 0 };
-    const key = JSON.stringify([location.latitude, location.longitude, location.revision, selectedCategory, page, requestAttempt]);
+    const key = JSON.stringify([location.latitude, location.longitude, location.revision, selectedCategory, searchQuery, page, requestAttempt]);
     // Reuse the in-flight request during StrictMode's setup/cleanup/setup cycle.
     if (pendingRequest.current?.key !== key) {
       pendingRequest.current = {
@@ -99,6 +143,7 @@ export const HomePage = () => {
           page,
           limit: MAGIC_NUMBERS.HOME_RECOMMENDATIONS.PAGE_SIZE,
           ...(selectedCategory !== 'all' ? { category: selectedCategory } : {}),
+          ...(searchQuery ? { q: searchQuery } : {}),
         }),
       };
     }
@@ -124,7 +169,8 @@ export const HomePage = () => {
         if (!active) return;
         const isConnectionError = requestError instanceof TypeError || requestError?.name === 'AbortError' ||
           [502, 503, 504].includes(requestError?.status);
-        setError(isConnectionError ? STRINGS.home.recommended.connectionError : STRINGS.home.recommended.apiError);
+        const defaultErrorMessage = searchQuery ? 'Unable to search devices.' : STRINGS.home.recommended.apiError;
+        setError(isConnectionError ? STRINGS.home.recommended.connectionError : defaultErrorMessage);
         if (isConnectionError && recovery.current.failures < MAX_RECOMMENDATION_RETRIES) {
           // Atlas may need longer to reconnect than the first few startup requests.
           const delay = Math.min(1000 * (2 ** recovery.current.failures), MAX_RETRY_DELAY_MS);
@@ -141,7 +187,7 @@ export const HomePage = () => {
 
     loadRecommendedDevices();
     return () => { active = false; clearTimeout(retryTimer); };
-  }, [location.latitude, location.longitude, location.revision, selectedCategory, page, requestAttempt]);
+  }, [location.latitude, location.longitude, location.revision, selectedCategory, searchQuery, page, requestAttempt]);
 
   useEffect(() => {
     // Recover when the network returns or the user revisits the tab after starting the backend.
@@ -167,8 +213,12 @@ export const HomePage = () => {
     <div className="home-page-root">
       {/* 1. Modern Hero Section with Subtle Grid, Glow Blobs & Trending Searches */}
       <HeroSection 
-        onSearch={(term) => setSearchTerm(term)} 
-        initialQuery={searchTerm}
+        searchInput={searchInput}
+        onSearchChange={handleSearchChange}
+        onSearchSubmit={handleSearchSubmit}
+        onClearSearch={handleClearSearch}
+        onSearch={handleSearchSubmit}
+        initialQuery={searchInput}
       />
 
       {/* 2. Category Area */}
@@ -275,7 +325,23 @@ export const HomePage = () => {
               <div className="state-icon-circle state-empty-icon">
                 <PackageOpen size={28} />
               </div>
-              <h3 className="state-title">{STRINGS.home.recommended.empty}</h3>
+              <h3 className="state-title">
+                {searchQuery ? 'No devices found for your search.' : STRINGS.home.recommended.empty}
+              </h3>
+              {searchQuery && (
+                <p className="state-desc">
+                  No matching devices found for "{searchQuery}". Try another keyword or clear search.
+                </p>
+              )}
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={handleClearSearch}
+                  className="state-retry-btn"
+                >
+                  {STRINGS.home.devices.clearSearchBtn}
+                </button>
+              )}
             </div>
           )}
 
