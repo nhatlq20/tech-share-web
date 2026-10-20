@@ -733,6 +733,7 @@ export const moderateDevice = async (req, res, next) => {
           body: notifBody,
           type: 'system',
           relatedId: device._id.toString(),
+          url: '/owner/devices',
         });
       } catch (notifErr) {
         console.warn('⚠️ Không thể gửi thông báo cho Owner:', notifErr.message);

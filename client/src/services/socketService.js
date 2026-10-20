@@ -10,11 +10,11 @@ const getSocketServerUrl = () => {
       const url = new URL(process.env.REACT_APP_API_URL);
       return url.origin;
     } catch {
-      return 'http://localhost:5000';
+      return 'http://localhost:8000';
     }
   }
   if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-    return 'http://localhost:5000';
+    return 'http://localhost:8000';
   }
   return '/';
 };

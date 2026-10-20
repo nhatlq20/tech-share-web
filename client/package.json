@@ -2,7 +2,7 @@
   "name": "tech-share-web",
   "private": true,
   "version": "0.1.0",
-  "proxy": "http://localhost:5000",
+  "proxy": "http://localhost:8000",
   "dependencies": {
     "@reduxjs/toolkit": "^2.13.0",
     "es-abstract": "1.24.2",

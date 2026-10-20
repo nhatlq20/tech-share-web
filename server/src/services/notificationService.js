@@ -105,6 +105,7 @@ const syncToFirestore = async (notificationDoc) => {
       body: notificationDoc.body,
       type: notificationDoc.type,
       relatedId: notificationDoc.relatedId || null,
+      url: notificationDoc.url || null,
       isRead: Boolean(notificationDoc.isRead),
       createdAt: notificationDoc.createdAt
         ? notificationDoc.createdAt.toISOString()
@@ -124,6 +125,7 @@ export const createAndSendNotification = async ({
   body,
   type = 'system',
   relatedId = null,
+  url = null,
 }) => {
   if (!userId || !title || !body) {
     throw new Error('userId, title, and body are required to create a notification.');
@@ -136,6 +138,12 @@ export const createAndSendNotification = async ({
     body: body.trim(),
     type,
     relatedId: relatedId ? String(relatedId) : null,
+    url: (url || (() => {
+      const lower = (title || '').toLowerCase();
+      if (lower.includes('yêu cầu thuê') || lower.includes('đơn thuê mới') || lower.includes('chờ duyệt') || lower.includes('hủy')) return '/owner/bookings';
+      if (lower.includes('thiết bị')) return '/owner/devices';
+      return relatedId ? (type === 'order' ? `/my-bookings/${relatedId}` : `/device/${relatedId}`) : '/my-bookings';
+    })()),
     isRead: false,
   });
 
@@ -160,7 +168,7 @@ export const createAndSendNotification = async ({
         notificationId: notification._id.toString(),
         type,
         relatedId,
-        url: relatedId ? `/devices/${relatedId}` : '/',
+        url: notification.url || (relatedId ? (type === 'order' ? `/my-bookings/${relatedId}` : `/device/${relatedId}`) : '/'),
       };
 
       // Gửi Mobile (Expo)
@@ -188,6 +196,7 @@ export const createAndSendNotification = async ({
         body: notification.body,
         type: notification.type,
         relatedId: notification.relatedId || null,
+        url: notification.url || null,
         isRead: false,
         createdAt: notification.createdAt ? notification.createdAt.toISOString() : new Date().toISOString(),
       });
@@ -224,6 +233,7 @@ export const getUserNotifications = async (userId, { limit = 30, page = 1, type 
       body: doc.body,
       type: doc.type,
       relatedId: doc.relatedId || null,
+      url: doc.url || null,
       isRead: doc.isRead,
       createdAt: doc.createdAt ? new Date(doc.createdAt).toISOString() : new Date().toISOString(),
     })),

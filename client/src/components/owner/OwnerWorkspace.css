@@ -552,9 +552,9 @@
 
 .owner-table th {
   background: #F8FAFC;
-  padding: 14px 20px;
-  font-size: 12px;
-  font-weight: 600;
+  padding: 10px 14px;
+  font-size: 11px;
+  font-weight: 700;
   color: var(--owner-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -563,11 +563,12 @@
 }
 
 .owner-table td {
-  padding: 16px 20px;
+  padding: 12px 14px;
   font-size: 13px;
   color: var(--owner-text-main);
   border-bottom: 1px solid #F1F5F9;
   vertical-align: middle;
+  white-space: nowrap;
 }
 
 .owner-table tr:last-child td {

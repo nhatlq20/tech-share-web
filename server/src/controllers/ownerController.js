@@ -1,5 +1,7 @@
 import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
+import { createAndSendNotification } from '../services/notificationService.js';
+import { getIO } from '../socket.js';
 
 /**
  * Helper to get MongoDB collections safely
@@ -20,15 +22,33 @@ const getCollections = () => {
  * Resolve ownerId from request (JWT token, query, or req.user)
  */
 export const resolveOwnerId = async (req) => {
+  const { usersCol } = getCollections();
+
   // 1. Direct from req.user if populated by auth middleware
   const userTargetId = req.user?.userId || req.user?.id || req.user?._id;
   if (userTargetId) {
+    const userObjId = mongoose.Types.ObjectId.isValid(userTargetId) ? new mongoose.Types.ObjectId(userTargetId) : null;
+    if (userObjId) {
+      const userDoc = await usersCol.findOne({ _id: userObjId });
+      if (userDoc) return userDoc._id.toString();
+
+      const userByAcc = await usersCol.findOne({ accountId: userObjId });
+      if (userByAcc) return userByAcc._id.toString();
+    }
     return userTargetId.toString();
   }
 
   // 2. Query param if explicitly provided
   if (req.query && (req.query.ownerId || req.query.userId)) {
-    return (req.query.ownerId || req.query.userId).toString();
+    const qId = (req.query.ownerId || req.query.userId).toString();
+    const qObjId = mongoose.Types.ObjectId.isValid(qId) ? new mongoose.Types.ObjectId(qId) : null;
+    if (qObjId) {
+      const userDoc = await usersCol.findOne({ _id: qObjId });
+      if (userDoc) return userDoc._id.toString();
+      const userByAcc = await usersCol.findOne({ accountId: qObjId });
+      if (userByAcc) return userByAcc._id.toString();
+    }
+    return qId;
   }
 
   // 3. JWT Bearer token from Authorization header
@@ -39,15 +59,33 @@ export const resolveOwnerId = async (req) => {
 
   if (token) {
     try {
-      const secret = process.env.JWT_SECRET || 'techshare_jwt_secret_key_2026';
+      const secret = process.env.JWT_SECRET || 'techshare_mma301_super_secret_jwt_key_2026';
       const decoded = jwt.verify(token, secret);
       const decodedId = decoded?.userId || decoded?.id || decoded?._id;
       if (decodedId) {
+        const dObjId = mongoose.Types.ObjectId.isValid(decodedId) ? new mongoose.Types.ObjectId(decodedId) : null;
+        if (dObjId) {
+          const userDoc = await usersCol.findOne({ _id: dObjId });
+          if (userDoc) return userDoc._id.toString();
+        }
+        if (decoded?.accountId) {
+          const accObjId = mongoose.Types.ObjectId.isValid(decoded.accountId) ? new mongoose.Types.ObjectId(decoded.accountId) : decoded.accountId;
+          const userByAcc = await usersCol.findOne({ accountId: accObjId });
+          if (userByAcc) return userByAcc._id.toString();
+        }
         return decodedId.toString();
       }
+      if (decoded?.accountId) {
+        const accObjId = mongoose.Types.ObjectId.isValid(decoded.accountId) ? new mongoose.Types.ObjectId(decoded.accountId) : decoded.accountId;
+        const userByAcc = await usersCol.findOne({ accountId: accObjId });
+        if (userByAcc) return userByAcc._id.toString();
+      }
       if (decoded?.email) {
-        const { usersCol } = getCollections();
         const found = await usersCol.findOne({ email: decoded.email });
+        if (found) return found._id.toString();
+      }
+      if (decoded?.username) {
+        const found = await usersCol.findOne({ username: decoded.username });
         if (found) return found._id.toString();
       }
     } catch {
@@ -90,6 +128,48 @@ const buildDeviceOwnerQuery = (ownerId) => {
 };
 
 /**
+ * Build airtight booking match query strictly for the given owner
+ */
+export const buildOwnerBookingFilter = async (ownerId, devicesCol) => {
+  if (!ownerId) {
+    return { ownerId: '__none__' };
+  }
+
+  const ownerValues = mongoose.Types.ObjectId.isValid(ownerId)
+    ? [new mongoose.Types.ObjectId(ownerId), ownerId.toString()]
+    : [ownerId.toString()];
+
+  const ownerDevices = await devicesCol
+    .find(
+      {
+        $or: [
+          ...ownerValues.map((v) => ({ ownerId: v })),
+          ...ownerValues.map((v) => ({ owner: v })),
+        ],
+      },
+      { projection: { _id: 1 } }
+    )
+    .toArray();
+
+  const deviceIds = ownerDevices.map((d) => d._id);
+  const deviceIdStrings = ownerDevices.map((d) => d._id.toString());
+
+  return {
+    $or: [
+      ...ownerValues.map((v) => ({ ownerId: v })),
+      ...ownerValues.map((v) => ({ owner: v })),
+      ...(deviceIds.length > 0
+        ? [
+            { deviceId: { $in: [...deviceIds, ...deviceIdStrings] } },
+            { device: { $in: [...deviceIds, ...deviceIdStrings] } },
+          ]
+        : [])
+    ],
+  };
+;
+};
+
+/**
  * Format VND currency
  */
 const formatVND = (amount) => {
@@ -116,6 +196,7 @@ export const getOwnerOverview = async (req, res, next) => {
     }
 
     const ownerFilter = buildOwnerQuery(ownerId);
+    const ownerBookingFilter = await buildOwnerBookingFilter(ownerId, devicesCol);
 
     // Fetch owner user profile directly from database
     const ownerObjectId = mongoose.Types.ObjectId.isValid(ownerId)
@@ -139,19 +220,19 @@ export const getOwnerOverview = async (req, res, next) => {
 
     // 2. Bookings summary
     const pendingApprovals = await bookingsCol.countDocuments({
-      ...ownerFilter,
+      ...ownerBookingFilter,
       status: { $in: ['pending', 'chờ duyệt'] },
     });
 
     const activeRentals = await bookingsCol.countDocuments({
-      ...ownerFilter,
+      ...ownerBookingFilter,
       status: { $in: ['active', 'confirmed', 'in_progress', 'delivering', 'đang thuê'] },
     });
 
     // 3. Revenue calculation
     const allOwnerBookings = await bookingsCol
       .find({
-        ...ownerFilter,
+        ...ownerBookingFilter,
         status: { $nin: ['cancelled', 'rejected'] },
       })
       .toArray();
@@ -865,10 +946,16 @@ export const getOwnerBookings = async (req, res, next) => {
       });
     }
 
-    const ownerFilter = buildOwnerQuery(ownerId);
+    const ownerBookingFilter = await buildOwnerBookingFilter(ownerId, devicesCol);
+
+    // Support optional query filter by status if specified and not 'all'
+    const queryFilter = { ...ownerBookingFilter };
+    if (req.query.status && req.query.status !== 'all') {
+      queryFilter.status = req.query.status;
+    }
 
     const bookings = await bookingsCol
-      .find(ownerFilter)
+      .find(queryFilter)
       .sort({ createdAt: -1 })
       .toArray();
 
@@ -876,17 +963,19 @@ export const getOwnerBookings = async (req, res, next) => {
     const enriched = await Promise.all(
       bookings.map(async (b) => {
         let device = null;
-        if (b.deviceId) {
-          const devObjectId = mongoose.Types.ObjectId.isValid(b.deviceId)
-            ? new mongoose.Types.ObjectId(b.deviceId)
+        const rawDevId = b.deviceId || b.device;
+        if (rawDevId) {
+          const devObjectId = mongoose.Types.ObjectId.isValid(rawDevId)
+            ? new mongoose.Types.ObjectId(rawDevId)
             : null;
           device = devObjectId ? await devicesCol.findOne({ _id: devObjectId }) : null;
         }
 
         let renter = null;
-        if (b.renterId) {
-          const renterObjectId = mongoose.Types.ObjectId.isValid(b.renterId)
-            ? new mongoose.Types.ObjectId(b.renterId)
+        const rawRenterId = b.renterId || b.renter;
+        if (rawRenterId) {
+          const renterObjectId = mongoose.Types.ObjectId.isValid(rawRenterId)
+            ? new mongoose.Types.ObjectId(rawRenterId)
             : null;
           renter = renterObjectId ? await usersCol.findOne({ _id: renterObjectId }) : null;
         }
@@ -900,23 +989,23 @@ export const getOwnerBookings = async (req, res, next) => {
           _id: b._id.toString(),
           id: b.bookingCode || `TS-${b._id.toString().slice(-4)}`,
           bookingCode: b.bookingCode || `TS-${b._id.toString().slice(-4)}`,
-          deviceId: b.deviceId ? b.deviceId.toString() : '',
-          deviceName: device?.name || b.deviceName || 'Thiết bị công nghệ',
+          deviceId: b.deviceId ? b.deviceId.toString() : (device?._id?.toString() || ''),
+          deviceName: device?.name || device?.title || b.deviceName || 'Thiết bị công nghệ',
           deviceCategory: device?.category || b.deviceCategory || 'electronics',
           deviceImage: device?.images?.[0] || 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=150&q=80',
           device: {
-            name: device?.name || b.deviceName || 'Thiết bị công nghệ',
+            name: device?.name || device?.title || b.deviceName || 'Thiết bị công nghệ',
             imageUrl: device?.images?.[0] || 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=150&q=80',
           },
           renter: {
-            _id: renter?._id?.toString() || b.renterId?.toString() || '',
-            name: renter?.name || 'Khách thuê',
-            email: renter?.email || '',
-            phone: renter?.phone || '',
+            _id: renter?._id?.toString() || b.renterId?.toString() || b.renter?.toString() || '',
+            name: renter?.name || b.renterInfo?.name || 'Khách thuê',
+            email: renter?.email || b.renterInfo?.email || '',
+            phone: renter?.phone || b.renterInfo?.phone || '',
             avatar: renter?.avatarUrl || renter?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80',
             avatarUrl: renter?.avatarUrl || renter?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80',
-            trustScore: renter?.trustScore || 100,
-            isVerified: renter?.isVerified ?? false,
+            trustScore: renter?.trust?.score || renter?.trustScore || 100,
+            isVerified: renter?.trust?.isVerified ?? renter?.isVerified ?? false,
           },
           rentalPeriod: {
             startDate: startDateStr,
@@ -931,6 +1020,12 @@ export const getOwnerBookings = async (req, res, next) => {
           totalPrice: rentalPrice,
           totalRentalPrice: rentalPrice,
           depositAmount: depositPrice,
+          dailyRate: Number(b.dailyRate) || Number(b.pricePerDayAtBooking) || Number(device?.dailyRate) || Math.round(Number(rentalPrice) / (Number(b.totalDays) || 1)),
+          discountAmount: Number(b.discountAmount) || 0,
+          deliveryAddress: b.deliveryAddress || b.delivery?.address || '',
+          note: b.note || '',
+          paymentMethod: b.paymentMethod || 'escrow',
+          paymentStatus: b.paymentStatus || 'escrow_hold',
           status: b.status || 'pending',
           deliveryMethod: b.deliveryMethod || 'pickup',
           rejectReason: b.rejectReason || '',
@@ -950,19 +1045,88 @@ export const getOwnerBookings = async (req, res, next) => {
 
 /**
  * 7. PATCH /api/bookings/:id/approve
+ * Approves a rental request and sends real-time notification to the Renter
  */
 export const approveBooking = async (req, res, next) => {
   try {
-    const { bookingsCol } = getCollections();
+    const { bookingsCol, devicesCol } = getCollections();
     const { id } = req.params;
 
     const query = mongoose.Types.ObjectId.isValid(id)
       ? { $or: [{ _id: new mongoose.Types.ObjectId(id) }, { bookingCode: id }] }
       : { bookingCode: id };
 
+    const booking = await bookingsCol.findOne(query);
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy yêu cầu thuê thiết bị.',
+      });
+    }
+
+    const now = new Date();
     await bookingsCol.updateOne(query, {
-      $set: { status: 'approved', updatedAt: new Date() },
+      $set: {
+        status: 'approved',
+        updatedAt: now,
+      },
+      $push: {
+        timeline: {
+          status: 'approved',
+          note: 'Chủ thiết bị đã phê duyệt yêu cầu thuê',
+          timestamp: now,
+          updatedAt: now,
+        },
+      },
     });
+
+    // Lookup device name
+    let deviceName = booking.deviceName;
+    const rawDevId = booking.deviceId || booking.device;
+    if (rawDevId) {
+      const devObjId = mongoose.Types.ObjectId.isValid(rawDevId)
+        ? new mongoose.Types.ObjectId(rawDevId)
+        : null;
+      if (devObjId) {
+        const dev = await devicesCol.findOne({ _id: devObjId });
+        if (dev?.name || dev?.title) deviceName = dev.name || dev.title;
+      }
+    }
+    deviceName = deviceName || 'Thiết bị';
+
+    // Notify renter
+    const rawRenterId = booking.renterId || booking.renter;
+    const targetRenterId = rawRenterId?._id?.toString?.() || rawRenterId?.toString?.();
+    const bookingCode = booking.bookingCode || id;
+
+    if (targetRenterId) {
+      try {
+        await createAndSendNotification({
+          userId: targetRenterId,
+          title: 'Yêu cầu thuê đã được duyệt',
+          body: `Chủ thiết bị đã chấp thuận yêu cầu thuê "${deviceName}" (Mã đơn: ${bookingCode}). Vui lòng kiểm tra đơn hàng để chuẩn bị nhận máy!`,
+          type: 'order',
+          relatedId: booking._id.toString(),
+          url: `/my-bookings/${booking._id.toString()}`,
+        });
+      } catch (notifErr) {
+        console.warn('⚠️ Gửi thông báo phê duyệt cho renter thất bại:', notifErr.message);
+      }
+
+      try {
+        const io = getIO();
+        if (io) {
+          io.to(`user_${targetRenterId}`).emit('booking_status_updated', {
+            bookingId: booking._id.toString(),
+            bookingCode,
+            status: 'approved',
+            deviceName,
+          });
+        }
+      } catch (ioErr) {
+        console.warn('⚠️ Socket emit warning:', ioErr.message);
+      }
+    }
 
     return res.status(200).json({
       success: true,
@@ -975,10 +1139,11 @@ export const approveBooking = async (req, res, next) => {
 
 /**
  * 8. PATCH /api/bookings/:id/reject
+ * Rejects a rental request and sends real-time notification to the Renter
  */
 export const rejectBooking = async (req, res, next) => {
   try {
-    const { bookingsCol } = getCollections();
+    const { bookingsCol, devicesCol } = getCollections();
     const { id } = req.params;
     const { reason } = req.body;
 
@@ -986,9 +1151,82 @@ export const rejectBooking = async (req, res, next) => {
       ? { $or: [{ _id: new mongoose.Types.ObjectId(id) }, { bookingCode: id }] }
       : { bookingCode: id };
 
+    const booking = await bookingsCol.findOne(query);
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy yêu cầu thuê thiết bị.',
+      });
+    }
+
+    const finalReason = (reason || '').trim() || 'Chủ thiết bị bận hoặc thiết bị hiện chưa sẵn sàng';
+    const now = new Date();
+
     await bookingsCol.updateOne(query, {
-      $set: { status: 'rejected', rejectReason: reason || 'Owner unavailable', updatedAt: new Date() },
+      $set: {
+        status: 'rejected',
+        rejectReason: finalReason,
+        statusReason: finalReason,
+        updatedAt: now,
+      },
+      $push: {
+        timeline: {
+          status: 'rejected',
+          note: `Chủ thiết bị từ chối: ${finalReason}`,
+          timestamp: now,
+          updatedAt: now,
+        },
+      },
     });
+
+    // Lookup device name
+    let deviceName = booking.deviceName;
+    const rawDevId = booking.deviceId || booking.device;
+    if (rawDevId) {
+      const devObjId = mongoose.Types.ObjectId.isValid(rawDevId)
+        ? new mongoose.Types.ObjectId(rawDevId)
+        : null;
+      if (devObjId) {
+        const dev = await devicesCol.findOne({ _id: devObjId });
+        if (dev?.name || dev?.title) deviceName = dev.name || dev.title;
+      }
+    }
+    deviceName = deviceName || 'Thiết bị';
+
+    // Notify renter
+    const rawRenterId = booking.renterId || booking.renter;
+    const targetRenterId = rawRenterId?._id?.toString?.() || rawRenterId?.toString?.();
+    const bookingCode = booking.bookingCode || id;
+
+    if (targetRenterId) {
+      try {
+        await createAndSendNotification({
+          userId: targetRenterId,
+          title: 'Yêu cầu thuê bị từ chối',
+          body: `Chủ thiết bị đã từ chối yêu cầu thuê "${deviceName}" (Mã đơn: ${bookingCode}). Lý do: ${finalReason}`,
+          type: 'order',
+          relatedId: booking._id.toString(),
+          url: `/my-bookings/${booking._id.toString()}`,
+        });
+      } catch (notifErr) {
+        console.warn('⚠️ Gửi thông báo từ chối cho renter thất bại:', notifErr.message);
+      }
+
+      try {
+        const io = getIO();
+        if (io) {
+          io.to(`user_${targetRenterId}`).emit('booking_status_updated', {
+            bookingId: booking._id.toString(),
+            bookingCode,
+            status: 'rejected',
+            rejectReason: finalReason,
+            deviceName,
+          });
+        }
+      } catch (ioErr) {
+        console.warn('⚠️ Socket emit warning:', ioErr.message);
+      }
+    }
 
     return res.status(200).json({
       success: true,
@@ -998,6 +1236,8 @@ export const rejectBooking = async (req, res, next) => {
     return next(error);
   }
 };
+
+
 
 /**
  * 9. PATCH /api/bookings/:id/handover

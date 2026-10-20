@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { ROUTES } from './routes.js';
 import { ProtectedRoute } from './ProtectedRoute.jsx';
 import { PublicLayout } from '../layouts/PublicLayout.jsx';
@@ -229,8 +229,25 @@ export const AppRoutes = () => {
             </ProtectedRoute>
           }
         />
+        <Route path="/bookings" element={<Navigate to={ROUTES.MY_BOOKINGS} replace />} />
         <Route
           path={ROUTES.BOOKING_DETAIL}
+          element={
+            <ProtectedRoute roles={['renter', 'owner', 'admin']}>
+              <BookingDetailPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/bookings/:bookingId"
+          element={
+            <ProtectedRoute roles={['renter', 'owner', 'admin']}>
+              <BookingDetailPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/booking/:bookingId/detail"
           element={
             <ProtectedRoute roles={['renter', 'owner', 'admin']}>
               <BookingDetailPage />

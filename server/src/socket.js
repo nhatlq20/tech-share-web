@@ -57,6 +57,11 @@ export const initSocket = (httpServer) => {
       socket.join(userRoom);
       console.log(`🔌 [Socket.IO] User ${socket.userId} connected and joined room: ${userRoom}`);
     }
+    if (socket.user?.accountId && socket.user.accountId.toString() !== socket.userId) {
+      const accountRoom = `user_${socket.user.accountId.toString()}`;
+      socket.join(accountRoom);
+      console.log(`🔌 [Socket.IO] User connected and joined account room: ${accountRoom}`);
+    }
 
     // 2. Tham gia phòng chat cụ thể theo bookingId
     socket.on('join_chat', (bookingId) => {
