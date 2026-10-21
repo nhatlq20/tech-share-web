@@ -16,7 +16,7 @@ import { initSocket } from './socket.js';
 import { errorHandler, notFound } from './middlewares/errorMiddleware.js';
 import aiCompareRoutes from "../src/routes/aiRoutes.js";
 const app = express();
-const PORT = Number(process.env.PORT) || 5000;
+const PORT = Number(process.env.PORT) || 8000;
 
 // Middlewares
 app.use(cors());
