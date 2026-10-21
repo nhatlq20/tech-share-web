@@ -846,10 +846,6 @@ export const getAdminEkycRequests = async (req, res, next) => {
         idCardBackUrl:
           r.idCardBackUrl ||
           'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=600&fit=crop',
-        selfieUrl:
-          r.selfieUrl ||
-          r.portraitUrl ||
-          'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&fit=crop',
         status: r.status || 'pending',
         rejectReason: r.rejectReason || null,
         createdAt: r.createdAt || new Date(),
