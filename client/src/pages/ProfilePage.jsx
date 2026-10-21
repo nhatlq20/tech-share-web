@@ -19,10 +19,12 @@ import {
   Edit3,
   X,
   Save,
+  Clock,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { api } from '../services/api.js';
 import { uploadAvatar } from '../services/uploadService.js';
+import { EkycSubmitModal } from '../components/ekyc/EkycSubmitModal.jsx';
 import { ROUTES } from '../routes/routes.js';
 import './ProfilePage.css';
 
@@ -48,11 +50,27 @@ export const ProfilePage = () => {
   const [uploadProgress, setUploadProgress] = useState(0); // 0–100
   const [feedbackMsg, setFeedbackMsg] = useState(null);
 
+  // Trạng thái eKYC & Modal eKYC
+  const [isEkycModalOpen, setIsEkycModalOpen] = useState(false);
+  const [ekycRequestData, setEkycRequestData] = useState(null);
+
   // Trạng thái Modal Edit Profile (Cập nhật địa chỉ & thông tin cá nhân)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editForm, setEditForm] = useState({ name: '', phone: '', address: '' });
   const [savingProfile, setSavingProfile] = useState(false);
   const [editError, setEditError] = useState(null);
+
+  // Lấy thông tin trạng thái eKYC của user
+  useEffect(() => {
+    if (!token) return;
+    api.get('/ekyc/status')
+      .then((res) => {
+        if (res?.success && res?.data) {
+          setEkycRequestData(res.data.request || null);
+        }
+      })
+      .catch(() => {});
+  }, [token]);
 
   const openEditModal = () => {
     const curProfile = userData || authUser || {};
@@ -245,6 +263,12 @@ export const ProfilePage = () => {
   // Sử dụng dữ liệu từ collection users (ưu tiên dữ liệu mới lấy từ server)
   const profile = userData || authUser || {};
   const account = accountData || authAccount || {};
+  const isAccountVerified = Boolean(
+    account?.isVerified ||
+    profile?.isVerified ||
+    profile?.trust?.isVerified ||
+    ekycRequestData?.status === 'approved'
+  );
 
   return (
     <div className="profile-page-root">
@@ -356,6 +380,29 @@ export const ProfilePage = () => {
 
               {/* Action Buttons */}
               <div className="profile-hero-actions">
+                {/* Nút Submit eKYC cho Renter */}
+                <button
+                  type="button"
+                  onClick={() => setIsEkycModalOpen(true)}
+                  className={`profile-btn-action ${isAccountVerified ? 'profile-btn-verified' : 'profile-btn-ekyc'}`}
+                  title={
+                    isAccountVerified
+                      ? 'Tài khoản đã hoàn tất xác thực eKYC CCCD'
+                      : 'Xác thực định danh eKYC để được quyền thuê thiết bị'
+                  }
+                >
+                  <ShieldCheck size={15} />
+                  <span>
+                    {isAccountVerified
+                      ? 'eKYC Đã xác thực'
+                      : ekycRequestData?.status === 'pending'
+                      ? 'eKYC Đang chờ duyệt'
+                      : ekycRequestData?.status === 'rejected'
+                      ? 'Nộp lại eKYC'
+                      : 'Submit eKYC'}
+                  </span>
+                </button>
+
                 <button
                   type="button"
                   onClick={openEditModal}
@@ -385,11 +432,43 @@ export const ProfilePage = () => {
                 <span className={`profile-role-pill profile-role-${profile.role || 'renter'}`}>
                   {profile.role === 'admin' ? 'Quản trị viên' : profile.role === 'owner' ? 'Chủ thiết bị' : 'Người thuê'}
                 </span>
-                {profile.isVerified && (
+                {isAccountVerified ? (
                   <span className="profile-badge-tag" style={{ background: '#ecfdf5', color: '#047857' }}>
                     <ShieldCheck size={14} />
                     eKYC Verified
                   </span>
+                ) : ekycRequestData?.status === 'pending' ? (
+                  <span
+                    className="profile-badge-tag"
+                    style={{ background: '#eff6ff', color: '#1d4ed8', cursor: 'pointer' }}
+                    onClick={() => setIsEkycModalOpen(true)}
+                    title="Bấm để xem chi tiết hồ sơ eKYC đang chờ duyệt"
+                  >
+                    <Clock size={14} />
+                    Đang chờ duyệt eKYC
+                  </span>
+                ) : ekycRequestData?.status === 'rejected' ? (
+                  <button
+                    type="button"
+                    onClick={() => setIsEkycModalOpen(true)}
+                    className="profile-badge-tag"
+                    style={{ background: '#fff1f2', color: '#be123c', border: '1px solid #fecdd3', cursor: 'pointer' }}
+                    title="Hồ sơ bị từ chối - Bấm để nộp lại"
+                  >
+                    <AlertCircle size={14} />
+                    eKYC bị từ chối (Nộp lại)
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setIsEkycModalOpen(true)}
+                    className="profile-badge-tag"
+                    style={{ background: '#fffbeb', color: '#b45309', border: '1px solid #fef3c7', cursor: 'pointer' }}
+                    title="Người thuê bắt buộc phải có eKYC mới thuê được sản phẩm"
+                  >
+                    <AlertCircle size={14} />
+                    Chưa eKYC (Bấm xác thực)
+                  </button>
                 )}
               </div>
 
@@ -548,6 +627,43 @@ export const ProfilePage = () => {
                 </span>
               </div>
               <div className="profile-data-row">
+                <span className="profile-data-label">Định danh eKYC:</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                  {isAccountVerified ? (
+                    <span className="profile-badge-tag" style={{ background: '#ecfdf5', color: '#047857' }}>
+                      <CheckCircle2 size={13} />
+                      Đã xác thực CCCD
+                    </span>
+                  ) : (
+                    <>
+                      <span
+                        className="profile-badge-tag"
+                        style={{
+                          background: ekycRequestData?.status === 'pending' ? '#eff6ff' : ekycRequestData?.status === 'rejected' ? '#fff1f2' : '#fffbeb',
+                          color: ekycRequestData?.status === 'pending' ? '#1d4ed8' : ekycRequestData?.status === 'rejected' ? '#be123c' : '#b45309',
+                        }}
+                      >
+                        {ekycRequestData?.status === 'pending'
+                          ? 'Đang xét duyệt'
+                          : ekycRequestData?.status === 'rejected'
+                          ? 'Bị từ chối'
+                          : 'Chưa định danh'}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setIsEkycModalOpen(true)}
+                        className="profile-btn-edit-inline"
+                        style={{ backgroundColor: '#286E74', color: '#ffffff', border: 'none', cursor: 'pointer' }}
+                        title="Bấm để mở giao diện nộp đơn eKYC"
+                      >
+                        <ShieldCheck size={13} />
+                        <span>{ekycRequestData?.status === 'pending' ? 'Xem đơn eKYC' : 'Nộp đơn eKYC'}</span>
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+              <div className="profile-data-row">
                 <span className="profile-data-label">Trạng thái:</span>
                 <span className="profile-badge-tag" style={{ background: '#ecfdf5', color: '#047857' }}>
                   <CheckCircle2 size={13} />
@@ -680,6 +796,23 @@ export const ProfilePage = () => {
             </div>
           </div>
         )}
+
+        {/* Modal Nộp Hồ Sơ eKYC Xác Thực Danh Tính */}
+        <EkycSubmitModal
+          isOpen={isEkycModalOpen}
+          onClose={() => setIsEkycModalOpen(false)}
+          user={profile}
+          account={account}
+          onOpenEditAddress={openEditModal}
+          onSuccess={(newReq) => {
+            setEkycRequestData(newReq);
+            setFeedbackMsg({
+              type: 'success',
+              text: 'Gửi hồ sơ eKYC thành công! Quản trị viên sẽ sớm xét duyệt hồ sơ của bạn.',
+            });
+            setTimeout(() => setFeedbackMsg(null), 4000);
+          }}
+        />
       </div>
     </div>
   );

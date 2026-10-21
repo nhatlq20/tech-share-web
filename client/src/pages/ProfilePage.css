@@ -198,6 +198,19 @@
   border-color: #cbd5e1;
 }
 
+.profile-btn-ekyc {
+  background: linear-gradient(135deg, #67bec3 0%, #286e74 100%);
+  border: none;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(103, 190, 195, 0.3);
+}
+
+.profile-btn-ekyc:hover {
+  opacity: 0.94;
+  transform: translateY(-1px);
+  color: #ffffff;
+}
+
 .profile-btn-logout {
   background-color: #fef2f2;
   border-color: #fee2e2;

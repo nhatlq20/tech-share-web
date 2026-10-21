@@ -7,10 +7,12 @@ import {
   getAdminDeviceDetails,
   moderateDevice,
   removeDevice,
-  getAdminEkycRequests,
-  approveEkycRequest,
-  rejectEkycRequest,
 } from '../controllers/adminController.js';
+import {
+  getAdminEkycList,
+  approveAdminEkyc,
+  rejectAdminEkyc,
+} from '../controllers/adminEkycController.js';
 
 const router = express.Router();
 
@@ -31,9 +33,10 @@ router.post('/devices/:id/moderate', moderateDevice);
 router.delete('/devices/:id', removeDevice);
 
 // 4. eKYC Verification
-router.get('/ekyc-requests', getAdminEkycRequests);
-router.patch('/ekyc/:id/approve', approveEkycRequest);
-router.patch('/ekyc/:id/reject', rejectEkycRequest);
+router.get('/ekyc', getAdminEkycList);
+router.get('/ekyc-requests', getAdminEkycList);
+router.patch('/ekyc/:id/approve', approveAdminEkyc);
+router.patch('/ekyc/:id/reject', rejectAdminEkyc);
 
 export default router;
 

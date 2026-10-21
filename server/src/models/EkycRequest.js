@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 
 /**
  * 12. Bảng ekyc_requests (Tier 3 - Định danh điện tử eKYC)
- * Quản lý hồ sơ định danh CCCD/CMND và ảnh selfie của người dùng
+ * Quản lý hồ sơ định danh CCCD/CMND 2 mặt của người dùng
  */
 const ekycRequestSchema = new mongoose.Schema(
   {
@@ -12,15 +12,36 @@ const ekycRequestSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
+    fullName: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    email: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    phone: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    address: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    idCardNumber: {
+      type: String,
+      default: '',
+      trim: true,
+    },
     idCardFrontUrl: {
       type: String,
       required: true,
     },
     idCardBackUrl: {
-      type: String,
-      required: true,
-    },
-    selfieUrl: {
       type: String,
       required: true,
     },

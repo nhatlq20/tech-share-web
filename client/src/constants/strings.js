@@ -297,7 +297,6 @@ export const STRINGS = {
         submittedDatePrefix: 'Ngày gửi:',
         frontLabel: '1. Mặt trước CCCD',
         backLabel: '2. Mặt sau CCCD',
-        selfieLabel: '3. Chân dung cầm CCCD',
         approveBtn: 'Duyệt & Cấp Tích Xanh',
         rejectBtn: 'Từ chối',
       },
@@ -310,7 +309,6 @@ export const STRINGS = {
       },
       reasons: [
         'Hình ảnh CCCD bị mờ, lóa sáng hoặc thông tin không rõ nét.',
-        'Ảnh chân dung Selfie không khớp với khuôn mặt trên CCCD.',
         'Số CCCD hoặc thông tin họ tên không trùng khớp với hồ sơ đăng ký.',
         'Ảnh giấy tờ bị cắt góc, có dấu hiệu chỉnh sửa hoặc không hợp lệ.',
       ],

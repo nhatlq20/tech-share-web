@@ -14,6 +14,7 @@ import {
   MessageSquare,
   Truck,
   Store,
+  ShieldCheck,
 } from 'lucide-react';
 import { STRINGS } from '../../constants/strings.js';
 import { API_CONFIG, MAGIC_NUMBERS } from '../../constants/config.js';
@@ -178,6 +179,13 @@ export const BookingCheckoutPage = () => {
   // Handle Order Submit
   const handleSubmitBooking = async () => {
     setFormError(null);
+
+    // Renter bắt buộc phải xác thực eKYC mới được thuê sản phẩm
+    if (user && !user.isVerified && !user.trust?.isVerified) {
+      setFormError('Bạn cần hoàn tất xác thực định danh (eKYC CCCD) trước khi đặt thuê thiết bị. Vui lòng vào Trang cá nhân để gửi đơn eKYC.');
+      window.scrollTo({ top: 100, behavior: 'smooth' });
+      return;
+    }
 
     if (!startDate || !endDate) {
       setFormError(STRINGS.booking.validation.noDatesSelected);
@@ -378,6 +386,28 @@ export const BookingCheckoutPage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Left Column: Form Sections (7 cols) */}
           <div className="lg:col-span-7 flex flex-col gap-6">
+            {/* Cảnh báo eKYC bắt buộc cho người thuê */}
+            {user && !user.isVerified && !user.trust?.isVerified && (
+              <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 flex items-start gap-3 shadow-xs">
+                <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <h3 className="text-sm font-bold text-amber-900">
+                    Yêu cầu xác thực định danh (eKYC)
+                  </h3>
+                  <p className="text-xs text-amber-700 mt-1 leading-relaxed">
+                    Theo quy định của TechShare, người thuê cần hoàn tất xác thực định danh CCCD 2 mặt trước khi đặt thuê thiết bị.
+                  </p>
+                  <Link
+                    to={ROUTES.PROFILE}
+                    className="inline-flex items-center gap-1.5 mt-2.5 px-3.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs transition"
+                  >
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    <span>Đến trang cá nhân nộp hồ sơ eKYC</span>
+                  </Link>
+                </div>
+              </div>
+            )}
+
             {/* Section 1: Date Range Picker */}
             <WebDatePicker
               startDate={startDate}

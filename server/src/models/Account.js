@@ -42,6 +42,11 @@ const accountSchema = new mongoose.Schema(
       default: true,
       index: true,
     },
+    isVerified: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
     lastLogin: {
       type: Date,
     },

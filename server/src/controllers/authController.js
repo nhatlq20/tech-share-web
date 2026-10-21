@@ -146,6 +146,7 @@ export const login = async (req, res) => {
       userId: finalUserId,
       role: roleCode,
       isActive: account.isActive,
+      isVerified: Boolean(account.isVerified),
       createdAt: account.createdAt,
     };
 

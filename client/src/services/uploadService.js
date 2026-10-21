@@ -198,6 +198,35 @@ export const uploadAvatar = async (file, { onProgress = null, maxSize = 800, qua
   };
 };
 
-const uploadService = { compressImage, uploadToCloudinaryDirect, uploadAvatar };
+/**
+ * Tải ảnh CCCD (Mặt trước / Mặt sau) lên Cloudinary thư mục techshare/ekyc
+ * @param {File} file
+ * @param {Object} opts
+ * @param {function} opts.onProgress - Callback(percent) 0->100
+ */
+export const uploadEkycImage = async (file, { onProgress = null } = {}) => {
+  const originalSize = file.size;
+
+  // Nén nhẹ để giữ độ sắc nét các chi tiết số CCCD và chữ
+  const compressed = await compressImage(file, {
+    maxWidth: 1600,
+    maxHeight: 1600,
+    quality: 0.88,
+    mimeType: 'image/jpeg',
+  });
+
+  const result = await uploadToCloudinaryDirect(compressed, {
+    folder: 'techshare/ekyc',
+    onProgress,
+  });
+
+  return {
+    ...result,
+    originalSize,
+  };
+};
+
+const uploadService = { compressImage, uploadToCloudinaryDirect, uploadAvatar, uploadEkycImage };
 
 export default uploadService;
+

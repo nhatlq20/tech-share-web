@@ -1,8 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { CheckCircle, XCircle, X, AlertCircle, ZoomIn, User, CreditCard, MapPin, Calendar, Sparkles, Loader2, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { api } from '../../services/api.js';
 import './AdminWorkspace.css';
-const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
-const COMMON_REJECT_REASONS = ['Hình ảnh CCCD bị mờ, lóa sáng hoặc thông tin không rõ nét.', 'Thông tin họ tên và số CCCD không trùng khớp với tài khoản.', 'Ảnh chân dung selfie không rõ khuôn mặt hoặc không khớp ảnh CCCD.', 'Giấy tờ tùy thân đã hết hạn sử dụng hoặc không hợp lệ.'];
+
+const COMMON_REJECT_REASONS = [
+  'Hình ảnh CCCD bị mờ, lóa sáng hoặc thông tin không rõ nét.',
+  'Thông tin họ tên và số CCCD không trùng khớp với tài khoản.',
+  'Giấy tờ tùy thân đã hết hạn sử dụng hoặc không hợp lệ.',
+  'Hình ảnh CCCD bị mất góc hoặc có dấu hiệu chỉnh sửa.'
+];
 export const EkycApprovalTab = ({
   requests: propsRequests,
   onApprove: propsOnApprove,
@@ -38,13 +44,10 @@ export const EkycApprovalTab = ({
   const fetchRequests = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/admin/ekyc`);
-      if (res.ok) {
-        const json = await res.json();
-        const items = Array.isArray(json.data) ? json.data : Array.isArray(json) ? json : [];
-        if (items.length > 0) {
-          setRequestList(items);
-        }
+      const res = await api.get('/admin/ekyc');
+      const items = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : [];
+      if (items.length > 0) {
+        setRequestList(items);
       }
     } catch (err) {
       console.warn('Lỗi fetch eKYC requests:', err);
@@ -76,9 +79,7 @@ export const EkycApprovalTab = ({
       if (propsOnApprove) {
         await propsOnApprove(id);
       } else {
-        await fetch(`${API_BASE}/admin/ekyc/${id}/approve`, {
-          method: 'PATCH'
-        });
+        await api.patch(`/admin/ekyc/${id}/approve`);
       }
 
       // Optimistic update
@@ -109,14 +110,8 @@ export const EkycApprovalTab = ({
       if (propsOnReject) {
         await propsOnReject(rejectModalReq._id, finalReason);
       } else {
-        await fetch(`${API_BASE}/admin/ekyc/${rejectModalReq._id}/reject`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            reason: finalReason
-          })
+        await api.patch(`/admin/ekyc/${rejectModalReq._id}/reject`, {
+          reason: finalReason
         });
       }
 
@@ -342,15 +337,16 @@ export const EkycApprovalTab = ({
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'flex-start',
-            flexWrap: 'wrap',
-            gap: '16px',
-            marginBottom: '20px'
+            gap: '20px',
+            marginBottom: '18px'
           }}>
                   {/* Cụm thông tin User */}
                   <div style={{
               display: 'flex',
               gap: '14px',
-              alignItems: 'flex-start'
+              alignItems: 'flex-start',
+              flex: 1,
+              minWidth: 0
             }}>
                     <div style={{
                 width: '46px',
@@ -366,11 +362,11 @@ export const EkycApprovalTab = ({
                       <User size={22} />
                     </div>
 
-                    <div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '8px',
+                  gap: '10px',
                   flexWrap: 'wrap'
                 }}>
                         <h3 style={{
@@ -386,7 +382,10 @@ export const EkycApprovalTab = ({
                         <span className="admin-pill-badge" style={{
                     backgroundColor: req.status === 'pending' ? '#FEF3C7' : req.status === 'approved' ? '#DCFCE7' : '#FEE2E2',
                     color: req.status === 'pending' ? '#D97706' : req.status === 'approved' ? '#15803D' : '#DC2626',
-                    fontWeight: 700
+                    fontWeight: 700,
+                    fontSize: '12px',
+                    padding: '3px 10px',
+                    borderRadius: '20px'
                   }}>
                           {req.status === 'pending' ? 'Chờ duyệt' : req.status === 'approved' ? 'Đã duyệt' : 'Đã từ chối'}
                         </span>
@@ -396,49 +395,43 @@ export const EkycApprovalTab = ({
                       <div style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '12px',
-                  marginTop: '6px',
-                  fontSize: '12.5px',
+                  gap: '6px 14px',
+                  marginTop: '8px',
+                  fontSize: '13px',
                   color: '#64748B',
-                  flexWrap: 'wrap'
+                  flexWrap: 'wrap',
+                  lineHeight: '1.5'
                 }}>
                         <span style={{
                     display: 'inline-flex',
                     alignItems: 'center',
-                    gap: '4px'
+                    gap: '5px'
                   }}>
-                          <CreditCard size={13} style={{
-                      color: '#67BEC3'
-                    }} />
-                          Số CCCD: <strong style={{
-                      color: '#0F172A'
-                    }}>{req.idCardNumber}</strong>
+                          <CreditCard size={13} style={{ color: '#286E74' }} />
+                          Số CCCD: <strong style={{ color: '#0F172A' }}>{req.idCardNumber || 'Chưa cung cấp'}</strong>
                         </span>
-                        <span>•</span>
-                        <span>SĐT: {req.phone}</span>
-                        <span>•</span>
-                        <span>Email: {req.email}</span>
-                        <span>•</span>
+                        <span style={{ color: '#CBD5E1' }}>•</span>
+                        <span>SĐT: <strong style={{ color: '#334155' }}>{req.phone || '---'}</strong></span>
+                        <span style={{ color: '#CBD5E1' }}>•</span>
+                        <span>Email: <span style={{ color: '#475569' }}>{req.email || '---'}</span></span>
+                        <span style={{ color: '#CBD5E1' }}>•</span>
                         <span style={{
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: '4px'
                   }}>
-                          <Calendar size={13} style={{
-                      color: '#94A3B8'
-                    }} />
+                          <Calendar size={13} style={{ color: '#94A3B8' }} />
                           Ngày gửi: {formattedDate}
                         </span>
                         {req.address && <>
-                            <span>•</span>
+                            <span style={{ color: '#CBD5E1' }}>•</span>
                             <span style={{
                       display: 'inline-flex',
                       alignItems: 'center',
-                      gap: '4px'
+                      gap: '4px',
+                      color: '#475569'
                     }}>
-                              <MapPin size={13} style={{
-                        color: '#94A3B8'
-                      }} />
+                              <MapPin size={13} style={{ color: '#94A3B8' }} />
                               {req.address}
                             </span>
                           </>}
@@ -446,151 +439,167 @@ export const EkycApprovalTab = ({
                     </div>
                   </div>
 
-                  {/* Cụm Action Buttons (Hiển thị khi đang Pending) */}
+                  {/* Cụm Action Buttons (Cố định góc phải trên) */}
                   {req.status === 'pending' && <div style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '10px'
+              gap: '10px',
+              flexShrink: 0,
+              alignSelf: 'flex-start'
             }}>
                       {/* Nút Từ chối: Viền đỏ, chữ đỏ */}
                       <button type="button" onClick={() => setRejectModalReq(req)} disabled={actionLoadingId === req._id} className="admin-btn-danger-soft whitespace-nowrap" style={{
-                padding: '7px 16px',
-                fontSize: '12.5px',
-                borderRadius: '10px'
+                padding: '8px 18px',
+                fontSize: '13px',
+                fontWeight: 600,
+                borderRadius: '10px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                cursor: 'pointer'
               }} title="Từ chối hồ sơ này">
-                        <XCircle size={14} />
+                        <XCircle size={15} />
                         <span>Từ chối</span>
                       </button>
 
-                      {/* Nút Duyệt: Nền #67BEC3, chữ trắng */}
+                      {/* Nút Duyệt: Nền #286E74, chữ trắng */}
                       <button type="button" onClick={() => handleApprove(req._id, req.fullName)} disabled={actionLoadingId === req._id} className="admin-btn admin-btn-primary whitespace-nowrap" style={{
-                padding: '7px 18px',
-                fontSize: '12.5px',
+                padding: '8px 20px',
+                fontSize: '13px',
                 fontWeight: 700,
                 borderRadius: '10px',
-                backgroundColor: '#67BEC3',
-                border: '1px solid #4CA6AC'
+                backgroundColor: '#286E74',
+                color: '#FFFFFF',
+                border: 'none',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: '0 2px 6px rgba(40, 110, 116, 0.25)',
+                cursor: 'pointer'
               }} title="Duyệt hồ sơ và cấp Tích Xanh">
                         {actionLoadingId === req._id ? <>
-                            <Loader2 size={14} className="animate-spin" />
-                            <span>Đang xử lý...</span>
+                            <Loader2 size={15} className="animate-spin" />
+                            <span>Đang duyệt...</span>
                           </> : <>
-                            <CheckCircle size={14} />
+                            <CheckCircle2 size={15} />
                             <span>Duyệt</span>
                           </>}
                       </button>
                     </div>}
                 </div>
 
-                {/* Cụm 3 ảnh thu nhỏ (Thumbnails: CCCD Mặt trước, CCCD Mặt sau, Selfie) */}
+                {/* Cụm 2 ảnh thu nhỏ (Thumbnails: CCCD Mặt trước, CCCD Mặt sau) */}
                 <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-            gap: '14px'
+            gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+            gap: '16px'
           }}>
                   {/* Ảnh 1: Mặt trước CCCD */}
                   <div style={{
-              borderRadius: '12px',
+              borderRadius: '14px',
               border: '1px solid #E2E8F0',
               overflow: 'hidden',
               backgroundColor: '#F8FAFC',
               cursor: 'pointer',
-              transition: 'border-color 0.2s'
+              transition: 'all 0.2s ease',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
             }} onClick={() => setLightboxImage({
               url: req.idCardFrontUrl,
               title: `CCCD Mặt Trước - ${req.fullName}`
             })}>
                     <div style={{
-                padding: '8px 12px',
-                fontSize: '12px',
+                padding: '10px 14px',
+                fontSize: '12.5px',
                 fontWeight: 700,
-                color: '#475569',
+                color: '#334155',
                 backgroundColor: '#F1F5F9',
                 display: 'flex',
                 justifyContent: 'space-between',
-                alignItems: 'center'
+                alignItems: 'center',
+                borderBottom: '1px solid #E2E8F0'
               }}>
-                      <span>1. Mặt trước CCCD</span>
-                      <ZoomIn size={13} style={{
-                  color: '#67BEC3'
-                }} />
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#286E74' }} />
+                        1. Mặt trước CCCD
+                      </span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#286E74', fontSize: '11.5px', fontWeight: 600 }}>
+                        <ZoomIn size={14} />
+                        Phóng to
+                      </span>
                     </div>
-                    <img src={req.idCardFrontUrl} alt="CCCD mặt trước" style={{
-                width: '100%',
-                height: '140px',
-                objectFit: 'cover',
-                display: 'block'
-              }} loading="lazy" />
+                    <div style={{
+                height: '240px',
+                backgroundColor: '#F8FAFC',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '10px'
+              }}>
+                      <img src={req.idCardFrontUrl} alt="CCCD mặt trước" style={{
+                  maxWidth: '100%',
+                  maxHeight: '100%',
+                  width: 'auto',
+                  height: 'auto',
+                  objectFit: 'contain',
+                  borderRadius: '8px',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                  display: 'block'
+                }} loading="lazy" />
+                    </div>
                   </div>
 
                   {/* Ảnh 2: Mặt sau CCCD */}
                   <div style={{
-              borderRadius: '12px',
+              borderRadius: '14px',
               border: '1px solid #E2E8F0',
               overflow: 'hidden',
               backgroundColor: '#F8FAFC',
               cursor: 'pointer',
-              transition: 'border-color 0.2s'
+              transition: 'all 0.2s ease',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
             }} onClick={() => setLightboxImage({
               url: req.idCardBackUrl,
               title: `CCCD Mặt Sau - ${req.fullName}`
             })}>
                     <div style={{
-                padding: '8px 12px',
-                fontSize: '12px',
+                padding: '10px 14px',
+                fontSize: '12.5px',
                 fontWeight: 700,
-                color: '#475569',
+                color: '#334155',
                 backgroundColor: '#F1F5F9',
                 display: 'flex',
                 justifyContent: 'space-between',
-                alignItems: 'center'
+                alignItems: 'center',
+                borderBottom: '1px solid #E2E8F0'
               }}>
-                      <span>2. Mặt sau CCCD</span>
-                      <ZoomIn size={13} style={{
-                  color: '#67BEC3'
-                }} />
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#286E74' }} />
+                        2. Mặt sau CCCD
+                      </span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#286E74', fontSize: '11.5px', fontWeight: 600 }}>
+                        <ZoomIn size={14} />
+                        Phóng to
+                      </span>
                     </div>
-                    <img src={req.idCardBackUrl} alt="CCCD mặt sau" style={{
-                width: '100%',
-                height: '140px',
-                objectFit: 'cover',
-                display: 'block'
-              }} loading="lazy" />
-                  </div>
-
-                  {/* Ảnh 3: Selfie cầm CCCD */}
-                  <div style={{
-              borderRadius: '12px',
-              border: '1px solid #E2E8F0',
-              overflow: 'hidden',
-              backgroundColor: '#F8FAFC',
-              cursor: 'pointer',
-              transition: 'border-color 0.2s'
-            }} onClick={() => setLightboxImage({
-              url: req.selfieUrl,
-              title: `Chân dung đối soát Selfie - ${req.fullName}`
-            })}>
                     <div style={{
-                padding: '8px 12px',
-                fontSize: '12px',
-                fontWeight: 700,
-                color: '#475569',
-                backgroundColor: '#F1F5F9',
+                height: '240px',
+                backgroundColor: '#F8FAFC',
                 display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '10px'
               }}>
-                      <span>3. Chân dung cầm CCCD</span>
-                      <ZoomIn size={13} style={{
-                  color: '#67BEC3'
-                }} />
+                      <img src={req.idCardBackUrl} alt="CCCD mặt sau" style={{
+                  maxWidth: '100%',
+                  maxHeight: '100%',
+                  width: 'auto',
+                  height: 'auto',
+                  objectFit: 'contain',
+                  borderRadius: '8px',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                  display: 'block'
+                }} loading="lazy" />
                     </div>
-                    <img src={req.selfieUrl} alt="Ảnh chân dung selfie" style={{
-                width: '100%',
-                height: '140px',
-                objectFit: 'cover',
-                display: 'block'
-              }} loading="lazy" />
                   </div>
                 </div>
 

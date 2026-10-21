@@ -237,9 +237,9 @@ export const AdminDashboardScreen = () => {
       // 3. Fetch eKYC Requests from MongoDB Atlas
       let liveEkyc = [];
       try {
-        let resEkyc = await fetch(`${API_BASE}/admin/ekyc`);
+        let resEkyc = await fetch(`${API_BASE}/admin/ekyc`, { headers });
         if (!resEkyc.ok) {
-          resEkyc = await fetch(`${API_BASE}/admin/ekyc-requests`);
+          resEkyc = await fetch(`${API_BASE}/admin/ekyc-requests`, { headers });
         }
         if (resEkyc.ok) {
           const json = await resEkyc.json();
@@ -255,7 +255,6 @@ export const AdminDashboardScreen = () => {
               address: r.address || r.userId?.address || 'Hà Nội, Việt Nam',
               idCardFrontUrl: r.idCardFrontUrl || 'https://res.cloudinary.com/oigtlazh/image/upload/v1791276126/techshare/ekyc/nhzgpvxytqmxrlpodabp.jpg',
               idCardBackUrl: r.idCardBackUrl || 'https://res.cloudinary.com/oigtlazh/image/upload/v1791276133/techshare/ekyc/ls63wxuvisirmbntjifn.jpg',
-              selfieUrl: r.selfieUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&fit=crop',
               status: r.status || 'pending',
               rejectReason: r.rejectReason || null,
               createdAt: r.createdAt || new Date()
@@ -414,8 +413,11 @@ export const AdminDashboardScreen = () => {
   // Action: Approve eKYC
   const handleApproveEkyc = async requestId => {
     try {
+      const token = localStorage.getItem('techshare_auth_token') || localStorage.getItem('techshare_token');
+      const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
       const res = await fetch(`${API_BASE}/admin/ekyc/${requestId}/approve`, {
-        method: 'PATCH'
+        method: 'PATCH',
+        headers: authHeaders
       });
       if (res.ok) {
         setEkycRequests(prev => prev.map(r => r._id === requestId ? {
@@ -439,11 +441,14 @@ export const AdminDashboardScreen = () => {
   // Action: Reject eKYC
   const handleRejectEkyc = async (requestId, reason) => {
     try {
+      const token = localStorage.getItem('techshare_auth_token') || localStorage.getItem('techshare_token');
+      const authHeaders = {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      };
       const res = await fetch(`${API_BASE}/admin/ekyc/${requestId}/reject`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: authHeaders,
         body: JSON.stringify({
           reason
         })

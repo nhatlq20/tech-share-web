@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import Device from '../models/Device.js';
 import Booking from '../models/Booking.js';
 import User from '../models/User.js';
+import Account from '../models/Account.js';
 import { createAndSendNotification } from '../services/notificationService.js';
 import { getIO } from '../socket.js';
 
@@ -473,6 +474,21 @@ export const createBooking = async (req, res, next) => {
     const effectiveOwnerId = rawOwnerId && mongoose.isValidObjectId(rawOwnerId)
       ? new mongoose.Types.ObjectId(String(rawOwnerId._id || rawOwnerId))
       : null;
+
+    // Renter bắt buộc phải hoàn tất xác thực định danh (eKYC trong collection accounts) mới được thuê thiết bị
+    if (effectiveRenterId) {
+      const renterUser = await User.findById(effectiveRenterId).populate('account');
+      const renterAccount = renterUser?.account || (renterUser?.accountId ? await Account.findById(renterUser.accountId) : null);
+      const isRenterVerified = Boolean(renterAccount?.isVerified === true || renterUser?.trust?.isVerified === true || renterUser?.isVerified === true);
+
+      if (renterUser && !isRenterVerified) {
+        return res.status(403).json({
+          success: false,
+          requireEkyc: true,
+          message: 'Bạn cần hoàn tất xác thực định danh (eKYC) trước khi đặt thuê thiết bị. Vui lòng vào trang cá nhân để nộp hồ sơ eKYC.',
+        });
+      }
+    }
 
     // Create Booking instance with 100% Atlas B303349941 field ordering
     const newBooking = new Booking({
