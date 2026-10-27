@@ -226,7 +226,61 @@ export const uploadEkycImage = async (file, { onProgress = null } = {}) => {
   };
 };
 
-const uploadService = { compressImage, uploadToCloudinaryDirect, uploadAvatar, uploadEkycImage };
+/**
+ * Chuyển Blob sang base64 Data URI (fallback nếu Cloudinary direct bị chặn mạng)
+ */
+const blobToDataUrl = (blob) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error('Không thể chuyển ảnh sang base64'));
+    reader.readAsDataURL(blob);
+  });
+
+/**
+ * Tải ảnh bàn giao thiết bị lúc nhận máy (beforeRental) lên Cloudinary thư mục techshare/handover
+ * @param {File} file
+ * @param {Object} opts
+ * @param {function} opts.onProgress - Callback(percent) 0->100
+ * @returns {Promise<{url: string, publicId?: string, originalSize: number}>}
+ */
+export const uploadHandoverImage = async (file, { onProgress = null } = {}) => {
+  const originalSize = file.size;
+
+  const compressed = await compressImage(file, {
+    maxWidth: 1600,
+    maxHeight: 1600,
+    quality: 0.86,
+    mimeType: 'image/jpeg',
+  });
+
+  try {
+    const result = await uploadToCloudinaryDirect(compressed, {
+      folder: 'techshare/handover',
+      onProgress,
+    });
+
+    return {
+      ...result,
+      originalSize,
+    };
+  } catch (err) {
+    console.warn('[Handover Upload] Direct Cloudinary upload failed, falling back to server relay:', err.message);
+    const dataUrl = await blobToDataUrl(compressed);
+    if (onProgress) onProgress(100);
+    return {
+      url: dataUrl,
+      originalSize,
+    };
+  }
+};
+
+const uploadService = {
+  compressImage,
+  uploadToCloudinaryDirect,
+  uploadAvatar,
+  uploadEkycImage,
+  uploadHandoverImage,
+};
 
 export default uploadService;
-

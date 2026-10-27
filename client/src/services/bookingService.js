@@ -1,5 +1,5 @@
 /**
- * Booking Service – renter-side booking APIs (My Bookings hub, detail, cancel).
+ * Booking Service – renter-side booking APIs (My Bookings hub, detail, cancel, handover).
  * All requests go through the shared `api` client (JWT header + base URL handled there).
  */
 import { api } from './api.js';
@@ -73,6 +73,18 @@ export const cancelBooking = async (bookingId, reason = '') => {
 };
 
 /**
+ * PATCH /api/bookings/:id/handover-renter
+ * Save renter's beforeRental photos (uploaded to Cloudinary) and optional condition note.
+ */
+export const submitRenterHandoverPhotos = async (bookingId, { beforePhotos = [], beforeNote = '' } = {}) => {
+  const res = await api.patch(API_CONFIG.ENDPOINTS.BOOKING_HANDOVER_RENTER(bookingId), {
+    beforePhotos,
+    beforeNote: (beforeNote || '').trim(),
+  });
+  return res?.data || null;
+};
+
+/**
  * POST /api/bookings/:id/extend
  */
 export const requestBookingExtension = async (bookingId, { days, note = '' }) => {
@@ -87,6 +99,7 @@ const bookingService = {
   fetchMyBookings,
   fetchBookingById,
   cancelBooking,
+  submitRenterHandoverPhotos,
   requestBookingExtension,
 };
 
