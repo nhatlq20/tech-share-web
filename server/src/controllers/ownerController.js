@@ -1029,6 +1029,18 @@ export const getOwnerBookings = async (req, res, next) => {
           status: b.status || 'pending',
           deliveryMethod: b.deliveryMethod || 'pickup',
           rejectReason: b.rejectReason || '',
+          qrToken: b.handover?.qrToken || b.qrToken || (b.bookingCode ? `TSQR-${b.bookingCode}` : ''),
+          handover: {
+            qrToken: b.handover?.qrToken || b.qrToken || (b.bookingCode ? `TSQR-${b.bookingCode}` : ''),
+            beforePhotos: b.handover?.beforePhotos || b.handoverPhotos?.beforeRental || [],
+            afterPhotos: b.handover?.afterPhotos || b.handoverPhotos?.afterRental || [],
+            beforeNote: b.handover?.beforeNote || b.conditionNotes?.before || '',
+            afterNote: b.handover?.afterNote || b.conditionNotes?.after || '',
+          },
+          handoverPhotos: {
+            beforeRental: b.handover?.beforePhotos || b.handoverPhotos?.beforeRental || [],
+            afterRental: b.handover?.afterPhotos || b.handoverPhotos?.afterRental || [],
+          },
           createdAt: b.createdAt ? new Date(b.createdAt).toISOString() : new Date().toISOString(),
         };
       })
@@ -1065,9 +1077,12 @@ export const approveBooking = async (req, res, next) => {
     }
 
     const now = new Date();
+    const suffix = Math.random().toString(36).substring(2, 6).toUpperCase();
+    const generatedQrToken = booking.handover?.qrToken || booking.qrToken || `TSQR-${booking.bookingCode || id}-${suffix}`;
     await bookingsCol.updateOne(query, {
       $set: {
         status: 'approved',
+        'handover.qrToken': generatedQrToken,
         updatedAt: now,
       },
       $push: {

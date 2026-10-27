@@ -5,6 +5,7 @@ import User from '../models/User.js';
 import Account from '../models/Account.js';
 import { createAndSendNotification } from '../services/notificationService.js';
 import { getIO } from '../socket.js';
+import { uploadToCloudinary } from '../services/cloudinaryService.js';
 
 /**
  * My Bookings hub tabs. Each tab maps to one or more persisted booking statuses.
@@ -209,14 +210,30 @@ const normalizeBookingAliases = (booking) => {
     email: renter.email || '',
   } : null);
 
-  const qrToken = booking.qrToken ?? handover.qrToken ?? '';
-  const handoverPhotos = booking.handoverPhotos ?? {
-    beforeRental: handover.beforePhotos ?? [],
-    afterRental: handover.afterPhotos ?? [],
+  const fallbackQrToken = booking.bookingCode ? `TSQR-${booking.bookingCode}` : '';
+  const qrToken = booking.qrToken || handover.qrToken || (['approved', 'active', 'completed'].includes(booking.status) ? fallbackQrToken : '');
+  const beforePhotos = Array.isArray(handover.beforePhotos) && handover.beforePhotos.length > 0
+    ? handover.beforePhotos
+    : (Array.isArray(booking.handoverPhotos?.beforeRental) ? booking.handoverPhotos.beforeRental : []);
+  const afterPhotos = Array.isArray(handover.afterPhotos) && handover.afterPhotos.length > 0
+    ? handover.afterPhotos
+    : (Array.isArray(booking.handoverPhotos?.afterRental) ? booking.handoverPhotos.afterRental : []);
+  const beforeNote = handover.beforeNote || booking.conditionNotes?.before || '';
+  const afterNote = handover.afterNote || booking.conditionNotes?.after || '';
+  const handoverPhotos = {
+    beforeRental: beforePhotos,
+    afterRental: afterPhotos,
   };
-  const conditionNotes = booking.conditionNotes ?? {
-    before: handover.beforeNote ?? '',
-    after: handover.afterNote ?? '',
+  const conditionNotes = {
+    before: beforeNote,
+    after: afterNote,
+  };
+  const normalizedHandover = {
+    qrToken,
+    beforePhotos,
+    afterPhotos,
+    beforeNote,
+    afterNote,
   };
 
   const cancelReason =
@@ -259,6 +276,7 @@ const normalizeBookingAliases = (booking) => {
     deliveryMethod,
     deliveryAddress,
     qrToken,
+    handover: normalizedHandover,
     handoverPhotos,
     conditionNotes,
     cancelReason,
@@ -750,7 +768,7 @@ export const getMyBookings = async (req, res, next) => {
     const [total, bookings, statusGroups] = await Promise.all([
       Booking.countDocuments(filter),
       Booking.find(filter)
-        .select('-digitalSignature -handoverPhotos -qrToken')
+        .select('-digitalSignature')
         .populate('device', BOOKING_DEVICE_LIST_FIELDS)
         .populate('deviceId', BOOKING_DEVICE_LIST_FIELDS)
         .populate('ownerId', BOOKING_PARTY_FIELDS)
@@ -1330,6 +1348,147 @@ export const rejectBookingExtension = async (req, res, next) => {
   }
 };
 
+/**
+ * 9. PATCH /api/bookings/:id/handover-renter
+ * Renter uploads beforeRental inspection photos & condition note to Cloudinary / MongoDB
+ * when booking is in 'approved' (or 'active') status.
+ */
+export const updateRenterHandover = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const userObjIds = await resolveAuthUserIds(req);
+
+    if (userObjIds.length === 0) {
+      return res.status(401).json({
+        success: false,
+        message: 'Vui lòng đăng nhập để thực hiện chức năng này.',
+      });
+    }
+
+    const booking = await Booking.findOne(buildBookingLookup(id));
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy đơn thuê thiết bị.',
+      });
+    }
+
+    const isRenter = matchesAnyId(booking.renterId, userObjIds) || matchesAnyId(booking.renter, userObjIds);
+    const isAdmin = req.user?.role === 'admin';
+    if (!isRenter && !isAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: 'Chỉ khách thuê của đơn hàng này mới có thể tải ảnh nhận máy.',
+      });
+    }
+
+    if (!['approved', 'active'].includes(booking.status)) {
+      return res.status(400).json({
+        success: false,
+        message: `Chỉ có thể tải ảnh nhận máy khi đơn hàng ở trạng thái Đã duyệt (Approved). Trạng thái hiện tại: ${booking.status}.`,
+      });
+    }
+
+    const rawPhotos = req.body?.beforePhotos ?? req.body?.photos ?? req.body?.beforeRental;
+    const rawNote = req.body?.beforeNote ?? req.body?.note ?? booking.handover?.beforeNote ?? '';
+    const cleanNote = String(rawNote || '').trim().slice(0, 500);
+
+    if (!Array.isArray(rawPhotos)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Danh sách ảnh nhận máy (beforePhotos) không hợp lệ.',
+      });
+    }
+
+    if (rawPhotos.length > 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'Tối đa 6 ảnh tình trạng máy khi nhận bàn giao.',
+      });
+    }
+
+    // Process each photo: keep HTTPS/Cloudinary URLs directly, or upload base64 data URIs to Cloudinary
+    const finalPhotoUrls = [];
+    for (const item of rawPhotos) {
+      if (!item || typeof item !== 'string') continue;
+      const trimmed = item.trim();
+      if (!trimmed) continue;
+      if (trimmed.startsWith('data:image/')) {
+        const uploaded = await uploadToCloudinary(trimmed, 'techshare/handover');
+        if (uploaded?.url) {
+          finalPhotoUrls.push(uploaded.url);
+        }
+      } else if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+        finalPhotoUrls.push(trimmed);
+      }
+    }
+
+    const existingQrToken =
+      booking.handover?.qrToken ||
+      booking.qrToken ||
+      generateQrToken(booking.bookingCode || String(booking._id).slice(-8).toUpperCase());
+
+    const now = new Date();
+    if (!booking.handover) {
+      booking.handover = {};
+    }
+    booking.handover.qrToken = existingQrToken;
+    booking.handover.beforePhotos = finalPhotoUrls;
+    booking.handover.beforeNote = cleanNote;
+
+    if (!Array.isArray(booking.timeline)) {
+      booking.timeline = [];
+    }
+    booking.timeline.push({
+      status: booking.status,
+      note: `Khách thuê đã cập nhật ${finalPhotoUrls.length} ảnh nhận máy (beforeRental)${cleanNote ? ` - Ghi chú: "${cleanNote}"` : ''}`,
+      timestamp: now,
+      updatedAt: now,
+    });
+
+    await booking.save();
+
+    const populated = await Booking.findById(booking._id)
+      .select('-digitalSignature')
+      .populate('device', BOOKING_DEVICE_DETAIL_FIELDS)
+      .populate('deviceId', BOOKING_DEVICE_DETAIL_FIELDS)
+      .populate('ownerId', BOOKING_PARTY_FIELDS)
+      .populate('owner', BOOKING_PARTY_FIELDS)
+      .populate('renterId', BOOKING_PARTY_FIELDS)
+      .populate('renter', BOOKING_PARTY_FIELDS)
+      .lean();
+
+    // Notify Owner that renter uploaded before-rental photos
+    const ownerTargetId = (populated?.ownerId?._id || populated?.ownerId || populated?.owner?._id || populated?.owner)?.toString();
+    if (ownerTargetId && finalPhotoUrls.length > 0) {
+      const devName = populated?.device?.name || populated?.device?.title || 'Thiết bị';
+      try {
+        await createAndSendNotification({
+          userId: ownerTargetId,
+          title: 'Khách thuê đã tải ảnh nhận máy',
+          body: `Khách thuê đã tải lên ${finalPhotoUrls.length} ảnh tình trạng máy ban đầu cho đơn #${populated.bookingCode} ("${devName}").`,
+          type: 'order',
+          relatedId: populated._id.toString(),
+          url: '/owner/bookings',
+        });
+      } catch (notifErr) {
+        console.warn('⚠️ Gửi thông báo ảnh nhận máy cho owner thất bại:', notifErr.message);
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Đã lưu ảnh nhận máy (beforeRental) thành công!',
+      data: {
+        ...normalizeBookingAliases(populated),
+        canCancel: false,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export default {
   getDeviceAvailability,
   createBooking,
@@ -1340,4 +1499,5 @@ export default {
   requestBookingExtension,
   approveBookingExtension,
   rejectBookingExtension,
+  updateRenterHandover,
 };
