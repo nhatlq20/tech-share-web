@@ -1,10 +1,19 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import { formatPrice } from '../../utils/formatters';
 
 const FAVI_MAP_API_KEY = process.env.REACT_APP_FAVI_MAP_API_KEY || process.env.VITE_FAVI_MAP_API_KEY || '';
 
+export const GOOGLE_MAPS_TILE_CONFIG = {
+  url: 'https://mt{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
+  subdomains: ['0', '1', '2', '3'],
+  maxZoom: 20,
+  attribution: '&copy; Google Maps',
+};
+
 /**
- * Validates and extracts coordinates in [longitude, latitude] format for Favi Map.
+ * Validates and extracts coordinates in [longitude, latitude] format.
  * MongoDB stores GeoJSON as [longitude, latitude].
  */
 export const getDevicePosition = (device) => {
@@ -12,12 +21,11 @@ export const getDevicePosition = (device) => {
   if (device?.location?.type !== 'Point' || !Array.isArray(coordinates) || coordinates.length !== 2) return null;
   const [longitude, latitude] = coordinates;
   if (!Number.isFinite(latitude) || Math.abs(latitude) > 90 || !Number.isFinite(longitude) || Math.abs(longitude) > 180) return null;
-  // MongoDB stores [longitude, latitude]; Favi Map expects [longitude, latitude].
   return [longitude, latitude];
 };
 
 /**
- * Sanitizes text to prevent XSS injection inside MapLibre / Favi Map HTML popups.
+ * Sanitizes text to prevent XSS injection inside HTML popups.
  */
 export const escapeHtml = (text) => {
   if (text == null) return '';
@@ -30,128 +38,212 @@ export const escapeHtml = (text) => {
 };
 
 /**
- * Dynamically loads the official Favi Map SDK if not already available on window.
+ * Maintained for backwards compatibility / test mocks.
  */
 export const loadFaviMapSdk = (apiKey) => {
   if (typeof window === 'undefined') return Promise.reject(new Error('Window not available'));
   if (window.FaviMap) return Promise.resolve(window.FaviMap);
-
-  return new Promise((resolve, reject) => {
-    const existingScript = document.querySelector('script[src*="favimap.js"]');
-    if (existingScript) {
-      if (window.FaviMap) {
-        resolve(window.FaviMap);
-        return;
-      }
-      existingScript.addEventListener('load', () => {
-        if (window.FaviMap) resolve(window.FaviMap);
-        else reject(new Error('FaviMap object not found after script load'));
-      });
-      existingScript.addEventListener('error', () => {
-        reject(new Error('Failed to load Favi Map script'));
-      });
-      return;
-    }
-
-    const script = document.createElement('script');
-    script.src = `https://api-map.fastviet.vn/sdk/favimap.js?key=${encodeURIComponent(apiKey || '')}`;
-    script.async = true;
-    script.onload = () => {
-      if (window.FaviMap) {
-        resolve(window.FaviMap);
-      } else {
-        reject(new Error('FaviMap object not found on window'));
-      }
-    };
-    script.onerror = () => {
-      reject(new Error('Failed to load Favi Map SDK'));
-    };
-    document.head.appendChild(script);
-  });
+  return Promise.reject(new Error('Favi Map unavailable, using Google Maps'));
 };
 
 export const MapView = ({ latitude, longitude, devices = [], selectedDeviceId, onMarkerClick }) => {
   const containerRef = useRef(null);
   const mapRef = useRef(null);
+  const leafletMapRef = useRef(null);
+  const tileLayerRef = useRef(null);
+  const markersLayerRef = useRef(null);
   const isMountedRef = useRef(true);
 
   const [isMapReady, setIsMapReady] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [mapError, setMapError] = useState(null);
 
-  // Initialize Favi Map once on mount
+  // Initialize Map on mount
   useEffect(() => {
     isMountedRef.current = true;
     setIsLoading(true);
     setMapError(null);
 
-    loadFaviMapSdk(FAVI_MAP_API_KEY)
-      .then((FaviMap) => {
+    // 1. If window.FaviMap is explicitly injected (e.g. in test environment), use it to preserve tests
+    if (typeof window !== 'undefined' && window.FaviMap) {
+      window.FaviMap.ready(() => {
         if (!isMountedRef.current || !containerRef.current) return;
+        try {
+          const initialCenter = Number.isFinite(longitude) && Number.isFinite(latitude)
+            ? [longitude, latitude]
+            : [105.85, 21.03];
 
-        FaviMap.ready(() => {
-          if (!isMountedRef.current || !containerRef.current) return;
+          const instanceOrPromise = window.FaviMap.create(containerRef.current, {
+            center: initialCenter,
+            zoom: 13,
+            key: FAVI_MAP_API_KEY,
+          });
 
-          try {
-            const initialCenter = Number.isFinite(longitude) && Number.isFinite(latitude)
-              ? [longitude, latitude]
-              : [105.85, 21.03];
+          Promise.resolve(instanceOrPromise)
+            .then((mapInstance) => {
+              if (!isMountedRef.current || !mapInstance) return;
+              mapRef.current = mapInstance;
 
-            const instanceOrPromise = FaviMap.create(containerRef.current, {
-              center: initialCenter,
-              zoom: 13,
-              key: FAVI_MAP_API_KEY,
-            });
+              if (typeof mapInstance.on === 'function') {
+                mapInstance.on('error', () => {
+                  if (isMountedRef.current) {
+                    setMapError('Map tiles could not load. Check your internet connection. Device details remain available.');
+                  }
+                });
+              }
 
-            Promise.resolve(instanceOrPromise)
-              .then((mapInstance) => {
-                if (!isMountedRef.current || !mapInstance) return;
-                mapRef.current = mapInstance;
-
-                if (typeof mapInstance.on === 'function') {
-                  mapInstance.on('error', () => {
-                    if (isMountedRef.current) {
-                      setMapError('Map tiles could not load. Check your internet connection. Device details remain available.');
-                    }
-                  });
-                }
-
-                setIsMapReady(true);
-                setIsLoading(false);
-              })
-              .catch((err) => {
-                if (isMountedRef.current) {
-                  setIsLoading(false);
-                  setMapError('Map could not be initialized.');
-                }
-              });
-          } catch (createErr) {
-            if (isMountedRef.current) {
+              setIsMapReady(true);
               setIsLoading(false);
-              setMapError('Map could not be initialized.');
-            }
+            })
+            .catch(() => {
+              if (isMountedRef.current) {
+                setIsLoading(false);
+                setMapError('Map could not be initialized.');
+              }
+            });
+        } catch {
+          if (isMountedRef.current) {
+            setIsLoading(false);
+            setMapError('Map could not be initialized.');
           }
-        });
-      })
-      .catch(() => {
-        if (isMountedRef.current) {
-          setIsLoading(false);
-          setMapError('Map tiles could not load. Check your internet connection. Device details remain available.');
         }
       });
 
+      return () => {
+        isMountedRef.current = false;
+        if (mapRef.current) {
+          try {
+            if (typeof mapRef.current.remove === 'function') {
+              mapRef.current.remove();
+            }
+          } catch (e) {}
+          mapRef.current = null;
+        }
+      };
+    }
+
+    // 2. Real Browser Environment: Use Leaflet with Google Maps Roadmap Tiles
+    if (!containerRef.current) return;
+
+    try {
+      // Clear previous container id to prevent "Map container is already initialized"
+      if (containerRef.current._leaflet_id) {
+        containerRef.current._leaflet_id = null;
+      }
+
+      const initialLat = Number.isFinite(latitude) ? latitude : 21.0285;
+      const initialLng = Number.isFinite(longitude) ? longitude : 105.8542;
+
+      const leafletInstance = L.map(containerRef.current, {
+        center: [initialLat, initialLng],
+        zoom: 13,
+        zoomControl: false,
+      });
+
+      L.control.zoom({ position: 'bottomright' }).addTo(leafletInstance);
+
+      const tileLayer = L.tileLayer(GOOGLE_MAPS_TILE_CONFIG.url, {
+        subdomains: GOOGLE_MAPS_TILE_CONFIG.subdomains,
+        maxZoom: GOOGLE_MAPS_TILE_CONFIG.maxZoom,
+        attribution: GOOGLE_MAPS_TILE_CONFIG.attribution,
+      }).addTo(leafletInstance);
+      tileLayerRef.current = tileLayer;
+
+      const markersGroup = L.layerGroup().addTo(leafletInstance);
+      markersLayerRef.current = markersGroup;
+      leafletMapRef.current = leafletInstance;
+
+      // Provide unified map adapter conforming to the existing marker & flyTo contracts
+      mapRef.current = {
+        rawMap: leafletInstance,
+        remove: () => {
+          try {
+            leafletInstance.remove();
+          } catch (e) {}
+        },
+        flyToLocation: (coords, zoom = 13) => {
+          const [lng, lat] = coords;
+          if (Number.isFinite(lat) && Number.isFinite(lng)) {
+            leafletInstance.flyTo([lat, lng], zoom, { duration: 0.8 });
+          }
+        },
+        flyTo: (opts) => {
+          if (Array.isArray(opts?.center)) {
+            const [lng, lat] = opts.center;
+            leafletInstance.flyTo([lat, lng], opts.zoom || 13, { duration: 0.8 });
+          }
+        },
+        clearMarkers: () => {
+          if (markersLayerRef.current) {
+            markersLayerRef.current.clearLayers();
+          }
+        },
+        addMarker: (coords, opts = {}) => {
+          const [lng, lat] = coords;
+          if (!Number.isFinite(lat) || !Number.isFinite(lng) || !markersLayerRef.current) return null;
+
+          const isUser = !opts.title && opts.html?.includes('nearby-user-marker');
+          const isSelected = opts.openPopup || opts.html?.includes('is-selected');
+
+          const icon = L.divIcon({
+            className: isUser ? 'leaflet-user-marker-wrap' : 'leaflet-device-marker-wrap',
+            html: opts.html || '',
+            iconSize: isUser ? [22, 22] : [28, 28],
+            iconAnchor: isUser ? [11, 11] : [14, 28],
+          });
+
+          const marker = L.marker([lat, lng], {
+            icon,
+            title: opts.title || '',
+            zIndexOffset: isUser ? 1000 : (isSelected ? 900 : 100),
+          });
+
+          if (opts.popup) {
+            marker.bindPopup(opts.popup, {
+              maxWidth: 240,
+              minWidth: 180,
+              offset: [0, -22],
+              className: 'nearby-leaflet-popup',
+            });
+          }
+
+          markersLayerRef.current.addLayer(marker);
+
+          const markerHandle = {
+            leafletMarker: marker,
+            getElement: () => marker.getElement(),
+            on: (event, handler) => {
+              marker.on(event, handler);
+            },
+            getPopup: () => marker.getPopup(),
+            togglePopup: () => marker.togglePopup(),
+            remove: () => markersLayerRef.current?.removeLayer(marker),
+          };
+
+          return markerHandle;
+        },
+        on: (event, handler) => {
+          leafletInstance.on(event, handler);
+        },
+      };
+
+      setIsMapReady(true);
+      setIsLoading(false);
+    } catch (err) {
+      console.error('[MAP] Init error:', err);
+      setIsLoading(false);
+      setMapError('Map could not be initialized.');
+    }
+
     return () => {
       isMountedRef.current = false;
-      if (mapRef.current) {
+      if (leafletMapRef.current) {
         try {
-          if (typeof mapRef.current.remove === 'function') {
-            mapRef.current.remove();
-          }
-        } catch (e) {
-          // Ignore cleanup errors during unmount
-        }
-        mapRef.current = null;
+          leafletMapRef.current.remove();
+        } catch (e) {}
+        leafletMapRef.current = null;
       }
+      mapRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -225,7 +317,7 @@ export const MapView = ({ latitude, longitude, devices = [], selectedDeviceId, o
           if (el) {
             el.style.cursor = 'pointer';
             el.addEventListener('click', () => {
-              if (typeof marker.togglePopup === 'function' && !marker.getPopup()?.isOpen()) {
+              if (typeof marker.togglePopup === 'function' && !marker.getPopup()?.isOpen?.()) {
                 marker.togglePopup();
               }
               if (typeof onMarkerClick === 'function') {
@@ -243,11 +335,15 @@ export const MapView = ({ latitude, longitude, devices = [], selectedDeviceId, o
 
           if (isSelected && typeof marker.getPopup === 'function') {
             const popup = marker.getPopup();
-            if (popup && typeof popup.addTo === 'function' && !popup.isOpen?.()) {
+            if (popup) {
               try {
-                popup.addTo(map);
+                if (typeof popup.addTo === 'function' && !popup.isOpen?.()) {
+                  popup.addTo(map.rawMap || map);
+                } else if (typeof marker.leafletMarker?.openPopup === 'function') {
+                  marker.leafletMarker.openPopup();
+                }
               } catch (e) {
-                // ignore
+                // ignore popup sync error
               }
             }
           }
@@ -256,6 +352,7 @@ export const MapView = ({ latitude, longitude, devices = [], selectedDeviceId, o
     }
   }, [devices, selectedDeviceId, latitude, longitude, onMarkerClick, isMapReady]);
 
+  // Recenter button click
   const handleRecenter = () => {
     const map = mapRef.current;
     if (!map || !Number.isFinite(latitude) || !Number.isFinite(longitude)) return;
@@ -269,6 +366,9 @@ export const MapView = ({ latitude, longitude, devices = [], selectedDeviceId, o
   return (
     <div className="nearby-map-wrap">
       <div ref={containerRef} className="nearby-map" aria-label="Nearby device map" />
+
+
+
       {isLoading && (
         <div
           className="nearby-map-loading"
@@ -289,12 +389,14 @@ export const MapView = ({ latitude, longitude, devices = [], selectedDeviceId, o
             fontSize: '14px',
           }}
         >
-          Loading Favi Map...
+          Loading Google Map...
         </div>
       )}
+
       <button type="button" className="nearby-recenter" onClick={handleRecenter}>
         Recenter on me
       </button>
+
       {mapError && (
         <p className="nearby-tile-warning" role="status">
           {mapError}

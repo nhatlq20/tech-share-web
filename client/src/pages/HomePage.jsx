@@ -228,7 +228,6 @@ export const HomePage = () => {
             <h2 id="categories-heading" className="home-section-title">
               {STRINGS.home.categories.heading}
             </h2>
-            <a className="home-browse-link" href="/explore">Browse all categories <ArrowRight size={14} /></a>
           </div>
 
           <div

@@ -6,7 +6,7 @@
  */
 
 export const API_CONFIG = {
-  BASE_URL: process.env.REACT_APP_API_URL || "http://localhost:8000/api",
+  BASE_URL: process.env.REACT_APP_API_URL || "http://localhost:5000/api",
   TIMEOUT_MS: 15000,
   ENDPOINTS: {
     ADMIN_KPI: "/admin/kpi",
