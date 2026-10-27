@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { CalendarDays, ChevronRight, Package } from 'lucide-react';
+import { CalendarDays, ChevronRight, Package, QrCode, Camera, CheckCircle2 } from 'lucide-react';
 import { STRINGS } from '../../constants/strings.js';
 import { ROUTES } from '../../routes/routes.js';
 import { formatPrice, formatDate } from '../../utils/formatters.js';
@@ -16,7 +16,6 @@ const toRowModel = (booking) => {
   const device = booking.device || booking.deviceId || {};
   const bookingKey = booking.bookingCode || booking._id;
 
-  // Tính chính xác số ngày thuê giữa startDate và endDate
   let totalDays = booking.totalDays;
   if (booking.startDate && booking.endDate) {
     const s = new Date(booking.startDate).getTime();
@@ -26,6 +25,11 @@ const toRowModel = (booking) => {
       totalDays = Math.max(1, Math.round(diff / (1000 * 60 * 60 * 24)));
     }
   }
+
+  const beforePhotos =
+    booking.handover?.beforePhotos ||
+    booking.handoverPhotos?.beforeRental ||
+    [];
 
   return {
     bookingKey,
@@ -42,6 +46,7 @@ const toRowModel = (booking) => {
     createdAt: formatDate(booking.createdAt),
     totalAmount: formatPrice(booking.totalAmount),
     status: booking.status,
+    beforePhotosCount: Array.isArray(beforePhotos) ? beforePhotos.length : 0,
   };
 };
 
@@ -58,7 +63,7 @@ const DeviceThumb = ({ image, title }) => (
 /**
  * Desktop table row for the My Bookings hub.
  */
-export const BookingTableRow = ({ booking }) => {
+export const BookingTableRow = ({ booking, onOpenHandover }) => {
   const row = toRowModel(booking);
 
   return (
@@ -101,6 +106,14 @@ export const BookingTableRow = ({ booking }) => {
       </td>
       <td className="px-4 py-4 whitespace-nowrap">
         <BookingStatusBadge status={row.status} />
+        {row.status === 'approved' && row.beforePhotosCount > 0 && (
+          <div className="mt-1.5">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+              {row.beforePhotosCount} {row.beforePhotosCount === 1 ? 'photo' : 'photos'} uploaded
+            </span>
+          </div>
+        )}
         {row.status === 'active' && row.rawEndDate && (
           <div className="mt-1.5">
             <CountdownBadge startDate={row.rawStartDate} targetDate={row.rawEndDate} size="sm" />
@@ -108,14 +121,30 @@ export const BookingTableRow = ({ booking }) => {
         )}
       </td>
       <td className="px-5 py-4 text-right whitespace-nowrap">
-        <Link
-          to={row.detailPath}
-          id={`booking-detail-link-${row.bookingKey}`}
-          className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full text-xs font-semibold text-brand-700 bg-brand-100 hover:bg-brand-500 hover:text-white transition-colors whitespace-nowrap flex-shrink-0"
-        >
-          {T.viewDetailBtn}
-          <ChevronRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
-        </Link>
+        <div className="inline-flex items-center justify-end gap-2">
+          {row.status === 'approved' && typeof onOpenHandover === 'function' && (
+            <button
+              type="button"
+              id={`booking-handover-btn-${row.bookingKey}`}
+              onClick={() => onOpenHandover(booking)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold text-white bg-teal-600 hover:bg-teal-700 shadow-2xs transition-colors whitespace-nowrap flex-shrink-0"
+              title="View Handover QR Code & Upload Before-Rental Photos"
+            >
+              <QrCode className="w-3.5 h-3.5" aria-hidden="true" />
+              <Camera className="w-3.5 h-3.5" aria-hidden="true" />
+              <span>QR &amp; Handover</span>
+            </button>
+          )}
+
+          <Link
+            to={row.detailPath}
+            id={`booking-detail-link-${row.bookingKey}`}
+            className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full text-xs font-semibold text-brand-700 bg-brand-100 hover:bg-brand-500 hover:text-white transition-colors whitespace-nowrap flex-shrink-0"
+          >
+            {T.viewDetailBtn}
+            <ChevronRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+          </Link>
+        </div>
       </td>
     </tr>
   );
@@ -124,46 +153,64 @@ export const BookingTableRow = ({ booking }) => {
 /**
  * Mobile card variant (same data as the table row) for small screens.
  */
-export const BookingMobileCard = ({ booking }) => {
+export const BookingMobileCard = ({ booking, onOpenHandover }) => {
   const row = toRowModel(booking);
 
   return (
-    <Link
-      to={row.detailPath}
-      className="block bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow"
-    >
-      <div className="flex items-start gap-4">
-        <DeviceThumb image={row.image} title={row.title} />
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-2">
-            <h3 className="text-sm font-bold text-slate-800 truncate">{row.title}</h3>
-            <div className="flex flex-col items-end gap-1 flex-shrink-0">
-              <BookingStatusBadge status={row.status} size="sm" />
-              {row.status === 'active' && row.rawEndDate && (
-                <CountdownBadge startDate={row.rawStartDate} targetDate={row.rawEndDate} size="sm" />
-              )}
+    <div className="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow">
+      <Link to={row.detailPath} className="block">
+        <div className="flex items-start gap-4">
+          <DeviceThumb image={row.image} title={row.title} />
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between gap-2">
+              <h3 className="text-sm font-bold text-slate-800 truncate">{row.title}</h3>
+              <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                <BookingStatusBadge status={row.status} size="sm" />
+                {row.status === 'active' && row.rawEndDate && (
+                  <CountdownBadge startDate={row.rawStartDate} targetDate={row.rawEndDate} size="sm" />
+                )}
+              </div>
+            </div>
+            <p className="text-xs font-mono text-slate-500 mt-1">
+              {T.bookingCodePrefix}: {row.bookingCode}
+            </p>
+            <div className="flex items-center gap-2 mt-2 text-xs text-slate-600">
+              <CalendarDays className="w-3.5 h-3.5 text-slate-400" aria-hidden="true" />
+              <span>
+                {row.startDate} → {row.endDate}
+              </span>
+              <span className="text-slate-400">· {T.daysSuffix(row.totalDays)}</span>
+            </div>
+            <div className="flex items-center justify-between mt-3">
+              <span className="text-sm font-bold text-brand-800">{row.totalAmount}</span>
+              <span className="inline-flex items-center gap-1 text-xs font-semibold text-brand-600">
+                {T.viewDetailBtn}
+                <ChevronRight className="w-3.5 h-3.5" aria-hidden="true" />
+              </span>
             </div>
           </div>
-          <p className="text-xs font-mono text-slate-500 mt-1">
-            {T.bookingCodePrefix}: {row.bookingCode}
-          </p>
-          <div className="flex items-center gap-2 mt-2 text-xs text-slate-600">
-            <CalendarDays className="w-3.5 h-3.5 text-slate-400" aria-hidden="true" />
-            <span>
-              {row.startDate} → {row.endDate}
-            </span>
-            <span className="text-slate-400">· {T.daysSuffix(row.totalDays)}</span>
-          </div>
-          <div className="flex items-center justify-between mt-3">
-            <span className="text-sm font-bold text-brand-800">{row.totalAmount}</span>
-            <span className="inline-flex items-center gap-1 text-xs font-semibold text-brand-600">
-              {T.viewDetailBtn}
-              <ChevronRight className="w-3.5 h-3.5" aria-hidden="true" />
-            </span>
-          </div>
         </div>
-      </div>
-    </Link>
+      </Link>
+
+      {row.status === 'approved' && typeof onOpenHandover === 'function' && (
+        <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+          <span className="text-[11px] font-medium text-slate-500">
+            {row.beforePhotosCount > 0
+              ? `${row.beforePhotosCount} photo(s) uploaded`
+              : 'Approved – Ready for device handover'}
+          </span>
+          <button
+            type="button"
+            onClick={() => onOpenHandover(booking)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold text-white bg-teal-600 hover:bg-teal-700 transition shadow-2xs"
+          >
+            <QrCode className="w-3.5 h-3.5" />
+            <Camera className="w-3.5 h-3.5" />
+            <span>QR &amp; Handover</span>
+          </button>
+        </div>
+      )}
+    </div>
   );
 };
 

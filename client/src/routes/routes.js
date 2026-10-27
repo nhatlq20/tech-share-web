@@ -4,6 +4,7 @@
 export const ROUTES = {
   HOME: '/',
   EXPLORE: '/explore',
+  WISHLIST: '/wishlist',
   COMPARE_DEVICES: '/compare-devices',
   DEVICE_DETAIL: '/device/:deviceId',
   DEVICE_DETAIL_LEGACY: '/devices/:id',

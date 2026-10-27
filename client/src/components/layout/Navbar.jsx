@@ -1,15 +1,23 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeftRight, MessageSquare } from 'lucide-react';
 import { ROUTES } from '../../routes/routes.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useChat } from '../../context/ChatContext.jsx';
 import { NotificationDropdown } from '../notifications/NotificationDropdown.jsx';
+import { fetchWishlist } from '../../services/wishlistService.js';
 import './Navbar.css';
 
 export const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuth();
   const { unreadMessagesCount } = useChat();
+
+  // Đồng bộ wishlist từ MongoDB khi người dùng đăng nhập hoặc tải trang
+  useEffect(() => {
+    const controller = new AbortController();
+    fetchWishlist({ mergeLocal: true, signal: controller.signal }).catch(() => {});
+    return () => controller.abort();
+  }, [user?._id, isAuthenticated]);
 
   const handleLogout = () => {
     logout();
@@ -42,6 +50,9 @@ export const Navbar = () => {
           </Link>
           <Link to={ROUTES.NEARBY} className="navbar-link">
             Nearby
+          </Link>
+          <Link to={ROUTES.WISHLIST} className="navbar-link">
+            Wishlist
           </Link>
           {isAuthenticated && (
             <Link to={ROUTES.MY_BOOKINGS} className="navbar-link">
