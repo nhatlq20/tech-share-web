@@ -28,6 +28,7 @@ import { OrderTimelineStepper } from '../../components/booking/OrderTimelineStep
 import { CancelBookingModal } from '../../components/booking/CancelBookingModal.jsx';
 import { CountdownBadge } from '../../components/booking/CountdownBadge.jsx';
 import { ExtensionModal } from '../../components/booking/ExtensionModal.jsx';
+import { RenterHandoverSection } from '../../components/booking/RenterHandoverSection.jsx';
 import { formatPrice, formatDateTime, formatDate } from '../../utils/formatters.js';
 
 const T = STRINGS.booking.detail;
@@ -348,6 +349,14 @@ export const BookingDetailPage = () => {
             />
           </div>
         </div>
+
+        {/* Handover QR Code (qrcode.react) & Before-Rental Photo Upload (Cloudinary) when Approved / Active */}
+        <RenterHandoverSection
+          booking={booking}
+          onBookingUpdated={(updatedBooking) => {
+            if (updatedBooking) setBooking(updatedBooking);
+          }}
+        />
 
         {/* 2-Column Details Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">

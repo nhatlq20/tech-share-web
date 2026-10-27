@@ -43,6 +43,7 @@ export const API_CONFIG = {
     BOOKINGS_MY: "/bookings/my-bookings",
     BOOKING_BY_ID: (id) => `/bookings/${id}`,
     BOOKING_CANCEL: (id) => `/bookings/${id}/cancel`,
+    BOOKING_HANDOVER_RENTER: (id) => `/bookings/${id}/handover-renter`,
     BOOKING_EXTEND: (id) => `/bookings/${id}/extend`,
     BOOKING_EXTENSION_APPROVE: (id) => `/bookings/${id}/extension/approve`,
     BOOKING_EXTENSION_REJECT: (id) => `/bookings/${id}/extension/reject`,

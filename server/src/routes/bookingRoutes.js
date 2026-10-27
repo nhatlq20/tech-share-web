@@ -9,6 +9,7 @@ import {
   requestBookingExtension,
   approveBookingExtension,
   rejectBookingExtension,
+  updateRenterHandover,
 } from '../controllers/bookingController.js';
 import {
   getOwnerBookings,
@@ -32,6 +33,11 @@ router.patch('/:id/approve', approveBooking);
 router.patch('/:id/reject', rejectBooking);
 router.patch('/:id/handover', handoverBooking);
 router.patch('/:id/complete', completeBooking);
+
+// Renter handover QR & beforeRental photo upload actions
+router.patch('/:id/handover-renter', protect, updateRenterHandover);
+router.post('/:id/handover-renter', protect, updateRenterHandover);
+router.patch('/:id/before-rental', protect, updateRenterHandover);
 
 // Rental Extension actions
 router.post('/:id/extend', protect, requestBookingExtension);

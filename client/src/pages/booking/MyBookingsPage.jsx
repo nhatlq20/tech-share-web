@@ -15,6 +15,7 @@ import { useAuth } from '../../context/AuthContext.jsx';
 import { fetchMyBookings } from '../../services/bookingService.js';
 import { BookingTableRow, BookingMobileCard } from '../../components/booking/BookingTableRow.jsx';
 import { getBookingStatusStyle } from '../../components/booking/BookingStatusBadge.jsx';
+import { RenterHandoverModal } from '../../components/booking/RenterHandoverSection.jsx';
 
 const T = STRINGS.booking.myBookings;
 const DEFAULT_TAB = BOOKING_STATUS.PENDING;
@@ -58,6 +59,7 @@ export const MyBookingsPage = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const [handoverModalBooking, setHandoverModalBooking] = useState(null);
 
   // Per-tab/page cache so switching back to a visited tab renders instantly while revalidating
   const cacheRef = useRef(new Map());
@@ -140,6 +142,19 @@ export const MyBookingsPage = () => {
   const handleRetry = useCallback(() => {
     cacheRef.current.clear();
     setReloadKey((key) => key + 1);
+  }, []);
+
+  const handleBookingUpdated = useCallback((updatedBooking) => {
+    if (!updatedBooking) return;
+    cacheRef.current.clear();
+    setBookings((prev) =>
+      prev.map((item) =>
+        String(item._id) === String(updatedBooking._id) ? { ...item, ...updatedBooking } : item
+      )
+    );
+    setHandoverModalBooking((prev) =>
+      prev && String(prev._id) === String(updatedBooking._id) ? { ...prev, ...updatedBooking } : prev
+    );
   }, []);
 
   const totalPages = pagination.totalPages || 1;
@@ -281,7 +296,11 @@ export const MyBookingsPage = () => {
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {bookings.map((booking) => (
-                      <BookingTableRow key={booking._id} booking={booking} />
+                      <BookingTableRow
+                        key={booking._id}
+                        booking={booking}
+                        onOpenHandover={(b) => setHandoverModalBooking(b)}
+                      />
                     ))}
                   </tbody>
                 </table>
@@ -290,7 +309,11 @@ export const MyBookingsPage = () => {
               {/* Mobile cards */}
               <div className="md:hidden flex flex-col gap-3">
                 {bookings.map((booking) => (
-                  <BookingMobileCard key={booking._id} booking={booking} />
+                  <BookingMobileCard
+                    key={booking._id}
+                    booking={booking}
+                    onOpenHandover={(b) => setHandoverModalBooking(b)}
+                  />
                 ))}
               </div>
             </>
@@ -324,6 +347,14 @@ export const MyBookingsPage = () => {
           )}
         </section>
       </div>
+
+      {/* Quick Modal for Handover QR & Before-Rental Photo Upload on Approved Bookings */}
+      <RenterHandoverModal
+        isOpen={Boolean(handoverModalBooking)}
+        booking={handoverModalBooking}
+        onClose={() => setHandoverModalBooking(null)}
+        onBookingUpdated={handleBookingUpdated}
+      />
     </div>
   );
 };
