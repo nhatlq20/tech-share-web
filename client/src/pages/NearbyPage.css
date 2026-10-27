@@ -24,4 +24,9 @@
 .nearby-device-marker span { display: block; box-sizing: border-box; width: 26px; height: 26px; background: #22a8b2; border: 3px solid white; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); box-shadow: 0 2px 7px #173b4959; }
 .nearby-device-marker.is-selected span { background: #f59e0b; border-color: #fff2c4; }
 .nearby-user-marker span { display: block; box-sizing: border-box; width: 22px; height: 22px; background: #2879e8; border: 4px solid white; border-radius: 50%; box-shadow: 0 0 0 5px #2879e826; }
+.leaflet-device-marker-wrap, .leaflet-user-marker-wrap { background: transparent !important; border: none !important; }
+.nearby-leaflet-popup .leaflet-popup-content-wrapper { border-radius: 12px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15); padding: 2px; }
+.nearby-leaflet-popup .leaflet-popup-content { margin: 10px 12px; }
 @media (max-width: 800px) { .nearby-layout { grid-template-columns: minmax(0, 1fr); } .nearby-map { height: 420px; } .nearby-sidebar { max-height: 450px; } .nearby-header { align-items: flex-start; flex-wrap: wrap; } }
+
+

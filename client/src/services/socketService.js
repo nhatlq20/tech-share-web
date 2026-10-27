@@ -4,17 +4,17 @@ import { STORAGE_KEYS } from '../constants/config.js';
 let socket = null;
 
 const getSocketServerUrl = () => {
-  if (typeof process !== 'undefined' && process.env && process.env.REACT_APP_API_URL) {
+  if (process.env.REACT_APP_API_URL) {
     // If REACT_APP_API_URL is 'http://localhost:5000/api', extract 'http://localhost:5000'
     try {
       const url = new URL(process.env.REACT_APP_API_URL);
       return url.origin;
     } catch {
-      return 'http://localhost:8000';
+      return 'http://localhost:5000';
     }
   }
   if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-    return 'http://localhost:8000';
+    return 'http://localhost:5000';
   }
   return '/';
 };

@@ -45,9 +45,6 @@ export const Navbar = () => {
           <Link to={ROUTES.HOME} className="navbar-link">
             Home
           </Link>
-          <Link to={ROUTES.EXPLORE} className="navbar-link">
-            Explore
-          </Link>
           <Link to={ROUTES.NEARBY} className="navbar-link">
             Nearby
           </Link>
