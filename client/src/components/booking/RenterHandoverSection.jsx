@@ -99,10 +99,10 @@ export const RenterHandoverSection = ({ booking, onBookingUpdated, compact = fal
       if (updatedBooking && typeof onBookingUpdated === 'function') {
         onBookingUpdated(updatedBooking);
       }
-      setSuccessMsg(customSuccessText || 'Đã lưu ảnh nhận máy (beforeRental) lên hệ thống thành công!');
+      setSuccessMsg(customSuccessText || 'Before-rental photos saved successfully!');
       setTimeout(() => setSuccessMsg(null), 4500);
     } catch (err) {
-      setErrorMsg(err?.message || 'Không thể lưu ảnh nhận máy. Vui lòng thử lại.');
+      setErrorMsg(err?.message || 'Unable to save before-rental photos. Please try again.');
     } finally {
       setIsSavingDb(false);
     }
@@ -112,21 +112,20 @@ export const RenterHandoverSection = ({ booking, onBookingUpdated, compact = fal
     const files = Array.from(event.target.files || []);
     if (files.length === 0) return;
 
-    // Reset input so selecting the same file again triggers change
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
 
     const remainingSlots = MAX_PHOTOS - photos.length;
     if (remainingSlots <= 0) {
-      setErrorMsg(`Bạn chỉ có thể tải tối đa ${MAX_PHOTOS} ảnh tình trạng máy lúc nhận.`);
+      setErrorMsg(`You can upload up to ${MAX_PHOTOS} before-rental photos.`);
       return;
     }
 
     const filesToUpload = files.slice(0, remainingSlots);
     const invalidFile = filesToUpload.find((f) => !f.type.startsWith('image/'));
     if (invalidFile) {
-      setErrorMsg('Vui lòng chỉ chọn định dạng file hình ảnh (JPG, PNG, WEBP).');
+      setErrorMsg('Please select valid image files (JPG, PNG, WEBP).');
       return;
     }
 
@@ -157,11 +156,11 @@ export const RenterHandoverSection = ({ booking, onBookingUpdated, compact = fal
         await persistToDatabase(
           nextPhotos,
           beforeNote,
-          `Đã tải ${uploadedUrls.length} ảnh lên Cloudinary và lưu vào đơn hàng!`
+          `Uploaded ${uploadedUrls.length} photo(s) to Cloudinary and saved to booking!`
         );
       }
     } catch (err) {
-      setErrorMsg(err?.message || 'Tải ảnh lên Cloudinary thất bại. Vui lòng thử lại.');
+      setErrorMsg(err?.message || 'Cloudinary upload failed. Please try again.');
     } finally {
       setIsUploadingCloudinary(false);
       setTimeout(() => setUploadProgress(0), 600);
@@ -172,17 +171,16 @@ export const RenterHandoverSection = ({ booking, onBookingUpdated, compact = fal
     if (!canEditPhotos || isSavingDb || isUploadingCloudinary) return;
     const nextPhotos = photos.filter((_, idx) => idx !== indexToRemove);
     setPhotos(nextPhotos);
-    await persistToDatabase(nextPhotos, beforeNote, 'Đã cập nhật danh sách ảnh nhận máy.');
+    await persistToDatabase(nextPhotos, beforeNote, 'Updated before-rental photo list.');
   };
 
   const handleSaveManual = async (e) => {
     if (e) e.preventDefault();
-    await persistToDatabase(photos, beforeNote, 'Đã lưu ảnh và ghi chú tình trạng nhận máy!');
+    await persistToDatabase(photos, beforeNote, 'Saved before-rental photos and condition notes!');
   };
 
   if (!booking) return null;
 
-  // Only show for approved, or active/completed if photos exist or active rental
   if (!isApproved && !isActive && photos.length === 0) {
     return null;
   }
@@ -202,18 +200,18 @@ export const RenterHandoverSection = ({ booking, onBookingUpdated, compact = fal
             <div className="flex items-center gap-2 flex-wrap">
               <h2 className="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight">
                 {isApproved
-                  ? 'Mã QR Bàn giao & Tải ảnh nhận máy (beforeRental)'
-                  : 'Hồ sơ Bàn giao & Ảnh nhận máy (beforeRental)'}
+                  ? 'Handover QR Code & Before-Rental Photos'
+                  : 'Handover Record & Before-Rental Photos'}
               </h2>
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-teal-50 text-teal-700 border border-teal-200">
                 <Sparkles className="w-3 h-3" />
-                {isApproved ? 'Sẵn sàng nhận bàn giao' : 'Bảo vệ Escrow'}
+                {isApproved ? 'Ready for Handover' : 'Escrow Protected'}
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-1">
               {isApproved
-                ? 'Đơn thuê đã được Chủ thiết bị chấp nhận. Hãy xuất trình mã QR bên dưới khi gặp Chủ máy và tải lên ảnh tình trạng máy lúc nhận.'
-                : 'Ảnh tình trạng thiết bị lúc nhận (beforeRental) được lưu trữ trên Cloudinary để đối soát bảo vệ tiền cọc Escrow.'}
+                ? 'Your booking has been approved by the owner. Present the QR code below at pickup and upload device condition photos.'
+                : 'Before-rental inspection photos are stored on Cloudinary to protect your Escrow security deposit.'}
             </p>
           </div>
         </div>
@@ -221,7 +219,7 @@ export const RenterHandoverSection = ({ booking, onBookingUpdated, compact = fal
         {photos.length > 0 && (
           <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold self-start sm:self-auto shrink-0">
             <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-            <span>Đã tải {photos.length}/{MAX_PHOTOS} ảnh nhận máy</span>
+            <span>{photos.length}/{MAX_PHOTOS} photos uploaded</span>
           </span>
         )}
       </div>
@@ -261,22 +259,22 @@ export const RenterHandoverSection = ({ booking, onBookingUpdated, compact = fal
 
       {/* Main 2-column content */}
       <div className="mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-        {/* LEFT COLUMN: QR CODE HANDOVER (shown in approved & active) */}
+        {/* LEFT COLUMN: QR CODE HANDOVER */}
         <div className="lg:col-span-5 flex flex-col justify-between rounded-2xl bg-gradient-to-b from-slate-50 to-teal-50/30 border border-slate-200/80 p-5">
           <div>
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs font-bold uppercase tracking-wider text-teal-800 flex items-center gap-1.5">
                 <QrCode className="w-4 h-4 text-teal-600" />
-                Mã QR Bàn giao đơn hàng
+                Order Handover QR Code
               </span>
               <button
                 type="button"
                 onClick={() => setIsQrZoomOpen(true)}
                 className="inline-flex items-center gap-1 text-[11px] font-semibold text-teal-700 hover:text-teal-900 bg-white px-2.5 py-1 rounded-lg border border-slate-200 shadow-2xs transition"
-                title="Phóng to mã QR"
+                title="Enlarge QR Code"
               >
                 <Maximize2 className="w-3 h-3" />
-                <span>Phóng to</span>
+                <span>Enlarge</span>
               </button>
             </div>
 
@@ -285,7 +283,7 @@ export const RenterHandoverSection = ({ booking, onBookingUpdated, compact = fal
               <div
                 onClick={() => setIsQrZoomOpen(true)}
                 className="p-3 rounded-2xl bg-white border-2 border-teal-500/20 hover:border-teal-500/50 transition cursor-pointer shadow-2xs"
-                title="Nhấn để phóng to mã QR"
+                title="Click to enlarge QR Code"
               >
                 <QRCodeSVG
                   id={`booking-handover-qr-${booking.bookingCode}`}
@@ -307,7 +305,7 @@ export const RenterHandoverSection = ({ booking, onBookingUpdated, compact = fal
                   type="button"
                   onClick={handleCopyQrToken}
                   className="text-slate-500 hover:text-teal-700 transition p-0.5"
-                  title="Sao chép mã QR Token"
+                  title="Copy QR Token"
                 >
                   {copiedQr ? (
                     <Check className="w-3.5 h-3.5 text-emerald-600" />
@@ -318,7 +316,7 @@ export const RenterHandoverSection = ({ booking, onBookingUpdated, compact = fal
               </div>
 
               <p className="text-[11px] text-slate-400 mt-1.5 text-center">
-                Mã đơn: <strong className="text-slate-600">#{booking.bookingCode}</strong>
+                Booking Code: <strong className="text-slate-600">#{booking.bookingCode}</strong>
               </p>
             </div>
           </div>
@@ -327,16 +325,16 @@ export const RenterHandoverSection = ({ booking, onBookingUpdated, compact = fal
           <div className="mt-4 p-3.5 rounded-xl bg-white/90 border border-teal-100 text-xs text-slate-600 space-y-1.5">
             <div className="font-bold text-teal-900 flex items-center gap-1.5">
               <ShieldCheck className="w-4 h-4 text-teal-600 shrink-0" />
-              <span>Hướng dẫn nhận bàn giao:</span>
+              <span>Handover Instructions:</span>
             </div>
             <p className="text-[11px] leading-relaxed text-slate-600">
-              1. Kiểm tra ngoại hình &amp; hoạt động của thiết bị cùng Chủ máy.
+              1. Inspect the device condition and accessories with the owner.
             </p>
             <p className="text-[11px] leading-relaxed text-slate-600">
-              2. Chụp và tải ảnh thiết bị lúc nhận vào khung bên cạnh.
+              2. Upload photos of the device upon receipt on the right panel.
             </p>
             <p className="text-[11px] leading-relaxed text-slate-600">
-              3. Đưa mã QR này để Chủ máy quét xác nhận kích hoạt kỳ thuê.
+              3. Show this QR code to the owner to scan and activate your rental.
             </p>
           </div>
         </div>
@@ -347,14 +345,14 @@ export const RenterHandoverSection = ({ booking, onBookingUpdated, compact = fal
             <div className="flex items-center justify-between gap-2 mb-1.5">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
                 <Camera className="w-4 h-4 text-teal-600" />
-                Ảnh tình trạng máy khi nhận (beforeRental)
+                Before-Rental Device Photos (beforeRental)
               </span>
               <span className="text-[11px] font-semibold text-slate-500">
-                {photos.length}/{MAX_PHOTOS} ảnh • Cloudinary
+                {photos.length}/{MAX_PHOTOS} photos • Cloudinary
               </span>
             </div>
             <p className="text-xs text-slate-500 mb-4">
-              Tải lên từ 1–6 ảnh chụp thực tế thiết bị lúc nhận (các góc máy, số serial, phụ kiện đi kèm) để bảo vệ quyền lợi hoàn cọc 100%.
+              Upload 1–6 photos of the device upon pickup (angles, serial number, included accessories) to ensure a 100% deposit refund.
             </p>
 
             {/* Hidden File Input */}
@@ -374,7 +372,7 @@ export const RenterHandoverSection = ({ booking, onBookingUpdated, compact = fal
                 <div className="flex items-center justify-between text-xs font-bold text-teal-900 mb-1.5">
                   <span className="flex items-center gap-2">
                     <Loader2 className="w-4 h-4 animate-spin text-teal-600" />
-                    Đang nén &amp; tải ảnh lên Cloudinary...
+                    Compressing &amp; uploading to Cloudinary...
                   </span>
                   <span>{uploadProgress}%</span>
                 </div>
@@ -396,12 +394,12 @@ export const RenterHandoverSection = ({ booking, onBookingUpdated, compact = fal
                 >
                   <img
                     src={url}
-                    alt={`Ảnh nhận máy ${idx + 1}`}
+                    alt={`Before rental ${idx + 1}`}
                     onClick={() => setPreviewPhotoUrl(url)}
                     className="w-full h-full object-cover cursor-pointer group-hover:scale-105 transition-transform duration-200"
                   />
                   <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-slate-900/75 text-white text-[10px] font-semibold backdrop-blur-xs">
-                    Ảnh #{idx + 1}
+                    Photo #{idx + 1}
                   </div>
                   {canEditPhotos && (
                     <button
@@ -409,7 +407,7 @@ export const RenterHandoverSection = ({ booking, onBookingUpdated, compact = fal
                       onClick={() => handleRemovePhoto(idx)}
                       disabled={isSavingDb || isUploadingCloudinary}
                       className="absolute top-2 right-2 w-7 h-7 rounded-full bg-rose-600/90 hover:bg-rose-700 text-white flex items-center justify-center shadow-sm transition opacity-90 group-hover:opacity-100"
-                      title="Xóa ảnh này"
+                      title="Remove photo"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -429,10 +427,10 @@ export const RenterHandoverSection = ({ booking, onBookingUpdated, compact = fal
                     <Upload className="w-4 h-4" />
                   </div>
                   <span className="text-xs font-bold text-teal-800">
-                    + Tải ảnh nhận máy
+                    + Upload Photos
                   </span>
                   <span className="text-[10px] text-slate-400">
-                    JPG, PNG, WEBP (Tối đa {MAX_PHOTOS} ảnh)
+                    JPG, PNG, WEBP (Max {MAX_PHOTOS} photos)
                   </span>
                 </button>
               )}
@@ -440,7 +438,7 @@ export const RenterHandoverSection = ({ booking, onBookingUpdated, compact = fal
               {photos.length === 0 && !canEditPhotos && (
                 <div className="col-span-full h-28 rounded-xl border border-slate-200 bg-white flex flex-col items-center justify-center text-slate-400 text-xs gap-1.5">
                   <ImageIcon className="w-6 h-6 text-slate-300" />
-                  <span>Chưa có ảnh nhận máy nào được tải lên.</span>
+                  <span>No before-rental photos uploaded yet.</span>
                 </div>
               )}
             </div>
@@ -451,7 +449,7 @@ export const RenterHandoverSection = ({ booking, onBookingUpdated, compact = fal
                 htmlFor={`before-note-input-${booking.bookingCode}`}
                 className="block text-xs font-bold text-slate-700 mb-1.5"
               >
-                Ghi chú tình trạng máy lúc nhận (Tùy chọn)
+                Device Condition Note at Pickup (Optional)
               </label>
               <textarea
                 id={`before-note-input-${booking.bookingCode}`}
@@ -459,7 +457,7 @@ export const RenterHandoverSection = ({ booking, onBookingUpdated, compact = fal
                 value={beforeNote}
                 onChange={(e) => setBeforeNote(e.target.value)}
                 disabled={!canEditPhotos || isSavingDb}
-                placeholder="VD: Đã nhận đủ máy, pin zin, sạc, túi đựng. Ngoại hình máy đẹp không trầy xước..."
+                placeholder="e.g. Received device with original battery, charger, and carrying case in great condition..."
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-xs text-slate-800 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 focus:outline-none disabled:bg-slate-100"
               />
             </div>
@@ -477,12 +475,12 @@ export const RenterHandoverSection = ({ booking, onBookingUpdated, compact = fal
                 {isSavingDb ? (
                   <>
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>Đang lưu...</span>
+                    <span>Saving...</span>
                   </>
                 ) : (
                   <>
                     <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>Lưu ảnh &amp; Ghi chú nhận máy</span>
+                    <span>Save Photos &amp; Condition Note</span>
                   </>
                 )}
               </button>
@@ -504,7 +502,7 @@ export const RenterHandoverSection = ({ booking, onBookingUpdated, compact = fal
             <div className="flex items-center justify-between mb-4">
               <span className="text-sm font-extrabold text-slate-900 flex items-center gap-1.5">
                 <QrCode className="w-4 h-4 text-teal-600" />
-                Mã QR Bàn giao #{booking.bookingCode}
+                Handover QR #{booking.bookingCode}
               </span>
               <button
                 type="button"
@@ -530,7 +528,7 @@ export const RenterHandoverSection = ({ booking, onBookingUpdated, compact = fal
               {qrToken}
             </div>
             <p className="text-xs text-slate-500 mt-2">
-              Đưa mã QR này cho Chủ thiết bị quét để xác nhận bàn giao máy.
+              Show this QR code to the device owner to confirm handover.
             </p>
           </div>
         </div>
@@ -549,11 +547,11 @@ export const RenterHandoverSection = ({ booking, onBookingUpdated, compact = fal
               className="self-end mb-2 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white text-xs font-semibold flex items-center gap-1"
             >
               <X className="w-4 h-4" />
-              <span>Đóng</span>
+              <span>Close</span>
             </button>
             <img
               src={previewPhotoUrl}
-              alt="Xem ảnh nhận máy"
+              alt="Before rental preview"
               className="max-h-[80vh] w-auto rounded-2xl shadow-2xl border border-white/20 object-contain"
               onClick={(e) => e.stopPropagation()}
             />
@@ -582,18 +580,18 @@ export const RenterHandoverModal = ({ isOpen, booking, onClose, onBookingUpdated
         <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-xs px-6 py-4 border-b border-slate-100 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <span className="text-sm font-black text-slate-900">
-              Đơn thuê #{booking.bookingCode}
+              Booking #{booking.bookingCode}
             </span>
             <span className="text-xs text-slate-400">•</span>
             <span className="text-xs font-semibold text-teal-700">
-              {booking.device?.title || booking.device?.name || 'Thiết bị công nghệ'}
+              {booking.device?.title || booking.device?.name || 'Tech Device'}
             </span>
           </div>
           <button
             type="button"
             onClick={onClose}
             className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition"
-            aria-label="Đóng"
+            aria-label="Close"
           >
             <X className="w-4 h-4" />
           </button>

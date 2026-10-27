@@ -8,6 +8,7 @@ import { PublicLayout } from '../layouts/PublicLayout.jsx';
 import { HomePage } from '../pages/HomePage.jsx';
 import { AiDeviceComparePage } from '../pages/AiDeviceComparePage.jsx';
 import { CatalogPage } from '../pages/CatalogPage.jsx';
+import { WishlistPage } from '../pages/WishlistPage.jsx';
 import { DeviceDetailPage } from '../pages/DeviceDetailPage.jsx';
 // eslint-disable-next-line no-unused-vars
 import { BookingCheckoutPage } from '../pages/booking/BookingCheckoutPage.jsx';
@@ -214,6 +215,8 @@ export const AppRoutes = () => {
         <Route path={ROUTES.HOME}               element={<HomePage />} />
         <Route path={ROUTES.COMPARE_DEVICES}    element={<AiDeviceComparePage />} />
         <Route path={ROUTES.EXPLORE}            element={<CatalogPage />} />
+        <Route path={ROUTES.WISHLIST}           element={<WishlistPage />} />
+        <Route path="/favorites"                element={<Navigate to={ROUTES.WISHLIST} replace />} />
         <Route path={ROUTES.DEVICE_DETAIL}      element={<DeviceDetailPage />} />
         <Route path={ROUTES.DEVICE_DETAIL_LEGACY} element={<DeviceDetailPage />} />
         <Route path={ROUTES.BOOKING_CHECKOUT}   element={<BookingCheckoutPage />} />

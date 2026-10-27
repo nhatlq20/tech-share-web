@@ -1,6 +1,12 @@
 import express from 'express';
 import { getProfile, getCurrentUser, updateAvatar, updateProfile } from '../controllers/authController.js';
-import { protect } from '../middlewares/authMiddleware.js';
+import {
+  getWishlist,
+  toggleWishlistDevice,
+  removeWishlistDevice,
+  clearWishlist,
+} from '../controllers/wishlistController.js';
+import { protect, optionalProtect } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
@@ -19,7 +25,19 @@ router.put('/profile', protect, updateProfile);
 router.post('/avatar', protect, updateAvatar);
 router.patch('/avatar', protect, updateAvatar);
 
-// Lấy thông tin profile người dùng theo userId từ collection users
+// Danh sách yêu thích (Wishlist / Favorites) - đọc & đồng bộ trường `wishlist` trong collection `users`
+router.get('/wishlist', optionalProtect, getWishlist);
+router.get('/favorites', optionalProtect, getWishlist);
+router.post('/wishlist/:deviceId', protect, toggleWishlistDevice);
+router.post('/favorites/:deviceId', protect, toggleWishlistDevice);
+router.patch('/wishlist/:deviceId', protect, toggleWishlistDevice);
+router.patch('/favorites/:deviceId', protect, toggleWishlistDevice);
+router.delete('/wishlist/:deviceId', protect, removeWishlistDevice);
+router.delete('/favorites/:deviceId', protect, removeWishlistDevice);
+router.delete('/wishlist', protect, clearWishlist);
+router.delete('/favorites', protect, clearWishlist);
+
+// Lấy thông tin profile người dùng theo userId từ collection users (phải đặt cuối cùng)
 router.get('/:userId', getProfile);
 
 export default router;

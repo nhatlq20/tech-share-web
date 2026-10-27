@@ -12,6 +12,7 @@ import {
   AlertCircle,
   Cpu,
   MessageSquare,
+  Heart,
 } from 'lucide-react';
 import { ROUTES } from '../routes/routes.js';
 import { API_CONFIG } from '../constants/config.js';
@@ -19,6 +20,11 @@ import { STRINGS } from '../constants/strings.js';
 import { api } from '../services/api.js';
 import { formatPrice } from '../utils/formatters.js';
 import { formatCategoryLabel, formatConditionLabel } from '../components/device/DeviceCard.jsx';
+import {
+  isDeviceInWishlist,
+  toggleWishlist,
+  WISHLIST_UPDATED_EVENT,
+} from '../services/wishlistService.js';
 import './DeviceDetailPage.css';
 import { DeviceReviews } from '../components/device/DeviceReviews';
 
@@ -41,6 +47,16 @@ export const DeviceDetailPage = () => {
   const [error, setError] = useState(null);
   const [activeImage, setActiveImage] = useState(0);
   const [ratingSummary, setRatingSummary] = useState(null);
+  const [isFavorite, setIsFavorite] = useState(() => isDeviceInWishlist(currentDeviceId));
+
+  useEffect(() => {
+    setIsFavorite(isDeviceInWishlist(currentDeviceId));
+    const handleWishlistEvent = () => {
+      setIsFavorite(isDeviceInWishlist(currentDeviceId));
+    };
+    window.addEventListener(WISHLIST_UPDATED_EVENT, handleWishlistEvent);
+    return () => window.removeEventListener(WISHLIST_UPDATED_EVENT, handleWishlistEvent);
+  }, [currentDeviceId]);
 
   useEffect(() => {
     let isMounted = true;
@@ -70,6 +86,13 @@ export const DeviceDetailPage = () => {
       isMounted = false;
     };
   }, [currentDeviceId]);
+
+  const handleToggleFavorite = async () => {
+    if (!currentDeviceId) return;
+    setIsFavorite((prev) => !prev);
+    const res = await toggleWishlist(currentDeviceId);
+    setIsFavorite(Boolean(res.isFavorite));
+  };
 
   if (loading) {
     return (
@@ -115,14 +138,28 @@ export const DeviceDetailPage = () => {
     <div className="min-h-screen bg-slate-50/50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto">
         {/* Back Link */}
-        <div className="mb-6">
+        <div className="mb-6 flex items-center justify-between">
           <Link
-            to={openedFromMap ? ROUTES.NEARBY : ROUTES.OWNER_DEVICES}
+            to={openedFromMap ? ROUTES.NEARBY : ROUTES.EXPLORE}
             className="inline-flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-brand-600 transition"
           >
             <ChevronLeft className="w-4 h-4" />
             {openedFromMap ? 'Back to Map' : 'Back to Catalog'}
           </Link>
+
+          <button
+            type="button"
+            onClick={handleToggleFavorite}
+            aria-pressed={isFavorite}
+            className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold border transition shadow-2xs ${
+              isFavorite
+                ? 'bg-rose-50 border-rose-200 text-rose-600 hover:bg-rose-100'
+                : 'bg-white border-slate-200 text-slate-700 hover:border-rose-300 hover:text-rose-600'
+            }`}
+          >
+            <Heart className="w-4 h-4" fill={isFavorite ? 'currentColor' : 'none'} />
+            <span>{isFavorite ? 'Saved in Wishlist' : 'Add to Wishlist'}</span>
+          </button>
         </div>
 
         {/* Main Grid */}
@@ -147,6 +184,20 @@ export const DeviceDetailPage = () => {
                     {conditionLabel}
                   </span>
                 )}
+
+                <button
+                  type="button"
+                  onClick={handleToggleFavorite}
+                  aria-pressed={isFavorite}
+                  title={isFavorite ? 'Remove from Wishlist' : 'Add to Wishlist'}
+                  className={`absolute top-3 right-3 w-10 h-10 rounded-full flex items-center justify-center shadow-md backdrop-blur-sm transition ${
+                    isFavorite
+                      ? 'bg-rose-500 text-white hover:bg-rose-600'
+                      : 'bg-white/90 text-slate-700 hover:text-rose-500'
+                  }`}
+                >
+                  <Heart className="w-5 h-5" fill={isFavorite ? 'currentColor' : 'none'} />
+                </button>
               </div>
 
               {images.length > 1 && (

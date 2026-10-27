@@ -1,17 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Star, ImageOff, MapPin, Heart } from 'lucide-react';
 import { ROUTES } from '../../routes/routes.js';
 import { formatPrice } from '../../utils/formatters.js';
+import {
+  isDeviceInWishlist,
+  toggleWishlist,
+  WISHLIST_UPDATED_EVENT,
+} from '../../services/wishlistService.js';
 import './DeviceCard.css';
-
-const FAVORITES_KEY = 'techshare:favorite-devices';
-const readFavorites = () => {
-  try {
-    const value = JSON.parse(localStorage.getItem(FAVORITES_KEY) || '[]');
-    return Array.isArray(value) ? value.filter(id => typeof id === 'string') : [];
-  } catch { return []; }
-};
 
 const CATEGORY_LABEL_MAP = {
   smartphone: 'Smartphone',
@@ -57,16 +54,37 @@ export const formatConditionLabel = (condition) => {
  *
  * @param {Object} props
  * @param {import('../../types/device.js').Device} props.device
+ * @param {Function} [props.onFavoriteChange] Optional callback when favorite state is toggled
  */
-export const DeviceCard = ({ device }) => {
+export const DeviceCard = ({ device, onFavoriteChange }) => {
+  const deviceId = String(device?._id || device?.id || '');
   const [imgError, setImgError] = useState(false);
-  const [isFavorite, setIsFavorite] = useState(() => readFavorites().includes(String(device?._id || device?.id || '')));
+  const [isFavorite, setIsFavorite] = useState(() => isDeviceInWishlist(deviceId));
+
+  useEffect(() => {
+    setIsFavorite(isDeviceInWishlist(deviceId));
+
+    const handleWishlistEvent = (e) => {
+      const ids = e?.detail?.wishlistIds;
+      if (Array.isArray(ids)) {
+        setIsFavorite(ids.includes(deviceId));
+      } else {
+        setIsFavorite(isDeviceInWishlist(deviceId));
+      }
+    };
+
+    window.addEventListener(WISHLIST_UPDATED_EVENT, handleWishlistEvent);
+    window.addEventListener('storage', handleWishlistEvent);
+    return () => {
+      window.removeEventListener(WISHLIST_UPDATED_EVENT, handleWishlistEvent);
+      window.removeEventListener('storage', handleWishlistEvent);
+    };
+  }, [deviceId]);
 
   if (!device || typeof device !== 'object') {
     return null;
   }
 
-  const deviceId = device._id || device.id || '';
   const title = (device.title || device.name || 'Untitled Device').trim();
   const brand = (device.brand || '').trim();
   const categoryLabel = formatCategoryLabel(device.category);
@@ -90,17 +108,29 @@ export const DeviceCard = ({ device }) => {
   // Route URL
   const detailUrl = deviceId ? ROUTES.DEVICE_DETAIL_PATH(deviceId) : ROUTES.EXPLORE;
 
+  const handleToggleFavorite = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!deviceId) return;
+    const nextState = !isFavorite;
+    setIsFavorite(nextState);
+    const res = await toggleWishlist(deviceId);
+    if (typeof onFavoriteChange === 'function') {
+      onFavoriteChange(deviceId, res.isFavorite, res);
+    }
+  };
+
   return (
     <article className="device-card-item">
       {deviceId && (
-        <button type="button" className="device-card-favorite" aria-pressed={isFavorite}
+        <button
+          type="button"
+          className="device-card-favorite"
+          aria-pressed={isFavorite}
           aria-label={`${isFavorite ? 'Remove from' : 'Add to'} favorites: ${title}`}
-          onClick={() => {
-            const ids = new Set(readFavorites());
-            if (isFavorite) ids.delete(String(deviceId)); else ids.add(String(deviceId));
-            try { localStorage.setItem(FAVORITES_KEY, JSON.stringify([...ids])); } catch { /* Keep this session usable. */ }
-            setIsFavorite(!isFavorite);
-          }}>
+          title={isFavorite ? 'Remove from Wishlist' : 'Add to Wishlist'}
+          onClick={handleToggleFavorite}
+        >
           <Heart size={20} fill={isFavorite ? 'currentColor' : 'none'} strokeWidth={2} />
         </button>
       )}

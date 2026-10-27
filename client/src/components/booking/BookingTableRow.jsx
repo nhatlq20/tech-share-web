@@ -16,7 +16,6 @@ const toRowModel = (booking) => {
   const device = booking.device || booking.deviceId || {};
   const bookingKey = booking.bookingCode || booking._id;
 
-  // Tính chính xác số ngày thuê giữa startDate và endDate
   let totalDays = booking.totalDays;
   if (booking.startDate && booking.endDate) {
     const s = new Date(booking.startDate).getTime();
@@ -111,7 +110,7 @@ export const BookingTableRow = ({ booking, onOpenHandover }) => {
           <div className="mt-1.5">
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
               <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-              Đã tải {row.beforePhotosCount} ảnh nhận máy
+              {row.beforePhotosCount} {row.beforePhotosCount === 1 ? 'photo' : 'photos'} uploaded
             </span>
           </div>
         )}
@@ -129,11 +128,11 @@ export const BookingTableRow = ({ booking, onOpenHandover }) => {
               id={`booking-handover-btn-${row.bookingKey}`}
               onClick={() => onOpenHandover(booking)}
               className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold text-white bg-teal-600 hover:bg-teal-700 shadow-2xs transition-colors whitespace-nowrap flex-shrink-0"
-              title="Xem Mã QR bàn giao & Tải ảnh nhận máy lên Cloudinary"
+              title="View Handover QR Code & Upload Before-Rental Photos"
             >
               <QrCode className="w-3.5 h-3.5" aria-hidden="true" />
               <Camera className="w-3.5 h-3.5" aria-hidden="true" />
-              <span>Mã QR &amp; Nhận máy</span>
+              <span>QR &amp; Handover</span>
             </button>
           )}
 
@@ -197,8 +196,8 @@ export const BookingMobileCard = ({ booking, onOpenHandover }) => {
         <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
           <span className="text-[11px] font-medium text-slate-500">
             {row.beforePhotosCount > 0
-              ? `Đã tải ${row.beforePhotosCount} ảnh nhận máy`
-              : 'Đơn đã được duyệt – sẵn sàng nhận bàn giao'}
+              ? `${row.beforePhotosCount} photo(s) uploaded`
+              : 'Approved – Ready for device handover'}
           </span>
           <button
             type="button"
@@ -207,7 +206,7 @@ export const BookingMobileCard = ({ booking, onOpenHandover }) => {
           >
             <QrCode className="w-3.5 h-3.5" />
             <Camera className="w-3.5 h-3.5" />
-            <span>Mã QR &amp; Nhận máy</span>
+            <span>QR &amp; Handover</span>
           </button>
         </div>
       )}
