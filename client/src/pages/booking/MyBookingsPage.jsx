@@ -11,6 +11,7 @@ import {
 import { STRINGS } from '../../constants/strings.js';
 import { MAGIC_NUMBERS, MY_BOOKING_TABS, BOOKING_STATUS } from '../../constants/config.js';
 import { ROUTES } from '../../routes/routes.js';
+import { useAuth } from '../../context/AuthContext.jsx';
 import { fetchMyBookings } from '../../services/bookingService.js';
 import { BookingTableRow, BookingMobileCard } from '../../components/booking/BookingTableRow.jsx';
 import { getBookingStatusStyle } from '../../components/booking/BookingStatusBadge.jsx';
@@ -43,9 +44,12 @@ const TableSkeleton = () => (
 );
 
 export const MyBookingsPage = () => {
+  const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
-  const activeTab = parseTab(searchParams.get('status'));
+  const rawStatusParam = searchParams.get('status');
+  const activeTab = parseTab(rawStatusParam);
   const page = parsePage(searchParams.get('page'));
+  const currentUserId = user?._id || user?.id || user?.userId;
 
   const [bookings, setBookings] = useState([]);
   const [counts, setCounts] = useState({});
@@ -57,10 +61,11 @@ export const MyBookingsPage = () => {
 
   // Per-tab/page cache so switching back to a visited tab renders instantly while revalidating
   const cacheRef = useRef(new Map());
+  const autoSwitchedRef = useRef(false);
 
   useEffect(() => {
     const controller = new AbortController();
-    const cacheKey = `${activeTab}:${page}`;
+    const cacheKey = `${currentUserId || 'anon'}:${activeTab}:${page}`;
     const cached = cacheRef.current.get(cacheKey);
 
     if (cached) {
@@ -73,15 +78,36 @@ export const MyBookingsPage = () => {
     }
     setError(null);
 
-    fetchMyBookings({ status: activeTab, page, signal: controller.signal })
+    fetchMyBookings({
+      status: activeTab,
+      page,
+      renterId: currentUserId,
+      signal: controller.signal,
+    })
       .then((result) => {
+        if (controller.signal.aborted) return;
         cacheRef.current.set(cacheKey, { data: result.data, pagination: result.pagination });
         setBookings(result.data);
         setPagination(result.pagination);
         setCounts(result.counts);
+
+        // Nếu vào trang lần đầu không chỉ định ?status= và tab mặc định (pending) trống
+        // nhưng các tab khác có đơn, tự động chuyển sang tab đầu tiên có dữ liệu
+        if (
+          !rawStatusParam &&
+          !autoSwitchedRef.current &&
+          result.data.length === 0 &&
+          result.counts
+        ) {
+          const firstNonEmptyTab = MY_BOOKING_TABS.find((tab) => (result.counts[tab] || 0) > 0);
+          if (firstNonEmptyTab && firstNonEmptyTab !== activeTab) {
+            autoSwitchedRef.current = true;
+            setSearchParams({ status: firstNonEmptyTab }, { replace: true });
+          }
+        }
       })
       .catch((err) => {
-        if (err?.name === 'AbortError') return;
+        if (err?.name === 'AbortError' || controller.signal.aborted) return;
         if (!cached) setBookings([]);
         setError(err?.message || T.errorTitle);
       })
@@ -92,10 +118,11 @@ export const MyBookingsPage = () => {
       });
 
     return () => controller.abort();
-  }, [activeTab, page, reloadKey]);
+  }, [activeTab, page, reloadKey, currentUserId, rawStatusParam, setSearchParams]);
 
   const handleTabChange = useCallback(
     (tab) => {
+      autoSwitchedRef.current = true;
       if (tab === activeTab) return;
       setSearchParams({ status: tab });
     },
