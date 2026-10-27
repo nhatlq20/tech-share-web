@@ -17,7 +17,7 @@ import {
   handoverBooking,
   completeBooking,
 } from '../controllers/ownerController.js';
-import { protect } from '../middlewares/authMiddleware.js';
+import { protect, optionalProtect } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
@@ -39,7 +39,7 @@ router.patch('/:id/extension/approve', protect, approveBookingExtension);
 router.patch('/:id/extension/reject', protect, rejectBookingExtension);
 
 // Standard REST routes
-router.post('/', createBooking);
+router.post('/', optionalProtect, createBooking);
 router.get('/:id', protect, getBookingById);
 router.patch('/:id/cancel', protect, cancelBooking);
 

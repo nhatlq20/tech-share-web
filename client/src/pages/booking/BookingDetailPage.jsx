@@ -16,7 +16,6 @@ import {
   Package,
   ExternalLink,
   ChevronRight,
-  FileText,
   Truck,
   MessageSquare,
 } from 'lucide-react';
@@ -25,7 +24,7 @@ import { STRINGS } from '../../constants/strings.js';
 import { ROUTES } from '../../routes/routes.js';
 import { fetchBookingById, cancelBooking } from '../../services/bookingService.js';
 import { BookingStatusBadge } from '../../components/booking/BookingStatusBadge.jsx';
-import { OrderTimelineStepper, OrderActivityHistory } from '../../components/booking/OrderTimelineStepper.jsx';
+import { OrderTimelineStepper } from '../../components/booking/OrderTimelineStepper.jsx';
 import { CancelBookingModal } from '../../components/booking/CancelBookingModal.jsx';
 import { CountdownBadge } from '../../components/booking/CountdownBadge.jsx';
 import { ExtensionModal } from '../../components/booking/ExtensionModal.jsx';
@@ -515,14 +514,6 @@ export const BookingDetailPage = () => {
               )}
             </div>
 
-            {/* Activity History Log */}
-            <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
-              <h2 className="text-base font-bold text-slate-800 pb-4 border-b border-slate-100 mb-4 flex items-center gap-2">
-                <FileText className="w-5 h-5 text-brand-500" />
-                {T.sections.history}
-              </h2>
-              <OrderActivityHistory timeline={booking.timeline} />
-            </div>
           </div>
 
           {/* Right Column (5 cols): Rental Period & Pricing Breakdown */}

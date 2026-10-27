@@ -62,10 +62,26 @@ const handleResponse = async (res) => {
 
 const getAuthHeaders = () => {
   if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('techshare_token');
-    if (token) {
-      return { Authorization: `Bearer ${token}` };
+    const headers = {};
+    const token =
+      localStorage.getItem('techshare_token') ||
+      localStorage.getItem('techshare_auth_token');
+    if (token && token !== 'null' && token !== 'undefined') {
+      headers.Authorization = `Bearer ${token}`;
     }
+    try {
+      const rawUser = localStorage.getItem('techshare_user');
+      if (rawUser) {
+        const parsedUser = JSON.parse(rawUser);
+        const uid = parsedUser?._id || parsedUser?.id || parsedUser?.userId;
+        if (uid) {
+          headers['X-User-Id'] = String(uid);
+        }
+      }
+    } catch {
+      // Ignore invalid JSON in localStorage
+    }
+    return headers;
   }
   return {};
 };
@@ -74,22 +90,43 @@ const getAuthHeaders = () => {
  * Fetch kèm cơ chế timeout (15s) và tự động thử lại 1 lần nếu gặp lỗi mạng (Failed to fetch)
  */
 const fetchWithRetry = async (url, fetchOptions = {}, retries = 1) => {
+  const callerSignal = fetchOptions.signal;
   for (let attempt = 0; attempt <= retries; attempt++) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    const onCallerAbort = () => controller.abort();
+
+    if (callerSignal) {
+      if (callerSignal.aborted) {
+        clearTimeout(timeoutId);
+        const abortErr = new Error('The operation was aborted.');
+        abortErr.name = 'AbortError';
+        throw abortErr;
+      }
+      callerSignal.addEventListener('abort', onCallerAbort, { once: true });
+    }
+
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000);
       const res = await fetch(url, {
         ...fetchOptions,
-        signal: fetchOptions.signal || controller.signal,
+        signal: controller.signal,
       });
-      clearTimeout(timeoutId);
       return res;
     } catch (err) {
+      // Không thử lại nếu request bị huỷ chủ động bởi caller
+      if (callerSignal?.aborted || err?.name === 'AbortError') {
+        throw err;
+      }
       if (attempt === retries) {
         throw err;
       }
       // Chờ 350ms rồi thử lại
       await new Promise((resolve) => setTimeout(resolve, 350));
+    } finally {
+      clearTimeout(timeoutId);
+      if (callerSignal) {
+        callerSignal.removeEventListener('abort', onCallerAbort);
+      }
     }
   }
 };

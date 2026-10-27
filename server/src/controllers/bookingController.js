@@ -13,7 +13,7 @@ import { getIO } from '../socket.js';
 const MY_BOOKING_TAB_STATUSES = {
   pending: ['pending'],
   approved: ['approved'],
-  active: ['active'],
+  active: ['active', 'disputed'],
   completed: ['completed'],
   cancelled: ['cancelled', 'rejected'],
 };
@@ -33,10 +33,91 @@ const BOOKING_PARTY_FIELDS = 'name email phone avatar rating totalReviews isVeri
  * Resolve the authenticated user's ObjectId from the JWT payload set by `protect`.
  */
 const getAuthUserObjectId = (req) => {
-  const rawId = req.user?.userId || req.user?._id || req.user?.id;
+  const rawId =
+    req.user?.userId ||
+    req.user?._id ||
+    req.user?.id ||
+    req.headers?.['x-user-id'] ||
+    req.query?.renterId ||
+    req.query?.userId;
   return rawId && mongoose.isValidObjectId(rawId)
     ? new mongoose.Types.ObjectId(String(rawId))
     : null;
+};
+
+/**
+ * Resolve all candidate ObjectIds (both User._id and Account._id) for the current user
+ * so bookings are matched whether stored under User._id or Account._id, ObjectId or String.
+ */
+const resolveAuthUserIds = async (req) => {
+  const rawCandidates = [
+    req.user?.userId,
+    req.user?._id,
+    req.user?.id,
+    req.user?.accountId,
+    req.headers?.['x-user-id'],
+    req.query?.renterId,
+    req.query?.userId,
+  ].filter(Boolean);
+
+  const objectIdMap = new Map();
+  const addId = (val) => {
+    if (val && mongoose.isValidObjectId(val)) {
+      const str = String(val._id || val);
+      objectIdMap.set(str, new mongoose.Types.ObjectId(str));
+    }
+  };
+
+  rawCandidates.forEach(addId);
+
+  try {
+    const initialObjIds = Array.from(objectIdMap.values());
+    if (initialObjIds.length > 0) {
+      const matchedUsers = await User.find({
+        $or: [
+          { _id: { $in: initialObjIds } },
+          { accountId: { $in: initialObjIds } },
+        ],
+      })
+        .select('_id accountId')
+        .lean();
+
+      matchedUsers.forEach((u) => {
+        addId(u._id);
+        addId(u.accountId);
+      });
+    } else if (req.user?.email || req.user?.username) {
+      const orConds = [];
+      if (req.user.username) orConds.push({ username: req.user.username });
+      if (req.user.email) orConds.push({ email: req.user.email });
+      const foundUser = await User.findOne({ $or: orConds }).select('_id accountId').lean();
+      if (foundUser) {
+        addId(foundUser._id);
+        addId(foundUser.accountId);
+      }
+    }
+  } catch {
+    // Continue with initial IDs if lookup fails
+  }
+
+  return Array.from(objectIdMap.values());
+};
+
+const buildRenterOwnershipFilter = (objIds) => {
+  const strIds = objIds.map((id) => String(id));
+  const allValues = [...objIds, ...strIds];
+  return {
+    $or: [
+      { renterId: { $in: allValues } },
+      { renter: { $in: allValues } },
+    ],
+  };
+};
+
+const matchesAnyId = (target, objIds) => {
+  if (!target || !Array.isArray(objIds)) return false;
+  const targetStr = String(target._id || target);
+  return objIds.some((id) => String(id) === targetStr);
 };
 
 /**
@@ -468,7 +549,7 @@ export const createBooking = async (req, res, next) => {
     // Resolve effective renterId & ownerId
     const effectiveRenterId = renterId && mongoose.isValidObjectId(renterId)
       ? new mongoose.Types.ObjectId(renterId)
-      : (req.user?._id || null);
+      : getAuthUserObjectId(req);
 
     const rawOwnerId = device.ownerId || device.owner || device._doc?.ownerId || device._doc?.owner;
     const effectiveOwnerId = rawOwnerId && mongoose.isValidObjectId(rawOwnerId)
@@ -636,8 +717,8 @@ export const createBooking = async (req, res, next) => {
  */
 export const getMyBookings = async (req, res, next) => {
   try {
-    const renterObjId = getAuthUserObjectId(req);
-    if (!renterObjId) {
+    const renterObjIds = await resolveAuthUserIds(req);
+    if (renterObjIds.length === 0) {
       return res.status(401).json({
         success: false,
         message: 'Unable to identify the current user. Please log in again.',
@@ -645,7 +726,7 @@ export const getMyBookings = async (req, res, next) => {
     }
 
     const { status, limit = MY_BOOKINGS_DEFAULT_LIMIT, page = 1 } = req.query;
-    const ownershipFilter = { $or: [{ renterId: renterObjId }, { renter: renterObjId }] };
+    const ownershipFilter = buildRenterOwnershipFilter(renterObjIds);
     const filter = { ...ownershipFilter };
 
     if (status && status !== 'all') {
@@ -718,7 +799,7 @@ export const getMyBookings = async (req, res, next) => {
 export const getBookingById = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const userObjId = getAuthUserObjectId(req);
+    const userObjIds = await resolveAuthUserIds(req);
 
     const booking = await Booking.findOne(buildBookingLookup(id))
       .select('-digitalSignature')
@@ -737,8 +818,8 @@ export const getBookingById = async (req, res, next) => {
       });
     }
 
-    const isRenter = isSameId(booking.renterId, userObjId) || isSameId(booking.renter, userObjId);
-    const isOwner = isSameId(booking.ownerId, userObjId) || isSameId(booking.owner, userObjId);
+    const isRenter = matchesAnyId(booking.renterId, userObjIds) || matchesAnyId(booking.renter, userObjIds);
+    const isOwner = matchesAnyId(booking.ownerId, userObjIds) || matchesAnyId(booking.owner, userObjIds);
     const isAdmin = req.user?.role === 'admin';
 
     if (!isRenter && !isOwner && !isAdmin) {
@@ -773,9 +854,9 @@ export const getBookingById = async (req, res, next) => {
 export const cancelBooking = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const userObjId = getAuthUserObjectId(req);
+    const userObjIds = await resolveAuthUserIds(req);
 
-    if (!userObjId) {
+    if (userObjIds.length === 0) {
       return res.status(401).json({
         success: false,
         message: 'Unable to identify the current user. Please log in again.',
@@ -801,7 +882,7 @@ export const cancelBooking = async (req, res, next) => {
       });
     }
 
-    const isRenter = isSameId(existing.renterId, userObjId) || isSameId(existing.renter, userObjId);
+    const isRenter = matchesAnyId(existing.renterId, userObjIds) || matchesAnyId(existing.renter, userObjIds);
     if (!isRenter) {
       return res.status(403).json({
         success: false,
