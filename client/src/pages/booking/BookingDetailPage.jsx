@@ -18,6 +18,7 @@ import {
   ChevronRight,
   Truck,
   MessageSquare,
+  Star,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { STRINGS } from '../../constants/strings.js';
@@ -29,6 +30,7 @@ import { CancelBookingModal } from '../../components/booking/CancelBookingModal.
 import { CountdownBadge } from '../../components/booking/CountdownBadge.jsx';
 import { ExtensionModal } from '../../components/booking/ExtensionModal.jsx';
 import { RenterHandoverSection } from '../../components/booking/RenterHandoverSection.jsx';
+import { BookingReviewModal, BookingReviewSection } from '../../components/booking/BookingReviewModal.jsx';
 import { formatPrice, formatDateTime, formatDate } from '../../utils/formatters.js';
 
 const T = STRINGS.booking.detail;
@@ -51,6 +53,9 @@ export const BookingDetailPage = () => {
   // Extension modal state
   const [isExtensionModalOpen, setIsExtensionModalOpen] = useState(false);
   const [extensionSuccessMsg, setExtensionSuccessMsg] = useState(null);
+
+  // Review modal state for completed bookings
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
 
   const loadBooking = useCallback(async (signal) => {
     if (!bookingId) return;
@@ -235,6 +240,27 @@ export const BookingDetailPage = () => {
                 <span>{STRINGS.booking.extension.openModalBtn}</span>
               </button>
             )}
+
+            {/* Quick Review action in Header when completed */}
+            {booking.status === 'completed' && (
+              <button
+                type="button"
+                id="header-review-booking-btn"
+                onClick={() => setIsReviewModalOpen(true)}
+                className={`px-4 py-2 rounded-full font-bold text-xs transition shadow-sm flex items-center justify-center gap-2 self-start sm:self-auto ${
+                  booking.review
+                    ? 'bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100'
+                    : 'bg-amber-500 hover:bg-amber-600 text-white'
+                }`}
+              >
+                <Star className={`w-4 h-4 ${booking.review ? 'fill-amber-400 text-amber-400' : 'fill-current'}`} />
+                <span>
+                  {booking.review
+                    ? `Reviewed (${booking.review.rating}.0) · Edit`
+                    : 'Write a Review'}
+                </span>
+              </button>
+            )}
           </div>
 
           {/* Extension success notification banner */}
@@ -356,6 +382,12 @@ export const BookingDetailPage = () => {
           onBookingUpdated={(updatedBooking) => {
             if (updatedBooking) setBooking(updatedBooking);
           }}
+        />
+
+        {/* Rental Review & Rating Section when Completed */}
+        <BookingReviewSection
+          booking={booking}
+          onOpenReviewModal={() => setIsReviewModalOpen(true)}
         />
 
         {/* 2-Column Details Layout */}
@@ -691,6 +723,16 @@ export const BookingDetailPage = () => {
         booking={booking}
         onClose={() => setIsExtensionModalOpen(false)}
         onSuccess={handleExtensionSuccess}
+      />
+
+      {/* Rental Review Modal for Completed Bookings */}
+      <BookingReviewModal
+        isOpen={isReviewModalOpen}
+        booking={booking}
+        onClose={() => setIsReviewModalOpen(false)}
+        onReviewSaved={(updatedBooking) => {
+          if (updatedBooking) setBooking(updatedBooking);
+        }}
       />
     </div>
   );

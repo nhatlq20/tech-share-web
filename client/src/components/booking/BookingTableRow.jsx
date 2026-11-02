@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { CalendarDays, ChevronRight, Package, QrCode, Camera, CheckCircle2 } from 'lucide-react';
+import { CalendarDays, ChevronRight, Package, QrCode, Camera, CheckCircle2, Star } from 'lucide-react';
 import { STRINGS } from '../../constants/strings.js';
 import { ROUTES } from '../../routes/routes.js';
 import { formatPrice, formatDate } from '../../utils/formatters.js';
@@ -47,6 +47,7 @@ const toRowModel = (booking) => {
     totalAmount: formatPrice(booking.totalAmount),
     status: booking.status,
     beforePhotosCount: Array.isArray(beforePhotos) ? beforePhotos.length : 0,
+    review: booking.review || null,
   };
 };
 
@@ -63,7 +64,7 @@ const DeviceThumb = ({ image, title }) => (
 /**
  * Desktop table row for the My Bookings hub.
  */
-export const BookingTableRow = ({ booking, onOpenHandover }) => {
+export const BookingTableRow = ({ booking, onOpenHandover, onOpenReview }) => {
   const row = toRowModel(booking);
 
   return (
@@ -119,6 +120,14 @@ export const BookingTableRow = ({ booking, onOpenHandover }) => {
             <CountdownBadge startDate={row.rawStartDate} targetDate={row.rawEndDate} size="sm" />
           </div>
         )}
+        {row.status === 'completed' && row.review && (
+          <div className="mt-1.5">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+              <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+              {row.review.rating}.0 Reviewed
+            </span>
+          </div>
+        )}
       </td>
       <td className="px-5 py-4 text-right whitespace-nowrap">
         <div className="inline-flex items-center justify-end gap-2">
@@ -133,6 +142,23 @@ export const BookingTableRow = ({ booking, onOpenHandover }) => {
               <QrCode className="w-3.5 h-3.5" aria-hidden="true" />
               <Camera className="w-3.5 h-3.5" aria-hidden="true" />
               <span>QR &amp; Handover</span>
+            </button>
+          )}
+
+          {row.status === 'completed' && typeof onOpenReview === 'function' && (
+            <button
+              type="button"
+              id={`booking-review-btn-${row.bookingKey}`}
+              onClick={() => onOpenReview(booking)}
+              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold shadow-2xs transition-colors whitespace-nowrap flex-shrink-0 ${
+                row.review
+                  ? 'bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100'
+                  : 'bg-amber-500 text-white hover:bg-amber-600'
+              }`}
+              title={row.review ? 'View or edit your review' : 'Rate & review this completed rental'}
+            >
+              <Star className={`w-3.5 h-3.5 ${row.review ? 'fill-amber-400 text-amber-400' : 'fill-current'}`} aria-hidden="true" />
+              <span>{row.review ? 'Edit Review' : 'Write Review'}</span>
             </button>
           )}
 
@@ -153,7 +179,7 @@ export const BookingTableRow = ({ booking, onOpenHandover }) => {
 /**
  * Mobile card variant (same data as the table row) for small screens.
  */
-export const BookingMobileCard = ({ booking, onOpenHandover }) => {
+export const BookingMobileCard = ({ booking, onOpenHandover, onOpenReview }) => {
   const row = toRowModel(booking);
 
   return (
@@ -207,6 +233,33 @@ export const BookingMobileCard = ({ booking, onOpenHandover }) => {
             <QrCode className="w-3.5 h-3.5" />
             <Camera className="w-3.5 h-3.5" />
             <span>QR &amp; Handover</span>
+          </button>
+        </div>
+      )}
+
+      {row.status === 'completed' && typeof onOpenReview === 'function' && (
+        <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+          <span className="text-[11px] font-medium text-slate-500 flex items-center gap-1">
+            {row.review ? (
+              <>
+                <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                <span className="font-bold text-amber-800">{row.review.rating}.0 Reviewed</span>
+              </>
+            ) : (
+              'Order completed – Rate your rental experience'
+            )}
+          </span>
+          <button
+            type="button"
+            onClick={() => onOpenReview(booking)}
+            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition shadow-2xs ${
+              row.review
+                ? 'bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100'
+                : 'bg-amber-500 text-white hover:bg-amber-600'
+            }`}
+          >
+            <Star className={`w-3.5 h-3.5 ${row.review ? 'fill-amber-400 text-amber-400' : 'fill-current'}`} />
+            <span>{row.review ? 'Edit Review' : 'Write Review'}</span>
           </button>
         </div>
       )}

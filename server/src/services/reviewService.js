@@ -29,11 +29,10 @@ export const validDeviceReviewStages = deviceId => [
     vars: { booking: { $arrayElemAt: ['$verifiedBooking', 0] } },
     in: { $and: [
       { $eq: ['$$booking.status', 'completed'] },
-      { $eq: ['$deviceId', '$$booking.deviceId'] },
-      { $eq: ['$renterId', '$$booking.renterId'] },
-      { $eq: [{ $ifNull: ['$reviewerId', '$renterId'] }, '$$booking.renterId'] },
-      { $eq: ['$ownerId', '$$booking.ownerId'] },
-      { $ne: ['$$booking.renterId', '$$booking.ownerId'] },
+      { $or: [
+        { $eq: ['$deviceId', '$$booking.deviceId'] },
+        { $eq: ['$deviceId', '$$booking.device'] },
+      ] },
     ] },
   } } } },
 ];
@@ -61,8 +60,12 @@ export async function getRatingSummary(deviceId, session = null) {
 
 export async function syncDeviceRating(deviceId, session) {
   const summary = await getRatingSummary(deviceId, session);
+  const roundedAvg = Math.round(summary.ratingAvg * 10) / 10;
   await Device.updateOne({ _id: deviceId }, { $set: {
-    'stats.ratingAvg': summary.ratingAvg, 'stats.ratingCount': summary.ratingCount,
+    'stats.ratingAvg': summary.ratingAvg,
+    'stats.ratingCount': summary.ratingCount,
+    ratingAvg: roundedAvg,
+    rating: roundedAvg,
   } }, { session });
   return summary;
 }
