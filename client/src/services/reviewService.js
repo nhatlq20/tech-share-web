@@ -1,5 +1,7 @@
 import api from './api';
 
+export const REVIEW_MAX_LENGTH = 2000;
+
 const reviewPath = deviceId => `/devices/${encodeURIComponent(deviceId)}/reviews`;
 
 export const reviewService = {

@@ -16,6 +16,7 @@ import { fetchMyBookings } from '../../services/bookingService.js';
 import { BookingTableRow, BookingMobileCard } from '../../components/booking/BookingTableRow.jsx';
 import { getBookingStatusStyle } from '../../components/booking/BookingStatusBadge.jsx';
 import { RenterHandoverModal } from '../../components/booking/RenterHandoverSection.jsx';
+import { BookingReviewModal } from '../../components/booking/BookingReviewModal.jsx';
 
 const T = STRINGS.booking.myBookings;
 const DEFAULT_TAB = BOOKING_STATUS.PENDING;
@@ -60,6 +61,7 @@ export const MyBookingsPage = () => {
   const [error, setError] = useState(null);
   const [reloadKey, setReloadKey] = useState(0);
   const [handoverModalBooking, setHandoverModalBooking] = useState(null);
+  const [reviewModalBooking, setReviewModalBooking] = useState(null);
 
   // Per-tab/page cache so switching back to a visited tab renders instantly while revalidating
   const cacheRef = useRef(new Map());
@@ -153,6 +155,9 @@ export const MyBookingsPage = () => {
       )
     );
     setHandoverModalBooking((prev) =>
+      prev && String(prev._id) === String(updatedBooking._id) ? { ...prev, ...updatedBooking } : prev
+    );
+    setReviewModalBooking((prev) =>
       prev && String(prev._id) === String(updatedBooking._id) ? { ...prev, ...updatedBooking } : prev
     );
   }, []);
@@ -300,6 +305,7 @@ export const MyBookingsPage = () => {
                         key={booking._id}
                         booking={booking}
                         onOpenHandover={(b) => setHandoverModalBooking(b)}
+                        onOpenReview={(b) => setReviewModalBooking(b)}
                       />
                     ))}
                   </tbody>
@@ -313,6 +319,7 @@ export const MyBookingsPage = () => {
                     key={booking._id}
                     booking={booking}
                     onOpenHandover={(b) => setHandoverModalBooking(b)}
+                    onOpenReview={(b) => setReviewModalBooking(b)}
                   />
                 ))}
               </div>
@@ -354,6 +361,14 @@ export const MyBookingsPage = () => {
         booking={handoverModalBooking}
         onClose={() => setHandoverModalBooking(null)}
         onBookingUpdated={handleBookingUpdated}
+      />
+
+      {/* Quick Modal for Rating & Reviewing Completed Bookings */}
+      <BookingReviewModal
+        isOpen={Boolean(reviewModalBooking)}
+        booking={reviewModalBooking}
+        onClose={() => setReviewModalBooking(null)}
+        onReviewSaved={handleBookingUpdated}
       />
     </div>
   );

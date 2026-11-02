@@ -3,6 +3,7 @@ import Device from '../models/Device.js';
 import Booking from '../models/Booking.js';
 import User from '../models/User.js';
 import Account from '../models/Account.js';
+import Review from '../models/Review.js';
 import { createAndSendNotification } from '../services/notificationService.js';
 import { getIO } from '../socket.js';
 import { uploadToCloudinary } from '../services/cloudinaryService.js';
@@ -282,6 +283,48 @@ const normalizeBookingAliases = (booking) => {
     cancelReason,
     rejectReason,
   };
+};
+
+/**
+ * Attach review documents from the `reviews` collection to normalized bookings
+ */
+const attachReviewsToBookings = async (bookingsList) => {
+  if (!Array.isArray(bookingsList) || bookingsList.length === 0) return [];
+  const bookingIds = bookingsList
+    .map((b) => b?._id)
+    .filter((id) => id && mongoose.isValidObjectId(id));
+
+  const reviewMap = new Map();
+  if (bookingIds.length > 0) {
+    try {
+      const reviews = await Review.find({
+        bookingId: { $in: bookingIds },
+        targetType: { $in: ['device', null] },
+      })
+        .sort({ createdAt: -1 })
+        .lean();
+
+      reviews.forEach((rev) => {
+        const key = String(rev.bookingId);
+        if (!reviewMap.has(key)) {
+          reviewMap.set(key, rev);
+        }
+      });
+    } catch {
+      // Ignore review lookup errors and fallback gracefully
+    }
+  }
+
+  return bookingsList.map((b) => {
+    const review = reviewMap.get(String(b._id)) || null;
+    const isReviewed = Boolean(review) || Boolean(b.isReviewed);
+    return {
+      ...b,
+      review,
+      isReviewed,
+      canReview: b.status === 'completed' && !review,
+    };
+  });
 };
 
 /**
@@ -792,9 +835,11 @@ export const getMyBookings = async (req, res, next) => {
       ])
     );
 
+    const normalizedList = await attachReviewsToBookings(bookings.map(normalizeBookingAliases));
+
     return res.status(200).json({
       success: true,
-      count: bookings.length,
+      count: normalizedList.length,
       counts,
       pagination: {
         page: pageNum,
@@ -802,7 +847,7 @@ export const getMyBookings = async (req, res, next) => {
         total,
         totalPages: Math.ceil(total / limitNum) || 1,
       },
-      data: bookings.map(normalizeBookingAliases),
+      data: normalizedList,
     });
   } catch (error) {
     next(error);
@@ -852,11 +897,14 @@ export const getBookingById = async (req, res, next) => {
       delete booking.qrToken;
     }
 
+    const [normalizedWithReview] = await attachReviewsToBookings([normalizeBookingAliases(booking)]);
+
     return res.status(200).json({
       success: true,
       data: {
-        ...normalizeBookingAliases(booking),
+        ...normalizedWithReview,
         canCancel: isRenter && booking.status === CANCELLABLE_STATUS,
+        canReview: isRenter && normalizedWithReview.status === 'completed' && !normalizedWithReview.review,
       },
     });
   } catch (error) {
