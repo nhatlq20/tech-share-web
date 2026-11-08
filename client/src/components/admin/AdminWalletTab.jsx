@@ -26,23 +26,23 @@ import {
 import { formatPrice, formatDate } from '../../utils/formatters.js';
 
 const TYPE_CONFIG = {
-  topup: { label: 'Nạp tiền', color: 'text-emerald-700 bg-emerald-50 border-emerald-200' },
-  withdrawal: { label: 'Rút tiền', color: 'text-rose-700 bg-rose-50 border-rose-200' },
-  withdraw: { label: 'Rút tiền', color: 'text-rose-700 bg-rose-50 border-rose-200' },
-  deposit_hold: { label: 'Giữ cọc Escrow', color: 'text-amber-700 bg-amber-50 border-amber-200' },
-  deposit_lock: { label: 'Giữ cọc Escrow', color: 'text-amber-700 bg-amber-50 border-amber-200' },
-  deposit_release: { label: 'Hoàn cọc', color: 'text-blue-700 bg-blue-50 border-blue-200' },
-  deposit_refund: { label: 'Hoàn cọc', color: 'text-blue-700 bg-blue-50 border-blue-200' },
-  rental_income: { label: 'Tiền thuê thiết bị', color: 'text-teal-700 bg-teal-50 border-teal-200' },
-  rental_payout: { label: 'Chi trả tiền thuê', color: 'text-teal-700 bg-teal-50 border-teal-200' },
-  payment: { label: 'Thanh toán đơn', color: 'text-slate-700 bg-slate-100 border-slate-200' },
+  topup: { label: 'Top-up', color: 'text-emerald-700 bg-emerald-50 border-emerald-200' },
+  withdrawal: { label: 'Withdrawal', color: 'text-rose-700 bg-rose-50 border-rose-200' },
+  withdraw: { label: 'Withdrawal', color: 'text-rose-700 bg-rose-50 border-rose-200' },
+  deposit_hold: { label: 'Escrow Deposit Hold', color: 'text-amber-700 bg-amber-50 border-amber-200' },
+  deposit_lock: { label: 'Escrow Deposit Lock', color: 'text-amber-700 bg-amber-50 border-amber-200' },
+  deposit_release: { label: 'Deposit Refund', color: 'text-blue-700 bg-blue-50 border-blue-200' },
+  deposit_refund: { label: 'Deposit Refund', color: 'text-blue-700 bg-blue-50 border-blue-200' },
+  rental_income: { label: 'Rental Income', color: 'text-teal-700 bg-teal-50 border-teal-200' },
+  rental_payout: { label: 'Rental Payout', color: 'text-teal-700 bg-teal-50 border-teal-200' },
+  payment: { label: 'Booking Payment', color: 'text-slate-700 bg-slate-100 border-slate-200' },
 };
 
 const STATUS_CONFIG = {
-  success: { label: 'Thành công', bg: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-  completed: { label: 'Thành công', bg: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-  pending: { label: 'Đang xử lý', bg: 'bg-amber-50 text-amber-700 border-amber-200' },
-  failed: { label: 'Thất bại', bg: 'bg-rose-50 text-rose-700 border-rose-200' },
+  success: { label: 'Completed', bg: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  completed: { label: 'Completed', bg: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  pending: { label: 'Pending', bg: 'bg-amber-50 text-amber-700 border-amber-200' },
+  failed: { label: 'Failed', bg: 'bg-rose-50 text-rose-700 border-rose-200' },
 };
 
 export const AdminWalletTab = () => {
@@ -82,7 +82,7 @@ export const AdminWalletTab = () => {
         setTotalCount(txRes.pagination?.total || 0);
       }
     } catch (err) {
-      console.error('Lỗi khi tải dữ liệu ví hệ thống:', err);
+      console.error('Error loading wallet data:', err);
     } finally {
       setLoading(false);
     }
@@ -106,13 +106,13 @@ export const AdminWalletTab = () => {
       <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
         <div>
           <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-            <span>Ví & Giao dịch Toàn sàn (Escrow Ledger)</span>
+            <span>Platform Wallet & Transactions (Escrow Ledger)</span>
             <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200">
-              Đối soát thời gian thực
+              Real-time Reconciliation
             </span>
           </h2>
           <p className="text-xs text-slate-500 mt-1">
-            Giám sát số dư khả dụng, hạn mức ký quỹ tiền cọc Escrow và luồng tiền ra vào nền tảng TechShare.
+            Monitor available balances, escrow liability limits, and platform cashflow on TechShare.
           </p>
         </div>
 
@@ -123,7 +123,7 @@ export const AdminWalletTab = () => {
             className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition shadow-2xs cursor-pointer"
           >
             <Download size={14} className="text-slate-500" />
-            <span>Xuất CSV</span>
+            <span>Export CSV</span>
           </button>
           <button
             type="button"
@@ -132,7 +132,7 @@ export const AdminWalletTab = () => {
             className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-teal-700 bg-teal-50 border border-teal-200 rounded-xl hover:bg-teal-100 transition shadow-2xs cursor-pointer"
           >
             <RotateCw size={14} className={loading ? 'animate-spin' : ''} />
-            <span>Làm mới</span>
+            <span>Refresh</span>
           </button>
         </div>
       </div>
@@ -143,12 +143,12 @@ export const AdminWalletTab = () => {
         <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs flex items-center justify-between">
           <div>
             <span className="text-xs font-semibold text-slate-500 block mb-1">
-              Tổng số dư ví thành viên
+              Total Member Balances
             </span>
             <span className="text-xl font-bold text-slate-800">
               {formatPrice(overview?.totalWalletBalance || 0)}
             </span>
-            <span className="text-[10px] text-slate-400 block mt-1">Tiền khả dụng của User & Owner</span>
+            <span className="text-[10px] text-slate-400 block mt-1">Available funds belonging to Users & Owners</span>
           </div>
           <div className="w-11 h-11 rounded-2xl bg-teal-50 border border-teal-100 text-teal-600 flex items-center justify-center shrink-0">
             <Wallet size={20} />
@@ -159,12 +159,12 @@ export const AdminWalletTab = () => {
         <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs flex items-center justify-between">
           <div>
             <span className="text-xs font-semibold text-slate-500 block mb-1">
-              Ký quỹ cọc Escrow (Nghĩa vụ)
+              Escrow Deposit Liabilities
             </span>
             <span className="text-xl font-bold text-amber-600">
               {formatPrice(overview?.totalEscrowBalance || 0)}
             </span>
-            <span className="text-[10px] text-slate-400 block mt-1">Đang khóa an toàn theo đơn thuê</span>
+            <span className="text-[10px] text-slate-400 block mt-1">Securely locked for active rental orders</span>
           </div>
           <div className="w-11 h-11 rounded-2xl bg-amber-50 border border-amber-100 text-amber-600 flex items-center justify-center shrink-0">
             <ShieldCheck size={20} />
@@ -175,12 +175,12 @@ export const AdminWalletTab = () => {
         <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs flex items-center justify-between">
           <div>
             <span className="text-xs font-semibold text-slate-500 block mb-1">
-              Tổng chi trả tiền thuê (Owner)
+              Total Owner Payouts
             </span>
             <span className="text-xl font-bold text-emerald-600">
               {formatPrice(overview?.totalPayouts || 0)}
             </span>
-            <span className="text-[10px] text-slate-400 block mt-1">Giải ngân khi đơn hoàn tất</span>
+            <span className="text-[10px] text-slate-400 block mt-1">Disbursed upon completed orders</span>
           </div>
           <div className="w-11 h-11 rounded-2xl bg-emerald-50 border border-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
             <ArrowUpRight size={20} />
@@ -191,12 +191,12 @@ export const AdminWalletTab = () => {
         <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs flex items-center justify-between">
           <div>
             <span className="text-xs font-semibold text-slate-500 block mb-1">
-              Tổng cọc đã hoàn (Renter)
+              Total Deposits Refunded
             </span>
             <span className="text-xl font-bold text-blue-600">
               {formatPrice(overview?.totalRefunds || 0)}
             </span>
-            <span className="text-[10px] text-slate-400 block mt-1">Sau khi trả thiết bị nguyên vẹn</span>
+            <span className="text-[10px] text-slate-400 block mt-1">Returned upon intact device return</span>
           </div>
           <div className="w-11 h-11 rounded-2xl bg-blue-50 border border-blue-100 text-blue-600 flex items-center justify-center shrink-0">
             <ArrowDownLeft size={20} />
@@ -210,7 +210,7 @@ export const AdminWalletTab = () => {
           <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
-            placeholder="Tìm theo người dùng, mã đơn..."
+            placeholder="Search by user, order code..."
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -229,12 +229,12 @@ export const AdminWalletTab = () => {
             }}
             className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500/20 cursor-pointer"
           >
-            <option value="all">Mọi loại giao dịch</option>
-            <option value="topup">Nạp tiền</option>
-            <option value="withdraw">Rút tiền</option>
-            <option value="deposit_lock">Giữ cọc</option>
-            <option value="deposit_refund">Hoàn cọc</option>
-            <option value="rental_payout">Nhận tiền thuê</option>
+            <option value="all">All Transaction Types</option>
+            <option value="topup">Top-up</option>
+            <option value="withdraw">Withdrawal</option>
+            <option value="deposit_lock">Deposit Hold</option>
+            <option value="deposit_refund">Deposit Refund</option>
+            <option value="rental_payout">Rental Payout</option>
           </select>
 
           <select
@@ -245,10 +245,10 @@ export const AdminWalletTab = () => {
             }}
             className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500/20 cursor-pointer"
           >
-            <option value="all">Mọi trạng thái</option>
-            <option value="completed">Thành công</option>
-            <option value="pending">Đang xử lý</option>
-            <option value="failed">Thất bại</option>
+            <option value="all">All Statuses</option>
+            <option value="completed">Completed</option>
+            <option value="pending">Pending</option>
+            <option value="failed">Failed</option>
           </select>
         </div>
       </div>
@@ -259,14 +259,14 @@ export const AdminWalletTab = () => {
           <table className="w-full text-left text-xs text-slate-600 border-collapse">
             <thead>
               <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[11px]">
-                <th className="py-3.5 px-4">Mã GD</th>
-                <th className="py-3.5 px-4">Người dùng</th>
-                <th className="py-3.5 px-4">Loại giao dịch</th>
-                <th className="py-3.5 px-4">Số tiền (VND)</th>
-                <th className="py-3.5 px-4">Số dư sau GD</th>
-                <th className="py-3.5 px-4">Mã đơn liên quan</th>
-                <th className="py-3.5 px-4 text-center">Trạng thái</th>
-                <th className="py-3.5 px-4 text-center">Thời gian</th>
+                <th className="py-3.5 px-4">Tx ID</th>
+                <th className="py-3.5 px-4">User</th>
+                <th className="py-3.5 px-4">Transaction Type</th>
+                <th className="py-3.5 px-4">Amount (VND)</th>
+                <th className="py-3.5 px-4">Post-Tx Balance</th>
+                <th className="py-3.5 px-4">Linked Order</th>
+                <th className="py-3.5 px-4 text-center">Status</th>
+                <th className="py-3.5 px-4 text-center">Timestamp</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium">
@@ -275,14 +275,14 @@ export const AdminWalletTab = () => {
                   <td colSpan={8} className="py-12 text-center text-slate-400">
                     <div className="flex flex-col items-center justify-center gap-2">
                       <RotateCw size={24} className="animate-spin text-teal-600" />
-                      <span>Đang tải lịch sử giao dịch...</span>
+                      <span>Loading transaction history...</span>
                     </div>
                   </td>
                 </tr>
               ) : transactions.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="py-12 text-center text-slate-400">
-                    Không tìm thấy bản ghi giao dịch nào.
+                    No transaction records found.
                   </td>
                 </tr>
               ) : (
@@ -353,7 +353,7 @@ export const AdminWalletTab = () => {
         {totalPages > 1 && (
           <div className="p-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
             <span>
-              Trang {page} / {totalPages} (Tổng {totalCount} giao dịch)
+              Page {page} / {totalPages} (Total {totalCount} transactions)
             </span>
             <div className="flex items-center gap-1.5">
               <button
@@ -361,9 +361,7 @@ export const AdminWalletTab = () => {
                 disabled={page <= 1}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 className="px-3 py-1.5 border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-              >
-                Trước
-              </button>
+              >Prev</button>
               <button
                 type="button"
                 disabled={page >= totalPages}

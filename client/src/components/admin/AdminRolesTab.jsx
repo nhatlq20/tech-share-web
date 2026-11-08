@@ -20,10 +20,10 @@ import {
 import { formatDate } from '../../utils/formatters.js';
 
 const ROLE_BADGE = {
-  admin: { bg: 'bg-rose-50 text-rose-700 border-rose-200', label: 'Quản trị viên (Admin)' },
-  owner: { bg: 'bg-purple-50 text-purple-700 border-purple-200', label: 'Chủ thiết bị (Owner)' },
-  renter: { bg: 'bg-blue-50 text-blue-700 border-blue-200', label: 'Người thuê (Renter)' },
-  both: { bg: 'bg-teal-50 text-teal-700 border-teal-200', label: 'Cả hai vai trò (Both)' },
+  admin: { bg: 'bg-rose-50 text-rose-700 border-rose-200', label: 'Administrator (Admin)' },
+  owner: { bg: 'bg-purple-50 text-purple-700 border-purple-200', label: 'Device Owner (Owner)' },
+  renter: { bg: 'bg-blue-50 text-blue-700 border-blue-200', label: 'Renter' },
+  both: { bg: 'bg-teal-50 text-teal-700 border-teal-200', label: 'Both Roles' },
 };
 
 export const AdminRolesTab = () => {
@@ -64,7 +64,7 @@ export const AdminRolesTab = () => {
         }
       }
     } catch (err) {
-      console.error('Lỗi tải danh sách vai trò:', err);
+      console.error('Error loading roles list:', err);
     } finally {
       setLoadingRoles(false);
     }
@@ -92,7 +92,7 @@ export const AdminRolesTab = () => {
         setTotalCount(res.pagination?.total || 0);
       }
     } catch (err) {
-      console.error('Lỗi tải danh sách tài khoản:', err);
+      console.error('Error loading accounts list:', err);
     } finally {
       setLoadingAccounts(false);
     }
@@ -124,7 +124,7 @@ export const AdminRolesTab = () => {
       });
 
       if (res && res.data) {
-        setSuccessMsg(res.message || 'Phân quyền tài khoản thành công.');
+        setSuccessMsg(res.message || 'Account role updated successfully.');
         setTimeout(() => {
           setTargetAccount(null);
           fetchRoles();
@@ -132,7 +132,7 @@ export const AdminRolesTab = () => {
         }, 1200);
       }
     } catch (err) {
-      setErrorMsg(err.response?.data?.message || err.message || 'Lỗi khi phân quyền tài khoản.');
+      setErrorMsg(err.response?.data?.message || err.message || 'Error assigning account role.');
     } finally {
       setSubmitting(false);
     }
@@ -148,9 +148,9 @@ export const AdminRolesTab = () => {
               <KeyRound className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-slate-900">Phân quyền vai trò (RBAC)</h2>
+              <h2 className="text-xl font-bold text-slate-900">Role Management & Permissions (RBAC)</h2>
               <p className="text-xs text-slate-500 mt-0.5">
-                Quản lý các cấp độ quyền hạn, danh sách tài khoản và bảo vệ an toàn phân quyền
+                Manage access tiers, account assignments, and security privileges
               </p>
             </div>
           </div>
@@ -163,11 +163,9 @@ export const AdminRolesTab = () => {
               fetchAccounts();
             }}
             className="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition"
-            title="Làm mới"
+            title="Refresh"
           >
-            <RotateCw className={`w-3.5 h-3.5 ${loadingRoles || loadingAccounts ? 'animate-spin' : ''}`} />
-            Làm mới
-          </button>
+            <RotateCw className={`w-3.5 h-3.5 ${loadingRoles || loadingAccounts ? 'animate-spin' : ''}`} />Refresh</button>
         </div>
       </div>
 
@@ -200,13 +198,13 @@ export const AdminRolesTab = () => {
                     </span>
                     <span className="text-xs text-slate-500 flex items-center gap-1 font-semibold">
                       <Users className="w-3 h-3 text-slate-400" />
-                      {r.accountCount || 0} tài khoản
+                      {r.accountCount || 0} accounts
                     </span>
                   </div>
 
                   <h3 className="font-bold text-slate-900 text-sm">{r.name}</h3>
                   <p className="text-[11px] text-slate-500 mt-1 line-clamp-2 leading-relaxed">
-                    {r.description || 'Không có mô tả thêm.'}
+                    {r.description || 'No additional description.'}
                   </p>
 
                   {/* Permissions tags */}
@@ -237,7 +235,7 @@ export const AdminRolesTab = () => {
           <div className="flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 text-teal-600" />
             <h4 className="font-bold text-slate-900 text-xs">
-              Tài khoản thuộc vai trò: <span className="text-teal-700">{selectedRole?.name}</span>
+              Accounts assigned to role: <span className="text-teal-700">{selectedRole?.name}</span>
             </h4>
           </div>
 
@@ -247,7 +245,7 @@ export const AdminRolesTab = () => {
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
-                placeholder="Tìm username, email..."
+                placeholder="Search username, email..."
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);
@@ -266,9 +264,9 @@ export const AdminRolesTab = () => {
               }}
               className="text-xs py-1.5 px-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/20 text-slate-700 font-medium"
             >
-              <option value="all">Tất cả trạng thái</option>
-              <option value="active">Đang hoạt động</option>
-              <option value="inactive">Đã bị khóa</option>
+              <option value="all">All Statuses</option>
+              <option value="active">Active</option>
+              <option value="inactive">Locked</option>
             </select>
           </div>
         </div>
@@ -278,12 +276,12 @@ export const AdminRolesTab = () => {
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-50/75 border-b border-slate-100 text-slate-500 font-semibold uppercase tracking-wider">
               <tr>
-                <th className="py-3.5 px-4">Tài khoản (Account)</th>
-                <th className="py-3.5 px-4">Người dùng liên kết</th>
-                <th className="py-3.5 px-4">Vai trò hiện tại</th>
-                <th className="py-3.5 px-4">Ngày tạo</th>
-                <th className="py-3.5 px-4 text-center">Trạng thái</th>
-                <th className="py-3.5 px-4 text-center">Thao tác</th>
+                <th className="py-3.5 px-4">Account</th>
+                <th className="py-3.5 px-4">Linked User</th>
+                <th className="py-3.5 px-4">Current Role</th>
+                <th className="py-3.5 px-4">Created Date</th>
+                <th className="py-3.5 px-4 text-center">Status</th>
+                <th className="py-3.5 px-4 text-center">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -291,14 +289,14 @@ export const AdminRolesTab = () => {
                 <tr>
                   <td colSpan="6" className="py-12 text-center text-slate-400">
                     <RotateCw className="w-6 h-6 animate-spin mx-auto mb-2 text-teal-600" />
-                    Đang tải danh sách tài khoản...
+                    Loading accounts list...
                   </td>
                 </tr>
               ) : accounts.length === 0 ? (
                 <tr>
                   <td colSpan="6" className="py-12 text-center text-slate-400">
                     <AlertCircle className="w-8 h-8 mx-auto mb-2 text-slate-300" />
-                    Không có tài khoản nào được gán vai trò này.
+                    No accounts assigned to this role.
                   </td>
                 </tr>
               ) : (
@@ -315,13 +313,13 @@ export const AdminRolesTab = () => {
                       <td className="py-3.5 px-4">
                         {acc.userId ? (
                           <div>
-                            <div className="font-semibold text-slate-800">{acc.userId.name || 'Người dùng'}</div>
+                            <div className="font-semibold text-slate-800">{acc.userId.name || 'User'}</div>
                             <div className="text-[11px] text-slate-400">
                               {acc.userId.phone || acc.userId.email || 'N/A'}
                             </div>
                           </div>
                         ) : (
-                          <span className="text-slate-400 italic">Chưa gắn hồ sơ</span>
+                          <span className="text-slate-400 italic">No linked profile</span>
                         )}
                       </td>
 
@@ -341,11 +339,11 @@ export const AdminRolesTab = () => {
                       <td className="py-3.5 px-4 text-center">
                         {acc.isActive !== false ? (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                            <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Hoạt động
+                            <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Active
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-full bg-rose-50 text-rose-700 border border-rose-200">
-                            <XCircle className="w-3 h-3 text-rose-600" /> Bị khóa
+                            <XCircle className="w-3 h-3 text-rose-600" /> Locked
                           </span>
                         )}
                       </td>
@@ -355,10 +353,8 @@ export const AdminRolesTab = () => {
                         <button
                           onClick={() => handleOpenChangeRole(acc)}
                           className="px-3 py-1.5 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-700 font-semibold transition"
-                          title="Đổi vai trò"
-                        >
-                          Đổi vai trò
-                        </button>
+                          title="Change Role"
+                        >Change Role</button>
                       </td>
                     </tr>
                   );
@@ -379,9 +375,7 @@ export const AdminRolesTab = () => {
                 disabled={page <= 1}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 className="px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-40 disabled:hover:bg-white transition"
-              >
-                Trước
-              </button>
+              >Prev</button>
               <button
                 disabled={page >= totalPages}
                 onClick={() => setPage((p) => p + 1)}
@@ -405,7 +399,7 @@ export const AdminRolesTab = () => {
                   <UserCheck className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-slate-900">Phân quyền tài khoản</h3>
+                  <h3 className="text-base font-bold text-slate-900">Reassign Account Role</h3>
                   <p className="text-xs text-slate-500">{targetAccount.username} ({targetAccount.email})</p>
                 </div>
               </div>
@@ -438,16 +432,16 @@ export const AdminRolesTab = () => {
                 <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 space-y-1">
                   <div className="font-bold flex items-center gap-1.5">
                     <Lock className="w-3.5 h-3.5 text-amber-700" />
-                    Cảnh báo bảo mật hệ thống:
+                    System Security Notice:
                   </div>
                   <p className="text-[11px] leading-relaxed">
-                    Tài khoản này đang nắm giữ quyền Quản trị viên (Admin). Hệ thống sẽ tự động chặn việc hạ quyền nếu đây là Admin duy nhất còn hoạt động.
+                    This account currently holds Administrator privileges. The system will automatically prevent demotion if this is the only active Administrator.
                   </p>
                 </div>
               )}
 
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Chọn vai trò mới:</label>
+                <label className="block font-semibold text-slate-700 mb-1">Select New Role:</label>
                 <select
                   required
                   value={newRoleId}
@@ -463,11 +457,11 @@ export const AdminRolesTab = () => {
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Lý do thay đổi phân quyền:</label>
+                <label className="block font-semibold text-slate-700 mb-1">Reason for Role Change:</label>
                 <textarea
                   required
                   rows={3}
-                  placeholder="Nhập lý do phân quyền để lưu vết vào nhật ký kiểm toán..."
+                  placeholder="Enter reason for role change to record in audit log..."
                   value={changeReason}
                   onChange={(e) => setChangeReason(e.target.value)}
                   className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20 font-medium"
@@ -479,15 +473,13 @@ export const AdminRolesTab = () => {
                   type="button"
                   onClick={() => setTargetAccount(null)}
                   className="px-4 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 font-semibold text-slate-600 transition"
-                >
-                  Hủy
-                </button>
+                >Cancel</button>
                 <button
                   type="submit"
                   disabled={submitting}
                   className="px-5 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold shadow-sm transition disabled:opacity-50"
                 >
-                  {submitting ? 'Đang lưu...' : 'Xác nhận đổi vai trò'}
+                  {submitting ? 'Saving...' : 'Confirm Role Change'}
                 </button>
               </div>
             </form>

@@ -162,13 +162,13 @@ export const AdminDashboardScreen = () => {
               accessory: '#A78BFA'
             };
             const nameMap = {
-              smartphone: 'Smartphone & Tablet',
-              laptop: 'Laptop & Workstation',
-              camera: 'Máy ảnh & Ống kính',
-              drone: 'Flycam & Gimbal',
-              audio: 'Tai nghe & Âm thanh',
-              gaming: 'Máy chơi game & VR',
-              accessory: 'Phụ kiện công nghệ'
+              smartphone: 'Smartphones & Tablets',
+              laptop: 'Laptops & Workstations',
+              camera: 'Cameras & Lenses',
+              drone: 'Drones & Gimbals',
+              audio: 'Headphones & Audio',
+              gaming: 'Gaming Consoles & VR',
+              accessory: 'Tech Accessories'
             };
             const mapped = raw.categoryDistribution.map(c => ({
               id: c.category,
@@ -192,8 +192,8 @@ export const AdminDashboardScreen = () => {
           if (items.length > 0) {
             liveDevices = items.map(d => ({
               _id: d._id || d.id,
-              name: d.name || d.title || 'Thiết bị công nghệ',
-              title: d.title || d.name || 'Thiết bị công nghệ',
+              name: d.name || d.title || 'Technology Device',
+              title: d.title || d.name || 'Technology Device',
               brand: d.brand || 'TechBrand',
               category: d.category || 'other',
               condition: d.condition || '99%',
@@ -216,7 +216,7 @@ export const AdminDashboardScreen = () => {
               rentalCount: d.rentalCount || d.viewsCount || 0,
               owner: {
                 _id: d.owner?._id || d.ownerId?._id || d.ownerId,
-                name: d.owner?.name || d.ownerId?.name || 'Đối tác TechShare',
+                name: d.owner?.name || d.ownerId?.name || 'TechShare Partner',
                 email: d.owner?.email || d.ownerId?.email || 'owner@techshare.vn',
                 phone: d.owner?.phone || d.ownerId?.phone || '0901234567',
                 avatar: d.owner?.avatar || d.ownerId?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400',
@@ -249,11 +249,11 @@ export const AdminDashboardScreen = () => {
             liveEkyc = items.map(r => ({
               _id: r._id || r.id,
               userId: typeof r.userId === 'object' ? r.userId?._id : r.userId,
-              fullName: r.fullName || r.userId?.name || 'Hồ sơ người dùng',
+              fullName: r.fullName || r.userId?.name || 'User Profile',
               email: r.email || r.userId?.email || 'user@techshare.vn',
               phone: r.phone || r.userId?.phone || '0901234567',
               idCardNumber: r.idCardNumber || '001202******',
-              address: r.address || r.userId?.address || 'Hà Nội, Việt Nam',
+              address: r.address || r.userId?.address || 'Hanoi, Vietnam',
               idCardFrontUrl: r.idCardFrontUrl || 'https://res.cloudinary.com/oigtlazh/image/upload/v1791276126/techshare/ekyc/nhzgpvxytqmxrlpodabp.jpg',
               idCardBackUrl: r.idCardBackUrl || 'https://res.cloudinary.com/oigtlazh/image/upload/v1791276133/techshare/ekyc/ls63wxuvisirmbntjifn.jpg',
               status: r.status || 'pending',
@@ -355,7 +355,7 @@ export const AdminDashboardScreen = () => {
       });
       setUsers(Array.from(userMap.values()));
     } catch (err) {
-      console.warn('⚠️ Lấy dữ liệu từ Admin API gặp trục trặc, sử dụng chế độ dự phòng:', err);
+      console.warn('⚠️ Error fetching from Admin API, using fallback mode:', err);
     } finally {
       setIsLoading(false);
     }
@@ -608,7 +608,7 @@ export const AdminDashboardScreen = () => {
                   fontWeight: 600,
                 }}
               >
-                {(adminProfile || user)?.role === 'admin' ? 'Quản trị viên hệ thống' : ((adminProfile || user)?.role || STRINGS.admin.dashboard.adminRole)}
+                {(adminProfile || user)?.role === 'admin' ? 'System Administrator' : ((adminProfile || user)?.role || STRINGS.admin.dashboard.adminRole)}
               </span>
             </div>
           </div>

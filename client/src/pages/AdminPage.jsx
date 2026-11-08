@@ -82,7 +82,7 @@ export const AdminPage = () => {
         }}
       ></div>
       <p style={{ fontWeight: 600, fontSize: '15px' }}>
-        Đang chuyển sang Cổng Quản trị TechShare (EJS)...
+        Redirecting to TechShare Admin Portal (EJS)...
       </p>
       <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
     </div>

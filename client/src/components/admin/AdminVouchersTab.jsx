@@ -67,7 +67,7 @@ export const AdminVouchersTab = () => {
         setTotalCount(res.pagination?.total || 0);
       }
     } catch (err) {
-      console.error('Lỗi tải danh sách voucher:', err);
+      console.error('Error loading vouchers list:', err);
     } finally {
       setLoading(false);
     }
@@ -131,7 +131,7 @@ export const AdminVouchersTab = () => {
         prev.map((item) => (item._id === v._id ? { ...item, isActive: targetActive } : item))
       );
     } catch (err) {
-      console.error('Lỗi khi chuyển trạng thái voucher:', err);
+      console.error('Error updating voucher status:', err);
     }
   };
 
@@ -155,7 +155,7 @@ export const AdminVouchersTab = () => {
         }
       }
     } catch (err) {
-      setFormError(err.response?.data?.message || err.message || 'Lỗi khi lưu dữ liệu voucher.');
+      setFormError(err.response?.data?.message || err.message || 'Error saving voucher data.');
     } finally {
       setFormSubmitting(false);
     }
@@ -176,9 +176,9 @@ export const AdminVouchersTab = () => {
               <Tag className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-slate-900">Quản lý mã ưu đãi & Voucher</h2>
+              <h2 className="text-xl font-bold text-slate-900">Voucher & Promotion Management</h2>
               <p className="text-xs text-slate-500 mt-0.5">
-                Cấu hình chương trình khuyến mãi, tỷ lệ chiết khấu và giới hạn sử dụng
+                Configure discount promotions, rates, and redemption limits
               </p>
             </div>
           </div>
@@ -188,18 +188,14 @@ export const AdminVouchersTab = () => {
           <button
             onClick={fetchVouchers}
             className="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition"
-            title="Làm mới"
+            title="Refresh"
           >
-            <RotateCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-            Làm mới
-          </button>
+            <RotateCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />Refresh</button>
           <button
             onClick={openCreateModal}
             className="flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-xl bg-teal-600 hover:bg-teal-700 text-white shadow-sm transition"
           >
-            <Plus className="w-4 h-4" />
-            Tạo Voucher mới
-          </button>
+            <Plus className="w-4 h-4" />Create New Voucher</button>
         </div>
       </div>
 
@@ -211,7 +207,7 @@ export const AdminVouchersTab = () => {
             <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
-              placeholder="Tìm theo mã voucher..."
+              placeholder="Search by voucher code..."
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
@@ -230,10 +226,10 @@ export const AdminVouchersTab = () => {
             }}
             className="text-xs py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/20 text-slate-700 font-medium"
           >
-            <option value="all">Tất cả trạng thái</option>
-            <option value="active">Đang áp dụng (Active)</option>
-            <option value="inactive">Đã tạm dừng (Inactive)</option>
-            <option value="expired">Đã hết hạn (Expired)</option>
+            <option value="all">All Statuses</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+            <option value="expired">Expired</option>
           </select>
 
           {/* Type Filter */}
@@ -245,14 +241,14 @@ export const AdminVouchersTab = () => {
             }}
             className="text-xs py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/20 text-slate-700 font-medium"
           >
-            <option value="all">Tất cả hình thức</option>
-            <option value="percent">Phần trăm (%)</option>
-            <option value="fixed">Số tiền cố định (VNĐ)</option>
+            <option value="all">All Discount Types</option>
+            <option value="percent">Percentage (%)</option>
+            <option value="fixed">Fixed Amount (VND)</option>
           </select>
         </div>
 
         <div className="text-xs text-slate-500">
-          Tổng số voucher: <span className="font-bold text-slate-800">{totalCount}</span>
+          Total Vouchers: <span className="font-bold text-slate-800">{totalCount}</span>
         </div>
       </div>
 
@@ -262,13 +258,13 @@ export const AdminVouchersTab = () => {
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-50/75 border-b border-slate-100 text-slate-500 font-semibold uppercase tracking-wider">
               <tr>
-                <th className="py-3.5 px-4">Mã Voucher</th>
-                <th className="py-3.5 px-4">Loại & Mức giảm</th>
-                <th className="py-3.5 px-4">Điều kiện áp dụng</th>
-                <th className="py-3.5 px-4 text-center">Lượt sử dụng</th>
-                <th className="py-3.5 px-4">Hạn sử dụng</th>
-                <th className="py-3.5 px-4 text-center">Trạng thái</th>
-                <th className="py-3.5 px-4 text-center">Thao tác</th>
+                <th className="py-3.5 px-4">Voucher Code</th>
+                <th className="py-3.5 px-4">Type & Discount</th>
+                <th className="py-3.5 px-4">Conditions</th>
+                <th className="py-3.5 px-4 text-center">Redemptions</th>
+                <th className="py-3.5 px-4">Expiration Date</th>
+                <th className="py-3.5 px-4 text-center">Status</th>
+                <th className="py-3.5 px-4 text-center">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -276,14 +272,14 @@ export const AdminVouchersTab = () => {
                 <tr>
                   <td colSpan="7" className="py-12 text-center text-slate-400">
                     <RotateCw className="w-6 h-6 animate-spin mx-auto mb-2 text-teal-600" />
-                    Đang tải danh sách voucher...
+                    Loading voucher list...
                   </td>
                 </tr>
               ) : vouchers.length === 0 ? (
                 <tr>
                   <td colSpan="7" className="py-12 text-center text-slate-400">
                     <AlertCircle className="w-8 h-8 mx-auto mb-2 text-slate-300" />
-                    Không tìm thấy voucher nào phù hợp.
+                    No matching vouchers found.
                   </td>
                 </tr>
               ) : (
@@ -305,18 +301,18 @@ export const AdminVouchersTab = () => {
                           {v.type === 'percent' ? `${v.value}%` : formatPrice(v.value)}
                         </div>
                         <div className="text-[11px] text-slate-400">
-                          {v.type === 'percent' ? 'Giảm theo phần trăm' : 'Giảm tiền mặt'}
+                          {v.type === 'percent' ? 'Percentage Discount' : 'Fixed Cash Discount'}
                         </div>
                       </td>
 
                       {/* Điều kiện */}
                       <td className="py-3.5 px-4">
                         <div className="text-slate-700">
-                          Tối thiểu: <span className="font-semibold">{v.minDays || 1} ngày</span>
+                          Min: <span className="font-semibold">{v.minDays || 1} days</span>
                         </div>
                         {v.type === 'percent' && v.maxDiscount > 0 && (
                           <div className="text-[11px] text-slate-500">
-                            Tối đa: <span className="font-semibold">{formatPrice(v.maxDiscount)}</span>
+                            Max: <span className="font-semibold">{formatPrice(v.maxDiscount)}</span>
                           </div>
                         )}
                       </td>
@@ -336,23 +332,21 @@ export const AdminVouchersTab = () => {
                           </span>
                         </div>
                         {expired && (
-                          <span className="text-[10px] text-rose-500 font-medium">Hết hạn</span>
+                          <span className="text-[10px] text-rose-500 font-medium">Expired</span>
                         )}
                       </td>
 
                       {/* Trạng thái */}
                       <td className="py-3.5 px-4 text-center">
                         {expired ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-full bg-slate-100 text-slate-600 border border-slate-200">
-                            Hết hạn
-                          </span>
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-full bg-slate-100 text-slate-600 border border-slate-200">Expired</span>
                         ) : v.isActive ? (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                            <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Hoạt động
+                            <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Active
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-full bg-amber-50 text-amber-700 border border-amber-200">
-                            <XCircle className="w-3 h-3 text-amber-600" /> Tạm dừng
+                            <XCircle className="w-3 h-3 text-amber-600" /> Inactive
                           </span>
                         )}
                       </td>
@@ -363,14 +357,14 @@ export const AdminVouchersTab = () => {
                           <button
                             onClick={() => openDetailModal(v)}
                             className="p-1.5 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-700 transition"
-                            title="Xem chi tiết"
+                            title="View details"
                           >
                             <Eye className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => openEditModal(v)}
                             className="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 transition"
-                            title="Sửa voucher"
+                            title="Edit voucher"
                           >
                             <Edit className="w-3.5 h-3.5" />
                           </button>
@@ -381,7 +375,7 @@ export const AdminVouchersTab = () => {
                                 ? 'bg-amber-50 hover:bg-amber-100 text-amber-700'
                                 : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700'
                             }`}
-                            title={v.isActive ? 'Tạm dừng voucher' : 'Kích hoạt voucher'}
+                            title={v.isActive ? 'Deactivate voucher' : 'Activate voucher'}
                           >
                             <Power className="w-3.5 h-3.5" />
                           </button>
@@ -406,9 +400,7 @@ export const AdminVouchersTab = () => {
                 disabled={page <= 1}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 className="px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-40 disabled:hover:bg-white transition"
-              >
-                Trước
-              </button>
+              >Prev</button>
               <button
                 disabled={page >= totalPages}
                 onClick={() => setPage((p) => p + 1)}
@@ -433,12 +425,12 @@ export const AdminVouchersTab = () => {
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-slate-900">
-                    {modalMode === 'create' ? 'Tạo Voucher khuyến mãi mới' : 'Cập nhật cấu hình Voucher'}
+                    {modalMode === 'create' ? 'Create Promotion Voucher' : 'Update Voucher Configuration'}
                   </h3>
                   <p className="text-xs text-slate-500">
                     {modalMode === 'create'
-                      ? 'Thiết lập các thông số chiết khấu cho đơn thuê'
-                      : `Chỉnh sửa voucher mã: ${selectedVoucher?.code}`}
+                      ? 'Set up discount parameters for rental orders'
+                      : `Edit voucher: ${selectedVoucher?.code}`}
                   </p>
                 </div>
               </div>
@@ -462,7 +454,7 @@ export const AdminVouchersTab = () => {
               <div className="grid grid-cols-2 gap-4">
                 {/* Code */}
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Mã Voucher (Code):</label>
+                  <label className="block font-semibold text-slate-700 mb-1">Voucher Code:</label>
                   <input
                     type="text"
                     required
@@ -475,14 +467,14 @@ export const AdminVouchersTab = () => {
 
                 {/* Type */}
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Hình thức giảm giá:</label>
+                  <label className="block font-semibold text-slate-700 mb-1">Discount Type:</label>
                   <select
                     value={formData.type}
                     onChange={(e) => setFormData({ ...formData, type: e.target.value })}
                     className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20"
                   >
-                    <option value="percent">Phần trăm (%)</option>
-                    <option value="fixed">Số tiền cố định (VNĐ)</option>
+                    <option value="percent">Percentage (%)</option>
+                    <option value="fixed">Fixed Amount (VND)</option>
                   </select>
                 </div>
               </div>
@@ -491,7 +483,7 @@ export const AdminVouchersTab = () => {
                 {/* Value */}
                 <div>
                   <label className="block font-semibold text-slate-700 mb-1">
-                    Giá trị giảm {formData.type === 'percent' ? '(%)' : '(VNĐ)'}:
+                    Discount Value {formData.type === 'percent' ? '(%)' : '(VND)'}:
                   </label>
                   <input
                     type="number"
@@ -506,11 +498,11 @@ export const AdminVouchersTab = () => {
 
                 {/* Max Discount (if percent) */}
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Giảm tối đa (VNĐ):</label>
+                  <label className="block font-semibold text-slate-700 mb-1">Max Discount (VND):</label>
                   <input
                     type="number"
                     min={0}
-                    placeholder="0 là không giới hạn"
+                    placeholder="0 for unlimited"
                     value={formData.maxDiscount}
                     onChange={(e) => setFormData({ ...formData, maxDiscount: Number(e.target.value) })}
                     className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20"
@@ -521,7 +513,7 @@ export const AdminVouchersTab = () => {
               <div className="grid grid-cols-2 gap-4">
                 {/* Min Days */}
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Thuê tối thiểu (ngày):</label>
+                  <label className="block font-semibold text-slate-700 mb-1">Minimum Rental (days):</label>
                   <input
                     type="number"
                     min={1}
@@ -533,7 +525,7 @@ export const AdminVouchersTab = () => {
 
                 {/* Expiry Date */}
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Ngày hết hạn:</label>
+                  <label className="block font-semibold text-slate-700 mb-1">Expiration Date:</label>
                   <input
                     type="date"
                     required
@@ -547,7 +539,7 @@ export const AdminVouchersTab = () => {
               <div className="grid grid-cols-2 gap-4">
                 {/* Usage Limit */}
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Tổng lượt sử dụng tối đa:</label>
+                  <label className="block font-semibold text-slate-700 mb-1">Total Usage Limit:</label>
                   <input
                     type="number"
                     min={modalMode === 'edit' ? selectedVoucher?.usedCount || 1 : 1}
@@ -557,14 +549,14 @@ export const AdminVouchersTab = () => {
                   />
                   {modalMode === 'edit' && (
                     <span className="text-[10px] text-slate-400">
-                      Đã sử dụng: {selectedVoucher?.usedCount || 0} lượt
+                      Already redeemed: {selectedVoucher?.usedCount || 0} times
                     </span>
                   )}
                 </div>
 
                 {/* Per User Limit */}
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Lượt dùng / Mỗi người:</label>
+                  <label className="block font-semibold text-slate-700 mb-1">Redemptions per User:</label>
                   <input
                     type="number"
                     min={1}
@@ -585,7 +577,7 @@ export const AdminVouchersTab = () => {
                   className="w-4 h-4 text-teal-600 rounded border-slate-300 focus:ring-teal-500"
                 />
                 <label htmlFor="isActiveToggle" className="font-semibold text-slate-700 cursor-pointer">
-                  Kích hoạt áp dụng voucher này ngay lập tức
+                  Activate voucher immediately
                 </label>
               </div>
 
@@ -595,15 +587,13 @@ export const AdminVouchersTab = () => {
                   type="button"
                   onClick={() => setModalMode(null)}
                   className="px-4 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 font-semibold transition"
-                >
-                  Hủy
-                </button>
+                >Cancel</button>
                 <button
                   type="submit"
                   disabled={formSubmitting}
                   className="px-5 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold shadow-sm transition disabled:opacity-50"
                 >
-                  {formSubmitting ? 'Đang lưu...' : modalMode === 'create' ? 'Tạo Voucher' : 'Lưu thay đổi'}
+                  {formSubmitting ? 'Saving...' : modalMode === 'create' ? 'Create Voucher' : 'Save Changes'}
                 </button>
               </div>
             </form>
@@ -621,7 +611,7 @@ export const AdminVouchersTab = () => {
                   <Tag className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-slate-900">Chi tiết Voucher</h3>
+                  <h3 className="text-base font-bold text-slate-900">Voucher Details</h3>
                   <p className="text-xs font-mono text-teal-700">{selectedVoucher.code}</p>
                 </div>
               </div>
@@ -636,17 +626,17 @@ export const AdminVouchersTab = () => {
             <div className="p-6 space-y-3.5 text-xs">
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-2">
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Mã voucher:</span>
+                  <span className="text-slate-500">Voucher Code:</span>
                   <span className="font-mono font-bold text-slate-900">{selectedVoucher.code}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Hình thức:</span>
+                  <span className="text-slate-500">Discount Type:</span>
                   <span className="font-semibold text-slate-800">
-                    {selectedVoucher.type === 'percent' ? 'Giảm theo phần trăm' : 'Số tiền cố định'}
+                    {selectedVoucher.type === 'percent' ? 'Percentage Discount' : 'Fixed Cash Discount'}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Mức giảm:</span>
+                  <span className="text-slate-500">Discount Amount:</span>
                   <span className="font-bold text-teal-700">
                     {selectedVoucher.type === 'percent'
                       ? `${selectedVoucher.value}%`
@@ -655,36 +645,36 @@ export const AdminVouchersTab = () => {
                 </div>
                 {selectedVoucher.type === 'percent' && selectedVoucher.maxDiscount > 0 && (
                   <div className="flex justify-between">
-                    <span className="text-slate-500">Giảm tối đa:</span>
+                    <span className="text-slate-500">Max Discount:</span>
                     <span className="font-semibold text-slate-800">{formatPrice(selectedVoucher.maxDiscount)}</span>
                   </div>
                 )}
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Thuê tối thiểu:</span>
-                  <span className="font-semibold text-slate-800">{selectedVoucher.minDays || 1} ngày</span>
+                  <span className="text-slate-500">Min Rental:</span>
+                  <span className="font-semibold text-slate-800">{selectedVoucher.minDays || 1} days</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Hạn sử dụng:</span>
+                  <span className="text-slate-500">Expiration Date:</span>
                   <span className="font-semibold text-slate-800">{formatDate(selectedVoucher.expiryDate)}</span>
                 </div>
               </div>
 
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-2">
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Đã sử dụng:</span>
-                  <span className="font-bold text-slate-900">{selectedVoucher.usedCount || 0} lượt</span>
+                  <span className="text-slate-500">Redeemed:</span>
+                  <span className="font-bold text-slate-900">{selectedVoucher.usedCount || 0} times</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Giới hạn tổng:</span>
-                  <span className="font-semibold text-slate-800">{selectedVoucher.usageLimit || 'Không giới hạn'}</span>
+                  <span className="text-slate-500">Total Limit:</span>
+                  <span className="font-semibold text-slate-800">{selectedVoucher.usageLimit || 'Unlimited'}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Giới hạn / Người dùng:</span>
-                  <span className="font-semibold text-slate-800">{selectedVoucher.perUserLimit || 1} lần</span>
+                  <span className="text-slate-500">Limit per User:</span>
+                  <span className="font-semibold text-slate-800">{selectedVoucher.perUserLimit || 1} times</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Đơn thuê thực tế đã ghi nhận:</span>
-                  <span className="font-bold text-teal-700">{selectedVoucher.bookingUsageCount || 0} đơn</span>
+                  <span className="text-slate-500">Recorded Rental Bookings:</span>
+                  <span className="font-bold text-teal-700">{selectedVoucher.bookingUsageCount || 0} rentals</span>
                 </div>
               </div>
             </div>
@@ -693,9 +683,7 @@ export const AdminVouchersTab = () => {
               <button
                 onClick={() => setModalMode(null)}
                 className="px-5 py-2 text-xs font-semibold rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 transition"
-              >
-                Đóng
-              </button>
+              >Close</button>
             </div>
           </div>
         </div>

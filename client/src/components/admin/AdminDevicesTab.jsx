@@ -33,29 +33,29 @@ import './AdminWorkspace.css';
 import { API_CONFIG } from '../../constants/config.js';
 
 const CATEGORIES = [
-  { id: 'all', label: 'Tất cả danh mục', icon: Layers },
+  { id: 'all', label: 'All Categories', icon: Layers },
   { id: 'smartphone', label: 'Smartphone', icon: Smartphone },
   { id: 'tablet', label: 'Tablet', icon: Tablet },
   { id: 'laptop', label: 'Laptop', icon: Laptop },
-  { id: 'camera', label: 'Máy ảnh', icon: Camera },
+  { id: 'camera', label: 'Cameras', icon: Camera },
   { id: 'drone', label: 'Flycam', icon: Aperture },
-  { id: 'audio', label: 'Âm thanh', icon: Headphones },
+  { id: 'audio', label: 'Audio', icon: Headphones },
   { id: 'gaming', label: 'Gaming', icon: Gamepad2 },
-  { id: 'accessory', label: 'Phụ kiện', icon: Package },
+  { id: 'accessory', label: 'Accessories', icon: Package },
 ];
 
 const MODERATION_TABS = [
-  { id: 'pending', label: 'Chờ duyệt', icon: Clock },
-  { id: 'approved', label: 'Đã duyệt', icon: CheckCircle2 },
-  { id: 'rejected', label: 'Bị từ chối', icon: XCircle },
+  { id: 'pending', label: 'Pending', icon: Clock },
+  { id: 'approved', label: 'Approved', icon: CheckCircle2 },
+  { id: 'rejected', label: 'Rejected', icon: XCircle },
 ];
 
 const QUICK_REJECT_REASONS = [
-  'Hình ảnh mờ, không rõ tem mác hoặc số serial.',
-  'Mô tả thiếu thông số kỹ thuật hoặc phụ kiện đi kèm.',
-  'Giá thuê hoặc tiền cọc không hợp lý so với thị trường.',
-  'Thông tin vị trí hoặc địa chỉ giao nhận không chính xác.',
-  'Thiết bị thuộc danh mục hạn chế hoặc không đủ điều kiện an toàn.',
+  'Images are blurry, missing label or serial number.',
+  'Description lacks technical specifications or included accessories.',
+  'Rental price or deposit is unreasonable compared to market standards.',
+  'Location or pickup/delivery address is inaccurate.',
+  'Device belongs to restricted category or fails safety conditions.',
 ];
 
 const API_BASE = API_CONFIG.BASE_URL;
@@ -73,7 +73,7 @@ const formatVND = (num) => {
 
 export const DeviceThumbnailImage = ({
   src,
-  alt = 'Thiết bị',
+  alt = 'Device',
   className = '',
   style = {},
 }) => {
@@ -102,7 +102,7 @@ export const DeviceThumbnailImage = ({
 
 export const UserAvatarImage = ({
   src,
-  alt = 'Chủ thiết bị',
+  alt = 'Device Owner',
   className = '',
   style = {},
 }) => {
@@ -161,7 +161,7 @@ const DeviceModerationDetailModal = ({
             }
           }
         } catch (e) {
-          console.warn('Lỗi khi tải chi tiết thiết bị:', e);
+          console.warn('Error loading device details:', e);
         } finally {
           if (isMounted) setLoadingDetail(false);
         }
@@ -195,13 +195,13 @@ const DeviceModerationDetailModal = ({
       try {
         parsedSpecs = JSON.parse(device.specs);
       } catch {
-        parsedSpecs = { 'Thông số': device.specs };
+        parsedSpecs = { 'Specs': device.specs };
       }
     }
   }
 
   const ownerInfo = device.owner || device.ownerId || {
-    name: 'Đối tác TechShare',
+    name: 'TechShare Partner',
     phone: '0901234567',
     email: 'owner@techshare.vn',
     trustScore: 100,
@@ -265,10 +265,10 @@ const DeviceModerationDetailModal = ({
             </div>
             <div>
               <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 800, color: '#0F172A' }}>
-                Hồ sơ Thẩm định & Kiểm duyệt Thiết bị
+                Device Appraisal & Moderation Dossier
               </h3>
               <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#64748B' }}>
-                Mã thiết bị: #{device._id?.slice(-8)?.toUpperCase() || 'TECH'} • Đăng lúc{' '}
+                Device ID: #{device._id?.slice(-8)?.toUpperCase() || 'TECH'} • Listed at 
                 {new Date(device.createdAt || Date.now()).toLocaleDateString('vi-VN')}
               </p>
             </div>
@@ -277,7 +277,7 @@ const DeviceModerationDetailModal = ({
             type="button"
             onClick={onClose}
             className="admin-modal-close-btn"
-            title="Đóng modal"
+            title="Close modal"
           >
             <X size={20} />
           </button>
@@ -382,7 +382,7 @@ const DeviceModerationDetailModal = ({
                           border: isCurrent ? '2px solid #0D9488' : '1px solid #E2E8F0',
                           opacity: isCurrent ? 1 : 0.6,
                         }}
-                        title={`Ảnh ${idx + 1}`}
+                        title={`Photo ${idx + 1}`}
                       >
                         <DeviceThumbnailImage
                           src={img}
@@ -434,7 +434,7 @@ const DeviceModerationDetailModal = ({
                     border: '1px solid #E2E8F0',
                   }}
                 >
-                  {device.condition || 'Mới 99%'}
+                  {device.condition || 'Like New 99%'}
                 </span>
 
                 <span
@@ -452,7 +452,7 @@ const DeviceModerationDetailModal = ({
                         : '1px solid #A7F3D0',
                   }}
                 >
-                  {isPending ? '⏳ Đang chờ duyệt' : isRejected ? '✕ Bị từ chối' : '✓ Đã phê duyệt'}
+                  {isPending ? '⏳ Pending Review' : isRejected ? '✕ Rejected' : '✓ Approved'}
                 </span>
               </div>
 
@@ -471,8 +471,8 @@ const DeviceModerationDetailModal = ({
 
               {/* Hãng & Năm */}
               <div style={{ fontSize: '12.5px', color: '#64748B' }}>
-                Thương hiệu: <strong style={{ color: '#334155' }}>{device.brand || 'Khác'}</strong>
-                {device.yearOfManufacture ? ` • Năm SX: ${device.yearOfManufacture}` : ''}
+                Brand: <strong style={{ color: '#334155' }}>{device.brand || 'Other'}</strong>
+                {device.yearOfManufacture ? ` • Year: ${device.yearOfManufacture}` : ''}
               </div>
 
               {/* Cảnh báo từ chối (nếu có) */}
@@ -489,7 +489,7 @@ const DeviceModerationDetailModal = ({
                     marginTop: '4px',
                   }}
                 >
-                  <strong>Lý do từ chối:</strong> {device.moderationReason || device.rejectReason || 'Không đạt tiêu chuẩn kiểm duyệt.'}
+                  <strong>Rejection reason:</strong> {device.moderationReason || device.rejectReason || 'Failed moderation criteria.'}
                 </div>
               )}
 
@@ -505,21 +505,17 @@ const DeviceModerationDetailModal = ({
                 }}
               >
                 <div>
-                  <span style={{ fontSize: '11px', color: '#64748B', fontWeight: 600, display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                    Giá thuê
-                  </span>
+                  <span style={{ fontSize: '11px', color: '#64748B', fontWeight: 600, display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Rental Rate</span>
                   <div style={{ marginTop: '2px', display: 'flex', alignItems: 'baseline', gap: '3px' }}>
                     <span style={{ fontSize: '19px', fontWeight: 800, color: '#0F766E' }}>
                       {formatVND(device.pricePerDay || device.dailyRate)}
                     </span>
-                    <span style={{ fontSize: '12px', color: '#64748B', fontWeight: 500 }}>/ngày</span>
+                    <span style={{ fontSize: '12px', color: '#64748B', fontWeight: 500 }}>/day</span>
                   </div>
                 </div>
 
                 <div style={{ borderLeft: '1px solid #E2E8F0', paddingLeft: '24px' }}>
-                  <span style={{ fontSize: '11px', color: '#64748B', fontWeight: 600, display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                    Tiền đặt cọc
-                  </span>
+                  <span style={{ fontSize: '11px', color: '#64748B', fontWeight: 600, display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Security Deposit</span>
                   <div style={{ marginTop: '2px' }}>
                     <span style={{ fontSize: '17px', fontWeight: 700, color: '#1E293B' }}>
                       {formatVND(device.depositAmount || device.depositValue)}
@@ -536,8 +532,8 @@ const DeviceModerationDetailModal = ({
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: '9px', fontSize: '13px' }}>
               <MapPin size={16} style={{ color: '#0D9488', flexShrink: 0, marginTop: '2px' }} />
               <div>
-                <span style={{ color: '#64748B', fontWeight: 500 }}>Địa chỉ bàn giao: </span>
-                <span style={{ color: '#1E293B', fontWeight: 600 }}>{device.address || 'Chưa cung cấp địa chỉ'}</span>
+                <span style={{ color: '#64748B', fontWeight: 500 }}>Handover address: </span>
+                <span style={{ color: '#1E293B', fontWeight: 600 }}>{device.address || 'Address not provided'}</span>
                 {device.location?.coordinates && (
                   <span style={{ color: '#94A3B8', fontSize: '11.5px', marginLeft: '8px' }}>
                     (GPS: {device.location.coordinates[1]?.toFixed(4)}, {device.location.coordinates[0]?.toFixed(4)})
@@ -557,9 +553,7 @@ const DeviceModerationDetailModal = ({
                   letterSpacing: '0.05em',
                   marginBottom: '8px',
                 }}
-              >
-                Thông số kỹ thuật
-              </div>
+              >Technical Specifications</div>
               {loadingDetail && Object.keys(parsedSpecs).length === 0 ? (
                 <div
                   style={{
@@ -612,9 +606,7 @@ const DeviceModerationDetailModal = ({
                   })}
                 </div>
               ) : (
-                <div style={{ fontSize: '12.5px', color: '#94A3B8', fontStyle: 'italic' }}>
-                  Chưa có thông số chi tiết
-                </div>
+                <div style={{ fontSize: '12.5px', color: '#94A3B8', fontStyle: 'italic' }}>No detailed specifications available</div>
               )}
             </div>
 
@@ -629,9 +621,7 @@ const DeviceModerationDetailModal = ({
                   letterSpacing: '0.05em',
                   marginBottom: '6px',
                 }}
-              >
-                Mô tả thiết bị
-              </div>
+              >Device Description</div>
               {loadingDetail && !device.description ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   <div className="admin-shimmer" style={{ height: '13px', width: '100%', borderRadius: '4px' }} />
@@ -649,7 +639,7 @@ const DeviceModerationDetailModal = ({
                     overflowY: 'auto',
                   }}
                 >
-                  {device.description || 'Chưa có thông tin mô tả chi tiết từ chủ sở hữu.'}
+                  {device.description || 'No detailed description provided by owner.'}
                 </p>
               )}
             </div>
@@ -691,7 +681,7 @@ const DeviceModerationDetailModal = ({
                         textOverflow: 'ellipsis',
                       }}
                     >
-                      {ownerInfo.name || 'Chủ thiết bị'}
+                      {ownerInfo.name || 'Device Owner'}
                     </span>
                     {ownerInfo.isVerified ? (
                       <span
@@ -708,7 +698,7 @@ const DeviceModerationDetailModal = ({
                         }}
                       >
                         <ShieldCheck size={11} color="#059669" />
-                        <span>Tích xanh ✅</span>
+                        <span>Verified ✅</span>
                       </span>
                     ) : (
                       <span
@@ -725,7 +715,7 @@ const DeviceModerationDetailModal = ({
                         }}
                       >
                         <AlertTriangle size={11} color="#D97706" />
-                        <span>Chưa eKYC ⚠️</span>
+                        <span>Unverified ⚠️</span>
                       </span>
                     )}
                   </div>
@@ -771,9 +761,7 @@ const DeviceModerationDetailModal = ({
                     letterSpacing: '0.04em',
                     display: 'block',
                   }}
-                >
-                  Điểm tín nhiệm
-                </span>
+                >Trust Score</span>
                 <span style={{ fontSize: '15px', fontWeight: 800, color: '#0F766E' }}>
                   {ownerInfo.trustScore || ownerInfo.trust?.score || 100} / 100
                 </span>
@@ -805,9 +793,7 @@ const DeviceModerationDetailModal = ({
             disabled={isProcessing}
             className="admin-btn admin-btn-outline"
             style={{ padding: '8px 18px', fontSize: '13px' }}
-          >
-            Đóng
-          </button>
+          >Close</button>
 
           {isPending && (
             <>
@@ -818,7 +804,7 @@ const DeviceModerationDetailModal = ({
                 className="admin-modal-footer-reject"
               >
                 <XCircle size={15} />
-                <span>✕ Từ chối</span>
+                <span>✕ Reject</span>
               </button>
 
               <button
@@ -830,12 +816,12 @@ const DeviceModerationDetailModal = ({
                 {isProcessing ? (
                   <>
                     <Loader2 size={14} className="animate-spin" />
-                    <span>Đang duyệt...</span>
+                    <span>Approving...</span>
                   </>
                 ) : (
                   <>
                     <CheckCircle2 size={15} />
-                    <span>✓ Phê duyệt đưa lên sàn</span>
+                    <span>✓ Approve & Publish</span>
                   </>
                 )}
               </button>
@@ -850,7 +836,7 @@ const DeviceModerationDetailModal = ({
               className="admin-modal-footer-approve"
             >
               <CheckCircle2 size={15} />
-              <span>✓ Duyệt lại thiết bị</span>
+              <span>✓ Re-approve Listing</span>
             </button>
           )}
 
@@ -862,7 +848,7 @@ const DeviceModerationDetailModal = ({
               className="admin-modal-footer-reject"
             >
               <XCircle size={15} />
-              <span>✕ Thu hồi phê duyệt</span>
+              <span>✕ Revoke Approval</span>
             </button>
           )}
         </div>
@@ -927,7 +913,7 @@ const RejectReasonModal = ({
             </div>
             <div>
               <h3 className="admin-modal-title" style={{ color: '#DC2626', fontSize: '17px' }}>
-                Từ chối kiểm duyệt thiết bị
+                Reject Device Listing
               </h3>
             </div>
           </div>
@@ -936,22 +922,22 @@ const RejectReasonModal = ({
             onClick={onClose}
             disabled={isSubmitting}
             className="admin-modal-close-btn"
-            title="Đóng"
+            title="Close"
           >
             <X size={18} />
           </button>
         </div>
 
         <p style={{ fontSize: '13px', color: '#475569', margin: '0 0 14px', lineHeight: 1.5 }}>
-          Bạn đang từ chối bài đăng của thiết bị:{' '}
-          <strong style={{ color: '#0F172A' }}>"{device.name}"</strong>. Vui lòng chọn lý do nhanh hoặc nhập nội dung cụ
-          thể để gửi thông báo cho chủ sở hữu:
+          You are rejecting the listing for:{' '}
+          <strong style={{ color: '#0F172A' }}>"{device.name}"</strong>. Please select a reason or enter specific details
+          to send a notification to the owner:
         </p>
 
         {/* Quick Suggestion Chips */}
         <div style={{ marginBottom: '14px' }}>
           <span style={{ fontSize: '11.5px', fontWeight: 700, color: '#64748B', display: 'block', marginBottom: '8px' }}>
-            Gợi ý lý do vi phạm phổ biến (click để chọn):
+            Common violation suggestions (click to select):
           </span>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
             {QUICK_REJECT_REASONS.map((chip, idx) => (
@@ -979,14 +965,14 @@ const RejectReasonModal = ({
               marginBottom: '6px',
             }}
           >
-            Nội dung chi tiết thông báo cho chủ thiết bị:
+            Detailed notification message for device owner:
           </label>
           <textarea
             id="reject-reason-text"
             rows={4}
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            placeholder="Nhập lý do cụ thể..."
+            placeholder="Enter specific rejection reason..."
             style={{
               width: '100%',
               boxSizing: 'border-box',
@@ -1009,9 +995,7 @@ const RejectReasonModal = ({
             onClick={onClose}
             disabled={isSubmitting}
             style={{ padding: '9px 18px', fontSize: '13px' }}
-          >
-            Hủy
-          </button>
+          >Cancel</button>
 
           <button
             type="button"
@@ -1033,10 +1017,10 @@ const RejectReasonModal = ({
             {isSubmitting ? (
               <>
                 <Loader2 size={14} className="animate-spin" />
-                <span>Đang gửi...</span>
+                <span>Sending...</span>
               </>
             ) : (
-              <span>Xác nhận từ chối</span>
+              <span>Confirm Rejection</span>
             )}
           </button>
         </div>
@@ -1080,7 +1064,7 @@ const ConfirmDeleteModal = ({ device, isDeleting, onCancel, onConfirm }) => {
             </div>
             <div>
               <h3 className="admin-modal-title" style={{ color: '#DC2626', fontSize: '17px' }}>
-                Xác nhận gỡ bỏ thiết bị
+                Confirm Device Removal
               </h3>
             </div>
           </div>
@@ -1089,15 +1073,15 @@ const ConfirmDeleteModal = ({ device, isDeleting, onCancel, onConfirm }) => {
             onClick={onCancel}
             disabled={isDeleting}
             className="admin-modal-close-btn"
-            title="Đóng"
+            title="Close"
           >
             <X size={18} />
           </button>
         </div>
 
         <p style={{ fontSize: '13.5px', color: '#475569', lineHeight: 1.6, margin: '12px 0 20px' }}>
-          Bạn có chắc chắn muốn gỡ bỏ thiết bị <strong style={{ color: '#0F172A' }}>"{device.name}"</strong> khỏi sàn?
-          Hành động này không thể hoàn tác.
+          Are you sure you want to remove device <strong style={{ color: '#0F172A' }}>"{device.name}"</strong> from the marketplace?
+          This action cannot be undone.
         </p>
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
@@ -1107,9 +1091,7 @@ const ConfirmDeleteModal = ({ device, isDeleting, onCancel, onConfirm }) => {
             onClick={onCancel}
             disabled={isDeleting}
             style={{ padding: '9px 18px', fontSize: '13px' }}
-          >
-            Hủy
-          </button>
+          >Cancel</button>
 
           <button
             type="button"
@@ -1131,10 +1113,10 @@ const ConfirmDeleteModal = ({ device, isDeleting, onCancel, onConfirm }) => {
             {isDeleting ? (
               <>
                 <Loader2 size={14} className="animate-spin" />
-                <span>Đang gỡ...</span>
+                <span>Removing...</span>
               </>
             ) : (
-              <span>Xác nhận gỡ</span>
+              <span>Confirm Removal</span>
             )}
           </button>
         </div>
@@ -1159,7 +1141,7 @@ export const DeviceTableRow = React.memo(({
   onDeleteDevice,
 }) => {
   const thumb = device.images?.[0] || '/images/default-device-placeholder.svg';
-  const ownerName = device.owner?.name || device.ownerId?.name || 'Đối tác TechShare';
+  const ownerName = device.owner?.name || device.ownerId?.name || 'TechShare Partner';
   const isPending = device.moderationStatus === 'pending';
   const isRejected = device.moderationStatus === 'rejected';
 
@@ -1233,11 +1215,11 @@ export const DeviceTableRow = React.memo(({
         <div style={{ fontWeight: 700, color: '#0F172A', fontSize: '12.5px' }}>
           {formatVND(device.pricePerDay || device.dailyRate)}
           <span style={{ fontSize: '11px', color: '#64748B', fontWeight: 500, marginLeft: '2px' }}>
-            /ngày
+            /day
           </span>
         </div>
         <div style={{ fontSize: '11px', color: '#64748B', marginTop: '1px' }}>
-          Cọc: {formatVND(device.depositAmount || device.depositValue)}
+          Deposit: {formatVND(device.depositAmount || device.depositValue)}
         </div>
       </td>
 
@@ -1307,7 +1289,7 @@ export const DeviceTableRow = React.memo(({
               backgroundColor: isPending ? '#D97706' : isRejected ? '#DC2626' : '#10B981',
             }}
           />
-          {isPending ? 'Chờ duyệt' : isRejected ? 'Từ chối' : 'Đã duyệt'}
+          {isPending ? 'Pending' : isRejected ? 'Rejected' : 'Approved'}
         </span>
       </td>
 
@@ -1326,10 +1308,10 @@ export const DeviceTableRow = React.memo(({
             type="button"
             onClick={() => onViewDetails(device)}
             className="admin-action-btn-view"
-            title="Thẩm định chi tiết hình ảnh, giấy tờ, vị trí & thông số"
+            title="Appraise photos, documents, location and specs"
           >
             <Eye size={12} />
-            <span>Thẩm định</span>
+            <span>Appraise</span>
           </button>
 
           {/* Vị trí 2: Nút Từ chối (Pending) / Thu hồi (Approved) / Gỡ tin (Rejected) */}
@@ -1338,10 +1320,10 @@ export const DeviceTableRow = React.memo(({
               type="button"
               onClick={() => onOpenReject(device)}
               className="admin-action-btn-reject"
-              title="Từ chối bài đăng kèm lý do cụ thể"
+              title="Reject listing with specific reason"
             >
               <X size={12} />
-              <span>Từ chối</span>
+              <span>Reject</span>
             </button>
           )}
 
@@ -1350,10 +1332,10 @@ export const DeviceTableRow = React.memo(({
               type="button"
               onClick={() => onOpenReject(device)}
               className="admin-action-btn-reject"
-              title="Thu hồi phê duyệt đưa thiết bị về trạng thái từ chối"
+              title="Revoke approval and return listing to rejected status"
             >
               <X size={12} />
-              <span>Thu hồi</span>
+              <span>Revoke</span>
             </button>
           )}
 
@@ -1362,10 +1344,10 @@ export const DeviceTableRow = React.memo(({
               type="button"
               onClick={() => onDeleteDevice(device)}
               className="admin-action-btn-remove"
-              title="Gỡ bỏ hoàn toàn thiết bị vi phạm khỏi hệ thống"
+              title="Remove violating device from platform"
             >
               <Trash2 size={12} />
-              <span>Gỡ tin</span>
+              <span>Remove</span>
             </button>
           )}
 
@@ -1375,10 +1357,10 @@ export const DeviceTableRow = React.memo(({
               type="button"
               onClick={() => onApprove(device._id)}
               className="admin-action-btn-approve"
-              title="Duyệt đưa thiết bị lên sàn ngay"
+              title="Approve and publish device now"
             >
               <Check size={12} />
-              <span>Duyệt</span>
+              <span>Approve</span>
             </button>
           )}
 
@@ -1388,10 +1370,10 @@ export const DeviceTableRow = React.memo(({
               onClick={() => onDeleteDevice(device)}
               className="admin-action-btn-remove"
               style={{ width: '74px', flex: '0 0 74px' }}
-              title="Gỡ bỏ thiết bị khỏi sàn cho thuê"
+              title="Remove device from rental marketplace"
             >
               <Trash2 size={12} />
-              <span>Gỡ tin</span>
+              <span>Remove</span>
             </button>
           )}
 
@@ -1400,10 +1382,10 @@ export const DeviceTableRow = React.memo(({
               type="button"
               onClick={() => onApprove(device._id)}
               className="admin-action-btn-approve"
-              title="Phê duyệt lại thiết bị đưa lên sàn cho thuê"
+              title="Re-approve device for marketplace"
             >
               <Check size={12} />
-              <span>Duyệt lại</span>
+              <span>Re-approve</span>
             </button>
           )}
         </div>
@@ -1542,12 +1524,12 @@ export const AdminDevicesTable = ({
         <table className="admin-table admin-devices-table" style={{ width: '100%' }}>
           <thead>
             <tr>
-              <th style={{ width: '22%' }}>Thiết bị</th>
-              <th style={{ width: '10%' }}>Danh mục</th>
-              <th style={{ width: '13%' }}>Giá thuê & Cọc</th>
-              <th style={{ width: '200px', minWidth: '180px' }}>Chủ thiết bị</th>
-              <th style={{ width: '10%' }}>Trạng thái</th>
-              <th style={{ width: '240px', minWidth: '240px', textAlign: 'right', paddingRight: '12px' }}>Hành động</th>
+              <th style={{ width: '22%' }}>Device</th>
+              <th style={{ width: '10%' }}>Category</th>
+              <th style={{ width: '13%' }}>Rental & Deposit</th>
+              <th style={{ width: '200px', minWidth: '180px' }}>Device Owner</th>
+              <th style={{ width: '10%' }}>Status</th>
+              <th style={{ width: '240px', minWidth: '240px', textAlign: 'right', paddingRight: '12px' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -1558,10 +1540,10 @@ export const AdminDevicesTable = ({
                 <td colSpan={6} style={{ textAlign: 'center', padding: '40px 20px', color: '#64748B' }}>
                   <div style={{ fontSize: '32px', marginBottom: '8px' }}>📦</div>
                   <div style={{ fontWeight: 700, fontSize: '14px', color: '#1E293B' }}>
-                    Không tìm thấy thiết bị phù hợp
+                    No matching devices found
                   </div>
                   <div style={{ fontSize: '12.5px', marginTop: '4px' }}>
-                    Thử đổi bộ lọc kiểm duyệt, danh mục hoặc từ khóa tìm kiếm.
+                    Try changing moderation filter, category, or search keywords.
                   </div>
                 </td>
               </tr>
@@ -1638,10 +1620,10 @@ export const AdminPaginationBar = ({
           color: !hasPrevPage ? '#CBD5E1' : undefined,
           cursor: !hasPrevPage || loading ? 'not-allowed' : 'pointer',
         }}
-        title="Trang trước"
+        title="Previous page"
       >
         <ChevronLeft size={14} />
-        <span>Trước</span>
+        <span>Prev</span>
       </button>
 
       {/* Danh sách các số trang */}
@@ -1691,9 +1673,9 @@ export const AdminPaginationBar = ({
           color: !hasNextPage ? '#CBD5E1' : undefined,
           cursor: !hasNextPage || loading ? 'not-allowed' : 'pointer',
         }}
-        title="Trang sau"
+        title="Next page"
       >
-        <span>Sau</span>
+        <span>Next</span>
         <ChevronRight size={14} />
       </button>
     </div>
@@ -1809,9 +1791,9 @@ export const AdminDevicesTab = ({
         const items = Array.isArray(json.data) ? json.data : [];
         const mappedDevices = items.map((d) => ({
           _id: d._id || d.id,
-          name: d.name || d.title || 'Thiết bị công nghệ',
-          title: d.title || d.name || 'Thiết bị công nghệ',
-          brand: d.brand || 'Khác',
+          name: d.name || d.title || 'Technology Device',
+          title: d.title || d.name || 'Technology Device',
+          brand: d.brand || 'Other',
           category: d.category || 'other',
           condition: d.condition || '99%',
           description: d.description || '',
@@ -1836,7 +1818,7 @@ export const AdminDevicesTab = ({
           rentalCount: d.rentalCount || d.viewsCount || 0,
           owner: {
             _id: d.owner?._id || d.ownerId?._id || d.ownerId,
-            name: d.owner?.name || d.ownerId?.name || 'Đối tác TechShare',
+            name: d.owner?.name || d.ownerId?.name || 'TechShare Partner',
             email: d.owner?.email || d.ownerId?.email || 'owner@techshare.vn',
             phone: d.owner?.phone || d.ownerId?.phone || '0901234567',
             avatar:
@@ -1870,7 +1852,7 @@ export const AdminDevicesTab = ({
         }
       }
     } catch (err) {
-      console.warn('Lỗi khi fetch danh sách thiết bị:', err);
+      console.warn('Error fetching device list:', err);
     } finally {
       setLoading(false);
     }
@@ -1947,11 +1929,11 @@ export const AdminDevicesTab = ({
       });
 
       if (!res.ok) {
-        console.warn('API moderate approve phản hồi status:', res.status);
+        console.warn('API moderate approve responded with status:', res.status);
       }
 
       setToast({
-        message: 'Đã phê duyệt thiết bị thành công! Thiết bị đã sẵn sàng hiển thị trên sàn cho thuê.',
+        message: 'Device approved successfully! It is now published on the marketplace.',
         type: 'success',
       });
 
@@ -1967,7 +1949,7 @@ export const AdminDevicesTab = ({
       fetchDevices();
     } catch (err) {
       setToast({
-        message: 'Đã phê duyệt thiết bị thành công.',
+        message: 'Device approved successfully.',
         type: 'success',
       });
       if (selectedDeviceForReview && selectedDeviceForReview._id === deviceId) {
@@ -1996,11 +1978,11 @@ export const AdminDevicesTab = ({
       });
 
       if (!res.ok) {
-        console.warn('API moderate reject phản hồi status:', res.status);
+        console.warn('API moderate reject responded with status:', res.status);
       }
 
       setToast({
-        message: 'Đã từ chối kiểm duyệt thiết bị và gửi thông báo kèm lý do cho chủ máy.',
+        message: 'Device listing rejected and notification sent to the owner.',
         type: 'info',
       });
 
@@ -2017,7 +1999,7 @@ export const AdminDevicesTab = ({
       fetchDevices();
     } catch (err) {
       setToast({
-        message: 'Đã từ chối kiểm duyệt thiết bị.',
+        message: 'Device listing rejected.',
         type: 'info',
       });
       setDeviceToReject(null);
@@ -2044,7 +2026,7 @@ export const AdminDevicesTab = ({
       }
 
       setToast({
-        message: `Đã gỡ bỏ thiết bị "${deviceToDelete.name}" khỏi sàn thành công.`,
+        message: `Device "${deviceToDelete.name}" removed successfully.`,
         type: 'success',
       });
 
@@ -2052,7 +2034,7 @@ export const AdminDevicesTab = ({
       fetchDevices();
     } catch (err) {
       setToast({
-        message: 'Có lỗi xảy ra khi gỡ bỏ thiết bị.',
+        message: 'Failed to remove device.',
         type: 'error',
       });
       setDeviceToDelete(null);
@@ -2108,10 +2090,10 @@ export const AdminDevicesTab = ({
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
-            Kiểm duyệt thiết bị
+            Device Moderation
           </h2>
           <span className="bg-teal-50 text-teal-700 font-semibold border border-teal-300 px-3 py-1 rounded-full text-xs shadow-2xs">
-            {counts.all || 0} thiết bị
+            {counts.all || 0} devices
           </span>
         </div>
 
@@ -2135,7 +2117,7 @@ export const AdminDevicesTab = ({
           />
           <input
             type="text"
-            placeholder="Tìm theo tên máy, thương hiệu..."
+            placeholder="Search by device name, brand..."
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             style={{

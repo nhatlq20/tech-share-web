@@ -17,11 +17,11 @@ import {
 import { formatDate } from '../../utils/formatters.js';
 
 const TYPE_CONFIG = {
-  system: { label: 'Hệ thống', bg: 'bg-blue-50 text-blue-700 border-blue-200' },
-  promo: { label: 'Khuyến mãi', bg: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-  booking: { label: 'Đơn thuê', bg: 'bg-purple-50 text-purple-700 border-purple-200' },
-  wallet: { label: 'Ví tiền', bg: 'bg-amber-50 text-amber-700 border-amber-200' },
-  chat: { label: 'Tin nhắn', bg: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
+  system: { label: 'System', bg: 'bg-blue-50 text-blue-700 border-blue-200' },
+  promo: { label: 'Promotion', bg: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  booking: { label: 'Rental Booking', bg: 'bg-purple-50 text-purple-700 border-purple-200' },
+  wallet: { label: 'Wallet', bg: 'bg-amber-50 text-amber-700 border-amber-200' },
+  chat: { label: 'Messages', bg: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
 };
 
 export const AdminNotificationsTab = () => {
@@ -70,7 +70,7 @@ export const AdminNotificationsTab = () => {
         setTotalCount(res.pagination?.total || 0);
       }
     } catch (err) {
-      console.error('Lỗi tải danh sách thông báo:', err);
+      console.error('Error loading notifications:', err);
     } finally {
       setLoading(false);
     }
@@ -104,7 +104,7 @@ export const AdminNotificationsTab = () => {
         setHistoryList(Array.isArray(res.data) ? res.data : []);
       }
     } catch (err) {
-      console.error('Lỗi tải lịch sử phát thông báo:', err);
+      console.error('Error loading broadcast history:', err);
     } finally {
       setHistoryLoading(false);
     }
@@ -135,14 +135,14 @@ export const AdminNotificationsTab = () => {
 
       const res = await sendAdminNotification(payload);
       if (res && res.success) {
-        setFormSuccess(res.message || 'Đã gửi thông báo thành công.');
+        setFormSuccess(res.message || 'Notification sent successfully.');
         setTimeout(() => {
           setSendModalOpen(false);
           fetchNotifications();
         }, 1200);
       }
     } catch (err) {
-      setFormError(err.response?.data?.message || err.message || 'Lỗi khi gửi thông báo.');
+      setFormError(err.response?.data?.message || err.message || 'Error sending notification.');
     } finally {
       setFormSubmitting(false);
     }
@@ -158,9 +158,9 @@ export const AdminNotificationsTab = () => {
               <Bell className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-slate-900">Quản lý & Phát thông báo</h2>
+              <h2 className="text-xl font-bold text-slate-900">Notification Management & Broadcasting</h2>
               <p className="text-xs text-slate-500 mt-0.5">
-                Phát tin tức toàn sàn, gửi cảnh báo bảo trì và điều hướng thông báo người dùng
+                Broadcast platform announcements, maintenance notices, and direct user alerts
               </p>
             </div>
           </div>
@@ -170,25 +170,19 @@ export const AdminNotificationsTab = () => {
           <button
             onClick={fetchNotifications}
             className="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition"
-            title="Làm mới"
+            title="Refresh"
           >
-            <RotateCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-            Làm mới
-          </button>
+            <RotateCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />Refresh</button>
           <button
             onClick={handleOpenHistoryModal}
             className="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 transition"
           >
-            <Clock className="w-4 h-4 text-slate-500" />
-            Lịch sử phát sóng
-          </button>
+            <Clock className="w-4 h-4 text-slate-500" />Broadcast History</button>
           <button
             onClick={handleOpenSendModal}
             className="flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-xl bg-teal-600 hover:bg-teal-700 text-white shadow-sm transition"
           >
-            <Send className="w-4 h-4" />
-            Phát thông báo mới
-          </button>
+            <Send className="w-4 h-4" />Broadcast New Notification</button>
         </div>
       </div>
 
@@ -200,7 +194,7 @@ export const AdminNotificationsTab = () => {
             <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
-              placeholder="Tìm theo tiêu đề, nội dung..."
+              placeholder="Search title, content..."
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
@@ -219,11 +213,11 @@ export const AdminNotificationsTab = () => {
             }}
             className="text-xs py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/20 text-slate-700 font-medium"
           >
-            <option value="all">Tất cả loại tin</option>
-            <option value="system">Hệ thống (System)</option>
-            <option value="promo">Khuyến mãi (Promo)</option>
-            <option value="booking">Đơn thuê (Booking)</option>
-            <option value="wallet">Ví tiền (Wallet)</option>
+            <option value="all">All Notification Types</option>
+            <option value="system">System</option>
+            <option value="promo">Promotion</option>
+            <option value="booking">Rental Booking</option>
+            <option value="wallet">Wallet</option>
           </select>
 
           {/* Read Status Filter */}
@@ -235,14 +229,14 @@ export const AdminNotificationsTab = () => {
             }}
             className="text-xs py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/20 text-slate-700 font-medium"
           >
-            <option value="all">Tất cả trạng thái đọc</option>
-            <option value="true">Đã xem</option>
-            <option value="false">Chưa xem</option>
+            <option value="all">All Read Statuses</option>
+            <option value="true">Read</option>
+            <option value="false">Unread</option>
           </select>
         </div>
 
         <div className="text-xs text-slate-500">
-          Tổng số thông báo: <span className="font-bold text-slate-800">{totalCount}</span>
+          Total Notifications: <span className="font-bold text-slate-800">{totalCount}</span>
         </div>
       </div>
 
@@ -252,11 +246,11 @@ export const AdminNotificationsTab = () => {
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-50/75 border-b border-slate-100 text-slate-500 font-semibold uppercase tracking-wider">
               <tr>
-                <th className="py-3.5 px-4">Thời gian</th>
-                <th className="py-3.5 px-4">Người nhận</th>
-                <th className="py-3.5 px-4">Loại tin</th>
-                <th className="py-3.5 px-4">Tiêu đề & Nội dung</th>
-                <th className="py-3.5 px-4 text-center">Đã xem</th>
+                <th className="py-3.5 px-4">Timestamp</th>
+                <th className="py-3.5 px-4">Recipient</th>
+                <th className="py-3.5 px-4">Category</th>
+                <th className="py-3.5 px-4">Title & Content</th>
+                <th className="py-3.5 px-4 text-center">Read Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -264,14 +258,14 @@ export const AdminNotificationsTab = () => {
                 <tr>
                   <td colSpan="5" className="py-12 text-center text-slate-400">
                     <RotateCw className="w-6 h-6 animate-spin mx-auto mb-2 text-teal-600" />
-                    Đang tải danh sách thông báo...
+                    Loading notifications list...
                   </td>
                 </tr>
               ) : notifications.length === 0 ? (
                 <tr>
                   <td colSpan="5" className="py-12 text-center text-slate-400">
                     <AlertCircle className="w-8 h-8 mx-auto mb-2 text-slate-300" />
-                    Không tìm thấy thông báo nào phù hợp.
+                    No matching notifications found.
                   </td>
                 </tr>
               ) : (
@@ -290,7 +284,7 @@ export const AdminNotificationsTab = () => {
 
                       {/* Người nhận */}
                       <td className="py-3.5 px-4">
-                        <div className="font-semibold text-slate-900">{n.userId?.name || 'Người dùng'}</div>
+                        <div className="font-semibold text-slate-900">{n.userId?.name || 'User'}</div>
                         <div className="text-[11px] text-slate-400">{n.userId?.email || 'N/A'}</div>
                       </td>
 
@@ -312,13 +306,9 @@ export const AdminNotificationsTab = () => {
                       {/* Trạng thái đã xem */}
                       <td className="py-3.5 px-4 text-center">
                         {n.isRead ? (
-                          <span className="inline-block px-2 py-0.5 text-[10px] font-semibold rounded-md bg-slate-100 text-slate-600">
-                            Đã đọc
-                          </span>
+                          <span className="inline-block px-2 py-0.5 text-[10px] font-semibold rounded-md bg-slate-100 text-slate-600">Read</span>
                         ) : (
-                          <span className="inline-block px-2 py-0.5 text-[10px] font-bold rounded-md bg-amber-50 text-amber-700 border border-amber-200">
-                            Chưa đọc
-                          </span>
+                          <span className="inline-block px-2 py-0.5 text-[10px] font-bold rounded-md bg-amber-50 text-amber-700 border border-amber-200">Unread</span>
                         )}
                       </td>
                     </tr>
@@ -340,9 +330,7 @@ export const AdminNotificationsTab = () => {
                 disabled={page <= 1}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 className="px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-40 disabled:hover:bg-white transition"
-              >
-                Trước
-              </button>
+              >Prev</button>
               <button
                 disabled={page >= totalPages}
                 onClick={() => setPage((p) => p + 1)}
@@ -365,8 +353,8 @@ export const AdminNotificationsTab = () => {
                   <Send className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-slate-900">Phát thông báo mới</h3>
-                  <p className="text-xs text-slate-500">Gửi thông báo diện rộng hoặc trực tiếp qua Socket.io</p>
+                  <h3 className="text-base font-bold text-slate-900">Broadcast New Notification</h3>
+                  <p className="text-xs text-slate-500">Send platform-wide broadcast or direct alerts via Socket.IO</p>
                 </div>
               </div>
               <button
@@ -393,12 +381,12 @@ export const AdminNotificationsTab = () => {
               )}
 
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Đối tượng nhận thông báo:</label>
+                <label className="block font-semibold text-slate-700 mb-1">Target Audience:</label>
                 <div className="grid grid-cols-3 gap-2">
                   {[
-                    { id: 'all', label: 'Tất cả người dùng' },
-                    { id: 'role', label: 'Theo vai trò' },
-                    { id: 'specific_users', label: 'Chỉ định User' },
+                    { id: 'all', label: 'All Users' },
+                    { id: 'role', label: 'By Role' },
+                    { id: 'specific_users', label: 'Specific Users' },
                   ].map((t) => (
                     <button
                       key={t.id}
@@ -418,15 +406,15 @@ export const AdminNotificationsTab = () => {
 
               {formData.targetType === 'role' && (
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Chọn nhóm vai trò:</label>
+                  <label className="block font-semibold text-slate-700 mb-1">Select Role Group:</label>
                   <select
                     value={formData.targetRole}
                     onChange={(e) => setFormData({ ...formData, targetRole: e.target.value })}
                     className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20"
                   >
-                    <option value="renter">Người thuê (Renter)</option>
-                    <option value="owner">Chủ thiết bị (Owner)</option>
-                    <option value="admin">Ban quản trị (Admin)</option>
+                    <option value="renter">Renter</option>
+                    <option value="owner">Device Owner</option>
+                    <option value="admin">Administrators</option>
                   </select>
                 </div>
               )}
@@ -434,7 +422,7 @@ export const AdminNotificationsTab = () => {
               {formData.targetType === 'specific_users' && (
                 <div>
                   <label className="block font-semibold text-slate-700 mb-1">
-                    Danh sách User ID (cách nhau bằng dấu phẩy):
+                    User IDs (comma-separated):
                   </label>
                   <textarea
                     rows={2}
@@ -448,24 +436,24 @@ export const AdminNotificationsTab = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Phân loại thông báo:</label>
+                  <label className="block font-semibold text-slate-700 mb-1">Notification Category:</label>
                   <select
                     value={formData.type}
                     onChange={(e) => setFormData({ ...formData, type: e.target.value })}
                     className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20"
                   >
-                    <option value="system">Hệ thống (System)</option>
-                    <option value="promo">Khuyến mãi (Promo)</option>
-                    <option value="booking">Đơn thuê (Booking)</option>
-                    <option value="wallet">Ví tiền (Wallet)</option>
+                    <option value="system">System</option>
+                    <option value="promo">Promotion</option>
+                    <option value="booking">Rental Booking</option>
+                    <option value="wallet">Wallet</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Đường dẫn liên kết (tùy chọn):</label>
+                  <label className="block font-semibold text-slate-700 mb-1">Target URL (optional):</label>
                   <input
                     type="text"
-                    placeholder="VD: /vouchers hoặc /profile"
+                    placeholder="e.g. /vouchers or /profile"
                     value={formData.url}
                     onChange={(e) => setFormData({ ...formData, url: e.target.value })}
                     className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20"
@@ -474,11 +462,11 @@ export const AdminNotificationsTab = () => {
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Tiêu đề thông báo:</label>
+                <label className="block font-semibold text-slate-700 mb-1">Notification Title:</label>
                 <input
                   type="text"
                   required
-                  placeholder="Nhập tiêu đề thông báo..."
+                  placeholder="Enter notification title..."
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20 font-semibold"
@@ -486,11 +474,11 @@ export const AdminNotificationsTab = () => {
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Nội dung chi tiết:</label>
+                <label className="block font-semibold text-slate-700 mb-1">Detailed Content:</label>
                 <textarea
                   required
                   rows={4}
-                  placeholder="Nhập nội dung đầy đủ của thông báo..."
+                  placeholder="Enter full notification content..."
                   value={formData.body}
                   onChange={(e) => setFormData({ ...formData, body: e.target.value })}
                   className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20 font-medium"
@@ -502,15 +490,13 @@ export const AdminNotificationsTab = () => {
                   type="button"
                   onClick={() => setSendModalOpen(false)}
                   className="px-4 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 font-semibold text-slate-600 transition"
-                >
-                  Hủy
-                </button>
+                >Cancel</button>
                 <button
                   type="submit"
                   disabled={formSubmitting}
                   className="px-5 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold shadow-sm transition disabled:opacity-50"
                 >
-                  {formSubmitting ? 'Đang gửi...' : 'Gửi thông báo'}
+                  {formSubmitting ? 'Sending...' : 'Send Notification'}
                 </button>
               </div>
             </form>
@@ -528,8 +514,8 @@ export const AdminNotificationsTab = () => {
                   <Clock className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-slate-900">Lịch sử phát thông báo</h3>
-                  <p className="text-xs text-slate-500">Các đợt thông báo diện rộng được ghi vết trong kiểm toán</p>
+                  <h3 className="text-base font-bold text-slate-900">Broadcast Notification History</h3>
+                  <p className="text-xs text-slate-500">Broadcast campaigns recorded in system audit trail</p>
                 </div>
               </div>
               <button
@@ -544,11 +530,11 @@ export const AdminNotificationsTab = () => {
               {historyLoading ? (
                 <div className="py-8 text-center text-slate-400">
                   <RotateCw className="w-5 h-5 animate-spin mx-auto mb-2 text-teal-600" />
-                  Đang tải lịch sử phát sóng...
+                  Loading broadcast history...
                 </div>
               ) : historyList.length === 0 ? (
                 <div className="py-8 text-center text-slate-400">
-                  Chưa ghi nhận đợt phát sóng nào.
+                  No broadcast campaigns recorded yet.
                 </div>
               ) : (
                 historyList.map((h) => (
@@ -559,13 +545,13 @@ export const AdminNotificationsTab = () => {
                     </div>
                     <div className="flex items-center gap-3 text-slate-600 text-[11px]">
                       <span>
-                        Người thực hiện: <span className="font-semibold">{h.adminName || 'Admin'}</span>
+                        Sent by: <span className="font-semibold">{h.adminName || 'Admin'}</span>
                       </span>
                       <span>
-                        Số người nhận: <span className="font-bold text-teal-700">{h.metadata?.recipientCount || 0}</span>
+                        Recipients: <span className="font-bold text-teal-700">{h.metadata?.recipientCount || 0}</span>
                       </span>
                       <span>
-                        Đối tượng: <span className="font-semibold">{h.metadata?.targetType || 'all'}</span>
+                        Target: <span className="font-semibold">{h.metadata?.targetType || 'all'}</span>
                       </span>
                     </div>
                   </div>
@@ -577,9 +563,7 @@ export const AdminNotificationsTab = () => {
               <button
                 onClick={() => setHistoryModalOpen(false)}
                 className="px-5 py-2 text-xs font-semibold rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 transition"
-              >
-                Đóng
-              </button>
+              >Close</button>
             </div>
           </div>
         </div>

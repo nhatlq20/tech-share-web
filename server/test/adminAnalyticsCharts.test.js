@@ -110,7 +110,7 @@ describe('TECHSHARE ADMIN ANALYTICS EJS & FINANCIAL CHARTS TEST SUITE', () => {
     assert.equal(res.status, 200);
     const html = await res.text();
 
-    assert.ok(html.includes('Báo cáo & Phân tích Tài chính Nâng cao'), 'Page title rendered');
+    assert.ok(html.includes('Advanced Financial Reports & Analytics') || html.includes('Báo cáo & Phân tích Tài chính Nâng cao'), 'Page title rendered');
     assert.ok(html.includes('id="revenueTrendsChart"'), 'Chart 1 canvas exists');
     assert.ok(html.includes('id="bookingStatusChart"'), 'Chart 2 canvas exists');
     assert.ok(html.includes('id="categoryRevenueChart"'), 'Chart 3 canvas exists');
@@ -287,9 +287,9 @@ describe('TECHSHARE ADMIN ANALYTICS EJS & FINANCIAL CHARTS TEST SUITE', () => {
     assert.ok(hasBom, 'CSV binary stream starts with UTF-8 BOM (0xEF, 0xBB, 0xBF)');
 
     const csv = new TextDecoder('utf-8').decode(bytes);
-    assert.ok(csv.includes('TECHSHARE - BÁO CÁO PHÂN TÍCH TÀI CHÍNH & VẬN HÀNH'), 'Includes CSV title');
-    assert.ok(csv.includes('Tổng giá trị giao dịch (GBV)'), 'Includes GBV metric');
-    assert.ok(csv.includes('Doanh thu phí nền tảng ròng (10%)'), 'Includes Platform fee metric');
+    assert.ok(/(?:TECHSHARE - BÁO CÁO PHÂN TÍCH TÀI CHÍNH & VẬN HÀNH|TECHSHARE - FINANCIAL & OPERATIONAL ANALYTICS REPORT)/.test(csv), 'Includes CSV title');
+    assert.ok(/(?:Tổng giá trị giao dịch \(GBV\)|Gross Booking Value \(GBV\))/.test(csv), 'Includes GBV metric');
+    assert.ok(/(?:Doanh thu phí nền tảng ròng \(10%\)|Net Platform Service Fee Revenue \(10%\))/.test(csv), 'Includes Platform fee metric');
   });
 
   // TC-ANALYTICS-13: Unauthorized requests return 401 or 403

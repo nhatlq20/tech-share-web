@@ -24,10 +24,10 @@ import {
 import { formatPrice, formatDate } from '../../utils/formatters.js';
 
 const DISPUTE_STATUS = {
-  pending: { label: 'Chờ xử lý', bg: 'bg-amber-50 text-amber-700 border-amber-200' },
-  in_review: { label: 'Đang xem xét', bg: 'bg-blue-50 text-blue-700 border-blue-200' },
-  resolved: { label: 'Đã giải quyết', bg: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-  dismissed: { label: 'Đã bác bỏ', bg: 'bg-slate-100 text-slate-700 border-slate-200' },
+  pending: { label: 'Pending', bg: 'bg-amber-50 text-amber-700 border-amber-200' },
+  in_review: { label: 'In Review', bg: 'bg-blue-50 text-blue-700 border-blue-200' },
+  resolved: { label: 'Resolved', bg: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  dismissed: { label: 'Dismissed', bg: 'bg-slate-100 text-slate-700 border-slate-200' },
 };
 
 export const AdminDisputesTab = () => {
@@ -66,7 +66,7 @@ export const AdminDisputesTab = () => {
         setTotalCount(res.pagination?.total || 0);
       }
     } catch (err) {
-      console.error('Lỗi khi tải danh sách tranh chấp:', err);
+      console.error('Error loading disputes list:', err);
     } finally {
       setLoading(false);
     }
@@ -92,7 +92,7 @@ export const AdminDisputesTab = () => {
         setAdminNote('');
       }
     } catch (err) {
-      console.error('Lỗi tải chi tiết tranh chấp:', err);
+      console.error('Error loading dispute details:', err);
     } finally {
       setDetailLoading(false);
     }
@@ -105,12 +105,12 @@ export const AdminDisputesTab = () => {
       setActionError('');
       const res = await reviewAdminDispute(selectedDispute._id, { adminNote });
       if (res && res.success) {
-        setActionSuccess('Đã chuyển tranh chấp sang trạng thái đang xem xét.');
+        setActionSuccess('Dispute moved to in review status.');
         setSelectedDispute((prev) => ({ ...prev, status: 'in_review' }));
         fetchDisputes();
       }
     } catch (err) {
-      setActionError(err.message || 'Lỗi khi cập nhật trạng thái xem xét.');
+      setActionError(err.message || 'Error updating review status.');
     } finally {
       setActionLoading(false);
     }
@@ -122,11 +122,11 @@ export const AdminDisputesTab = () => {
     if (decision === 'partial_deduct') {
       const num = Number(deductAmount);
       if (isNaN(num) || num < 0) {
-        setActionError('Số tiền khấu trừ không được âm.');
+        setActionError('Deduction amount cannot be negative.');
         return;
       }
       if (num > deposit) {
-        setActionError(`Số tiền khấu trừ (${num.toLocaleString()}₫) vượt quá tiền cọc thực tế (${deposit.toLocaleString()}₫).`);
+        setActionError(`Deduction amount (${num.toLocaleString()}₫) exceeds actual escrow deposit (${deposit.toLocaleString()}₫).`);
         return;
       }
     }
@@ -140,12 +140,12 @@ export const AdminDisputesTab = () => {
         adminNote,
       });
       if (res && res.success) {
-        setActionSuccess('Phân xử tranh chấp thành công. Tiền cọc đã được giải ngân chính xác.');
+        setActionSuccess('Dispute resolved successfully. Escrow deposit has been disbursed.');
         setSelectedDispute((prev) => ({ ...prev, status: 'resolved', adminDecision: decision }));
         fetchDisputes();
       }
     } catch (err) {
-      setActionError(err.message || 'Lỗi khi phân xử tranh chấp.');
+      setActionError(err.message || 'Error resolving dispute.');
     } finally {
       setActionLoading(false);
     }
@@ -158,12 +158,12 @@ export const AdminDisputesTab = () => {
       setActionError('');
       const res = await dismissAdminDispute(selectedDispute._id, { adminNote });
       if (res && res.success) {
-        setActionSuccess('Đã bác bỏ yêu cầu bồi thường và hoàn trả cọc đầy đủ.');
+        setActionSuccess('Claim dismissed and deposit refunded in full.');
         setSelectedDispute((prev) => ({ ...prev, status: 'dismissed' }));
         fetchDisputes();
       }
     } catch (err) {
-      setActionError(err.message || 'Lỗi khi bác bỏ khiếu nại.');
+      setActionError(err.message || 'Error dismissing dispute.');
     } finally {
       setActionLoading(false);
     }
@@ -175,13 +175,13 @@ export const AdminDisputesTab = () => {
       <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
         <div>
           <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-            <span>Xử lý Tranh chấp & Khiếu nại Cọc</span>
+            <span>Dispute Resolution & Escrow Claims</span>
             <span className="text-xs px-2.5 py-0.5 rounded-full bg-purple-50 text-purple-700 font-semibold border border-purple-200">
-              {totalCount} vụ việc
+              {totalCount} cases
             </span>
           </h2>
           <p className="text-xs text-slate-500 mt-1">
-            Thẩm định hiện trạng hư hỏng, đối soát ảnh bàn giao và đưa ra phán quyết giải ngân tiền cọc Escrow an toàn.
+            Assess damage evidence, cross-reference handover photos, and resolve escrow deposit distribution securely.
           </p>
         </div>
 
@@ -192,7 +192,7 @@ export const AdminDisputesTab = () => {
           className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-teal-700 bg-teal-50 border border-teal-200 rounded-xl hover:bg-teal-100 transition shadow-2xs cursor-pointer"
         >
           <RotateCw size={14} className={loading ? 'animate-spin' : ''} />
-          <span>Làm mới</span>
+          <span>Refresh</span>
         </button>
       </div>
 
@@ -202,7 +202,7 @@ export const AdminDisputesTab = () => {
           <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
-            placeholder="Tìm theo mã đơn, lý do, người khiếu nại..."
+            placeholder="Search by order code, reason, claimant..."
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -228,7 +228,7 @@ export const AdminDisputesTab = () => {
               }`}
             >
               {st === 'all'
-                ? 'Tất cả'
+                ? 'All'
                 : DISPUTE_STATUS[st]?.label || st}
             </button>
           ))}
@@ -241,13 +241,13 @@ export const AdminDisputesTab = () => {
           <table className="w-full text-left text-xs text-slate-600 border-collapse">
             <thead>
               <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[11px]">
-                <th className="py-3.5 px-4">Đơn thuê</th>
-                <th className="py-3.5 px-4">Người khiếu nại</th>
-                <th className="py-3.5 px-4">Lý do tranh chấp</th>
-                <th className="py-3.5 px-4">Yêu cầu bồi thường</th>
-                <th className="py-3.5 px-4">Ngày tạo</th>
-                <th className="py-3.5 px-4 text-center">Trạng thái</th>
-                <th className="py-3.5 px-4 text-center">Thao tác</th>
+                <th className="py-3.5 px-4">Rental Booking</th>
+                <th className="py-3.5 px-4">Claimant</th>
+                <th className="py-3.5 px-4">Dispute Reason</th>
+                <th className="py-3.5 px-4">Claim Amount</th>
+                <th className="py-3.5 px-4">Created Date</th>
+                <th className="py-3.5 px-4 text-center">Status</th>
+                <th className="py-3.5 px-4 text-center">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium">
@@ -256,14 +256,14 @@ export const AdminDisputesTab = () => {
                   <td colSpan={7} className="py-12 text-center text-slate-400">
                     <div className="flex flex-col items-center justify-center gap-2">
                       <RotateCw size={24} className="animate-spin text-teal-600" />
-                      <span>Đang tải danh sách tranh chấp...</span>
+                      <span>Loading dispute list...</span>
                     </div>
                   </td>
                 </tr>
               ) : disputes.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-12 text-center text-slate-400">
-                    Không có khiếu nại tranh chấp nào trong mục này.
+                    No dispute claims found in this section.
                   </td>
                 </tr>
               ) : (
@@ -280,15 +280,15 @@ export const AdminDisputesTab = () => {
                           #{d.booking?.bookingCode || 'TS-BOOKING'}
                         </span>
                         <div className="text-[10px] text-slate-400 mt-0.5 truncate max-w-[120px]">
-                          {d.booking?.deviceId?.name || 'Thiết bị'}
+                          {d.booking?.deviceId?.name || 'Device'}
                         </div>
                       </td>
 
                       {/* Người khiếu nại */}
                       <td className="py-3.5 px-4">
-                        <div className="font-bold text-slate-800">{d.claimant?.name || 'Người dùng'}</div>
+                        <div className="font-bold text-slate-800">{d.claimant?.name || 'User'}</div>
                         <span className="text-[10px] text-slate-400">
-                          {d.claimant?.role === 'owner' ? 'Chủ thiết bị' : 'Người thuê'}
+                          {d.claimant?.role === 'owner' ? 'Device Owner' : 'Renter'}
                         </span>
                       </td>
 
@@ -324,9 +324,7 @@ export const AdminDisputesTab = () => {
                           type="button"
                           onClick={() => handleOpenDetail(d._id)}
                           className="px-3 py-1 bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-200 rounded-lg text-xs font-semibold transition cursor-pointer"
-                        >
-                          Xử lý
-                        </button>
+                        >Resolve</button>
                       </td>
                     </tr>
                   );
@@ -340,7 +338,7 @@ export const AdminDisputesTab = () => {
         {totalPages > 1 && (
           <div className="p-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
             <span>
-              Trang {page} / {totalPages} (Tổng {totalCount} vụ việc)
+              Page {page} / {totalPages} (Total {totalCount} cases)
             </span>
             <div className="flex items-center gap-1.5">
               <button
@@ -348,9 +346,7 @@ export const AdminDisputesTab = () => {
                 disabled={page <= 1}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 className="px-3 py-1.5 border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-              >
-                Trước
-              </button>
+              >Prev</button>
               <button
                 type="button"
                 disabled={page >= totalPages}
@@ -380,7 +376,7 @@ export const AdminDisputesTab = () => {
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
                 <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
-                  <span>Giải quyết Tranh chấp đơn #{selectedDispute.booking?.bookingCode}</span>
+                  <span>Resolve Dispute for Order #{selectedDispute.booking?.bookingCode}</span>
                   <span
                     className={`text-[10px] px-2 py-0.5 rounded-full border ${
                       DISPUTE_STATUS[selectedDispute.status]?.bg || 'bg-slate-100'
@@ -390,7 +386,7 @@ export const AdminDisputesTab = () => {
                   </span>
                 </h3>
                 <p className="text-[11px] text-slate-400 mt-0.5">
-                  Người khiếu nại: {selectedDispute.claimant?.name} ({selectedDispute.claimant?.email})
+                  Claimant: {selectedDispute.claimant?.name} ({selectedDispute.claimant?.email})
                 </p>
               </div>
               <button
@@ -420,7 +416,7 @@ export const AdminDisputesTab = () => {
             <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
               <div>
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                  Lý do khiếu nại từ đối tác
+                  Claim Reason from Counterparty
                 </span>
                 <p className="text-xs text-slate-800 font-medium leading-relaxed">
                   {selectedDispute.reason}
@@ -431,7 +427,7 @@ export const AdminDisputesTab = () => {
               {Array.isArray(selectedDispute.evidenceImages) && selectedDispute.evidenceImages.length > 0 && (
                 <div>
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">
-                    Ảnh chụp bằng chứng hiện trường
+                    On-site Photo Evidence
                   </span>
                   <div className="flex items-center gap-2 overflow-x-auto pb-1">
                     {selectedDispute.evidenceImages.map((imgUrl, i) => (
@@ -442,7 +438,7 @@ export const AdminDisputesTab = () => {
                         rel="noopener noreferrer"
                         className="w-16 h-16 rounded-lg bg-slate-200 border border-slate-300 overflow-hidden shrink-0 hover:opacity-80 transition"
                       >
-                        <img src={imgUrl} alt={`Bằng chứng ${i + 1}`} className="w-full h-full object-cover" />
+                        <img src={imgUrl} alt={`Evidence ${i + 1}`} className="w-full h-full object-cover" />
                       </a>
                     ))}
                   </div>
@@ -453,13 +449,13 @@ export const AdminDisputesTab = () => {
             {/* Financial Overview of Dispute */}
             <div className="grid grid-cols-2 gap-3 p-4 bg-teal-50/50 border border-teal-200 rounded-xl text-xs">
               <div>
-                <span className="text-slate-500 block">Tiền cọc giữ chỗ (Escrow):</span>
+                <span className="text-slate-500 block">Escrow Security Deposit:</span>
                 <span className="text-base font-bold text-slate-800">
                   {formatPrice(selectedDispute.booking?.pricing?.deposit || 0)}
                 </span>
               </div>
               <div>
-                <span className="text-slate-500 block">Yêu cầu bồi thường:</span>
+                <span className="text-slate-500 block">Claim Amount:</span>
                 <span className="text-base font-bold text-rose-600">
                   {formatPrice(selectedDispute.requestedDeductAmount || 0)}
                 </span>
@@ -470,7 +466,7 @@ export const AdminDisputesTab = () => {
             {selectedDispute.status !== 'resolved' && selectedDispute.status !== 'dismissed' ? (
               <div className="space-y-4 pt-2 border-t border-slate-100">
                 <span className="text-xs font-bold text-slate-800 block">
-                  Phương án Phân xử của Quản trị viên
+                  Administrator Resolution Plan
                 </span>
 
                 {/* Decision Radios */}
@@ -490,9 +486,9 @@ export const AdminDisputesTab = () => {
                       onChange={() => setDecision('full_refund')}
                       className="sr-only"
                     />
-                    <span>Hoàn cọc 100%</span>
+                    <span>100% Deposit Refund</span>
                     <span className="text-[10px] text-slate-400 font-normal">
-                      Người thuê nhận lại đủ tiền cọc
+                      Renter receives full deposit back
                     </span>
                   </label>
 
@@ -511,9 +507,9 @@ export const AdminDisputesTab = () => {
                       onChange={() => setDecision('partial_deduct')}
                       className="sr-only"
                     />
-                    <span>Bồi thường 1 phần</span>
+                    <span>Partial Compensation</span>
                     <span className="text-[10px] text-slate-400 font-normal">
-                      Khấu trừ 1 phần theo thiệt hại
+                      Deduct partial deposit for verified damages
                     </span>
                   </label>
 
@@ -532,9 +528,9 @@ export const AdminDisputesTab = () => {
                       onChange={() => setDecision('full_deduct')}
                       className="sr-only"
                     />
-                    <span>Khấu trừ 100%</span>
+                    <span>100% Deposit Forfeiture</span>
                     <span className="text-[10px] text-slate-400 font-normal">
-                      Chuyển toàn bộ cọc cho chủ máy
+                      Transfer entire deposit to device owner
                     </span>
                   </label>
                 </div>
@@ -543,7 +539,7 @@ export const AdminDisputesTab = () => {
                 {decision === 'partial_deduct' && (
                   <div>
                     <label className="text-xs font-semibold text-slate-700 block mb-1">
-                      Số tiền khấu trừ bồi thường cho Chủ máy (VND):
+                      Deduction amount compensated to Owner (VND):
                     </label>
                     <input
                       type="number"
@@ -554,7 +550,7 @@ export const AdminDisputesTab = () => {
                       className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500"
                     />
                     <p className="text-[10px] text-slate-400 mt-1">
-                      Tiền cọc còn lại sẽ tự động hoàn trả về ví người thuê: {formatPrice((selectedDispute.booking?.pricing?.deposit || 0) - deductAmount)}.
+                      Remaining deposit will be automatically refunded to renter wallet: {formatPrice((selectedDispute.booking?.pricing?.deposit || 0) - deductAmount)}.
                     </p>
                   </div>
                 )}
@@ -562,11 +558,11 @@ export const AdminDisputesTab = () => {
                 {/* Admin Note Input */}
                 <div>
                   <label className="text-xs font-semibold text-slate-700 block mb-1">
-                    Ghi chú phán quyết / Căn cứ thẩm định:
+                    Resolution Notes / Appraisal Basis:
                   </label>
                   <textarea
                     rows={2}
-                    placeholder="Ghi rõ lý do đưa ra mức bồi thường hoặc kết quả thương lượng..."
+                    placeholder="Specify grounds for resolution or negotiation outcome..."
                     value={adminNote}
                     onChange={(e) => setAdminNote(e.target.value)}
                     className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
@@ -582,18 +578,14 @@ export const AdminDisputesTab = () => {
                         onClick={handleReview}
                         disabled={actionLoading}
                         className="px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-xs font-semibold transition cursor-pointer"
-                      >
-                        Đưa vào xem xét
-                      </button>
+                      >Mark In Review</button>
                     )}
                     <button
                       type="button"
                       onClick={handleDismiss}
                       disabled={actionLoading}
                       className="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-semibold transition cursor-pointer"
-                    >
-                      Bác bỏ khiếu nại
-                    </button>
+                    >Dismiss Claim</button>
                   </div>
 
                   <button
@@ -603,15 +595,15 @@ export const AdminDisputesTab = () => {
                     className="px-5 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer flex items-center gap-1.5"
                   >
                     {actionLoading && <RotateCw size={13} className="animate-spin" />}
-                    <span>Xác nhận Phân xử & Giải ngân</span>
+                    <span>Confirm Resolution & Disburse</span>
                   </button>
                 </div>
               </div>
             ) : (
               <div className="p-4 bg-slate-100 rounded-xl text-xs text-slate-600 space-y-1">
-                <span className="font-bold text-slate-800">Tranh chấp này đã hoàn tất:</span>
-                <p>Quyết định: {selectedDispute.adminDecision}</p>
-                <p>Số tiền khấu trừ: {formatPrice(selectedDispute.finalDeductAmount || 0)}</p>
+                <span className="font-bold text-slate-800">This dispute has been resolved:</span>
+                <p>Decision: {selectedDispute.adminDecision}</p>
+                <p>Deduction Amount: {formatPrice(selectedDispute.finalDeductAmount || 0)}</p>
                 {selectedDispute.adminNote && <p className="italic text-slate-500">"{selectedDispute.adminNote}"</p>}
               </div>
             )}

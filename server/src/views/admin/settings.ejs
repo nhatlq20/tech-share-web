@@ -3,10 +3,10 @@
   <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
     <div>
       <h1 style="font-size: 24px; font-weight: 800; color: #0F172A; letter-spacing: -0.02em; margin: 0;">
-        Cấu hình Tham số Nền tảng (System Settings)
+        Platform Parameter Configuration (System Settings)
       </h1>
       <p style="font-size: 12px; color: #64748B; margin-top: 4px; margin-bottom: 0;">
-        Quản trị tỷ lệ phí sàn, thời gian xác nhận đơn, hạn mức ký quỹ và chính sách hệ thống
+        Manage platform fee rates, booking confirmation timeouts, escrow thresholds, and system policies
       </p>
     </div>
   </div>
@@ -15,7 +15,7 @@
   <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px;">
     <% if (!settings || settings.length === 0) { %>
       <div class="admin-card" style="padding: 32px; text-align: center; color: #64748B;">
-        Không có cấu hình nào.
+        No configuration parameters found.
       </div>
     <% } else { %>
       <% settings.forEach(function(s) { %>
@@ -30,7 +30,7 @@
               </span>
             </div>
             <p style="font-size: 12.5px; color: #64748B; line-height: 1.4; margin-bottom: 12px;">
-              <%= s.description || 'Tham số cấu hình hệ thống TechShare.' %>
+              <%= s.description || 'TechShare system configuration parameter.' %>
             </p>
             <div style="background: #F8FAFC; border-radius: 8px; padding: 10px 12px; border: 1px solid #E2E8F0; font-family: monospace; font-size: 13px; font-weight: 700; color: #286E74; word-break: break-all;">
               <%= typeof s.value === 'object' ? JSON.stringify(s.value) : s.value %>
@@ -46,7 +46,7 @@
               data-desc="<%= s.description || '' %>"
               style="padding: 6px 12px; font-size: 12px;"
             >
-              Chỉnh sửa tham số
+              Edit Parameter
             </button>
           </div>
         </div>
@@ -59,7 +59,7 @@
 <div id="editSettingModal" class="admin-modal-overlay" style="display: none;">
   <div class="admin-modal-card" style="max-width: 440px;" onclick="event.stopPropagation();">
     <div class="admin-modal-header">
-      <h3 class="admin-modal-title">Cập nhật Tham số Cấu hình</h3>
+      <h3 class="admin-modal-title">Update System Parameter</h3>
       <button type="button" class="btn-close-modal" style="background: none; border: none; cursor: pointer; color: #94A3B8;">
         <i data-lucide="x" style="width: 18px; height: 18px;"></i>
       </button>
@@ -67,18 +67,18 @@
 
     <form id="editSettingForm" style="margin-top: 16px;">
       <div style="margin-bottom: 12px;">
-        <label style="display: block; font-size: 12.5px; font-weight: 600; color: #334155; margin-bottom: 4px;">Khóa tham số (Key):</label>
+        <label style="display: block; font-size: 12.5px; font-weight: 600; color: #334155; margin-bottom: 4px;">Parameter Key:</label>
         <input type="text" id="settingModalKey" readonly style="width: 100%; border: 1px solid #CBD5E1; border-radius: 8px; padding: 8px 12px; font-size: 13px; background-color: #F8FAFC; color: #64748B; font-family: monospace;" />
       </div>
 
       <div style="margin-bottom: 20px;">
-        <label style="display: block; font-size: 12.5px; font-weight: 600; color: #334155; margin-bottom: 4px;">Giá trị mới:</label>
+        <label style="display: block; font-size: 12.5px; font-weight: 600; color: #334155; margin-bottom: 4px;">New Value:</label>
         <input type="text" id="settingModalValue" required style="width: 100%; border: 1px solid #CBD5E1; border-radius: 8px; padding: 10px 12px; font-size: 13.5px; outline: none;" />
       </div>
 
       <div style="display: flex; justify-content: flex-end; gap: 10px;">
-        <button type="button" class="admin-btn admin-btn-outline btn-close-modal">Hủy</button>
-        <button type="submit" class="admin-btn admin-btn-primary">Lưu cấu hình</button>
+        <button type="button" class="admin-btn admin-btn-outline btn-close-modal">Cancel</button>
+        <button type="submit" class="admin-btn admin-btn-primary">Save Parameter</button>
       </div>
     </form>
   </div>

@@ -3,10 +3,10 @@
   <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
     <div>
       <h1 style="font-size: 24px; font-weight: 800; color: #0F172A; letter-spacing: -0.02em; margin: 0;">
-        Báo cáo & Phân tích Tài chính Nâng cao
+        Advanced Financial Reports & Analytics
       </h1>
       <p style="font-size: 12px; color: #64748B; margin-top: 4px; margin-bottom: 0;">
-        Bóc tách chi tiết dòng tiền nền tảng, công nợ ký quỹ an toàn và tỷ lệ chuyển đổi vòng đời đơn thuê
+        In-depth breakdown of platform cash flows, escrow liability security, and rental lifecycle conversion funnel
       </p>
     </div>
 
@@ -14,13 +14,13 @@
     <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
       <!-- Date Filter Tabs -->
       <div class="admin-tab-group" id="analyticsPeriodTabs">
-        <button type="button" class="admin-tab-pill <%= period === '7d' ? 'active' : '' %>" data-period="7d">7 ngày</button>
-        <button type="button" class="admin-tab-pill <%= period === '30d' ? 'active' : '' %>" data-period="30d">30 ngày</button>
-        <button type="button" class="admin-tab-pill <%= period === '90d' ? 'active' : '' %>" data-period="90d">90 ngày</button>
-        <button type="button" class="admin-tab-pill <%= period === 'year' ? 'active' : '' %>" data-period="year">Năm nay</button>
+        <button type="button" class="admin-tab-pill <%= period === '7d' ? 'active' : '' %>" data-period="7d">7 Days</button>
+        <button type="button" class="admin-tab-pill <%= period === '30d' ? 'active' : '' %>" data-period="30d">30 Days</button>
+        <button type="button" class="admin-tab-pill <%= period === '90d' ? 'active' : '' %>" data-period="90d">90 Days</button>
+        <button type="button" class="admin-tab-pill <%= period === 'year' ? 'active' : '' %>" data-period="year">This Year</button>
         <button type="button" class="admin-tab-pill <%= period === 'custom' ? 'active' : '' %>" data-period="custom" id="btnCustomRangeToggle">
           <i data-lucide="calendar" style="width: 12px; height: 12px; display: inline-block; vertical-align: middle; margin-right: 4px;"></i>
-          <span>Tùy chỉnh</span>
+          <span>Custom</span>
         </button>
       </div>
 
@@ -32,16 +32,16 @@
         style="text-decoration: none; font-size: 12px; padding: 7px 14px; display: inline-flex; align-items: center; gap: 6px; border-radius: 9999px;"
       >
         <i data-lucide="download" style="width: 14px; height: 14px;"></i>
-        <span>Xuất báo cáo CSV</span>
+        <span>Export CSV Report</span>
       </a>
     </div>
   </div>
 
   <!-- Custom Date Range Selector (Collapsible) -->
   <div id="customDateRangeBox" style="display: <%= period === 'custom' ? 'flex' : 'none' %>; align-items: center; gap: 12px; flex-wrap: wrap; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 14px; padding: 12px 18px; box-shadow: var(--admin-shadow-soft);">
-    <span style="font-size: 12px; font-weight: 700; color: #475569;">Khoảng thời gian:</span>
+    <span style="font-size: 12px; font-weight: 700; color: #475569;">Date Range:</span>
     <div style="display: flex; align-items: center; gap: 8px;">
-      <label for="customStartDate" style="font-size: 12px; color: #64748B;">Từ:</label>
+      <label for="customStartDate" style="font-size: 12px; color: #64748B;">From:</label>
       <input
         type="date"
         id="customStartDate"
@@ -50,7 +50,7 @@
       />
     </div>
     <div style="display: flex; align-items: center; gap: 8px;">
-      <label for="customEndDate" style="font-size: 12px; color: #64748B;">Đến:</label>
+      <label for="customEndDate" style="font-size: 12px; color: #64748B;">To:</label>
       <input
         type="date"
         id="customEndDate"
@@ -59,7 +59,7 @@
       />
     </div>
     <button type="button" id="btnApplyCustomDate" class="admin-btn admin-btn-primary" style="padding: 6px 14px; font-size: 12px;">
-      <span>Áp dụng</span>
+      <span>Apply</span>
     </button>
   </div>
 
@@ -68,7 +68,7 @@
     <!-- KPI 1: GBV -->
     <div class="admin-card" style="background: #FFFFFF; border-radius: 18px; padding: 22px; border: 1px solid #F1F5F9; position: relative;">
       <div style="display: flex; align-items: center; justify-content: space-between;">
-        <span style="font-size: 12.5px; color: #64748B; font-weight: 600;">Tổng giá trị giao dịch — Gross Booking Value (GBV)</span>
+        <span style="font-size: 12.5px; color: #64748B; font-weight: 600;">Total Transaction Volume — Gross Booking Value (GBV)</span>
         <div style="width: 36px; height: 36px; border-radius: 10px; background: #E8F6F7; color: #286E74; display: flex; align-items: center; justify-content: center;">
           <i data-lucide="trending-up" style="width: 18px; height: 18px;"></i>
         </div>
@@ -78,9 +78,9 @@
       </div>
       <div id="kpiGbvGrowth" style="font-size: 12px; margin-top: 6px; font-weight: 600; color: <%= (analytics && analytics.growth && analytics.growth.gbvGrowthPercent >= 0) ? '#16A34A' : '#DC2626' %>;">
         <% if (analytics && analytics.growth) { %>
-          <%= analytics.growth.gbvGrowthPercent >= 0 ? '↑ +' : '↓ ' %><%= analytics.growth.gbvGrowthPercent %>% so với kỳ trước
+          <%= analytics.growth.gbvGrowthPercent >= 0 ? '↑ +' : '↓ ' %><%= analytics.growth.gbvGrowthPercent %>% vs prior period
         <% } else { %>
-          Số liệu thời gian thực
+          Real-time metrics
         <% } %>
       </div>
     </div>
@@ -88,7 +88,7 @@
     <!-- KPI 2: Platform Revenue (10%) -->
     <div class="admin-card" style="background: #FFFFFF; border-radius: 18px; padding: 22px; border: 1px solid #F1F5F9; position: relative;">
       <div style="display: flex; align-items: center; justify-content: space-between;">
-        <span style="font-size: 12.5px; color: #64748B; font-weight: 600;">Doanh thu phí nền tảng ròng (10%)</span>
+        <span style="font-size: 12.5px; color: #64748B; font-weight: 600;">Net Platform Service Fee Revenue (10%)</span>
         <div style="width: 36px; height: 36px; border-radius: 10px; background: #E8F6F7; color: #286E74; display: flex; align-items: center; justify-content: center;">
           <i data-lucide="dollar-sign" style="width: 18px; height: 18px;"></i>
         </div>
@@ -97,14 +97,14 @@
         <%= new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(analytics && analytics.platformFeeRevenue ? analytics.platformFeeRevenue : 0) %>
       </div>
       <div style="font-size: 12px; color: #286E74; margin-top: 6px; font-weight: 500;">
-        Dòng tiền thu thực tế sàn (không tính tiền cọc)
+        Actual platform revenue (excluding deposits)
       </div>
     </div>
 
     <!-- KPI 3: Escrow Held -->
     <div class="admin-card" style="background: #E8F6F7; border-radius: 18px; padding: 22px; border: 1px solid #BCE5E8; position: relative;">
       <div style="display: flex; align-items: center; justify-content: space-between;">
-        <span style="font-size: 12.5px; color: #286E74; font-weight: 700;">Công nợ ký quỹ an toàn (Escrow)</span>
+        <span style="font-size: 12.5px; color: #286E74; font-weight: 700;">Escrow Security Deposit Liabilities</span>
         <div style="width: 36px; height: 36px; border-radius: 10px; background: #FFFFFF; color: #286E74; display: flex; align-items: center; justify-content: center;">
           <i data-lucide="shield-check" style="width: 18px; height: 18px;"></i>
         </div>
@@ -113,7 +113,7 @@
         <%= new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(analytics && analytics.escrowLiabilities ? analytics.escrowLiabilities : 0) %>
       </div>
       <div style="font-size: 12px; color: #286E74; margin-top: 6px; font-weight: 600;">
-        Tiền cọc bảo chứng giữ an toàn qua đơn & ví
+        Security deposits held securely in escrow
       </div>
     </div>
   </div>
@@ -123,42 +123,42 @@
     <!-- Completion Rate -->
     <div class="admin-card" style="background: #FFFFFF; border-radius: 14px; padding: 18px; border: 1px solid #E2E8F0;">
       <div style="display: flex; align-items: center; justify-content: space-between;">
-        <span style="font-size: 12px; color: #64748B; font-weight: 600;">Tỷ lệ đơn hoàn tất</span>
+        <span style="font-size: 12px; color: #64748B; font-weight: 600;">Booking Completion Rate</span>
         <i data-lucide="check-circle-2" style="width: 16px; height: 16px; color: #16A34A;"></i>
       </div>
       <div id="kpiCompletionRate" style="font-size: 22px; font-weight: 800; color: #16A34A; margin-top: 4px;">
         <%= analytics && typeof analytics.completionRate !== 'undefined' ? analytics.completionRate : '0.0' %>%
       </div>
       <div id="kpiCompletionDesc" style="font-size: 11px; color: #64748B; margin-top: 4px;">
-        <%= analytics && analytics.completedBookings ? analytics.completedBookings : 0 %> / <%= analytics && analytics.totalBookings ? analytics.totalBookings : 0 %> đơn thành công
+        <%= analytics && analytics.completedBookings ? analytics.completedBookings : 0 %> / <%= analytics && analytics.totalBookings ? analytics.totalBookings : 0 %> successful orders
       </div>
     </div>
 
     <!-- Cancellation Rate -->
     <div class="admin-card" style="background: #FFFFFF; border-radius: 14px; padding: 18px; border: 1px solid #E2E8F0;">
       <div style="display: flex; align-items: center; justify-content: space-between;">
-        <span style="font-size: 12px; color: #64748B; font-weight: 600;">Tỷ lệ hủy đơn</span>
+        <span style="font-size: 12px; color: #64748B; font-weight: 600;">Cancellation Rate</span>
         <i data-lucide="x-circle" style="width: 16px; height: 16px; color: #64748B;"></i>
       </div>
       <div id="kpiCancellationRate" style="font-size: 22px; font-weight: 800; color: #64748B; margin-top: 4px;">
         <%= analytics && typeof analytics.cancellationRate !== 'undefined' ? analytics.cancellationRate : '0.0' %>%
       </div>
       <div id="kpiCancellationDesc" style="font-size: 11px; color: #64748B; margin-top: 4px;">
-        <%= analytics && analytics.cancelledBookings ? analytics.cancelledBookings : 0 %> / <%= analytics && analytics.totalBookings ? analytics.totalBookings : 0 %> đơn hủy / từ chối
+        <%= analytics && analytics.cancelledBookings ? analytics.cancelledBookings : 0 %> / <%= analytics && analytics.totalBookings ? analytics.totalBookings : 0 %> cancelled / rejected orders
       </div>
     </div>
 
     <!-- Dispute Rate -->
     <div class="admin-card" style="background: #FFFFFF; border-radius: 14px; padding: 18px; border: 1px solid #E2E8F0;">
       <div style="display: flex; align-items: center; justify-content: space-between;">
-        <span style="font-size: 12px; color: #64748B; font-weight: 600;">Tỷ lệ tranh chấp cọc</span>
+        <span style="font-size: 12px; color: #64748B; font-weight: 600;">Deposit Dispute Rate</span>
         <i data-lucide="alert-triangle" style="width: 16px; height: 16px; color: #DC2626;"></i>
       </div>
       <div id="kpiDisputeRate" style="font-size: 22px; font-weight: 800; color: #DC2626; margin-top: 4px;">
         <%= analytics && typeof analytics.disputeRate !== 'undefined' ? analytics.disputeRate : '0.0' %>%
       </div>
       <div id="kpiDisputeDesc" style="font-size: 11px; color: #64748B; margin-top: 4px;">
-        <%= analytics && analytics.disputedBookings ? analytics.disputedBookings : 0 %> / <%= analytics && analytics.totalBookings ? analytics.totalBookings : 0 %> đơn phát sinh khiếu nại
+        <%= analytics && analytics.disputedBookings ? analytics.disputedBookings : 0 %> / <%= analytics && analytics.totalBookings ? analytics.totalBookings : 0 %> disputed orders
       </div>
     </div>
   </div>
@@ -170,17 +170,17 @@
       <div class="admin-card-header" style="margin-bottom: 16px;">
         <div>
           <h3 class="admin-card-title" style="margin: 0; font-size: 16px; font-weight: 800; color: #0F172A;">
-            Xu hướng Doanh thu & Giao dịch
+            Revenue & Transaction Trends
           </h3>
           <p class="admin-card-subtitle" style="margin: 4px 0 0; font-size: 12px; color: #64748B;">
-            Gross Booking Value, Tiền thuê thực nhận và Phí nền tảng 10%
+            Gross Booking Value, Net Rental Revenue, and 10% Platform Fee
           </p>
         </div>
         <div style="display: flex; align-items: center; gap: 8px;">
           <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background-color: #67BEC3;"></span>
           <span style="font-size: 11.5px; color: #64748B; font-weight: 600;">GBV</span>
           <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background-color: #286E74; margin-left: 6px;"></span>
-          <span style="font-size: 11.5px; color: #64748B; font-weight: 600;">Phí sàn 10%</span>
+          <span style="font-size: 11.5px; color: #64748B; font-weight: 600;">Platform Fee 10%</span>
         </div>
       </div>
       <div style="position: relative; height: 310px; width: 100%;">
@@ -193,10 +193,10 @@
       <div class="admin-card-header" style="margin-bottom: 16px;">
         <div>
           <h3 class="admin-card-title" style="margin: 0; font-size: 16px; font-weight: 800; color: #0F172A;">
-            Cơ cấu Trạng thái Đơn thuê
+            Booking Status Distribution
           </h3>
           <p class="admin-card-subtitle" style="margin: 4px 0 0; font-size: 12px; color: #64748B;">
-            Phân bổ tỷ trọng trạng thái trong kỳ phân tích
+            Status breakdown during selected reporting period
           </p>
         </div>
       </div>
@@ -226,10 +226,10 @@
       <div class="admin-card-header" style="margin-bottom: 16px;">
         <div>
           <h3 class="admin-card-title" style="margin: 0; font-size: 16px; font-weight: 800; color: #0F172A;">
-            Doanh thu theo Danh mục Thiết bị
+            Revenue by Device Category
           </h3>
           <p class="admin-card-subtitle" style="margin: 4px 0 0; font-size: 12px; color: #64748B;">
-            Cơ cấu tiền thuê đóng góp theo từng phân loại phần cứng
+            Rental revenue contribution by hardware category
           </p>
         </div>
       </div>
@@ -243,10 +243,10 @@
       <div class="admin-card-header" style="margin-bottom: 16px;">
         <div>
           <h3 class="admin-card-title" style="margin: 0; font-size: 16px; font-weight: 800; color: #0F172A;">
-            Biến động Ký quỹ & Dòng tiền Ví
+            Escrow & Wallet Cashflow Trends
           </h3>
           <p class="admin-card-subtitle" style="margin: 4px 0 0; font-size: 12px; color: #64748B;">
-            Tiền cọc khóa qua đơn, giải tỏa cọc và giải ngân tiền thuê
+            Locked escrow deposits, deposit releases, and owner payouts
           </p>
         </div>
       </div>
@@ -261,15 +261,15 @@
     <div class="admin-card-header" style="margin-bottom: 20px;">
       <div>
         <h3 class="admin-card-title" style="margin: 0; font-size: 17px; font-weight: 800; color: #0F172A;">
-          Phễu Chuyển đổi Vòng đời Đơn thuê (Booking Lifecycle Funnel)
+          Booking Lifecycle Conversion Funnel
         </h3>
         <p class="admin-card-subtitle" style="margin: 4px 0 0; font-size: 12px; color: #64748B;">
-          Đo lường tỷ lệ chuyển đổi và tỷ lệ rơi rụng thực tế qua từng mốc vòng đời đơn thuê từ lịch sử timeline
+          Measure conversion and drop-off rates across rental lifecycle milestones
         </p>
       </div>
       <div style="display: flex; align-items: center; gap: 8px;">
         <span style="font-size: 12px; font-weight: 700; color: #286E74; background: #E8F6F7; padding: 4px 10px; border-radius: 9999px;">
-          Số liệu đối soát từ MongoDB Timeline
+          Verified from MongoDB lifecycle timeline
         </span>
       </div>
     </div>
@@ -281,7 +281,7 @@
           <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 14px; padding: 18px; position: relative;">
             <div style="display: flex; align-items: center; justify-content: space-between;">
               <span style="font-size: 11.5px; font-weight: 700; color: #64748B; text-transform: uppercase;">
-                Bước <%= idx + 1 %>
+                Step <%= idx + 1 %>
               </span>
               <span style="font-size: 13px; font-weight: 800; color: #286E74;">
                 <%= stage.percent %>%
@@ -291,7 +291,7 @@
               <%= stage.label %>
             </div>
             <div style="font-size: 22px; font-weight: 800; color: #0F172A; margin-top: 8px;">
-              <%= stage.count %> <span style="font-size: 13px; font-weight: 500; color: #64748B;">đơn</span>
+              <%= stage.count %> <span style="font-size: 13px; font-weight: 500; color: #64748B;">orders</span>
             </div>
 
             <!-- Progress Bar -->
@@ -301,11 +301,11 @@
 
             <% if (idx > 0 && typeof stage.dropoffPercent !== 'undefined') { %>
               <div style="font-size: 11px; color: <%= stage.dropoffPercent > 0 ? '#DC2626' : '#16A34A' %>; margin-top: 8px; font-weight: 600;">
-                <%= stage.dropoffPercent > 0 ? `↓ Rơi rụng: ${stage.dropoffPercent}%` : '✓ Duy trì 100%' %>
+                <%= stage.dropoffPercent > 0 ? `↓ Drop-off: ${stage.dropoffPercent}%` : '✓ 100% Retained' %>
               </div>
             <% } else { %>
               <div style="font-size: 11px; color: #64748B; margin-top: 8px;">
-                Điểm khởi tạo ban đầu
+                Initial creation point
               </div>
             <% } %>
           </div>

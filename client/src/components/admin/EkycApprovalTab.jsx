@@ -4,10 +4,10 @@ import { api } from '../../services/api.js';
 import './AdminWorkspace.css';
 
 const COMMON_REJECT_REASONS = [
-  'Hình ảnh CCCD bị mờ, lóa sáng hoặc thông tin không rõ nét.',
-  'Thông tin họ tên và số CCCD không trùng khớp với tài khoản.',
-  'Giấy tờ tùy thân đã hết hạn sử dụng hoặc không hợp lệ.',
-  'Hình ảnh CCCD bị mất góc hoặc có dấu hiệu chỉnh sửa.'
+  'ID photos are blurry, glare, or information is illegible.',
+  'Full name and ID number do not match account profile.',
+  'Identity document has expired or is invalid.',
+  'ID photos have cropped corners or show signs of tampering.'
 ];
 export const EkycApprovalTab = ({
   requests: propsRequests,
@@ -50,7 +50,7 @@ export const EkycApprovalTab = ({
         setRequestList(items);
       }
     } catch (err) {
-      console.warn('Lỗi fetch eKYC requests:', err);
+      console.warn('Error fetching eKYC requests:', err);
     } finally {
       setLoading(false);
     }
@@ -88,12 +88,12 @@ export const EkycApprovalTab = ({
         status: 'approved'
       } : r));
       setToast({
-        message: `Đã phê duyệt hồ sơ và cấp Tích Xanh cho "${name}" thành công!`,
+        message: `Dossier approved and Verified Badge granted to "${name}" successfully!`,
         type: 'success'
       });
     } catch {
       setToast({
-        message: `Đã xảy ra lỗi khi duyệt hồ sơ "${name}".`,
+        message: `Error occurred while approving dossier "${name}".`,
         type: 'error'
       });
     } finally {
@@ -122,14 +122,14 @@ export const EkycApprovalTab = ({
         rejectReason: finalReason
       } : r));
       setToast({
-        message: `Đã từ chối hồ sơ của "${rejectModalReq.fullName}".`,
+        message: `Rejected dossier of "${rejectModalReq.fullName}".`,
         type: 'info'
       });
       setRejectModalReq(null);
       setCustomRejectReason('');
     } catch {
       setToast({
-        message: `Đã xảy ra lỗi khi từ chối hồ sơ "${rejectModalReq.fullName}".`,
+        message: `Error occurred while rejecting dossier "${rejectModalReq.fullName}".`,
         type: 'error'
       });
     } finally {
@@ -183,7 +183,7 @@ export const EkycApprovalTab = ({
         letterSpacing: '-0.02em',
         margin: 0
       }}>
-          Xét duyệt Hồ sơ eKYC Cấp Tích Xanh
+          Electronic Identity Verification (eKYC)
         </h1>
 
         {/* Cụm Tabs lọc (Bên phải): Liền khối Button Group nền xám nhạt bg-slate-100 */}
@@ -209,7 +209,7 @@ export const EkycApprovalTab = ({
           transition: 'all 0.15s ease',
           whiteSpace: 'nowrap'
         }}>
-            Chờ duyệt ({pendingCount})
+            Pending ({pendingCount})
           </button>
 
           {/* Tab 2: Đã duyệt */}
@@ -226,7 +226,7 @@ export const EkycApprovalTab = ({
           transition: 'all 0.15s ease',
           whiteSpace: 'nowrap'
         }}>
-            Đã duyệt ({approvedCount})
+            Approved ({approvedCount})
           </button>
 
           {/* Tab 3: Đã từ chối */}
@@ -243,7 +243,7 @@ export const EkycApprovalTab = ({
           transition: 'all 0.15s ease',
           whiteSpace: 'nowrap'
         }}>
-            Đã từ chối ({rejectedCount})
+            Rejected ({rejectedCount})
           </button>
 
           {/* Tab 4: Tất cả */}
@@ -260,7 +260,7 @@ export const EkycApprovalTab = ({
           transition: 'all 0.15s ease',
           whiteSpace: 'nowrap'
         }}>
-            Tất cả ({requestList.length})
+            All ({requestList.length})
           </button>
         </div>
       </div>
@@ -300,7 +300,7 @@ export const EkycApprovalTab = ({
         color: '#1E293B',
         margin: '0 0 8px'
       }}>
-            {loading ? 'Đang tải danh sách hồ sơ...' : statusFilter === 'pending' ? 'Không có hồ sơ nào đang chờ duyệt!' : 'Không có hồ sơ nào trong mục này!'}
+            {loading ? 'Loading dossiers list...' : statusFilter === 'pending' ? 'No dossiers awaiting review!' : 'No dossiers found in this section!'}
           </h3>
 
           {/* Mô tả */}
@@ -311,7 +311,7 @@ export const EkycApprovalTab = ({
         margin: 0,
         lineHeight: 1.6
       }}>
-            {statusFilter === 'pending' ? 'Tuyệt vời! Toàn bộ hồ sơ định danh điện tử eKYC trên hệ thống đã được kiểm tra và xử lý hoàn tất.' : 'Hãy chuyển qua các tab bộ lọc khác để kiểm tra hoặc đợi thành viên gửi yêu cầu xác thực mới.'}
+            {statusFilter === 'pending' ? 'All electronic identity verification dossiers have been reviewed and processed.' : 'Switch to other tabs or wait for members to submit new verification requests.'}
           </p>
         </div> : (/* C. Trạng thái Có Dữ liệu (Danh sách Card hồ sơ eKYC) */
     <div style={{
@@ -324,7 +324,7 @@ export const EkycApprovalTab = ({
           day: '2-digit',
           month: '2-digit',
           year: 'numeric'
-        }) : 'Gần đây';
+        }) : 'Recent';
         return <div key={req._id} className="admin-card rounded-2xl shadow-sm bg-white" style={{
           padding: '24px',
           borderRadius: '16px',
@@ -387,7 +387,7 @@ export const EkycApprovalTab = ({
                     padding: '3px 10px',
                     borderRadius: '20px'
                   }}>
-                          {req.status === 'pending' ? 'Chờ duyệt' : req.status === 'approved' ? 'Đã duyệt' : 'Đã từ chối'}
+                          {req.status === 'pending' ? 'Pending' : req.status === 'approved' ? 'Approved' : 'Rejected'}
                         </span>
                       </div>
 
@@ -408,10 +408,10 @@ export const EkycApprovalTab = ({
                     gap: '5px'
                   }}>
                           <CreditCard size={13} style={{ color: '#286E74' }} />
-                          Số CCCD: <strong style={{ color: '#0F172A' }}>{req.idCardNumber || 'Chưa cung cấp'}</strong>
+                          National ID: <strong style={{ color: '#0F172A' }}>{req.idCardNumber || 'Not provided'}</strong>
                         </span>
                         <span style={{ color: '#CBD5E1' }}>•</span>
-                        <span>SĐT: <strong style={{ color: '#334155' }}>{req.phone || '---'}</strong></span>
+                        <span>Phone: <strong style={{ color: '#334155' }}>{req.phone || '---'}</strong></span>
                         <span style={{ color: '#CBD5E1' }}>•</span>
                         <span>Email: <span style={{ color: '#475569' }}>{req.email || '---'}</span></span>
                         <span style={{ color: '#CBD5E1' }}>•</span>
@@ -421,7 +421,7 @@ export const EkycApprovalTab = ({
                     gap: '4px'
                   }}>
                           <Calendar size={13} style={{ color: '#94A3B8' }} />
-                          Ngày gửi: {formattedDate}
+                          Submitted: {formattedDate}
                         </span>
                         {req.address && <>
                             <span style={{ color: '#CBD5E1' }}>•</span>
@@ -457,9 +457,9 @@ export const EkycApprovalTab = ({
                 alignItems: 'center',
                 gap: '6px',
                 cursor: 'pointer'
-              }} title="Từ chối hồ sơ này">
+              }} title="Reject this dossier">
                         <XCircle size={15} />
-                        <span>Từ chối</span>
+                        <span>Reject</span>
                       </button>
 
                       {/* Nút Duyệt: Nền #286E74, chữ trắng */}
@@ -476,13 +476,13 @@ export const EkycApprovalTab = ({
                 gap: '6px',
                 boxShadow: '0 2px 6px rgba(40, 110, 116, 0.25)',
                 cursor: 'pointer'
-              }} title="Duyệt hồ sơ và cấp Tích Xanh">
+              }} title="Approve dossier and grant Verified Badge">
                         {actionLoadingId === req._id ? <>
                             <Loader2 size={15} className="animate-spin" />
-                            <span>Đang duyệt...</span>
+                            <span>Approving...</span>
                           </> : <>
                             <CheckCircle2 size={15} />
-                            <span>Duyệt</span>
+                            <span>Approve</span>
                           </>}
                       </button>
                     </div>}
@@ -505,7 +505,7 @@ export const EkycApprovalTab = ({
               boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
             }} onClick={() => setLightboxImage({
               url: req.idCardFrontUrl,
-              title: `CCCD Mặt Trước - ${req.fullName}`
+              title: `National ID Front - ${req.fullName}`
             })}>
                     <div style={{
                 padding: '10px 14px',
@@ -520,11 +520,11 @@ export const EkycApprovalTab = ({
               }}>
                       <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                         <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#286E74' }} />
-                        1. Mặt trước CCCD
+                        1. National ID Front
                       </span>
                       <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#286E74', fontSize: '11.5px', fontWeight: 600 }}>
                         <ZoomIn size={14} />
-                        Phóng to
+                        Enlarge
                       </span>
                     </div>
                     <div style={{
@@ -535,7 +535,7 @@ export const EkycApprovalTab = ({
                 justifyContent: 'center',
                 padding: '10px'
               }}>
-                      <img src={req.idCardFrontUrl} alt="CCCD mặt trước" style={{
+                      <img src={req.idCardFrontUrl} alt="National ID Front" style={{
                   maxWidth: '100%',
                   maxHeight: '100%',
                   width: 'auto',
@@ -559,7 +559,7 @@ export const EkycApprovalTab = ({
               boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
             }} onClick={() => setLightboxImage({
               url: req.idCardBackUrl,
-              title: `CCCD Mặt Sau - ${req.fullName}`
+              title: `National ID Back - ${req.fullName}`
             })}>
                     <div style={{
                 padding: '10px 14px',
@@ -574,11 +574,11 @@ export const EkycApprovalTab = ({
               }}>
                       <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                         <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#286E74' }} />
-                        2. Mặt sau CCCD
+                        2. National ID Back
                       </span>
                       <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#286E74', fontSize: '11.5px', fontWeight: 600 }}>
                         <ZoomIn size={14} />
-                        Phóng to
+                        Enlarge
                       </span>
                     </div>
                     <div style={{
@@ -589,7 +589,7 @@ export const EkycApprovalTab = ({
                 justifyContent: 'center',
                 padding: '10px'
               }}>
-                      <img src={req.idCardBackUrl} alt="CCCD mặt sau" style={{
+                      <img src={req.idCardBackUrl} alt="National ID Back" style={{
                   maxWidth: '100%',
                   maxHeight: '100%',
                   width: 'auto',
@@ -620,14 +620,14 @@ export const EkycApprovalTab = ({
               flexShrink: 0
             }} />
                     <span>
-                      Lý do từ chối: <strong>{req.rejectReason}</strong>
+                      Rejection reason: <strong>{req.rejectReason}</strong>
                     </span>
                   </div>}
               </div>;
       })}
         </div>)}
 
-      {/* MODAL 1: Phóng to tài liệu CCCD/Selfie (Lightbox) */}
+      {/* MODAL 1: Enlarge tài liệu CCCD/Selfie (Lightbox) */}
       {lightboxImage && <div className="admin-modal-overlay" onClick={() => setLightboxImage(null)}>
           <div className="admin-modal-card" style={{
         maxWidth: '780px',
@@ -668,9 +668,7 @@ export const EkycApprovalTab = ({
             backgroundColor: '#67BEC3',
             padding: '8px 20px',
             fontSize: '13px'
-          }}>
-                Đóng ảnh
-              </button>
+          }}>Close Preview</button>
             </div>
           </div>
         </div>}
@@ -697,7 +695,7 @@ export const EkycApprovalTab = ({
               fontSize: '16.5px',
               color: '#DC2626'
             }}>
-                  Từ chối hồ sơ eKYC
+                  Reject eKYC Dossier
                 </h3>
               </div>
               <button type="button" onClick={() => setRejectModalReq(null)} style={{
@@ -716,7 +714,7 @@ export const EkycApprovalTab = ({
           color: '#475569',
           margin: '0 0 14px'
         }}>
-              Vui lòng chọn hoặc nhập lý do từ chối hồ sơ của{' '}
+              Please select or enter the reason for rejecting the dossier of{' '}
               <strong style={{
             color: '#0F172A'
           }}>{rejectModalReq.fullName}</strong>:
@@ -754,7 +752,7 @@ export const EkycApprovalTab = ({
             <div style={{
           marginBottom: '20px'
         }}>
-              <textarea placeholder="Hoặc nhập lý do cụ thể khác..." value={customRejectReason} onChange={e => setCustomRejectReason(e.target.value)} rows={3} style={{
+              <textarea placeholder="Or enter a specific rejection reason..." value={customRejectReason} onChange={e => setCustomRejectReason(e.target.value)} rows={3} style={{
             width: '100%',
             padding: '10px 12px',
             borderRadius: '10px',
@@ -774,17 +772,13 @@ export const EkycApprovalTab = ({
               <button type="button" className="admin-btn admin-btn-outline" onClick={() => setRejectModalReq(null)} style={{
             padding: '8px 16px',
             fontSize: '13px'
-          }}>
-                Hủy bỏ
-              </button>
+          }}>Cancel</button>
               <button type="button" className="admin-btn admin-btn-danger" onClick={handleConfirmReject} style={{
             padding: '8px 20px',
             fontSize: '13px',
             fontWeight: 700,
             backgroundColor: '#DC2626'
-          }}>
-                Xác nhận từ chối
-              </button>
+          }}>Confirm Rejection</button>
             </div>
           </div>
         </div>}

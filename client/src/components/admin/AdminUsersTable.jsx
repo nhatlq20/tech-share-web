@@ -21,38 +21,36 @@ export const AdminUsersTable = ({
       }}>
           <thead>
             <tr>
-              {/* Cột 1: Thành viên & Liên hệ (Tích hợp Tích xanh eKYC) */}
+              {/* Cột 1: Member & Contact (Tích hợp Tích xanh eKYC) */}
               <th style={{
               minWidth: '280px',
               width: '38%',
               paddingLeft: '20px'
             }}>
-                Thành viên & Liên hệ
+                Member & Contact
               </th>
               {/* Cột 2: Vai trò */}
               <th style={{
               minWidth: '140px',
               width: '18%'
-            }}>Vai trò</th>
+            }}>Role</th>
               {/* Cột 3: Điểm tín nhiệm (Rút gọn) */}
               <th style={{
               minWidth: '120px',
               width: '14%'
-            }}>Điểm tín nhiệm</th>
+            }}>Trust Score</th>
               {/* Cột 4: Trạng thái */}
               <th style={{
               minWidth: '120px',
               width: '14%'
-            }}>Trạng thái</th>
-              {/* Cột 5: Hành động (Đầy đủ bên phải) */}
+            }}>Status</th>
+              {/* Cột 5: Actions (Đầy đủ bên phải) */}
               <th style={{
               minWidth: '160px',
               width: '16%',
               textAlign: 'right',
               paddingRight: '24px'
-            }}>
-                Hành động
-              </th>
+            }}>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -72,17 +70,17 @@ export const AdminUsersTable = ({
                 fontSize: '15px',
                 color: '#1E293B'
               }}>
-                    {loading ? 'Đang tải danh sách người dùng...' : 'Không tìm thấy người dùng phù hợp'}
+                    {loading ? 'Loading user list...' : 'No matching users found'}
                   </div>
                   <div style={{
                 fontSize: '13px',
                 marginTop: '4px'
               }}>
-                    {loading ? 'Đang đồng bộ dữ liệu thời gian thực từ MongoDB Atlas' : 'Hãy thử đổi từ khóa tìm kiếm hoặc đặt lại các bộ lọc vai trò.'}
+                    {loading ? 'Synchronizing real-time data from MongoDB Atlas' : 'Try searching with different keywords or reset role filters.'}
                   </div>
                 </td>
               </tr> : users.map(user => <tr key={user._id}>
-                  {/* Cột 1: Thành viên & Liên hệ + Tích hợp Tích xanh eKYC */}
+                  {/* Cột 1: Member & Contact + Tích hợp Tích xanh eKYC */}
                   <td style={{
               verticalAlign: 'middle',
               paddingLeft: '20px'
@@ -116,7 +114,7 @@ export const AdminUsersTable = ({
                   }}>
                           <span className="whitespace-nowrap">{user.name}</span>
                           {/* Tích hợp Tích xanh eKYC ngay sát bên cạnh Tên người dùng */}
-                          {user.isVerified && <span title="Tài khoản đã hoàn tất xác thực eKYC CCCD" style={{
+                          {user.isVerified && <span title="Account verified with national ID (eKYC)" style={{
                       display: 'inline-flex',
                       alignItems: 'center'
                     }}>
@@ -168,7 +166,7 @@ export const AdminUsersTable = ({
                         color: '#94A3B8',
                         flexShrink: 0
                       }} />
-                            {user.phone || 'Chưa cập nhật'}
+                            {user.phone || 'Not updated'}
                           </span>
                         </div>
                       </div>
@@ -183,7 +181,7 @@ export const AdminUsersTable = ({
                 backgroundColor: user.role === 'admin' ? '#F3E8FF' : user.role === 'owner' ? '#E0F2FE' : user.role === 'both' ? '#E8F6F7' : '#F1F5F9',
                 color: user.role === 'admin' ? '#7E22CE' : user.role === 'owner' ? '#0369A1' : user.role === 'both' ? '#286E74' : '#475569'
               }}>
-                      {user.role === 'admin' ? 'Quản trị viên' : user.role === 'owner' ? 'Chủ thiết bị' : user.role === 'both' ? 'Chủ & Khách' : 'Khách thuê'}
+                      {user.role === 'admin' ? 'Administrator' : user.role === 'owner' ? 'Device Owner' : user.role === 'both' ? 'Owner & Renter' : 'Renter'}
                     </span>
                   </td>
 
@@ -203,7 +201,7 @@ export const AdminUsersTable = ({
                 backgroundColor: user.trustScore >= 85 ? '#F0FDF4' : user.trustScore >= 70 ? '#FEFCE8' : '#FEF2F2',
                 color: user.trustScore >= 85 ? '#15803D' : user.trustScore >= 70 ? '#A16207' : '#B91C1C',
                 borderColor: user.trustScore >= 85 ? '#BBF7D0' : user.trustScore >= 70 ? '#FEF08A' : '#FECACA'
-              }} title={`Điểm tín nhiệm: ${user.trustScore}/100`}>
+              }} title={`Trust score: ${user.trustScore}/100`}>
                       <Shield size={13} style={{
                   flexShrink: 0
                 }} />
@@ -222,18 +220,14 @@ export const AdminUsersTable = ({
                   borderRadius: '50%',
                   backgroundColor: '#22C55E',
                   flexShrink: 0
-                }} />
-                        Hoạt động
-                      </span> : <span className="admin-pill-badge locked whitespace-nowrap">
+                }} />Active</span> : <span className="admin-pill-badge locked whitespace-nowrap">
                         <span style={{
                   width: '6px',
                   height: '6px',
                   borderRadius: '50%',
                   backgroundColor: '#EF4444',
                   flexShrink: 0
-                }} />
-                        Đã khóa
-                      </span>}
+                }} />Locked</span>}
                   </td>
 
                   {/* Cột 5: Hành động (Rộng rãi, hiển thị đầy đủ bên phải) */}
@@ -251,21 +245,21 @@ export const AdminUsersTable = ({
                 minWidth: '160px'
               }}>
                       {/* Nút Chi tiết (Nền trắng, viền mảnh, chữ xám đậm) */}
-                      <button type="button" onClick={() => onViewDetails(user)} className="admin-user-btn-detail whitespace-nowrap" title="Xem thông tin chi tiết & Ví Escrow">
+                      <button type="button" onClick={() => onViewDetails(user)} className="admin-user-btn-detail whitespace-nowrap" title="View Details & Escrow Wallet">
                         <Eye size={13} style={{
                     flexShrink: 0
                   }} />
-                        <span>Chi tiết</span>
+                        <span>Details</span>
                       </button>
 
                       {/* Nút Khóa / Mở khóa (Nền đỏ/xanh, chữ trắng) */}
-                      <button type="button" onClick={() => onToggleStatus(user)} disabled={actionLoadingId === user._id} className={`whitespace-nowrap ${user.isActive ? 'admin-user-btn-lock' : 'admin-user-btn-unlock'}`} title={user.isActive ? 'Khóa tài khoản này' : 'Mở khóa tài khoản'}>
+                      <button type="button" onClick={() => onToggleStatus(user)} disabled={actionLoadingId === user._id} className={`whitespace-nowrap ${user.isActive ? 'admin-user-btn-lock' : 'admin-user-btn-unlock'}`} title={user.isActive ? 'Lock this account' : 'Unlock this account'}>
                         {user.isActive ? <Lock size={13} style={{
                     flexShrink: 0
                   }} /> : <Unlock size={13} style={{
                     flexShrink: 0
                   }} />}
-                        <span>{user.isActive ? 'Khóa' : 'Mở khóa'}</span>
+                        <span>{user.isActive ? 'Lock' : 'Unlock'}</span>
                       </button>
                     </div>
                   </td>

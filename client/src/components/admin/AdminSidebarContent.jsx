@@ -26,18 +26,18 @@ import './AdminWorkspace.css';
 
 const getNavGroups = (t) => [
   {
-    groupTitle: 'TỔNG QUAN',
+    groupTitle: 'OVERVIEW',
     items: [
       {
         id: 'overview',
-        label: 'Tổng quan & KPI',
+        label: 'Overview & KPIs',
         icon: LayoutDashboard,
         path: ROUTES.ADMIN_DASHBOARD,
         aliases: [ROUTES.ADMIN],
       },
       {
         id: 'analytics',
-        label: 'Báo cáo & Phân tích',
+        label: 'Reports & Analytics',
         icon: BarChart3,
         path: ROUTES.ADMIN_ANALYTICS,
         aliases: ['/admin/analytics'],
@@ -45,18 +45,18 @@ const getNavGroups = (t) => [
     ],
   },
   {
-    groupTitle: 'QUẢN LÝ NỀN TẢNG',
+    groupTitle: 'PLATFORM MANAGEMENT',
     items: [
       {
         id: 'users',
-        label: 'Quản lý người dùng',
+        label: 'User Management',
         icon: Users,
         path: ROUTES.ADMIN_USER_MANAGER,
         aliases: [ROUTES.ADMIN_USERS],
       },
       {
         id: 'devices',
-        label: 'Kiểm duyệt thiết bị',
+        label: 'Device Moderation',
         icon: Cpu,
         showBadge: 'devices',
         path: ROUTES.ADMIN_DEVICE_MANAGER,
@@ -64,14 +64,14 @@ const getNavGroups = (t) => [
       },
       {
         id: 'bookings',
-        label: 'Quản lý đơn thuê',
+        label: 'Rental Management',
         icon: ShoppingBag,
         path: ROUTES.ADMIN_BOOKINGS,
         aliases: ['/admin/bookings'],
       },
       {
         id: 'reviews',
-        label: 'Kiểm duyệt đánh giá',
+        label: 'Review Moderation',
         icon: Star,
         path: ROUTES.ADMIN_REVIEWS,
         aliases: ['/admin/reviews'],
@@ -79,11 +79,11 @@ const getNavGroups = (t) => [
     ],
   },
   {
-    groupTitle: 'TIN CẬY & BẢO MẬT',
+    groupTitle: 'TRUST & SECURITY',
     items: [
       {
         id: 'ekyc',
-        label: 'Xác minh eKYC',
+        label: 'eKYC Verification',
         icon: ShieldCheck,
         showBadge: 'ekyc',
         path: ROUTES.ADMIN_EKYC_VERIFICATION,
@@ -91,7 +91,7 @@ const getNavGroups = (t) => [
       },
       {
         id: 'owner-ekyc',
-        label: t.ownerEkycTab,
+        label: t.ownerEkycTab || 'Owner Verification',
         icon: Crown,
         showBadge: 'owner-ekyc',
         path: ROUTES.ADMIN_OWNER_EKYC_VERIFICATION,
@@ -99,7 +99,7 @@ const getNavGroups = (t) => [
       },
       {
         id: 'disputes',
-        label: 'Xử lý tranh chấp',
+        label: 'Dispute Resolution',
         icon: Scale,
         showBadge: 'disputes',
         path: ROUTES.ADMIN_DISPUTES,
@@ -107,7 +107,7 @@ const getNavGroups = (t) => [
       },
       {
         id: 'roles',
-        label: 'Phân quyền vai trò',
+        label: 'Role Management',
         icon: KeyRound,
         path: ROUTES.ADMIN_ROLES,
         aliases: ['/admin/roles'],
@@ -115,18 +115,18 @@ const getNavGroups = (t) => [
     ],
   },
   {
-    groupTitle: 'TÀI CHÍNH',
+    groupTitle: 'FINANCE',
     items: [
       {
         id: 'wallet',
-        label: 'Ví & Giao dịch',
+        label: 'Wallet & Transactions',
         icon: Wallet,
         path: ROUTES.ADMIN_WALLET,
         aliases: ['/admin/wallet'],
       },
       {
         id: 'vouchers',
-        label: 'Quản lý Voucher',
+        label: 'Voucher Management',
         icon: Tag,
         path: ROUTES.ADMIN_VOUCHERS,
         aliases: ['/admin/vouchers'],
@@ -134,25 +134,25 @@ const getNavGroups = (t) => [
     ],
   },
   {
-    groupTitle: 'HỆ THỐNG',
+    groupTitle: 'SYSTEM',
     items: [
       {
         id: 'notifications',
-        label: 'Quản lý thông báo',
+        label: 'Broadcast Notifications',
         icon: Bell,
         path: ROUTES.ADMIN_NOTIFICATIONS,
         aliases: ['/admin/notifications'],
       },
       {
         id: 'settings',
-        label: 'Cấu hình hệ thống',
+        label: 'System Settings',
         icon: Settings,
         path: ROUTES.ADMIN_SETTINGS,
         aliases: ['/admin/settings'],
       },
       {
         id: 'audit-logs',
-        label: 'Nhật ký kiểm toán',
+        label: 'Audit Logs',
         icon: FileText,
         path: ROUTES.ADMIN_AUDIT_LOGS,
         aliases: ['/admin/audit-logs'],
@@ -211,10 +211,10 @@ export const AdminSidebarContent = ({
           />
           <div className="admin-profile-info">
             <div className="admin-profile-name" title={currentAdmin?.name || ''}>
-              {currentAdmin?.name || 'Admin Quản trị'}
+              {currentAdmin?.name || 'Administrator'}
             </div>
             <div className="admin-profile-role">
-              {currentAdmin?.role === 'admin' ? 'Quản trị viên hệ thống' : (currentAdmin?.role || t.adminRole)}
+              {currentAdmin?.role === 'admin' ? 'System Administrator' : (currentAdmin?.role || t.adminRole)}
             </div>
             <div className="admin-profile-email" title={currentAdmin?.email || ''}>
               {currentAdmin?.email || ''}
@@ -261,7 +261,7 @@ export const AdminSidebarContent = ({
                     </span>
                   </div>
                   {item.showBadge === 'ekyc' && pendingEkycCount > 0 && (
-                    <span className="admin-nav-badge" title={`${pendingEkycCount} yêu cầu chờ xác minh`}>
+                    <span className="admin-nav-badge" title={`${pendingEkycCount} pending verification requests`}>
                       {pendingEkycCount}
                     </span>
                   )}
@@ -274,7 +274,7 @@ export const AdminSidebarContent = ({
                     <span
                       className="admin-nav-badge"
                       style={{ backgroundColor: '#F59E0B', color: '#FFFFFF' }}
-                      title={`${pendingDevicesCount} thiết bị chờ duyệt`}
+                      title={`${pendingDevicesCount} devices pending moderation`}
                     >
                       {pendingDevicesCount}
                     </span>
@@ -283,7 +283,7 @@ export const AdminSidebarContent = ({
                     <span
                       className="admin-nav-badge"
                       style={{ backgroundColor: '#EF4444', color: '#FFFFFF' }}
-                      title={`${pendingDisputesCount} tranh chấp cần xử lý`}
+                      title={`${pendingDisputesCount} disputes requiring attention`}
                     >
                       {pendingDisputesCount}
                     </span>

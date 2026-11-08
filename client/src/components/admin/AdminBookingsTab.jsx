@@ -24,13 +24,13 @@ import {
 import { formatPrice, formatDate } from '../../utils/formatters.js';
 
 const STATUS_CONFIG = {
-  pending: { label: 'Chờ duyệt', bg: 'bg-amber-50 text-amber-700 border-amber-200' },
-  approved: { label: 'Đã duyệt', bg: 'bg-blue-50 text-blue-700 border-blue-200' },
-  active: { label: 'Đang thuê', bg: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-  completed: { label: 'Hoàn tất', bg: 'bg-slate-100 text-slate-700 border-slate-200' },
-  cancelled: { label: 'Đã hủy', bg: 'bg-rose-50 text-rose-700 border-rose-200' },
-  rejected: { label: 'Từ chối', bg: 'bg-rose-50 text-rose-700 border-rose-200' },
-  disputed: { label: 'Tranh chấp', bg: 'bg-purple-50 text-purple-700 border-purple-200' },
+  pending: { label: 'Pending', bg: 'bg-amber-50 text-amber-700 border-amber-200' },
+  approved: { label: 'Approved', bg: 'bg-blue-50 text-blue-700 border-blue-200' },
+  active: { label: 'Active', bg: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  completed: { label: 'Completed', bg: 'bg-slate-100 text-slate-700 border-slate-200' },
+  cancelled: { label: 'Cancelled', bg: 'bg-rose-50 text-rose-700 border-rose-200' },
+  rejected: { label: 'Rejected', bg: 'bg-rose-50 text-rose-700 border-rose-200' },
+  disputed: { label: 'Disputed', bg: 'bg-purple-50 text-purple-700 border-purple-200' },
 };
 
 export const AdminBookingsTab = () => {
@@ -63,7 +63,7 @@ export const AdminBookingsTab = () => {
         setTotalCount(res.pagination?.total || 0);
       }
     } catch (err) {
-      console.error('Lỗi khi tải danh sách đơn thuê:', err);
+      console.error('Error loading rental bookings:', err);
     } finally {
       setLoading(false);
     }
@@ -81,7 +81,7 @@ export const AdminBookingsTab = () => {
         setSelectedBooking(res.data);
       }
     } catch (err) {
-      console.error('Lỗi khi xem chi tiết đơn thuê:', err);
+      console.error('Error viewing rental details:', err);
     } finally {
       setDetailLoading(false);
     }
@@ -101,13 +101,13 @@ export const AdminBookingsTab = () => {
       <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
         <div>
           <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-            <span>Quản lý Đơn thuê Toàn sàn</span>
+            <span>Platform Rental Management</span>
             <span className="text-xs px-2.5 py-0.5 rounded-full bg-teal-50 text-teal-700 font-semibold border border-teal-200">
-              {totalCount} đơn
+              {totalCount} rentals
             </span>
           </h2>
           <p className="text-xs text-slate-500 mt-1">
-            Theo dõi, tra cứu trạng thái bàn giao và kiểm soát quy trình cho thuê thiết bị công nghệ.
+            Track, inspect handover statuses and oversee technology equipment rental workflows.
           </p>
         </div>
 
@@ -118,7 +118,7 @@ export const AdminBookingsTab = () => {
             className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 hover:border-slate-300 transition shadow-2xs cursor-pointer"
           >
             <Download size={14} className="text-slate-500" />
-            <span>Xuất CSV</span>
+            <span>Export CSV</span>
           </button>
           <button
             type="button"
@@ -127,7 +127,7 @@ export const AdminBookingsTab = () => {
             className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-teal-700 bg-teal-50 border border-teal-200 rounded-xl hover:bg-teal-100 transition shadow-2xs cursor-pointer"
           >
             <RotateCw size={14} className={loading ? 'animate-spin' : ''} />
-            <span>Làm mới</span>
+            <span>Refresh</span>
           </button>
         </div>
       </div>
@@ -139,7 +139,7 @@ export const AdminBookingsTab = () => {
           <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
-            placeholder="Tìm mã đơn, thiết bị, người thuê..."
+            placeholder="Search order code, device, renter..."
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -159,13 +159,13 @@ export const AdminBookingsTab = () => {
             }}
             className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500/20 cursor-pointer"
           >
-            <option value="all">Mọi trạng thái đơn</option>
-            <option value="pending">Chờ duyệt</option>
-            <option value="approved">Đã duyệt</option>
-            <option value="active">Đang thuê</option>
-            <option value="completed">Hoàn tất</option>
-            <option value="cancelled">Đã hủy</option>
-            <option value="disputed">Tranh chấp</option>
+            <option value="all">All Order Statuses</option>
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="active">Active</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
+            <option value="disputed">Disputed</option>
           </select>
 
           <select
@@ -176,12 +176,12 @@ export const AdminBookingsTab = () => {
             }}
             className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500/20 cursor-pointer"
           >
-            <option value="all">Mọi trạng thái thanh toán</option>
-            <option value="unpaid">Chưa thanh toán</option>
-            <option value="deposit_held">Đang giữ cọc</option>
-            <option value="paid">Đã thanh toán đủ</option>
-            <option value="refunded">Đã hoàn trả</option>
-            <option value="disputed">Đang tranh chấp</option>
+            <option value="all">All Payment Statuses</option>
+            <option value="unpaid">Unpaid</option>
+            <option value="deposit_held">Deposit Held (Escrow)</option>
+            <option value="paid">Paid in Full</option>
+            <option value="refunded">Refunded</option>
+            <option value="disputed">Disputed</option>
           </select>
         </div>
       </div>
@@ -192,14 +192,14 @@ export const AdminBookingsTab = () => {
           <table className="w-full text-left text-xs text-slate-600 border-collapse">
             <thead>
               <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[11px]">
-                <th className="py-3.5 px-4">Mã đơn</th>
-                <th className="py-3.5 px-4">Thiết bị</th>
-                <th className="py-3.5 px-4">Người thuê</th>
-                <th className="py-3.5 px-4">Chủ thiết bị</th>
-                <th className="py-3.5 px-4">Thời gian thuê</th>
-                <th className="py-3.5 px-4">Tổng tiền (VND)</th>
-                <th className="py-3.5 px-4 text-center">Trạng thái</th>
-                <th className="py-3.5 px-4 text-center">Thao tác</th>
+                <th className="py-3.5 px-4">Order Code</th>
+                <th className="py-3.5 px-4">Device</th>
+                <th className="py-3.5 px-4">Renter</th>
+                <th className="py-3.5 px-4">Device Owner</th>
+                <th className="py-3.5 px-4">Rental Period</th>
+                <th className="py-3.5 px-4">Total Amount (VND)</th>
+                <th className="py-3.5 px-4 text-center">Status</th>
+                <th className="py-3.5 px-4 text-center">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium">
@@ -208,14 +208,14 @@ export const AdminBookingsTab = () => {
                   <td colSpan={8} className="py-12 text-center text-slate-400">
                     <div className="flex flex-col items-center justify-center gap-2">
                       <RotateCw size={24} className="animate-spin text-teal-600" />
-                      <span>Đang tải danh sách đơn thuê...</span>
+                      <span>Loading rental list...</span>
                     </div>
                   </td>
                 </tr>
               ) : bookings.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="py-12 text-center text-slate-400">
-                    Không tìm thấy đơn thuê nào phù hợp với bộ lọc.
+                    No rental bookings found matching filters.
                   </td>
                 </tr>
               ) : (
@@ -246,7 +246,7 @@ export const AdminBookingsTab = () => {
                             )}
                           </div>
                           <span className="font-bold text-slate-800 max-w-[140px] truncate" title={b.device?.name}>
-                            {b.device?.name || 'Thiết bị'}
+                            {b.device?.name || 'Device'}
                           </span>
                         </div>
                       </td>
@@ -288,7 +288,7 @@ export const AdminBookingsTab = () => {
                           type="button"
                           onClick={() => handleViewDetails(b._id)}
                           className="p-1.5 rounded-lg hover:bg-teal-50 text-slate-500 hover:text-teal-700 transition cursor-pointer"
-                          title="Xem chi tiết đơn thuê"
+                          title="View rental details"
                         >
                           <Eye size={16} />
                         </button>
@@ -305,7 +305,7 @@ export const AdminBookingsTab = () => {
         {totalPages > 1 && (
           <div className="p-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
             <span>
-              Trang {page} / {totalPages} (Tổng {totalCount} đơn)
+              Page {page} / {totalPages} (Total {totalCount} rentals)
             </span>
             <div className="flex items-center gap-1.5">
               <button
@@ -313,9 +313,7 @@ export const AdminBookingsTab = () => {
                 disabled={page <= 1}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 className="px-3 py-1.5 border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-              >
-                Trước
-              </button>
+              >Prev</button>
               <button
                 type="button"
                 disabled={page >= totalPages}
@@ -345,7 +343,7 @@ export const AdminBookingsTab = () => {
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
                 <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
-                  <span>Chi tiết đơn thuê #{selectedBooking.bookingCode}</span>
+                  <span>Rental Details #{selectedBooking.bookingCode}</span>
                   <span
                     className={`text-[10px] px-2 py-0.5 rounded-full border ${
                       STATUS_CONFIG[selectedBooking.status]?.bg || 'bg-slate-100 text-slate-600'
@@ -355,7 +353,7 @@ export const AdminBookingsTab = () => {
                   </span>
                 </h3>
                 <p className="text-[11px] text-slate-400 mt-0.5">
-                  Ngày tạo: {formatDate(selectedBooking.createdAt)}
+                  Created Date: {formatDate(selectedBooking.createdAt)}
                 </p>
               </div>
               <button
@@ -385,7 +383,7 @@ export const AdminBookingsTab = () => {
                   {selectedBooking.device?.name}
                 </h4>
                 <div className="flex items-center gap-2 text-xs text-slate-500 mt-1">
-                  <span>Thời gian:</span>
+                  <span>Rental Period:</span>
                   <span className="font-semibold text-slate-700">
                     {formatDate(selectedBooking.startDate)} ➔ {formatDate(selectedBooking.endDate)}
                   </span>
@@ -398,43 +396,43 @@ export const AdminBookingsTab = () => {
               {/* Renter Card */}
               <div className="p-4 rounded-xl border border-slate-200 space-y-1">
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                  Người thuê (Renter)
+                  Renter
                 </span>
                 <p className="text-sm font-bold text-slate-800">{selectedBooking.renter?.name}</p>
                 <p className="text-xs text-slate-500">{selectedBooking.renter?.email}</p>
-                <p className="text-xs text-slate-500">{selectedBooking.renter?.phone || 'Chưa cập nhật SĐT'}</p>
+                <p className="text-xs text-slate-500">{selectedBooking.renter?.phone || 'Phone not updated'}</p>
               </div>
 
               {/* Owner Card */}
               <div className="p-4 rounded-xl border border-slate-200 space-y-1">
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                  Chủ thiết bị (Owner)
+                  Device Owner
                 </span>
                 <p className="text-sm font-bold text-slate-800">{selectedBooking.owner?.name}</p>
                 <p className="text-xs text-slate-500">{selectedBooking.owner?.email}</p>
-                <p className="text-xs text-slate-500">{selectedBooking.owner?.phone || 'Chưa cập nhật SĐT'}</p>
+                <p className="text-xs text-slate-500">{selectedBooking.owner?.phone || 'Phone not updated'}</p>
               </div>
             </div>
 
             {/* Pricing Breakdown */}
             <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-2">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                Chi tiết Tài chính
+                Financial Details
               </span>
               <div className="flex justify-between text-xs text-slate-600">
-                <span>Tiền thuê thiết bị:</span>
+                <span>Device Rental Fee:</span>
                 <span className="font-semibold">{formatPrice(selectedBooking.pricing?.rentalFee || 0)}</span>
               </div>
               <div className="flex justify-between text-xs text-slate-600">
-                <span>Tiền cọc giữ chỗ (Escrow):</span>
+                <span>Escrow Security Deposit:</span>
                 <span className="font-semibold">{formatPrice(selectedBooking.pricing?.deposit || 0)}</span>
               </div>
               <div className="flex justify-between text-xs text-slate-600">
-                <span>Phí dịch vụ sàn:</span>
+                <span>Platform Service Fee:</span>
                 <span className="font-semibold">{formatPrice(selectedBooking.pricing?.serviceFee || 0)}</span>
               </div>
               <div className="border-t border-slate-200 pt-2 flex justify-between text-sm font-bold text-slate-800">
-                <span>Tổng giá trị đơn:</span>
+                <span>Total Order Value:</span>
                 <span className="text-teal-700">{formatPrice(selectedBooking.pricing?.totalAmount || 0)}</span>
               </div>
             </div>
@@ -443,7 +441,7 @@ export const AdminBookingsTab = () => {
             {Array.isArray(selectedBooking.timeline) && selectedBooking.timeline.length > 0 && (
               <div className="space-y-2">
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                  Dòng thời gian đơn hàng
+                  Order Timeline
                 </span>
                 <div className="space-y-2 pl-2 border-l-2 border-teal-200">
                   {selectedBooking.timeline.map((step, idx) => (

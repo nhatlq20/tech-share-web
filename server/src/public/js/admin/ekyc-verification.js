@@ -49,24 +49,24 @@ document.addEventListener('DOMContentLoaded', function() {
       const res = await fetch(endpoint, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reason: action === 'reject' ? 'Giấy tờ không đủ độ phân giải hoặc mờ.' : '' })
+        body: JSON.stringify({ reason: action === 'reject' ? 'ID documents are blurry or insufficient resolution.' : '' })
       });
       const data = await res.json();
       if (res.ok && data.success) {
         const statusCell = targetEkycRow.querySelector('.ekyc-status-cell');
         if (statusCell) {
           statusCell.innerHTML = action === 'approve'
-            ? '<span class="admin-pill-badge" style="background-color: #ECFDF5; color: #16A34A;">Đã xác minh</span>'
-            : '<span class="admin-pill-badge" style="background-color: #FEF2F2; color: #DC2626;">Bị từ chối</span>';
+            ? '<span class="admin-pill-badge" style="background-color: #ECFDF5; color: #16A34A;">Verified</span>'
+            : '<span class="admin-pill-badge" style="background-color: #FEF2F2; color: #DC2626;">Rejected</span>';
         }
         if (window.showAdminToast) {
-          window.showAdminToast('Thành công', action === 'approve' ? 'Đã duyệt eKYC.' : 'Đã từ chối eKYC.', 'success');
+          window.showAdminToast('Success', action === 'approve' ? 'eKYC verified successfully.' : 'eKYC rejected.', 'success');
         }
       } else {
-        if (window.showAdminToast) window.showAdminToast('Lỗi', data.message || 'Không thể cập nhật eKYC.', 'error');
+        if (window.showAdminToast) window.showAdminToast('Error', data.message || 'Failed to update eKYC.', 'error');
       }
     } catch (err) {
-      if (window.showAdminToast) window.showAdminToast('Lỗi mạng', err.message, 'error');
+      if (window.showAdminToast) window.showAdminToast('Network Error', err.message, 'error');
     } finally {
       document.getElementById('ekycModal').style.display = 'none';
     }

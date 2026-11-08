@@ -3,10 +3,10 @@
   <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
     <div>
       <h1 style="font-size: 24px; font-weight: 800; color: #0F172A; letter-spacing: -0.02em; margin: 0;">
-        Kiểm duyệt Đánh giá & Bảo vệ Uy tín
+        Review Moderation & Reputation Protection
       </h1>
       <p style="font-size: 12px; color: #64748B; margin-top: 4px; margin-bottom: 0;">
-        Giám sát phản hồi người dùng, loại bỏ đánh giá rác và đồng bộ điểm đánh giá thiết bị
+        Monitor user feedback, remove spam reviews, and synchronize equipment rating scores
       </p>
     </div>
   </div>
@@ -17,18 +17,18 @@
       <table class="admin-table w-full text-left" style="width: 100%; min-width: 860px; border-collapse: collapse;">
         <thead>
           <tr>
-            <th style="min-width: 220px; width: 25%; padding-left: 20px;">Người đánh giá</th>
-            <th style="min-width: 200px; width: 24%;">Thiết bị / Đối tác</th>
-            <th style="min-width: 140px; width: 16%;">Số sao & Nội dung</th>
-            <th style="min-width: 120px; width: 15%;">Trạng thái</th>
-            <th style="min-width: 160px; width: 20%; text-align: right; padding-right: 24px;">Hành động</th>
+            <th style="min-width: 220px; width: 25%; padding-left: 20px;">Reviewer</th>
+            <th style="min-width: 200px; width: 24%;">Equipment / Partner</th>
+            <th style="min-width: 140px; width: 16%;">Rating & Review</th>
+            <th style="min-width: 120px; width: 15%;">Status</th>
+            <th style="min-width: 160px; width: 20%; text-align: right; padding-right: 24px;">Actions</th>
           </tr>
         </thead>
         <tbody>
           <% if (!reviews || reviews.length === 0) { %>
             <tr>
               <td colspan="5" style="text-align: center; padding: 48px; color: #64748B;">
-                Chưa có đánh giá nào cần kiểm duyệt.
+                No reviews awaiting moderation.
               </td>
             </tr>
           <% } else { %>
@@ -36,7 +36,7 @@
               <tr class="review-row" data-id="<%= r._id %>">
                 <td style="vertical-align: middle; padding-left: 20px;">
                   <div style="font-weight: 700; font-size: 13.5px; color: #0F172A;">
-                    <%= r.reviewer && r.reviewer.name ? r.reviewer.name : 'Khách thuê' %>
+                    <%= r.reviewer && r.reviewer.name ? r.reviewer.name : 'Renter' %>
                   </div>
                   <div style="font-size: 11.5px; color: #64748B;">
                     <%= r.reviewer && r.reviewer.email ? r.reviewer.email : 'user@techshare.vn' %>
@@ -44,7 +44,7 @@
                 </td>
                 <td style="vertical-align: middle;">
                   <div style="font-weight: 600; font-size: 13px; color: #1E293B;">
-                    <%= r.device && (r.device.name || r.device.title) ? (r.device.name || r.device.title) : 'Thiết bị công nghệ' %>
+                    <%= r.device && (r.device.name || r.device.title) ? (r.device.name || r.device.title) : 'Tech Equipment' %>
                   </div>
                 </td>
                 <td style="vertical-align: middle;">
@@ -55,14 +55,14 @@
                     <span style="font-size: 12px; font-weight: 700; color: #0F172A; margin-left: 4px;"><%= r.rating || 5 %></span>
                   </div>
                   <div style="font-size: 12px; color: #475569; margin-top: 4px; max-width: 320px; white-space: normal;">
-                    "<%= r.comment || 'Thiết bị dùng rất tốt, chủ máy nhiệt tình.' %>"
+                    "<%= r.comment || 'Device works well, friendly owner.' %>"
                   </div>
                 </td>
                 <td style="vertical-align: middle;">
                   <% if (r.isHidden || r.moderationStatus === 'hidden') { %>
-                    <span class="admin-pill-badge" style="background-color: #FEF2F2; color: #DC2626;">Đã ẩn</span>
+                    <span class="admin-pill-badge" style="background-color: #FEF2F2; color: #DC2626;">Hidden</span>
                   <% } else { %>
-                    <span class="admin-pill-badge" style="background-color: #ECFDF5; color: #16A34A;">Hiển thị</span>
+                    <span class="admin-pill-badge" style="background-color: #ECFDF5; color: #16A34A;">Visible</span>
                   <% } %>
                 </td>
                 <td style="vertical-align: middle; text-align: right; padding-right: 24px; white-space: nowrap;">
@@ -72,7 +72,7 @@
                     </button>
                   <% } else { %>
                     <button type="button" class="admin-btn admin-btn-danger btn-moderate-review" data-id="<%= r._id %>" data-status="hidden" style="padding: 6px 12px; font-size: 12px;">
-                      Ẩn đánh giá
+                      Hide Review
                     </button>
                   <% } %>
                 </td>

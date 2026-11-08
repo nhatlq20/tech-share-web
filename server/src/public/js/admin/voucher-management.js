@@ -38,13 +38,13 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         const data = await res.json();
         if (res.ok && data.success) {
-          if (window.showAdminToast) window.showAdminToast('Thành công', 'Đã cập nhật trạng thái voucher.', 'success');
+          if (window.showAdminToast) window.showAdminToast('Success', 'Voucher status updated successfully.', 'success');
           setTimeout(() => window.location.reload(), 500);
         } else {
-          if (window.showAdminToast) window.showAdminToast('Lỗi', data.message || 'Không thể đổi trạng thái voucher.', 'error');
+          if (window.showAdminToast) window.showAdminToast('Error', data.message || 'Failed to update voucher status.', 'error');
         }
       } catch (err) {
-        if (window.showAdminToast) window.showAdminToast('Lỗi mạng', err.message, 'error');
+        if (window.showAdminToast) window.showAdminToast('Network Error', err.message, 'error');
       }
     });
   });
@@ -68,10 +68,10 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         const data = await res.json();
         if (res.ok && data.success) {
-          if (window.showAdminToast) window.showAdminToast('Thành công', 'Đã tạo voucher khuyến mãi thành công.', 'success');
+          if (window.showAdminToast) window.showAdminToast('Success', 'Promotion voucher created successfully.', 'success');
           setTimeout(() => window.location.reload(), 600);
         } else {
-          if (window.showAdminToast) window.showAdminToast('Lỗi', data.message || 'Không thể tạo voucher.', 'error');
+          if (window.showAdminToast) window.showAdminToast('Error', data.message || 'Failed to create voucher.', 'error');
         }
       } catch (err) {
         if (window.showAdminToast) window.showAdminToast('Lỗi mạng', err.message, 'error');

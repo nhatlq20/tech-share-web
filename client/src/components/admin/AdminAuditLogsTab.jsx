@@ -15,15 +15,15 @@ import {
 import { getAdminAuditLogs } from '../../services/adminService.js';
 
 const ACTION_CONFIG = {
-  dispute_resolve: { label: 'Giải quyết khiếu nại', bg: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-  dispute_dismiss: { label: 'Bác bỏ khiếu nại', bg: 'bg-slate-100 text-slate-700 border-slate-200' },
-  dispute_review: { label: 'Xem xét khiếu nại', bg: 'bg-blue-50 text-blue-700 border-blue-200' },
-  user_status_toggle: { label: 'Khóa / Mở khóa người dùng', bg: 'bg-amber-50 text-amber-700 border-amber-200' },
-  device_moderate: { label: 'Duyệt / Từ chối thiết bị', bg: 'bg-purple-50 text-purple-700 border-purple-200' },
-  ekyc_approve: { label: 'Duyệt eKYC', bg: 'bg-teal-50 text-teal-700 border-teal-200' },
-  ekyc_reject: { label: 'Từ chối eKYC', bg: 'bg-rose-50 text-rose-700 border-rose-200' },
-  review_moderate: { label: 'Kiểm duyệt đánh giá', bg: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
-  setting_update: { label: 'Cập nhật cấu hình', bg: 'bg-cyan-50 text-cyan-700 border-cyan-200' },
+  dispute_resolve: { label: 'Resolve Dispute', bg: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  dispute_dismiss: { label: 'Dismiss Dispute', bg: 'bg-slate-100 text-slate-700 border-slate-200' },
+  dispute_review: { label: 'Review Dispute', bg: 'bg-blue-50 text-blue-700 border-blue-200' },
+  user_status_toggle: { label: 'Lock / Unlock User', bg: 'bg-amber-50 text-amber-700 border-amber-200' },
+  device_moderate: { label: 'Moderate Device', bg: 'bg-purple-50 text-purple-700 border-purple-200' },
+  ekyc_approve: { label: 'Approve eKYC', bg: 'bg-teal-50 text-teal-700 border-teal-200' },
+  ekyc_reject: { label: 'Reject eKYC', bg: 'bg-rose-50 text-rose-700 border-rose-200' },
+  review_moderate: { label: 'Moderate Review', bg: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
+  setting_update: { label: 'Update Setting', bg: 'bg-cyan-50 text-cyan-700 border-cyan-200' },
 };
 
 export const AdminAuditLogsTab = () => {
@@ -57,7 +57,7 @@ export const AdminAuditLogsTab = () => {
         setTotalCount(res.pagination?.total || 0);
       }
     } catch (err) {
-      console.error('Lỗi khi tải nhật ký kiểm toán:', err);
+      console.error('Error loading audit logs:', err);
     } finally {
       setLoading(false);
     }
@@ -90,9 +90,9 @@ export const AdminAuditLogsTab = () => {
               <FileText className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-slate-900">Nhật ký kiểm toán hệ thống</h2>
+              <h2 className="text-xl font-bold text-slate-900">System Audit Logs</h2>
               <p className="text-xs text-slate-500 mt-0.5">
-                Ghi vết bảo mật và minh bạch toàn bộ thao tác can thiệp của Quản trị viên
+                Security logging and transparent audit trail of all Administrator actions
               </p>
             </div>
           </div>
@@ -102,11 +102,9 @@ export const AdminAuditLogsTab = () => {
           <button
             onClick={fetchLogs}
             className="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition"
-            title="Làm mới"
+            title="Refresh"
           >
-            <RotateCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-            Làm mới
-          </button>
+            <RotateCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />Refresh</button>
         </div>
       </div>
 
@@ -118,7 +116,7 @@ export const AdminAuditLogsTab = () => {
             <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
-              placeholder="Tìm hành động, email, đối tượng..."
+              placeholder="Search action, email, target..."
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
@@ -137,16 +135,16 @@ export const AdminAuditLogsTab = () => {
             }}
             className="text-xs py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/20 text-slate-700 font-medium"
           >
-            <option value="all">Tất cả hành động</option>
-            <option value="dispute_resolve">Giải quyết khiếu nại</option>
-            <option value="dispute_dismiss">Bác bỏ khiếu nại</option>
-            <option value="dispute_review">Xem xét khiếu nại</option>
-            <option value="user_status_toggle">Khóa/Mở người dùng</option>
-            <option value="device_moderate">Kiểm duyệt thiết bị</option>
-            <option value="ekyc_approve">Duyệt eKYC</option>
-            <option value="ekyc_reject">Từ chối eKYC</option>
-            <option value="review_moderate">Kiểm duyệt đánh giá</option>
-            <option value="setting_update">Cập nhật cấu hình</option>
+            <option value="all">All Actions</option>
+            <option value="dispute_resolve">Resolve Dispute</option>
+            <option value="dispute_dismiss">Dismiss Dispute</option>
+            <option value="dispute_review">Review Dispute</option>
+            <option value="user_status_toggle">Lock/Unlock User</option>
+            <option value="device_moderate">Moderate Device</option>
+            <option value="ekyc_approve">Approve eKYC</option>
+            <option value="ekyc_reject">Reject eKYC</option>
+            <option value="review_moderate">Moderate Review</option>
+            <option value="setting_update">Update Setting</option>
           </select>
 
           {/* Target Type Filter */}
@@ -158,14 +156,14 @@ export const AdminAuditLogsTab = () => {
             }}
             className="text-xs py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/20 text-slate-700 font-medium"
           >
-            <option value="all">Tất cả đối tượng</option>
-            <option value="Dispute">Khiếu nại (Dispute)</option>
-            <option value="Booking">Đơn thuê (Booking)</option>
-            <option value="User">Người dùng (User)</option>
-            <option value="Device">Thiết bị (Device)</option>
-            <option value="Wallet">Ví tiền (Wallet)</option>
-            <option value="Review">Đánh giá (Review)</option>
-            <option value="eKYC">Hồ sơ eKYC</option>
+            <option value="all">All Target Types</option>
+            <option value="Dispute">Dispute</option>
+            <option value="Booking">Rental Booking</option>
+            <option value="User">User</option>
+            <option value="Device">Device</option>
+            <option value="Wallet">Wallet</option>
+            <option value="Review">Review</option>
+            <option value="eKYC">eKYC Dossier</option>
           </select>
 
           {/* Status Filter */}
@@ -177,14 +175,14 @@ export const AdminAuditLogsTab = () => {
             }}
             className="text-xs py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/20 text-slate-700 font-medium"
           >
-            <option value="all">Tất cả trạng thái</option>
-            <option value="success">Thành công</option>
-            <option value="failure">Thất bại</option>
+            <option value="all">All Statuses</option>
+            <option value="success">Success</option>
+            <option value="failure">Failure</option>
           </select>
         </div>
 
         <div className="text-xs text-slate-500">
-          Tổng số bản ghi: <span className="font-bold text-slate-800">{totalCount}</span>
+          Total Records: <span className="font-bold text-slate-800">{totalCount}</span>
         </div>
       </div>
 
@@ -194,13 +192,13 @@ export const AdminAuditLogsTab = () => {
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-50/75 border-b border-slate-100 text-slate-500 font-semibold uppercase tracking-wider">
               <tr>
-                <th className="py-3.5 px-4">Thời gian</th>
-                <th className="py-3.5 px-4">Quản trị viên</th>
-                <th className="py-3.5 px-4">Hành động</th>
-                <th className="py-3.5 px-4">Đối tượng</th>
-                <th className="py-3.5 px-4">Lý do / Mô tả</th>
-                <th className="py-3.5 px-4 text-center">Trạng thái</th>
-                <th className="py-3.5 px-4 text-center">Thao tác</th>
+                <th className="py-3.5 px-4">Timestamp</th>
+                <th className="py-3.5 px-4">Administrator</th>
+                <th className="py-3.5 px-4">Action</th>
+                <th className="py-3.5 px-4">Target Type</th>
+                <th className="py-3.5 px-4">Reason / Notes</th>
+                <th className="py-3.5 px-4 text-center">Status</th>
+                <th className="py-3.5 px-4 text-center">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -208,14 +206,14 @@ export const AdminAuditLogsTab = () => {
                 <tr>
                   <td colSpan="7" className="py-12 text-center text-slate-400">
                     <RotateCw className="w-6 h-6 animate-spin mx-auto mb-2 text-teal-600" />
-                    Đang tải nhật ký kiểm toán...
+                    Loading audit logs...
                   </td>
                 </tr>
               ) : logs.length === 0 ? (
                 <tr>
                   <td colSpan="7" className="py-12 text-center text-slate-400">
                     <AlertCircle className="w-8 h-8 mx-auto mb-2 text-slate-300" />
-                    Không tìm thấy bản ghi kiểm toán nào phù hợp.
+                    No matching audit records found.
                   </td>
                 </tr>
               ) : (
@@ -259,7 +257,7 @@ export const AdminAuditLogsTab = () => {
                       </td>
 
                       {/* Lý do / Mô tả */}
-                      <td className="py-3.5 px-4 max-w-xs truncate" title={log.reason || 'Không có mô tả'}>
+                      <td className="py-3.5 px-4 max-w-xs truncate" title={log.reason || 'No description'}>
                         <span className="text-slate-600">{log.reason || '—'}</span>
                       </td>
 
@@ -267,11 +265,11 @@ export const AdminAuditLogsTab = () => {
                       <td className="py-3.5 px-4 text-center">
                         {log.status === 'success' ? (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                            <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Thành công
+                            <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Success
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-full bg-rose-50 text-rose-700 border border-rose-200">
-                            <XCircle className="w-3 h-3 text-rose-600" /> Thất bại
+                            <XCircle className="w-3 h-3 text-rose-600" /> Failure
                           </span>
                         )}
                       </td>
@@ -281,7 +279,7 @@ export const AdminAuditLogsTab = () => {
                         <button
                           onClick={() => setSelectedLog(log)}
                           className="p-1.5 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-700 transition"
-                          title="Xem chi tiết"
+                          title="View details"
                         >
                           <Eye className="w-3.5 h-3.5" />
                         </button>
@@ -305,9 +303,7 @@ export const AdminAuditLogsTab = () => {
                 disabled={page <= 1}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 className="px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-40 disabled:hover:bg-white transition"
-              >
-                Trước
-              </button>
+              >Prev</button>
               <button
                 disabled={page >= totalPages}
                 onClick={() => setPage((p) => p + 1)}
@@ -331,7 +327,7 @@ export const AdminAuditLogsTab = () => {
                   <Terminal className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-slate-900">Chi tiết bản ghi kiểm toán</h3>
+                  <h3 className="text-base font-bold text-slate-900">Audit Record Details</h3>
                   <p className="text-xs text-slate-500">ID: {selectedLog._id}</p>
                 </div>
               </div>
@@ -347,14 +343,14 @@ export const AdminAuditLogsTab = () => {
             <div className="p-6 space-y-4 max-h-[75vh] overflow-y-auto text-xs">
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-100">
-                  <span className="text-slate-400 font-medium block mb-1">Quản trị viên thực hiện:</span>
+                  <span className="text-slate-400 font-medium block mb-1">Performed by Administrator:</span>
                   <div className="font-bold text-slate-800">{selectedLog.adminName || 'Admin'}</div>
                   <div className="text-slate-500">{selectedLog.adminEmail || 'N/A'}</div>
                   <div className="text-[10px] text-slate-400 font-mono mt-1">ID: {selectedLog.adminId}</div>
                 </div>
 
                 <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-100">
-                  <span className="text-slate-400 font-medium block mb-1">Thời gian ghi nhận:</span>
+                  <span className="text-slate-400 font-medium block mb-1">Recorded Timestamp:</span>
                   <div className="font-bold text-slate-800">{formatTimestamp(selectedLog.createdAt)}</div>
                   <div className="text-slate-500 mt-1">
                     IP:{' '}
@@ -365,24 +361,24 @@ export const AdminAuditLogsTab = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-100">
-                  <span className="text-slate-400 font-medium block mb-1">Hành động & Đối tượng:</span>
+                  <span className="text-slate-400 font-medium block mb-1">Action & Target:</span>
                   <div className="font-bold text-teal-700">{selectedLog.action}</div>
                   <div className="text-slate-600 mt-0.5">
-                    Mục tiêu: <span className="font-semibold">{selectedLog.targetType}</span> (ID:{' '}
+                    Target: <span className="font-semibold">{selectedLog.targetType}</span> (ID:{' '}
                     <span className="font-mono">{selectedLog.targetId || 'N/A'}</span>)
                   </div>
                 </div>
 
                 <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-100">
-                  <span className="text-slate-400 font-medium block mb-1">Trạng thái thực thi:</span>
+                  <span className="text-slate-400 font-medium block mb-1">Execution Status:</span>
                   <div>
                     {selectedLog.status === 'success' ? (
                       <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200">
-                        <CheckCircle2 className="w-3.5 h-3.5" /> Thành công
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Success
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-lg bg-rose-50 text-rose-700 border border-rose-200">
-                        <XCircle className="w-3.5 h-3.5" /> Thất bại
+                        <XCircle className="w-3.5 h-3.5" /> Failure
                       </span>
                     )}
                   </div>
@@ -394,9 +390,9 @@ export const AdminAuditLogsTab = () => {
 
               {/* Lý do / Ghi chú */}
               <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-100">
-                <span className="text-slate-400 font-medium block mb-1">Lý do can thiệp / Ghi chú:</span>
+                <span className="text-slate-400 font-medium block mb-1">Intervention Reason / Notes:</span>
                 <p className="text-slate-800 font-medium leading-relaxed">
-                  {selectedLog.reason || 'Không có ghi chú thêm.'}
+                  {selectedLog.reason || 'No additional notes provided.'}
                 </p>
               </div>
 
@@ -411,7 +407,7 @@ export const AdminAuditLogsTab = () => {
               {/* Raw Metadata JSON */}
               <div className="bg-slate-900 text-slate-200 p-4 rounded-2xl font-mono text-[11px] overflow-x-auto shadow-inner">
                 <div className="flex items-center justify-between text-slate-400 pb-2 mb-2 border-b border-slate-800">
-                  <span>Dữ liệu Metadata (Sanitized JSON)</span>
+                  <span>Metadata (Sanitized JSON)</span>
                   <Activity className="w-3.5 h-3.5 text-teal-400" />
                 </div>
                 <pre>{JSON.stringify(selectedLog.metadata || {}, null, 2)}</pre>
@@ -423,9 +419,7 @@ export const AdminAuditLogsTab = () => {
               <button
                 onClick={() => setSelectedLog(null)}
                 className="px-5 py-2 text-xs font-semibold rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 transition"
-              >
-                Đóng
-              </button>
+              >Close</button>
             </div>
           </div>
         </div>

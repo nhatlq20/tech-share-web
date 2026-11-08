@@ -17,15 +17,15 @@ import {
 import { formatDate } from '../../utils/formatters.js';
 
 const STATUS_CONFIG = {
-  approved: { label: 'Đã duyệt', bg: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-  hidden: { label: 'Đã ẩn (Vi phạm)', bg: 'bg-rose-50 text-rose-700 border-rose-200' },
-  flagged: { label: 'Cần xem xét', bg: 'bg-amber-50 text-amber-700 border-amber-200' },
+  approved: { label: 'Approved', bg: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  hidden: { label: 'Hidden (Violating)', bg: 'bg-rose-50 text-rose-700 border-rose-200' },
+  flagged: { label: 'Needs Review', bg: 'bg-amber-50 text-amber-700 border-amber-200' },
 };
 
 const TARGET_MAP = {
-  device: { label: 'Thiết bị', bg: 'bg-blue-50 text-blue-700 border-blue-200' },
-  owner: { label: 'Chủ máy', bg: 'bg-purple-50 text-purple-700 border-purple-200' },
-  renter: { label: 'Người thuê', bg: 'bg-teal-50 text-teal-700 border-teal-200' },
+  device: { label: 'Device', bg: 'bg-blue-50 text-blue-700 border-blue-200' },
+  owner: { label: 'Owner', bg: 'bg-purple-50 text-purple-700 border-purple-200' },
+  renter: { label: 'Renter', bg: 'bg-teal-50 text-teal-700 border-teal-200' },
 };
 
 export const AdminReviewsTab = () => {
@@ -67,7 +67,7 @@ export const AdminReviewsTab = () => {
         setTotalCount(res.pagination?.total || 0);
       }
     } catch (err) {
-      console.error('Lỗi khi tải danh sách đánh giá:', err);
+      console.error('Error loading reviews:', err);
     } finally {
       setLoading(false);
     }
@@ -122,7 +122,7 @@ export const AdminReviewsTab = () => {
         setModalMode(null);
       }
     } catch (err) {
-      setErrorMsg(err.response?.data?.message || err.message || 'Lỗi khi cập nhật trạng thái kiểm duyệt.');
+      setErrorMsg(err.response?.data?.message || err.message || 'Error updating review moderation status.');
     } finally {
       setSubmitting(false);
     }
@@ -152,9 +152,9 @@ export const AdminReviewsTab = () => {
               <Star className="w-5 h-5 fill-teal-600 text-teal-600" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-slate-900">Kiểm duyệt đánh giá hệ thống</h2>
+              <h2 className="text-xl font-bold text-slate-900">Platform Review Moderation</h2>
               <p className="text-xs text-slate-500 mt-0.5">
-                Kiểm duyệt tính trung thực, xử lý nội dung vi phạm và đồng bộ điểm sao tín nhiệm
+                Moderate review authenticity, manage policy violations, and synchronize trust ratings
               </p>
             </div>
           </div>
@@ -164,11 +164,9 @@ export const AdminReviewsTab = () => {
           <button
             onClick={fetchReviews}
             className="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition"
-            title="Làm mới"
+            title="Refresh"
           >
-            <RotateCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-            Làm mới
-          </button>
+            <RotateCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />Refresh</button>
         </div>
       </div>
 
@@ -180,7 +178,7 @@ export const AdminReviewsTab = () => {
             <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
-              placeholder="Tìm theo nội dung đánh giá..."
+              placeholder="Search by review comment..."
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
@@ -199,12 +197,12 @@ export const AdminReviewsTab = () => {
             }}
             className="text-xs py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/20 text-slate-700 font-medium"
           >
-            <option value="all">Tất cả số sao</option>
-            <option value="5">5 sao (Tuyệt vời)</option>
-            <option value="4">4 sao (Hài lòng)</option>
-            <option value="3">3 sao (Bình thường)</option>
-            <option value="2">2 sao (Kém)</option>
-            <option value="1">1 sao (Rất tệ)</option>
+            <option value="all">All Star Ratings</option>
+            <option value="5">5 Stars (Excellent)</option>
+            <option value="4">4 Stars (Good)</option>
+            <option value="3">3 Stars (Average)</option>
+            <option value="2">2 Stars (Poor)</option>
+            <option value="1">1 Star (Terrible)</option>
           </select>
 
           {/* Target Type Filter */}
@@ -216,10 +214,10 @@ export const AdminReviewsTab = () => {
             }}
             className="text-xs py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/20 text-slate-700 font-medium"
           >
-            <option value="all">Tất cả đối tượng</option>
-            <option value="device">Thiết bị</option>
-            <option value="owner">Chủ máy (Owner)</option>
-            <option value="renter">Người thuê (Renter)</option>
+            <option value="all">All Targets</option>
+            <option value="device">Device</option>
+            <option value="owner">Owner</option>
+            <option value="renter">Renter</option>
           </select>
 
           {/* Status Filter */}
@@ -231,15 +229,15 @@ export const AdminReviewsTab = () => {
             }}
             className="text-xs py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/20 text-slate-700 font-medium"
           >
-            <option value="all">Tất cả trạng thái</option>
-            <option value="approved">Đã duyệt (Hiển thị)</option>
-            <option value="hidden">Đã ẩn (Vi phạm)</option>
-            <option value="flagged">Cần xem xét</option>
+            <option value="all">All Statuses</option>
+            <option value="approved">Approved (Visible)</option>
+            <option value="hidden">Hidden (Violating)</option>
+            <option value="flagged">Needs Review</option>
           </select>
         </div>
 
         <div className="text-xs text-slate-500">
-          Tổng số đánh giá: <span className="font-bold text-slate-800">{totalCount}</span>
+          Total Reviews: <span className="font-bold text-slate-800">{totalCount}</span>
         </div>
       </div>
 
@@ -249,12 +247,12 @@ export const AdminReviewsTab = () => {
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-50/75 border-b border-slate-100 text-slate-500 font-semibold uppercase tracking-wider">
               <tr>
-                <th className="py-3.5 px-4">Thời gian & Đơn thuê</th>
-                <th className="py-3.5 px-4">Người đánh giá</th>
-                <th className="py-3.5 px-4">Đối tượng</th>
-                <th className="py-3.5 px-4">Điểm & Bình luận</th>
-                <th className="py-3.5 px-4 text-center">Trạng thái</th>
-                <th className="py-3.5 px-4 text-center">Thao tác</th>
+                <th className="py-3.5 px-4">Date & Rental Booking</th>
+                <th className="py-3.5 px-4">Reviewer</th>
+                <th className="py-3.5 px-4">Target</th>
+                <th className="py-3.5 px-4">Rating & Comment</th>
+                <th className="py-3.5 px-4 text-center">Status</th>
+                <th className="py-3.5 px-4 text-center">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -262,14 +260,14 @@ export const AdminReviewsTab = () => {
                 <tr>
                   <td colSpan="6" className="py-12 text-center text-slate-400">
                     <RotateCw className="w-6 h-6 animate-spin mx-auto mb-2 text-teal-600" />
-                    Đang tải danh sách đánh giá...
+                    Loading reviews list...
                   </td>
                 </tr>
               ) : reviews.length === 0 ? (
                 <tr>
                   <td colSpan="6" className="py-12 text-center text-slate-400">
                     <AlertCircle className="w-8 h-8 mx-auto mb-2 text-slate-300" />
-                    Không tìm thấy đánh giá nào phù hợp.
+                    No matching reviews found.
                   </td>
                 </tr>
               ) : (
@@ -292,7 +290,7 @@ export const AdminReviewsTab = () => {
 
                       {/* Người đánh giá */}
                       <td className="py-3.5 px-4">
-                        <div className="font-semibold text-slate-900">{r.reviewer?.name || 'Người dùng'}</div>
+                        <div className="font-semibold text-slate-900">{r.reviewer?.name || 'User'}</div>
                         <div className="text-[11px] text-slate-400">{r.reviewer?.email || 'N/A'}</div>
                       </td>
 
@@ -303,10 +301,10 @@ export const AdminReviewsTab = () => {
                         </span>
                         <div className="font-medium text-slate-800 truncate max-w-[160px]" title={r.device?.name || ''}>
                           {r.targetType === 'device' || !r.targetType
-                            ? r.device?.name || 'Thiết bị công nghệ'
+                            ? r.device?.name || 'Technology Device'
                             : r.targetType === 'owner'
-                            ? r.owner?.name || 'Chủ máy'
-                            : r.renter?.name || 'Người thuê'}
+                            ? r.owner?.name || 'Owner'
+                            : r.renter?.name || 'Renter'}
                         </div>
                       </td>
 
@@ -348,14 +346,14 @@ export const AdminReviewsTab = () => {
                           <button
                             onClick={() => handleOpenModal(r, 'view')}
                             className="p-1.5 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-700 transition"
-                            title="Xem chi tiết"
+                            title="View details"
                           >
                             <Eye className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => handleOpenModal(r, 'moderate')}
                             className="p-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 transition"
-                            title="Kiểm duyệt"
+                            title="Moderate"
                           >
                             <ShieldAlert className="w-3.5 h-3.5" />
                           </button>
@@ -380,9 +378,7 @@ export const AdminReviewsTab = () => {
                 disabled={page <= 1}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 className="px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-40 disabled:hover:bg-white transition"
-              >
-                Trước
-              </button>
+              >Prev</button>
               <button
                 disabled={page >= totalPages}
                 onClick={() => setPage((p) => p + 1)}
@@ -407,10 +403,10 @@ export const AdminReviewsTab = () => {
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-slate-900">
-                    {modalMode === 'moderate' ? 'Kiểm duyệt đánh giá' : 'Chi tiết đánh giá'}
+                    {modalMode === 'moderate' ? 'Review Moderation' : 'Review Details'}
                   </h3>
                   <p className="text-xs text-slate-500">
-                    Mã đơn thuê: {selectedReview.booking?.bookingCode || 'N/A'}
+                    Rental Code: {selectedReview.booking?.bookingCode || 'N/A'}
                   </p>
                 </div>
               </div>
@@ -427,22 +423,22 @@ export const AdminReviewsTab = () => {
               {/* Context Summary Cards */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-100">
-                  <span className="text-slate-400 font-medium block mb-1">Người đánh giá:</span>
-                  <div className="font-bold text-slate-800">{selectedReview.reviewer?.name || 'Người dùng'}</div>
+                  <span className="text-slate-400 font-medium block mb-1">Reviewer:</span>
+                  <div className="font-bold text-slate-800">{selectedReview.reviewer?.name || 'User'}</div>
                   <div className="text-slate-500">{selectedReview.reviewer?.email || 'N/A'}</div>
                 </div>
 
                 <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-100">
-                  <span className="text-slate-400 font-medium block mb-1">Mục tiêu đánh giá:</span>
+                  <span className="text-slate-400 font-medium block mb-1">Review Target:</span>
                   <div className="font-bold text-teal-700">
                     {selectedReview.targetType === 'device' || !selectedReview.targetType
-                      ? selectedReview.device?.name || 'Thiết bị'
+                      ? selectedReview.device?.name || 'Device'
                       : selectedReview.targetType === 'owner'
-                      ? selectedReview.owner?.name || 'Chủ máy'
-                      : selectedReview.renter?.name || 'Người thuê'}
+                      ? selectedReview.owner?.name || 'Owner'
+                      : selectedReview.renter?.name || 'Renter'}
                   </div>
                   <div className="text-slate-500">
-                    Loại: <span className="font-semibold">{selectedReview.targetType || 'device'}</span>
+                    Type: <span className="font-semibold">{selectedReview.targetType || 'device'}</span>
                   </div>
                 </div>
               </div>
@@ -450,11 +446,11 @@ export const AdminReviewsTab = () => {
               {/* Rating & Comment Box */}
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-slate-500 font-semibold">Điểm số:</span>
+                  <span className="text-slate-500 font-semibold">Rating:</span>
                   <div>{renderStars(selectedReview.rating)}</div>
                 </div>
                 <div>
-                  <span className="text-slate-500 font-semibold block mb-1">Nội dung bình luận:</span>
+                  <span className="text-slate-500 font-semibold block mb-1">Comment Content:</span>
                   <p className="text-slate-800 bg-white p-3 rounded-lg border border-slate-200/60 leading-relaxed font-medium">
                     "{selectedReview.comment}"
                   </p>
@@ -463,7 +459,7 @@ export const AdminReviewsTab = () => {
                 {/* Review Images */}
                 {Array.isArray(selectedReview.images) && selectedReview.images.length > 0 && (
                   <div>
-                    <span className="text-slate-500 font-semibold block mb-1.5">Hình ảnh đính kèm:</span>
+                    <span className="text-slate-500 font-semibold block mb-1.5">Attached Photos:</span>
                     <div className="flex flex-wrap gap-2">
                       {selectedReview.images.map((img, i) => (
                         <a key={i} href={img} target="_blank" rel="noreferrer">
@@ -482,7 +478,7 @@ export const AdminReviewsTab = () => {
               {/* Owner Reply if present */}
               {selectedReview.ownerReply && (
                 <div className="bg-blue-50/50 p-3.5 rounded-xl border border-blue-100 text-blue-900">
-                  <span className="font-bold block mb-1">Phản hồi từ Chủ thiết bị:</span>
+                  <span className="font-bold block mb-1">Response from Device Owner:</span>
                   <p className="italic font-medium">"{selectedReview.ownerReply.comment}"</p>
                 </div>
               )}
@@ -490,7 +486,7 @@ export const AdminReviewsTab = () => {
               {/* Moderation Form (if mode === 'moderate') */}
               {modalMode === 'moderate' ? (
                 <form onSubmit={handleModerateSubmit} className="pt-2 border-t border-slate-100 space-y-3">
-                  <h4 className="font-bold text-slate-800 text-xs">Cập nhật trạng thái kiểm duyệt</h4>
+                  <h4 className="font-bold text-slate-800 text-xs">Update Moderation Status</h4>
 
                   {errorMsg && (
                     <div className="p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 flex items-center gap-2">
@@ -500,24 +496,24 @@ export const AdminReviewsTab = () => {
                   )}
 
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">Quyết định kiểm duyệt:</label>
+                    <label className="block font-semibold text-slate-700 mb-1">Moderation Decision:</label>
                     <select
                       value={modStatus}
                       onChange={(e) => setModStatus(e.target.value)}
                       className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20 font-semibold text-slate-800"
                     >
-                      <option value="approved">Duyệt hợp lệ (Hiển thị công khai)</option>
-                      <option value="hidden">Ẩn vi phạm (Không hiển thị & Không tính vào sao)</option>
-                      <option value="flagged">Đánh dấu xem xét (Cần kiểm tra thêm)</option>
+                      <option value="approved">Approve (Publicly Visible)</option>
+                      <option value="hidden">Hide Violation (Hidden & Excluded from Ratings)</option>
+                      <option value="flagged">Flag for Review (Pending Verification)</option>
                     </select>
                   </div>
 
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">Lý do kiểm duyệt / Ghi chú:</label>
+                    <label className="block font-semibold text-slate-700 mb-1">Moderation Reason / Notes:</label>
                     <textarea
                       required={modStatus === 'hidden'}
                       rows={3}
-                      placeholder="Nhập lý do ẩn vi phạm hoặc nội dung kiểm duyệt..."
+                      placeholder="Enter reason for hiding violation or moderation notes..."
                       value={modReason}
                       onChange={(e) => setModReason(e.target.value)}
                       className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20 font-medium"
@@ -529,37 +525,33 @@ export const AdminReviewsTab = () => {
                       type="button"
                       onClick={() => setModalMode(null)}
                       className="px-4 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 font-semibold text-slate-600 transition"
-                    >
-                      Hủy
-                    </button>
+                    >Cancel</button>
                     <button
                       type="submit"
                       disabled={submitting}
                       className="px-5 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold shadow-sm transition disabled:opacity-50"
                     >
-                      {submitting ? 'Đang lưu...' : 'Lưu quyết định'}
+                      {submitting ? 'Saving...' : 'Save Decision'}
                     </button>
                   </div>
                 </form>
               ) : (
                 <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-100 flex items-center justify-between">
                   <div>
-                    <span className="text-slate-400 font-medium block">Trạng thái hiện tại:</span>
+                    <span className="text-slate-400 font-medium block">Current Status:</span>
                     <span className="font-bold text-slate-800 mt-0.5 inline-block">
-                      {STATUS_CONFIG[selectedReview.moderationStatus]?.label || 'Đã duyệt'}
+                      {STATUS_CONFIG[selectedReview.moderationStatus]?.label || 'Approved'}
                     </span>
                     {selectedReview.moderationReason && (
                       <p className="text-slate-500 text-[11px] mt-0.5">
-                        Lý do: {selectedReview.moderationReason}
+                        Reason: {selectedReview.moderationReason}
                       </p>
                     )}
                   </div>
                   <button
                     onClick={() => setModalMode('moderate')}
                     className="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold transition shadow-sm"
-                  >
-                    Thay đổi kiểm duyệt
-                  </button>
+                  >Change Moderation</button>
                 </div>
               )}
             </div>
@@ -570,9 +562,7 @@ export const AdminReviewsTab = () => {
                 <button
                   onClick={() => setModalMode(null)}
                   className="px-5 py-2 text-xs font-semibold rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 transition"
-                >
-                  Đóng
-                </button>
+                >Close</button>
               </div>
             )}
           </div>

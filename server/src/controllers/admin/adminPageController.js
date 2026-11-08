@@ -23,9 +23,9 @@ const generateAdminToken = (payload) => {
 // 1. GET /admin/login
 export const renderLoginPage = (req, res) => {
   const redirect = req.query.redirect || '/admin/dashboard';
-  const error = req.query.error === 'forbidden' ? 'Tài khoản của bạn không có quyền Quản trị viên (Admin).' : null;
+  const error = req.query.error === 'forbidden' ? 'Your account does not have Administrator privileges.' : null;
   return res.render('admin/login', {
-    title: 'Đăng nhập Quản trị viên — TechShare Admin',
+    title: 'Admin Sign In — TechShare Admin Portal',
     redirect,
     error,
   });
@@ -39,9 +39,9 @@ export const handleLogin = async (req, res) => {
 
     if (!loginKey || !password) {
       return res.render('admin/login', {
-        title: 'Đăng nhập Quản trị viên — TechShare Admin',
+        title: 'Admin Sign In — TechShare Admin Portal',
         redirect: redirect || '/admin/dashboard',
-        error: 'Vui lòng nhập tên đăng nhập/email và mật khẩu.',
+        error: 'Please enter your username/email and password.',
       });
     }
 
@@ -56,26 +56,26 @@ export const handleLogin = async (req, res) => {
 
     if (!account) {
       return res.render('admin/login', {
-        title: 'Đăng nhập Quản trị viên — TechShare Admin',
+        title: 'Admin Sign In — TechShare Admin Portal',
         redirect: redirect || '/admin/dashboard',
-        error: 'Tên đăng nhập hoặc mật khẩu không chính xác.',
+        error: 'Incorrect username or password.',
       });
     }
 
     if (account.isActive === false) {
       return res.render('admin/login', {
-        title: 'Đăng nhập Quản trị viên — TechShare Admin',
+        title: 'Admin Sign In — TechShare Admin Portal',
         redirect: redirect || '/admin/dashboard',
-        error: 'Tài khoản của bạn đã bị khóa hoặc tạm ngưng hoạt động.',
+        error: 'Your account has been locked or suspended.',
       });
     }
 
     const isMatch = await bcrypt.compare(password, account.passwordHash);
     if (!isMatch) {
       return res.render('admin/login', {
-        title: 'Đăng nhập Quản trị viên — TechShare Admin',
+        title: 'Admin Sign In — TechShare Admin Portal',
         redirect: redirect || '/admin/dashboard',
-        error: 'Tên đăng nhập hoặc mật khẩu không chính xác.',
+        error: 'Incorrect username or password.',
       });
     }
 
@@ -90,9 +90,9 @@ export const handleLogin = async (req, res) => {
     const roleCode = await resolveRoleCode(account, user);
     if (roleCode !== 'admin') {
       return res.render('admin/login', {
-        title: 'Đăng nhập Quản trị viên — TechShare Admin',
+        title: 'Admin Sign In — TechShare Admin Portal',
         redirect: redirect || '/admin/dashboard',
-        error: 'Tài khoản của bạn không có quyền Quản trị viên (Admin).',
+        error: 'Your account does not have Administrator privileges.',
       });
     }
 
@@ -117,9 +117,9 @@ export const handleLogin = async (req, res) => {
   } catch (err) {
     console.error('Error during admin EJS login:', err);
     return res.render('admin/login', {
-      title: 'Đăng nhập Quản trị viên — TechShare Admin',
+      title: 'Admin Sign In — TechShare Admin Portal',
       redirect: '/admin/dashboard',
-      error: 'Có lỗi phát sinh trong quá trình đăng nhập. Vui lòng thử lại.',
+      error: 'An error occurred during sign in. Please try again.',
     });
   }
 };
@@ -180,7 +180,7 @@ export const renderDashboardPage = async (req, res) => {
 
       // Aggregation for 7d, month, year based on real MongoDB data
       const now = new Date();
-      const dayNames = ['Chủ Nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
+      const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
       const chart7d = [];
       for (let i = 6; i >= 0; i--) {
         const d = new Date(now);
@@ -223,7 +223,7 @@ export const renderDashboardPage = async (req, res) => {
         }, 0);
 
         chartMonth.push({
-          name: `Tuần ${5 - w}`,
+          name: `Week ${5 - w}`,
           revenue: rev,
           orders: weekBookings.length
         });
@@ -242,7 +242,7 @@ export const renderDashboardPage = async (req, res) => {
         }, 0);
 
         chartYear.push({
-          name: `Th${m + 1}`,
+          name: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][m],
           revenue: rev,
           orders: monthBookings.length
         });
@@ -293,7 +293,7 @@ export const renderDashboardPage = async (req, res) => {
       const totalCount = categoryAgg.reduce((s, c) => s + c.count, 0) || 1;
       categories = categoryAgg.map(c => ({
         id: c._id || 'other',
-        name: nameMap[c._id] || c._id || 'Khác',
+        name: nameMap[c._id] || c._id || 'Other',
         count: c.count,
         percent: Math.round((c.count / totalCount) * 100),
         color: colorMap[c._id] || '#67BEC3',
@@ -301,7 +301,7 @@ export const renderDashboardPage = async (req, res) => {
     }
 
     return res.render('admin/layouts/main', {
-      title: 'Tổng quan & KPI — TechShare Admin Portal',
+      title: 'Overview & KPIs — TechShare Admin Portal',
       activePage: 'overview',
       pageScript: '/js/admin/dashboard.js',
       body: await new Promise((resolve, reject) => {
@@ -349,7 +349,7 @@ export const renderUserManagerPage = async (req, res) => {
 
         return {
           _id: String(u._id),
-          name: u.name || 'Người dùng TechShare',
+          name: u.name || 'TechShare User',
           email: email,
           phone: u.phone || '0901234567',
           avatar: u.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${u._id}`,
@@ -365,7 +365,7 @@ export const renderUserManagerPage = async (req, res) => {
     }
 
     return res.render('admin/layouts/main', {
-      title: 'Quản lý Người dùng & Tín nhiệm — TechShare Admin',
+      title: 'User Management & Trust Scores — TechShare Admin',
       activePage: 'users',
       pageScript: '/js/admin/user-manager.js',
       body: await new Promise((resolve, reject) => {
@@ -395,7 +395,7 @@ export const renderDeviceModerationPage = async (req, res) => {
       const rawDevices = await devicesCol.find({ isDeleted: { $ne: true } }).sort({ createdAt: -1 }).limit(100).toArray();
 
       devices = await Promise.all(rawDevices.map(async (d) => {
-        let owner = { name: 'Chủ thiết bị', email: 'owner@techshare.vn', phone: '0901234567' };
+        let owner = { name: 'Device Owner', email: 'owner@techshare.vn', phone: '0901234567' };
         if (d.ownerId) {
           try {
             const u = await usersCol.findOne({ _id: new mongoose.Types.ObjectId(String(d.ownerId)) });
@@ -416,7 +416,7 @@ export const renderDeviceModerationPage = async (req, res) => {
     }
 
     return res.render('admin/layouts/main', {
-      title: 'Kiểm duyệt Thiết bị — TechShare Admin',
+      title: 'Device Moderation — TechShare Admin',
       activePage: 'devices',
       pageScript: '/js/admin/device-moderation.js',
       body: await new Promise((resolve, reject) => {
@@ -444,7 +444,7 @@ export const renderEkycVerificationPage = async (req, res) => {
       const raw = await ekycCol.find({}).sort({ createdAt: -1 }).limit(50).toArray();
 
       requests = await Promise.all(raw.map(async (r) => {
-        let user = { name: r.fullName || 'Người dùng', email: 'user@techshare.vn' };
+        let user = { name: r.fullName || 'TechShare User', email: 'user@techshare.vn' };
         if (r.userId) {
           try {
             const u = await usersCol.findOne({ _id: new mongoose.Types.ObjectId(String(r.userId)) });
@@ -456,7 +456,7 @@ export const renderEkycVerificationPage = async (req, res) => {
     }
 
     return res.render('admin/layouts/main', {
-      title: 'Xác minh eKYC — TechShare Admin',
+      title: 'eKYC Verification — TechShare Admin',
       activePage: 'ekyc',
       pageScript: '/js/admin/ekyc-verification.js',
       body: await new Promise((resolve, reject) => {
@@ -497,7 +497,7 @@ export const renderOwnerEkycPage = async (req, res, next) => {
       });
     });
     return res.set('Cache-Control', 'no-store').render('admin/layouts/main', {
-      title: 'Xác minh Chủ thiết bị — TechShare Admin',
+      title: 'Owner Verification — TechShare Admin',
       activePage: 'owner-ekyc',
       pageScript: '/js/admin/owner-ekyc-verification.js',
       body,
@@ -521,8 +521,8 @@ export const renderBookingManagementPage = async (req, res) => {
       const raw = await bookingsCol.find({}).sort({ createdAt: -1 }).limit(100).toArray();
 
       bookings = await Promise.all(raw.map(async (b) => {
-        let renter = { name: 'Khách thuê' };
-        let owner = { name: 'Chủ thiết bị' };
+        let renter = { name: 'Renter' };
+        let owner = { name: 'Device Owner' };
         let device = { name: 'Thiết bị công nghệ' };
 
         if (b.renterId) {
@@ -555,7 +555,7 @@ export const renderBookingManagementPage = async (req, res) => {
     }
 
     return res.render('admin/layouts/main', {
-      title: 'Quản lý Đơn thuê — TechShare Admin',
+      title: 'Rental Management — TechShare Admin',
       activePage: 'bookings',
       pageScript: '/js/admin/booking-management.js',
       body: await new Promise((resolve, reject) => {
@@ -584,7 +584,7 @@ export const renderDisputeResolutionPage = async (req, res) => {
       const raw = await disputesCol.find({}).sort({ createdAt: -1 }).limit(50).toArray();
 
       disputes = await Promise.all(raw.map(async (d) => {
-        let raisedBy = { name: 'Người khiếu nại' };
+        let raisedBy = { name: 'Complainant' };
         if (d.raisedBy) {
           try {
             const u = await usersCol.findOne({ _id: new mongoose.Types.ObjectId(String(d.raisedBy)) });
@@ -600,7 +600,7 @@ export const renderDisputeResolutionPage = async (req, res) => {
     }
 
     return res.render('admin/layouts/main', {
-      title: 'Xử lý Tranh chấp — TechShare Admin',
+      title: 'Dispute Resolution — TechShare Admin',
       activePage: 'disputes',
       pageScript: '/js/admin/dispute-resolution.js',
       body: await new Promise((resolve, reject) => {
@@ -629,7 +629,7 @@ export const renderWalletPage = async (req, res) => {
 
       transactions = await txCol.find({}).sort({ createdAt: -1 }).limit(50).toArray();
       transactions = await Promise.all(transactions.map(async (tx) => {
-        let user = { name: 'Thành viên', email: 'user@techshare.vn' };
+        let user = { name: 'Member', email: 'user@techshare.vn' };
         if (tx.userId) {
           try {
             const u = await usersCol.findOne({ _id: new mongoose.Types.ObjectId(String(tx.userId)) });
@@ -641,7 +641,7 @@ export const renderWalletPage = async (req, res) => {
     }
 
     return res.render('admin/layouts/main', {
-      title: 'Ví & Giao dịch — TechShare Admin',
+      title: 'Wallet & Transactions — TechShare Admin',
       activePage: 'wallet',
       body: await new Promise((resolve, reject) => {
         res.render('admin/wallet', { overview, transactions }, (err, html) => {
@@ -668,7 +668,7 @@ export const renderVoucherManagementPage = async (req, res) => {
     }
 
     return res.render('admin/layouts/main', {
-      title: 'Quản lý Voucher — TechShare Admin',
+      title: 'Voucher Management — TechShare Admin',
       activePage: 'vouchers',
       pageScript: '/js/admin/voucher-management.js',
       body: await new Promise((resolve, reject) => {
@@ -698,7 +698,7 @@ export const renderReviewModerationPage = async (req, res) => {
       const raw = await reviewsCol.find({}).sort({ createdAt: -1 }).limit(50).toArray();
 
       reviews = await Promise.all(raw.map(async (r) => {
-        let reviewer = { name: 'Người đánh giá', email: 'user@techshare.vn' };
+        let reviewer = { name: 'Reviewer', email: 'user@techshare.vn' };
         let device = { name: 'Thiết bị công nghệ' };
 
         if (r.reviewerId) {
@@ -718,7 +718,7 @@ export const renderReviewModerationPage = async (req, res) => {
     }
 
     return res.render('admin/layouts/main', {
-      title: 'Kiểm duyệt Đánh giá — TechShare Admin',
+      title: 'Review Moderation — TechShare Admin',
       activePage: 'reviews',
       pageScript: '/js/admin/review-moderation.js',
       body: await new Promise((resolve, reject) => {
@@ -755,7 +755,7 @@ export const renderRolesPermissionsPage = async (req, res) => {
     }
 
     return res.render('admin/layouts/main', {
-      title: 'Phân quyền Vai trò — TechShare Admin',
+      title: 'Role Management — TechShare Admin',
       activePage: 'roles',
       pageScript: '/js/admin/roles-permissions.js',
       body: await new Promise((resolve, reject) => {
@@ -783,7 +783,7 @@ export const renderNotificationManagementPage = async (req, res) => {
     }
 
     return res.render('admin/layouts/main', {
-      title: 'Quản lý Thông báo — TechShare Admin',
+      title: 'Notification Management — TechShare Admin',
       activePage: 'notifications',
       pageScript: '/js/admin/notification-management.js',
       body: await new Promise((resolve, reject) => {
@@ -807,7 +807,7 @@ export const renderAnalyticsPage = async (req, res) => {
     const analyticsData = await calculateAnalyticsData({ ...dateRange, period });
 
     return res.render('admin/layouts/main', {
-      title: 'Báo cáo & Phân tích Tài chính — TechShare Admin',
+      title: 'Financial Reports & Analytics — TechShare Admin',
       activePage: 'analytics',
       pageScript: '/js/admin/analytics.js',
       body: await new Promise((resolve, reject) => {
@@ -841,7 +841,7 @@ export const renderSettingsPage = async (req, res) => {
     }
 
     return res.render('admin/layouts/main', {
-      title: 'Cấu hình Hệ thống — TechShare Admin',
+      title: 'System Settings — TechShare Admin',
       activePage: 'settings',
       pageScript: '/js/admin/settings.js',
       body: await new Promise((resolve, reject) => {
@@ -869,7 +869,7 @@ export const renderAuditLogsPage = async (req, res) => {
     }
 
     return res.render('admin/layouts/main', {
-      title: 'Nhật ký Kiểm toán — TechShare Admin',
+      title: 'Audit Logs — TechShare Admin',
       activePage: 'audit-logs',
       body: await new Promise((resolve, reject) => {
         res.render('admin/audit-logs', { logs }, (err, html) => {

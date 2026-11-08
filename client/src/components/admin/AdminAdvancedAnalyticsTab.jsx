@@ -30,7 +30,7 @@ export const AdminAdvancedAnalyticsTab = () => {
         setData(res.data);
       }
     } catch (err) {
-      console.error('Lỗi khi tải báo cáo phân tích chuyên sâu:', err);
+      console.error('Error loading advanced analytics:', err);
     } finally {
       setLoading(false);
     }
@@ -58,9 +58,9 @@ export const AdminAdvancedAnalyticsTab = () => {
               <BarChart3 className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-slate-900">Báo cáo & Phân tích chuyên sâu</h2>
+              <h2 className="text-xl font-bold text-slate-900">Advanced Reports & Analytics</h2>
               <p className="text-xs text-slate-500 mt-0.5">
-                Dữ liệu tài chính, hiệu suất vận hành và xu hướng tăng trưởng nền tảng TechShare
+                Financial metrics, operational performance, and growth trends of TechShare platform
               </p>
             </div>
           </div>
@@ -70,9 +70,9 @@ export const AdminAdvancedAnalyticsTab = () => {
           {/* Period Selector */}
           <div className="flex bg-slate-100 p-1 rounded-xl text-xs font-semibold text-slate-600">
             {[
-              { id: '7d', label: '7 ngày qua' },
-              { id: 'month', label: '30 ngày' },
-              { id: 'year', label: 'Năm nay' },
+              { id: '7d', label: 'Last 7 Days' },
+              { id: 'month', label: '30 Days' },
+              { id: 'year', label: 'This Year' },
             ].map((p) => (
               <button
                 key={p.id}
@@ -90,7 +90,7 @@ export const AdminAdvancedAnalyticsTab = () => {
           <button
             onClick={fetchAnalytics}
             className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition"
-            title="Làm mới"
+            title="Refresh"
           >
             <RotateCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
           </button>
@@ -100,7 +100,7 @@ export const AdminAdvancedAnalyticsTab = () => {
             className="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl bg-teal-600 hover:bg-teal-700 text-white shadow-sm transition"
           >
             <Download className="w-3.5 h-3.5" />
-            Xuất file CSV
+            Export CSV
           </button>
         </div>
       </div>
@@ -110,7 +110,7 @@ export const AdminAdvancedAnalyticsTab = () => {
         {/* Gross Booking Value */}
         <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-semibold text-slate-500">Tổng giá trị giao dịch (Gross)</span>
+            <span className="text-xs font-semibold text-slate-500">Gross Booking Value (GBV)</span>
             <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
               <DollarSign className="w-4 h-4" />
             </div>
@@ -118,13 +118,13 @@ export const AdminAdvancedAnalyticsTab = () => {
           <div className="text-2xl font-black text-slate-900">
             {formatPrice(kpi.grossBookingValue || 0)}
           </div>
-          <p className="text-[11px] text-slate-400 mt-1">Bao gồm tiền thuê máy và cọc ban đầu</p>
+          <p className="text-[11px] text-slate-400 mt-1">Includes rental fees and upfront escrow deposit</p>
         </div>
 
         {/* Realized Platform Fee Revenue */}
         <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-semibold text-slate-500">Doanh thu sàn thực tế</span>
+            <span className="text-xs font-semibold text-slate-500">Net Platform Service Revenue</span>
             <div className="w-8 h-8 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
               <TrendingUp className="w-4 h-4" />
             </div>
@@ -132,13 +132,13 @@ export const AdminAdvancedAnalyticsTab = () => {
           <div className="text-2xl font-black text-emerald-600">
             {formatPrice(kpi.platformServiceFeeRevenue || 0)}
           </div>
-          <p className="text-[11px] text-slate-400 mt-1">10% phí dịch vụ trên tiền thuê (không tính cọc)</p>
+          <p className="text-[11px] text-slate-400 mt-1">10% platform service fee on rentals (excluding deposits)</p>
         </div>
 
         {/* Escrow Held */}
         <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-semibold text-slate-500">Ký quỹ đang giữ (Escrow)</span>
+            <span className="text-xs font-semibold text-slate-500">Escrow Funds Held</span>
             <div className="w-8 h-8 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600">
               <ShieldCheck className="w-4 h-4" />
             </div>
@@ -146,13 +146,13 @@ export const AdminAdvancedAnalyticsTab = () => {
           <div className="text-2xl font-black text-purple-700">
             {formatPrice(kpi.totalEscrowHeld || 0)}
           </div>
-          <p className="text-[11px] text-slate-400 mt-1">Tiền cọc và tiền thuê các đơn đang diễn ra</p>
+          <p className="text-[11px] text-slate-400 mt-1">Security deposits for active rental orders</p>
         </div>
 
         {/* Completion Rate */}
         <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-semibold text-slate-500">Tỷ lệ hoàn tất đơn thuê</span>
+            <span className="text-xs font-semibold text-slate-500">Rental Completion Rate</span>
             <div className="w-8 h-8 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600">
               <ShoppingBag className="w-4 h-4" />
             </div>
@@ -160,41 +160,41 @@ export const AdminAdvancedAnalyticsTab = () => {
           <div className="text-2xl font-black text-slate-900">
             {kpi.bookingCompletionRate || 0}%
           </div>
-          <p className="text-[11px] text-slate-400 mt-1">Đơn thuê đã trả máy thành công</p>
+          <p className="text-[11px] text-slate-400 mt-1">Rentals returned and completed successfully</p>
         </div>
       </div>
 
       {/* 3. Operational Mini Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         <div className="bg-white p-3.5 rounded-xl border border-slate-100 text-center">
-          <span className="text-slate-400 text-[11px] block">Người dùng active</span>
+          <span className="text-slate-400 text-[11px] block">Active Users</span>
           <span className="text-lg font-bold text-slate-800">{kpi.activeUsers || 0}</span>
-          <span className="text-[10px] text-slate-400 block">/ {kpi.totalUsers || 0} tổng</span>
+          <span className="text-[10px] text-slate-400 block">/ {kpi.totalUsers || 0} total</span>
         </div>
         <div className="bg-white p-3.5 rounded-xl border border-slate-100 text-center">
-          <span className="text-slate-400 text-[11px] block">Thiết bị đã duyệt</span>
+          <span className="text-slate-400 text-[11px] block">Approved Devices</span>
           <span className="text-lg font-bold text-emerald-600">{kpi.approvedDevices || 0}</span>
-          <span className="text-[10px] text-slate-400 block">/ {kpi.totalDevices || 0} tổng</span>
+          <span className="text-[10px] text-slate-400 block">/ {kpi.totalDevices || 0} total</span>
         </div>
         <div className="bg-white p-3.5 rounded-xl border border-slate-100 text-center">
-          <span className="text-slate-400 text-[11px] block">Đang cho thuê</span>
+          <span className="text-slate-400 text-[11px] block">Active Rentals</span>
           <span className="text-lg font-bold text-blue-600">{kpi.activeBookings || 0}</span>
-          <span className="text-[10px] text-slate-400 block">đơn thực tế</span>
+          <span className="text-[10px] text-slate-400 block">in progress</span>
         </div>
         <div className="bg-white p-3.5 rounded-xl border border-slate-100 text-center">
-          <span className="text-slate-400 text-[11px] block">Đơn chờ duyệt</span>
+          <span className="text-slate-400 text-[11px] block">Pending Approvals</span>
           <span className="text-lg font-bold text-amber-600">{kpi.pendingBookings || 0}</span>
-          <span className="text-[10px] text-slate-400 block">cần chủ duyệt</span>
+          <span className="text-[10px] text-slate-400 block">awaiting owner</span>
         </div>
         <div className="bg-white p-3.5 rounded-xl border border-slate-100 text-center">
-          <span className="text-slate-400 text-[11px] block">Tranh chấp mở</span>
+          <span className="text-slate-400 text-[11px] block">Open Disputes</span>
           <span className="text-lg font-bold text-rose-600">{kpi.openDisputes || 0}</span>
-          <span className="text-[10px] text-slate-400 block">cần xử lý</span>
+          <span className="text-[10px] text-slate-400 block">requiring attention</span>
         </div>
         <div className="bg-white p-3.5 rounded-xl border border-slate-100 text-center">
-          <span className="text-slate-400 text-[11px] block">eKYC chờ duyệt</span>
+          <span className="text-slate-400 text-[11px] block">Pending eKYC</span>
           <span className="text-lg font-bold text-teal-600">{kpi.pendingEkyc || 0}</span>
-          <span className="text-[10px] text-slate-400 block">hồ sơ mới</span>
+          <span className="text-[10px] text-slate-400 block">new submissions</span>
         </div>
       </div>
 
@@ -205,9 +205,9 @@ export const AdminAdvancedAnalyticsTab = () => {
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
               <ShoppingBag className="w-4 h-4 text-teal-600" />
-              Xu hướng phát sinh đơn thuê
+              Rental Orders Trend
             </h3>
-            <span className="text-[11px] text-slate-400">Số đơn theo ngày</span>
+            <span className="text-[11px] text-slate-400">Daily order volume</span>
           </div>
 
           <div className="space-y-3 pt-2">
@@ -216,7 +216,7 @@ export const AdminAdvancedAnalyticsTab = () => {
                 <div key={idx} className="space-y-1">
                   <div className="flex justify-between text-xs">
                     <span className="font-semibold text-slate-700">{item.name}</span>
-                    <span className="font-bold text-teal-700">{item.orders} đơn</span>
+                    <span className="font-bold text-teal-700">{item.orders} orders</span>
                   </div>
                   <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
                     <div
@@ -234,9 +234,9 @@ export const AdminAdvancedAnalyticsTab = () => {
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
               <Layers className="w-4 h-4 text-teal-600" />
-              Phân bổ danh mục thiết bị
+              Device Category Distribution
             </h3>
-            <span className="text-[11px] text-slate-400">Tỷ lệ trên toàn sàn</span>
+            <span className="text-[11px] text-slate-400">Platform share</span>
           </div>
 
           <div className="space-y-3 pt-2">
@@ -246,7 +246,7 @@ export const AdminAdvancedAnalyticsTab = () => {
                   <div className="flex justify-between text-xs">
                     <span className="font-semibold text-slate-700 capitalize">{cat.category}</span>
                     <span className="font-bold text-slate-800">
-                      {cat.count} máy ({cat.percent}%)
+                      {cat.count} devices ({cat.percent}%)
                     </span>
                   </div>
                   <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
@@ -258,7 +258,7 @@ export const AdminAdvancedAnalyticsTab = () => {
                 </div>
               ))
             ) : (
-              <p className="text-xs text-slate-400 py-6 text-center">Chưa có dữ liệu danh mục</p>
+              <p className="text-xs text-slate-400 py-6 text-center">No category data available</p>
             )}
           </div>
         </div>
@@ -270,7 +270,7 @@ export const AdminAdvancedAnalyticsTab = () => {
         <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-4">
           <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
             <PieChart className="w-4 h-4 text-teal-600" />
-            Cơ cấu trạng thái đơn thuê
+            Booking Status Composition
           </h3>
           <div className="grid grid-cols-2 gap-3 pt-2">
             {Array.isArray(charts.bookingStatusDistribution) &&
@@ -287,7 +287,7 @@ export const AdminAdvancedAnalyticsTab = () => {
         <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-4">
           <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
             <Tag className="w-4 h-4 text-teal-600" />
-            Top Voucher áp dụng nhiều nhất
+            Top Applied Vouchers
           </h3>
           <div className="space-y-2.5 pt-2">
             {Array.isArray(charts.voucherUsage) && charts.voucherUsage.length > 0 ? (
@@ -303,12 +303,12 @@ export const AdminAdvancedAnalyticsTab = () => {
                     <span>{v.code}</span>
                   </div>
                   <div className="text-slate-600">
-                    Đã dùng: <span className="font-bold text-teal-700">{v.usedCount} lượt</span>
+                    Redeemed: <span className="font-bold text-teal-700">{v.usedCount} times</span>
                   </div>
                 </div>
               ))
             ) : (
-              <p className="text-xs text-slate-400 py-6 text-center">Chưa có lượt sử dụng voucher nào</p>
+              <p className="text-xs text-slate-400 py-6 text-center">No voucher redemptions yet</p>
             )}
           </div>
         </div>

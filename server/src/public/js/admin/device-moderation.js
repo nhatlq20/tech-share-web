@@ -58,7 +58,7 @@ document.addEventListener('DOMContentLoaded', function() {
       if (!row) return;
       currentTargetDevice = row;
 
-      const title = row.querySelector('.device-title')?.textContent.trim() || 'Thiết bị';
+      const title = row.querySelector('.device-title')?.textContent.trim() || 'Device';
       const img = row.getAttribute('data-image') || '';
       const brand = row.getAttribute('data-brand') || '';
       const category = row.getAttribute('data-category') || '';
@@ -69,8 +69,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
       document.getElementById('modalDeviceTitle').textContent = title;
       document.getElementById('modalDeviceImg').src = img;
-      document.getElementById('modalDeviceSpecs').textContent = `${brand.toUpperCase()} • ${category} • Tình trạng: ${condition}`;
-      document.getElementById('modalDeviceRates').textContent = `${window.formatVND ? window.formatVND(dailyRate) : dailyRate} / ngày • Cọc: ${window.formatVND ? window.formatVND(deposit) : deposit}`;
+      document.getElementById('modalDeviceSpecs').textContent = `${brand.toUpperCase()} • ${category} • Condition: ${condition}`;
+      document.getElementById('modalDeviceRates').textContent = `${window.formatVND ? window.formatVND(dailyRate) : dailyRate} / day • Deposit: ${window.formatVND ? window.formatVND(deposit) : deposit}`;
       document.getElementById('moderateRejectReason').value = reason;
 
       document.getElementById('deviceModerateModal').style.display = 'flex';
@@ -106,17 +106,17 @@ document.addEventListener('DOMContentLoaded', function() {
         const badgeCell = currentTargetDevice.querySelector('.device-status-badge-cell');
         if (badgeCell) {
           badgeCell.innerHTML = action === 'approve'
-            ? '<span class="admin-pill-badge" style="background-color: #ECFDF5; color: #16A34A;">Đã duyệt</span>'
-            : '<span class="admin-pill-badge" style="background-color: #FEF2F2; color: #DC2626;">Bị từ chối</span>';
+            ? '<span class="admin-pill-badge" style="background-color: #ECFDF5; color: #16A34A;">Approved</span>'
+            : '<span class="admin-pill-badge" style="background-color: #FEF2F2; color: #DC2626;">Rejected</span>';
         }
         if (window.showAdminToast) {
-          window.showAdminToast('Thành công', action === 'approve' ? 'Đã phê duyệt thiết bị.' : 'Đã từ chối niêm yết thiết bị.', 'success');
+          window.showAdminToast('Success', action === 'approve' ? 'Device approved successfully.' : 'Device listing rejected.', 'success');
         }
       } else {
-        if (window.showAdminToast) window.showAdminToast('Lỗi', data.message || 'Không thể kiểm duyệt thiết bị.', 'error');
+        if (window.showAdminToast) window.showAdminToast('Error', data.message || 'Failed to moderate device.', 'error');
       }
     } catch (err) {
-      if (window.showAdminToast) window.showAdminToast('Lỗi mạng', err.message, 'error');
+      if (window.showAdminToast) window.showAdminToast('Network Error', err.message, 'error');
     } finally {
       document.getElementById('deviceModerateModal').style.display = 'none';
     }
@@ -133,18 +133,18 @@ document.addEventListener('DOMContentLoaded', function() {
       const row = btn.closest('.device-row');
       if (!row) return;
       const deviceId = row.getAttribute('data-device-id');
-      const title = row.querySelector('.device-title')?.textContent.trim() || 'thiết bị này';
+      const title = row.querySelector('.device-title')?.textContent.trim() || 'this device';
 
-      if (!confirm(`Bạn có chắc chắn muốn xóa niêm yết "${title}" khỏi nền tảng?`)) return;
+      if (!confirm(`Are you sure you want to remove listing "${title}" from the platform?`)) return;
 
       try {
         const res = await fetch(`/api/admin/devices/${deviceId}`, { method: 'DELETE' });
         const data = await res.json();
         if (res.ok && data.success) {
           row.remove();
-          if (window.showAdminToast) window.showAdminToast('Đã xóa', 'Đã gỡ bỏ thiết bị khỏi sàn.', 'success');
+          if (window.showAdminToast) window.showAdminToast('Deleted', 'Device removed from platform.', 'success');
         } else {
-          if (window.showAdminToast) window.showAdminToast('Lỗi', data.message || 'Không thể xóa thiết bị.', 'error');
+          if (window.showAdminToast) window.showAdminToast('Error', data.message || 'Failed to delete device.', 'error');
         }
       } catch (err) {
         if (window.showAdminToast) window.showAdminToast('Lỗi mạng', err.message, 'error');

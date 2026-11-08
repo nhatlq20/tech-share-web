@@ -3,17 +3,17 @@
   <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
     <div>
       <h1 style="font-size: 24px; font-weight: 800; color: #0F172A; letter-spacing: -0.02em; margin: 0;">
-        Giám sát Ví & Giao dịch Tài chính Escrow
+        Escrow Financial Transactions & Wallet Monitoring
       </h1>
       <p style="font-size: 12px; color: #64748B; margin-top: 4px; margin-bottom: 0;">
-        Đối soát dòng tiền ký quỹ an toàn, tiền thanh toán đơn thuê và phí nền tảng
+        Reconcile platform escrow liabilities, customer payments, and platform fee revenue
       </p>
     </div>
 
     <div style="display: flex; align-items: center; gap: 10px;">
       <a href="/api/admin/wallet/transactions/export" class="admin-btn admin-btn-outline" style="text-decoration: none; font-size: 12px; padding: 8px 14px; display: inline-flex; align-items: center; gap: 6px;">
         <i data-lucide="download" style="width: 14px; height: 14px;"></i>
-        <span>Xuất sao kê CSV</span>
+        <span>Export Statement CSV</span>
       </a>
     </div>
   </div>
@@ -22,7 +22,7 @@
   <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px;">
     <!-- Available User Balances -->
     <div class="admin-card" style="background: #FFFFFF; border-radius: 16px; padding: 22px; border: 1px solid #F1F5F9;">
-      <div style="font-size: 12.5px; color: #64748B; font-weight: 600;">Tổng số dư khả dụng ví người dùng</div>
+      <div style="font-size: 12.5px; color: #64748B; font-weight: 600;">Total Available User Wallet Balances</div>
       <div style="font-size: 26px; font-weight: 800; color: #0F172A; margin-top: 6px;">
         <%= new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(overview && overview.totalUserBalance ? overview.totalUserBalance : 142500000) %>
       </div>
@@ -30,7 +30,7 @@
 
     <!-- Escrow Held -->
     <div class="admin-card" style="background: #E8F6F7; border-radius: 16px; padding: 22px; border: 1px solid #BCE5E8;">
-      <div style="font-size: 12.5px; color: #286E74; font-weight: 600;">Tiền ký quỹ an toàn đang giữ (Escrow Liabilities)</div>
+      <div style="font-size: 12.5px; color: #286E74; font-weight: 600;">Total Held Escrow Deposits (Escrow Liabilities)</div>
       <div style="font-size: 26px; font-weight: 800; color: #286E74; margin-top: 6px;">
         <%= new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(overview && overview.totalEscrowHeld ? overview.totalEscrowHeld : 48500000) %>
       </div>
@@ -38,7 +38,7 @@
 
     <!-- Platform Fee -->
     <div class="admin-card" style="background: #FFFFFF; border-radius: 16px; padding: 22px; border: 1px solid #F1F5F9;">
-      <div style="font-size: 12.5px; color: #64748B; font-weight: 600;">Tổng phí dịch vụ nền tảng đã thu (10%)</div>
+      <div style="font-size: 12.5px; color: #64748B; font-weight: 600;">Total Collected Platform Fees (10%)</div>
       <div style="font-size: 26px; font-weight: 800; color: #16A34A; margin-top: 6px;">
         <%= new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(overview && overview.totalPlatformFee ? overview.totalPlatformFee : 4977000) %>
       </div>
@@ -51,18 +51,18 @@
       <table class="admin-table w-full text-left" style="width: 100%; min-width: 860px; border-collapse: collapse;">
         <thead>
           <tr>
-            <th style="min-width: 220px; width: 25%; padding-left: 20px;">Mã GD & Loại giao dịch</th>
-            <th style="min-width: 200px; width: 25%;">Thành viên thụ hưởng</th>
-            <th style="min-width: 160px; width: 20%;">Số tiền giao dịch</th>
+            <th style="min-width: 220px; width: 25%; padding-left: 20px;">Tx ID & Transaction Type</th>
+            <th style="min-width: 200px; width: 25%;">Beneficiary Member</th>
+            <th style="min-width: 160px; width: 20%;">Transaction Amount</th>
             <th style="min-width: 140px; width: 15%;">Thời gian</th>
-            <th style="min-width: 140px; width: 15%; text-align: right; padding-right: 24px;">Trạng thái</th>
+            <th style="min-width: 140px; width: 15%; text-align: right; padding-right: 24px;">Status</th>
           </tr>
         </thead>
         <tbody>
           <% if (!transactions || transactions.length === 0) { %>
             <tr>
               <td colspan="5" style="text-align: center; padding: 48px; color: #64748B;">
-                Chưa có giao dịch ví nào được ghi nhận.
+                No wallet transactions recorded yet.
               </td>
             </tr>
           <% } else { %>
@@ -78,7 +78,7 @@
                 </td>
                 <td style="vertical-align: middle;">
                   <div style="font-size: 13px; font-weight: 600; color: #1E293B;">
-                    <%= tx.user && tx.user.name ? tx.user.name : (tx.userId ? String(tx.userId).slice(-6) : 'Thành viên') %>
+                    <%= tx.user && tx.user.name ? tx.user.name : (tx.userId ? String(tx.userId).slice(-6) : 'Member') %>
                   </div>
                   <div style="font-size: 11.5px; color: #64748B; margin-top: 2px;">
                     <%= tx.user && tx.user.email ? tx.user.email : 'user@techshare.vn' %>

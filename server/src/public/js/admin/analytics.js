@@ -51,7 +51,7 @@ document.addEventListener('DOMContentLoaded', function() {
         labels: labels,
         datasets: [
           {
-            label: 'Tổng giá trị GD (GBV)',
+            label: 'Gross Booking Value (GBV)',
             data: gbvSeries,
             borderColor: '#67BEC3',
             borderWidth: 3,
@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', function() {
             pointHoverRadius: 6,
           },
           {
-            label: 'Tiền thuê thực tế',
+            label: 'Actual Rental Revenue',
             data: rentalSeries,
             borderColor: '#3B82F6',
             borderWidth: 2,
@@ -80,7 +80,7 @@ document.addEventListener('DOMContentLoaded', function() {
             pointHoverRadius: 5,
           },
           {
-            label: 'Doanh thu phí sàn (10%)',
+            label: 'Platform Fee Revenue (10%)',
             data: feeSeries,
             borderColor: '#286E74',
             borderWidth: 2.5,
@@ -164,7 +164,7 @@ document.addEventListener('DOMContentLoaded', function() {
       window.__ANALYTICS_CHARTS__.bookingStatus = new Chart(ctx, {
         type: 'doughnut',
         data: {
-          labels: ['Chưa có đơn'],
+          labels: ['No orders'],
           datasets: [{
             data: [1],
             backgroundColor: ['#E2E8F0'],
@@ -210,7 +210,7 @@ document.addEventListener('DOMContentLoaded', function() {
               label: function(context) {
                 const count = context.raw || 0;
                 const pct = totalCount > 0 ? ((count / totalCount) * 100).toFixed(1) : 0;
-                return ` ${context.label}: ${count} đơn (${pct}%)`;
+                return ` ${context.label}: ${count} orders (${pct}%)`;
               },
             },
           },
@@ -250,7 +250,7 @@ document.addEventListener('DOMContentLoaded', function() {
       data: {
         labels: labels,
         datasets: [{
-          label: 'Doanh thu tiền thuê',
+          label: 'Rental Revenue',
           data: revenues,
           backgroundColor: '#67BEC3',
           hoverBackgroundColor: '#286E74',
@@ -272,7 +272,7 @@ document.addEventListener('DOMContentLoaded', function() {
             callbacks: {
               label: function(context) {
                 const item = validData[context.dataIndex];
-                return ` Tiền thuê: ${formatVND(context.raw)} (${item?.percent || 0}% • ${item?.count || 0} đơn)`;
+                return ` Rental: ${formatVND(context.raw)} (${item?.percent || 0}% • ${item?.count || 0} orders)`;
               },
             },
           },
@@ -326,19 +326,19 @@ document.addEventListener('DOMContentLoaded', function() {
         labels: labels,
         datasets: [
           {
-            label: 'Tiền cọc khóa (Escrow Locked)',
+            label: 'Escrow Locked',
             data: locked,
             backgroundColor: '#F59E0B',
             borderRadius: 6,
           },
           {
-            label: 'Cọc hoàn trả (Deposit Released)',
+            label: 'Deposit Released',
             data: released,
             backgroundColor: '#10B981',
             borderRadius: 6,
           },
           {
-            label: 'Chi trả đối tác (Owner Payouts)',
+            label: 'Owner Payouts',
             data: payouts,
             backgroundColor: '#286E74',
             borderRadius: 6,
@@ -404,7 +404,7 @@ document.addEventListener('DOMContentLoaded', function() {
       <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 14px; padding: 18px; position: relative;">
         <div style="display: flex; align-items: center; justify-content: space-between;">
           <span style="font-size: 11.5px; font-weight: 700; color: #64748B; text-transform: uppercase;">
-            Bước ${idx + 1}
+            Step ${idx + 1}
           </span>
           <span style="font-size: 13px; font-weight: 800; color: #286E74;">
             ${stage.percent}%
@@ -414,13 +414,13 @@ document.addEventListener('DOMContentLoaded', function() {
           ${stage.label}
         </div>
         <div style="font-size: 22px; font-weight: 800; color: #0F172A; margin-top: 8px;">
-          ${stage.count} <span style="font-size: 13px; font-weight: 500; color: #64748B;">đơn</span>
+          ${stage.count} <span style="font-size: 13px; font-weight: 500; color: #64748B;">orders</span>
         </div>
         <div style="width: 100%; height: 8px; border-radius: 9999px; background: #E2E8F0; overflow: hidden; margin-top: 12px;">
           <div style="width: ${stage.percent}%; height: 100%; border-radius: 9999px; background: ${idx === 3 ? '#16A34A' : '#67BEC3'};"></div>
         </div>
         <div style="font-size: 11px; color: ${idx === 0 ? '#64748B' : (stage.dropoffPercent > 0 ? '#DC2626' : '#16A34A')}; margin-top: 8px; font-weight: 600;">
-          ${idx === 0 ? 'Điểm khởi tạo ban đầu' : (stage.dropoffPercent > 0 ? `↓ Rơi rụng: ${stage.dropoffPercent}%` : '✓ Duy trì 100%')}
+          ${idx === 0 ? 'Initial Start Point' : (stage.dropoffPercent > 0 ? `↓ Drop-off: ${stage.dropoffPercent}%` : '✓ 100% Retained')}
         </div>
       </div>
     `).join('');
@@ -447,18 +447,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (growthEl && kpi.growth) {
       const g = kpi.growth.gbvGrowthPercent;
-      growthEl.textContent = `${g >= 0 ? '↑ +' : '↓ '}${g}% so với kỳ trước`;
+      growthEl.textContent = `${g >= 0 ? '↑ +' : '↓ '}${g}% vs prior period`;
       growthEl.style.color = g >= 0 ? '#16A34A' : '#DC2626';
     }
 
     if (compEl) compEl.textContent = `${kpi.completionRate}%`;
-    if (compDesc) compDesc.textContent = `${kpi.completedBookings || 0} / ${kpi.totalBookings || 0} đơn thành công`;
+    if (compDesc) compDesc.textContent = `${kpi.completedBookings || 0} / ${kpi.totalBookings || 0} successful orders`;
 
     if (cancEl) cancEl.textContent = `${kpi.cancellationRate}%`;
-    if (cancDesc) cancDesc.textContent = `${kpi.cancelledBookings || 0} / ${kpi.totalBookings || 0} đơn hủy / từ chối`;
+    if (cancDesc) cancDesc.textContent = `${kpi.cancelledBookings || 0} / ${kpi.totalBookings || 0} cancelled / rejected orders`;
 
     if (dispEl) dispEl.textContent = `${kpi.disputeRate}%`;
-    if (dispDesc) dispDesc.textContent = `${kpi.disputedBookings || 0} / ${kpi.totalBookings || 0} đơn phát sinh khiếu nại`;
+    if (dispDesc) dispDesc.textContent = `${kpi.disputedBookings || 0} / ${kpi.totalBookings || 0} disputed orders`;
   }
 
   // Fetch updated data from API
@@ -482,7 +482,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const res = await fetch(url);
       const json = await res.json();
       if (!json.success || !json.data) {
-        throw new Error(json.message || 'Không thể tải dữ liệu phân tích');
+        throw new Error(json.message || 'Failed to load analytics data');
       }
 
       const d = json.data;
@@ -499,7 +499,7 @@ document.addEventListener('DOMContentLoaded', function() {
     } catch (err) {
       console.error('Analytics fetch error:', err);
       if (window.showAdminToast) {
-        window.showAdminToast('Lỗi khi tải dữ liệu phân tích: ' + err.message, 'error');
+        window.showAdminToast('Failed to load analytics data: ' + err.message, 'error');
       }
     }
   }
@@ -529,11 +529,11 @@ document.addEventListener('DOMContentLoaded', function() {
       const start = document.getElementById('customStartDate')?.value;
       const end = document.getElementById('customEndDate')?.value;
       if (!start || !end) {
-        if (window.showAdminToast) window.showAdminToast('Vui lòng chọn ngày bắt đầu và kết thúc', 'warning');
+        if (window.showAdminToast) window.showAdminToast('Please select start and end dates', 'warning');
         return;
       }
       if (new Date(start) > new Date(end)) {
-        if (window.showAdminToast) window.showAdminToast('Ngày bắt đầu không được lớn hơn ngày kết thúc', 'warning');
+        if (window.showAdminToast) window.showAdminToast('Start date cannot be after end date', 'warning');
         return;
       }
       fetchAnalytics('custom', start, end);

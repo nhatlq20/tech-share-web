@@ -10,28 +10,28 @@ import WalletTransaction from '../../models/WalletTransaction.js';
  * Category friendly names mapping
  */
 const CATEGORY_NAMES = {
-  camera: 'Máy ảnh & Ống kính',
-  laptop: 'Laptop & Máy tính',
-  gaming: 'Máy chơi game & VR',
-  smartphone: 'Smartphone & Tablet',
-  drone: 'Flycam & Gimbal',
-  audio: 'Tai nghe & Âm thanh',
-  tablet: 'Máy tính bảng',
-  accessory: 'Phụ kiện công nghệ',
-  other: 'Thiết bị khác',
+  camera: 'Cameras & Lenses',
+  laptop: 'Laptops & Computers',
+  gaming: 'Gaming & VR',
+  smartphone: 'Smartphones & Tablets',
+  drone: 'Drones & Gimbals',
+  audio: 'Headphones & Audio',
+  tablet: 'Tablets',
+  accessory: 'Tech Accessories',
+  other: 'Other Devices',
 };
 
 /**
  * Status colors & display labels
  */
 const STATUS_CONFIG = {
-  pending: { label: 'Chờ duyệt', color: '#F59E0B' },
-  approved: { label: 'Đã duyệt', color: '#0284C7' },
-  active: { label: 'Đang thuê', color: '#286E74' },
-  completed: { label: 'Hoàn tất', color: '#10B981' },
-  cancelled: { label: 'Đã hủy', color: '#64748B' },
-  rejected: { label: 'Bị từ chối', color: '#EF4444' },
-  disputed: { label: 'Tranh chấp', color: '#DC2626' },
+  pending: { label: 'Pending', color: '#F59E0B' },
+  approved: { label: 'Approved', color: '#0284C7' },
+  active: { label: 'Active Rental', color: '#286E74' },
+  completed: { label: 'Completed', color: '#10B981' },
+  cancelled: { label: 'Cancelled', color: '#64748B' },
+  rejected: { label: 'Rejected', color: '#EF4444' },
+  disputed: { label: 'Disputed', color: '#DC2626' },
 };
 
 /**
@@ -250,7 +250,7 @@ export const calculateAnalyticsData = async ({ filterStart, filterEnd, prevFilte
     for (let i = 0; i < weekCount; i++) {
       const dStart = new Date(filterStart.getTime() + i * 7 * 24 * 60 * 60 * 1000);
       const dEnd = new Date(Math.min(filterEnd.getTime(), dStart.getTime() + 7 * 24 * 60 * 60 * 1000));
-      const label = `Tuần ${i + 1} (${dStart.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })})`;
+      const label = `Week ${i + 1} (${dStart.toLocaleDateString('en-US', { day: '2-digit', month: '2-digit' })})`;
       buckets.push({ start: dStart, end: dEnd, label, grossValue: 0, rentalFee: 0, platformFee: 0, orders: 0 });
     }
   } else {
@@ -263,7 +263,7 @@ export const calculateAnalyticsData = async ({ filterStart, filterEnd, prevFilte
     for (let i = 0; i < Math.max(1, totalMonths); i++) {
       const dStart = new Date(startYear, startMonth + i, 1);
       const dEnd = new Date(startYear, startMonth + i + 1, 0, 23, 59, 59, 999);
-      const label = `Tháng ${dStart.getMonth() + 1}`;
+      const label = `Month ${dStart.getMonth() + 1}`;
       buckets.push({ start: dStart, end: dEnd, label, grossValue: 0, rentalFee: 0, platformFee: 0, orders: 0 });
     }
   }
@@ -331,7 +331,7 @@ export const calculateAnalyticsData = async ({ filterStart, filterEnd, prevFilte
   const totalCatRevenue = categoryAgg.reduce((sum, c) => sum + (c.totalRevenue || 0), 0) || 1;
   const revenueByCategory = categoryAgg.map((item) => ({
     category: item._id || 'other',
-    label: CATEGORY_NAMES[item._id] || item._id || 'Thiết bị khác',
+    label: CATEGORY_NAMES[item._id] || item._id || 'Other Devices',
     revenue: item.totalRevenue || 0,
     count: item.count || 0,
     percent: Number((((item.totalRevenue || 0) / totalCatRevenue) * 100).toFixed(1)),
@@ -417,28 +417,28 @@ export const calculateAnalyticsData = async ({ filterStart, filterEnd, prevFilte
   const bookingFunnel = [
     {
       stage: 'created',
-      label: 'Khởi tạo đơn thuê',
+      label: 'Rental Initiated',
       count: createdStage,
       percent: 100,
       dropoffPercent: 0,
     },
     {
       stage: 'approved',
-      label: 'Chủ thiết bị duyệt',
+      label: 'Owner Approved',
       count: approvedStage,
       percent: createdStage > 0 ? Number(((approvedStage / createdStage) * 100).toFixed(1)) : 0,
       dropoffPercent: createdStage > 0 ? Number((((createdStage - approvedStage) / createdStage) * 100).toFixed(1)) : 0,
     },
     {
       stage: 'active',
-      label: 'Bàn giao & Đang thuê',
+      label: 'Handover & Active',
       count: activeStage,
       percent: createdStage > 0 ? Number(((activeStage / createdStage) * 100).toFixed(1)) : 0,
       dropoffPercent: approvedStage > 0 ? Number((((approvedStage - activeStage) / approvedStage) * 100).toFixed(1)) : 0,
     },
     {
       stage: 'completed',
-      label: 'Hoàn tất & Trả cọc',
+      label: 'Completed & Deposit Returned',
       count: completedStage,
       percent: createdStage > 0 ? Number(((completedStage / createdStage) * 100).toFixed(1)) : 0,
       dropoffPercent: activeStage > 0 ? Number((((activeStage - completedStage) / activeStage) * 100).toFixed(1)) : 0,
@@ -537,55 +537,55 @@ export const exportAdminAnalyticsReport = async (req, res, next) => {
     const lines = [];
 
     // Header info
-    lines.push('\uFEFFTECHSHARE - BÁO CÁO PHÂN TÍCH TÀI CHÍNH & VẬN HÀNH');
-    lines.push(`Kỳ báo cáo,${sanitizeCsvField(period)}`);
-    lines.push(`Từ ngày,${sanitizeCsvField(dateRange.filterStart.toLocaleDateString('vi-VN'))}`);
-    lines.push(`Đến ngày,${sanitizeCsvField(dateRange.filterEnd.toLocaleDateString('vi-VN'))}`);
-    lines.push(`Thời điểm xuất,${sanitizeCsvField(new Date().toLocaleString('vi-VN'))}`);
+    lines.push('\uFEFFTECHSHARE - FINANCIAL & OPERATIONAL ANALYTICS REPORT');
+    lines.push(`Reporting Period,${sanitizeCsvField(period)}`);
+    lines.push(`From Date,${sanitizeCsvField(dateRange.filterStart.toLocaleDateString('en-US'))}`);
+    lines.push(`To Date,${sanitizeCsvField(dateRange.filterEnd.toLocaleDateString('en-US'))}`);
+    lines.push(`Export Timestamp,${sanitizeCsvField(new Date().toLocaleString('en-US'))}`);
     lines.push('');
 
     // Section 1: KPI Overview
-    lines.push('1. CÁC CHỈ SỐ TÀI CHÍNH & VẬN HÀNH (KPIS)');
-    lines.push('Chỉ số,Giá trị,Đơn vị,Ghi chú');
-    lines.push(`Tổng giá trị giao dịch (GBV),${data.kpi.grossBookingValue},VNĐ,"Tổng giá trị đơn thuê không gồm đơn hủy"`);
-    lines.push(`Tổng giá trị giao dịch,${data.kpi.grossBookingValue},VNĐ,"Bao gồm tiền thuê và cọc"`);
-    lines.push(`Tổng doanh thu tiền thuê,${data.kpi.totalRentalFee},VNĐ,"Giá thuê thực tế"`);
-    lines.push(`Doanh thu phí nền tảng ròng (10%),${data.kpi.platformFeeRevenue},VNĐ,"10% phí dịch vụ trên tiền thuê thực tế"`);
-    lines.push(`Công nợ ký quỹ an toàn (Escrow),${data.kpi.escrowLiabilities},VNĐ,"Tiền cọc bảo chứng đang giữ"`);
-    lines.push(`Tỷ lệ hoàn tất đơn,${data.kpi.completionRate},%,"${data.kpi.completedBookings} / ${data.kpi.totalBookings} đơn"`);
-    lines.push(`Tỷ lệ hủy đơn,${data.kpi.cancellationRate},%,"${data.kpi.cancelledBookings} / ${data.kpi.totalBookings} đơn"`);
-    lines.push(`Tỷ lệ tranh chấp cọc,${data.kpi.disputeRate},%,"${data.kpi.disputedBookings} / ${data.kpi.totalBookings} đơn"`);
-    lines.push(`Tăng trưởng GBV so với kỳ trước,${data.kpi.growth.gbvGrowthPercent},%,""`);
-    lines.push(`Tăng trưởng Doanh thu so với kỳ trước,${data.kpi.growth.revenueGrowthPercent},%,""`);
+    lines.push('1. FINANCIAL & OPERATIONAL METRICS (KPIS)');
+    lines.push('Metric,Value,Unit,Notes');
+    lines.push(`Gross Booking Value (GBV),${data.kpi.grossBookingValue},VND,"Total booking value excluding cancellations"`);
+    lines.push(`Total Transaction Volume,${data.kpi.grossBookingValue},VND,"Includes rental fee and escrow deposit"`);
+    lines.push(`Total Rental Revenue,${data.kpi.totalRentalFee},VND,"Actual rental fee"`);
+    lines.push(`Net Platform Service Fee Revenue (10%),${data.kpi.platformFeeRevenue},VND,"10% platform service fee on actual rental"`);
+    lines.push(`Escrow Liabilities,${data.kpi.escrowLiabilities},VND,"Security deposits currently held in escrow"`);
+    lines.push(`Booking Completion Rate,${data.kpi.completionRate},%,"${data.kpi.completedBookings} / ${data.kpi.totalBookings} orders"`);
+    lines.push(`Cancellation Rate,${data.kpi.cancellationRate},%,"${data.kpi.cancelledBookings} / ${data.kpi.totalBookings} orders"`);
+    lines.push(`Deposit Dispute Rate,${data.kpi.disputeRate},%,"${data.kpi.disputedBookings} / ${data.kpi.totalBookings} orders"`);
+    lines.push(`GBV Growth vs Prior Period,${data.kpi.growth.gbvGrowthPercent},%,""`);
+    lines.push(`Revenue Growth vs Prior Period,${data.kpi.growth.revenueGrowthPercent},%,""`);
     lines.push('');
 
     // Section 2: Status Distribution
-    lines.push('2. PHÂN BỔ TRẠNG THÁI ĐƠN THUÊ');
-    lines.push('Mã trạng thái,Tên trạng thái,Số lượng,Tỷ lệ (%)');
+    lines.push('2. BOOKING STATUS DISTRIBUTION');
+    lines.push('Status Code,Status Label,Count,Percentage (%)');
     data.bookingStatusDistribution.forEach((st) => {
       lines.push(`${sanitizeCsvField(st.status)},${sanitizeCsvField(st.label)},${st.count},${st.percent}%`);
     });
     lines.push('');
 
     // Section 3: Revenue by Category
-    lines.push('3. DOANH THU THEO DANH MỤC THIẾT BỊ');
-    lines.push('Mã danh mục,Tên danh mục,Doanh thu (VNĐ),Số lượt thuê,Tỷ trọng (%)');
+    lines.push('3. REVENUE BY DEVICE CATEGORY');
+    lines.push('Category Code,Category Name,Revenue (VND),Rentals Count,Share (%)');
     data.revenueByCategory.forEach((cat) => {
       lines.push(`${sanitizeCsvField(cat.category)},${sanitizeCsvField(cat.label)},${cat.revenue},${cat.count},${cat.percent}%`);
     });
     lines.push('');
 
     // Section 4: Revenue Trends
-    lines.push('4. XU HƯỚNG DOANH THU THEO THỜI GIAN');
-    lines.push('Mốc thời gian,Tổng GBV (VNĐ),Tiền thuê (VNĐ),Phí sàn 10% (VNĐ),Số đơn');
+    lines.push('4. REVENUE & TRANSACTION TRENDS OVER TIME');
+    lines.push('Time Bucket,Gross GBV (VND),Rental Fee (VND),Platform Fee 10% (VND),Order Count');
     data.revenueTrends.forEach((rt) => {
       lines.push(`${sanitizeCsvField(rt.label)},${rt.grossBookingValue},${rt.rentalFee},${rt.platformFeeRevenue},${rt.orders}`);
     });
     lines.push('');
 
     // Section 5: Funnel
-    lines.push('5. PHỄU CHUYỂN ĐỔI VÒNG ĐỜI ĐƠN THUÊ');
-    lines.push('Giai đoạn,Tên giai đoạn,Số lượng đơn,Tỷ lệ chuyển đổi (%),Tỷ lệ rơi rụng (%)');
+    lines.push('5. BOOKING LIFECYCLE CONVERSION FUNNEL');
+    lines.push('Stage Code,Stage Label,Orders Count,Conversion Rate (%),Drop-off Rate (%)');
     data.bookingFunnel.forEach((fn) => {
       lines.push(`${sanitizeCsvField(fn.stage)},${sanitizeCsvField(fn.label)},${fn.count},${fn.percent}%,${fn.dropoffPercent}%`);
     });

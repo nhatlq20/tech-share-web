@@ -57,7 +57,7 @@ export const AdminUsersTab = ({
           letterSpacing: '-0.02em',
           margin: 0
         }}>
-            Quản lý Người dùng & Tín nhiệm
+            User Management & Trust Scores
           </h1>
         </div>
 
@@ -75,7 +75,7 @@ export const AdminUsersTab = ({
             <Search size={16} style={{
             color: '#67BEC3'
           }} />
-            <input type="text" placeholder="Tìm theo Tên, Email, SĐT..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+            <input type="text" placeholder="Search by name, email, phone..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
           </div>
 
           {/* Role Filter */}
@@ -89,10 +89,10 @@ export const AdminUsersTab = ({
           cursor: 'pointer',
           outline: 'none'
         }}>
-            <option value="all">Tất cả vai trò</option>
-            <option value="admin">Quản trị viên (Admin)</option>
-            <option value="owner">Chủ thiết bị (Owner)</option>
-            <option value="renter">Khách thuê (Renter)</option>
+            <option value="all">All Roles</option>
+            <option value="admin">Administrator (Admin)</option>
+            <option value="owner">Device Owner (Owner)</option>
+            <option value="renter">Renter</option>
           </select>
 
           {/* Status Filter */}
@@ -106,9 +106,9 @@ export const AdminUsersTab = ({
           cursor: 'pointer',
           outline: 'none'
         }}>
-            <option value="all">Mọi trạng thái</option>
-            <option value="active">Đang hoạt động</option>
-            <option value="locked">Đã bị khóa</option>
+            <option value="all">All Statuses</option>
+            <option value="active">Active</option>
+            <option value="locked">Locked</option>
           </select>
         </div>
       </div>
@@ -131,7 +131,7 @@ export const AdminUsersTab = ({
               color: confirmLockUser.isActive ? '#DC2626' : '#16A34A'
             }} />
                 <h3 className="admin-modal-title">
-                  {confirmLockUser.isActive ? 'Xác nhận khóa tài khoản' : 'Xác nhận mở khóa tài khoản'}
+                  {confirmLockUser.isActive ? 'Confirm Lock Account' : 'Confirm Unlock Account'}
                 </h3>
               </div>
               <button type="button" onClick={() => setConfirmLockUser(null)} style={{
@@ -149,9 +149,9 @@ export const AdminUsersTab = ({
           color: '#475569',
           lineHeight: 1.6
         }}>
-              Bạn có chắc chắn muốn {confirmLockUser.isActive ? 'khóa tài khoản' : 'mở khóa tài khoản'} của{' '}
+              Are you sure you want to {confirmLockUser.isActive ? 'lock the account' : 'unlock the account'} of{' '}
               <strong>{confirmLockUser.name}</strong> ({confirmLockUser.email})?{' '}
-              {confirmLockUser.isActive && 'Người dùng này sẽ không thể đăng nhập, đăng tin hoặc thực hiện giao dịch thuê máy trên TechShare.'}
+              {confirmLockUser.isActive && 'This user will not be able to log in, list devices, or make rental bookings on TechShare.'}
             </p>
 
             <div style={{
@@ -161,10 +161,10 @@ export const AdminUsersTab = ({
           marginTop: '24px'
         }}>
               <button type="button" className="admin-btn admin-btn-outline" onClick={() => setConfirmLockUser(null)}>
-                Hủy bỏ
+                Cancel
               </button>
               <button type="button" className={`admin-btn ${confirmLockUser.isActive ? 'admin-btn-danger' : 'admin-btn-success'}`} onClick={() => handleStatusChange(confirmLockUser)}>
-                {confirmLockUser.isActive ? 'Đồng ý Khóa' : 'Đồng ý Mở khóa'}
+                {confirmLockUser.isActive ? 'Confirm Lock' : 'Confirm Unlock'}
               </button>
             </div>
           </div>
@@ -184,7 +184,7 @@ export const AdminUsersTab = ({
                 <Wallet size={20} style={{
               color: '#67BEC3'
             }} />
-                <h3 className="admin-modal-title">Hồ sơ Tài chính & Tín nhiệm Escrow</h3>
+                <h3 className="admin-modal-title">Financial Profile & Escrow Trust</h3>
               </div>
               <button type="button" onClick={() => setSelectedUserForWallet(null)} style={{
             cursor: 'pointer',
@@ -242,7 +242,7 @@ export const AdminUsersTab = ({
                 <div style={{
               fontSize: '12px',
               color: '#64748B'
-            }}>Số dư ví khả dụng</div>
+            }}>Available Wallet Balance</div>
                 <div style={{
               fontSize: '20px',
               fontWeight: 800,
@@ -261,7 +261,7 @@ export const AdminUsersTab = ({
                 <div style={{
               fontSize: '12px',
               color: '#286E74'
-            }}>Tiền ký quỹ an toàn (Escrow)</div>
+            }}>Escrow Security Deposit</div>
                 <div style={{
               fontSize: '20px',
               fontWeight: 800,
@@ -290,7 +290,7 @@ export const AdminUsersTab = ({
               fontWeight: 700,
               color: '#1E293B'
             }}>
-                  Chỉ số uy tín Trust Score
+                  Trust Score
                 </span>
                 <span style={{
               fontSize: '13px',
@@ -312,7 +312,7 @@ export const AdminUsersTab = ({
             marginTop: '8px',
             lineHeight: 1.5
           }}>
-                {selectedUserForWallet.isVerified ? '✓ Tài khoản đã hoàn tất xác thực eKYC CCCD cấp độ cao nhất.' : '⚠️ Tài khoản chưa xác thực danh tính điện tử eKYC.'}
+                {selectedUserForWallet.isVerified ? '✓ Identity verified with highest National ID level (eKYC).' : '⚠️ Account has not completed electronic identity verification (eKYC).'}
               </p>
             </div>
 
@@ -321,9 +321,7 @@ export const AdminUsersTab = ({
           justifyContent: 'flex-end',
           marginTop: '24px'
         }}>
-              <button type="button" className="admin-btn admin-btn-primary" onClick={() => setSelectedUserForWallet(null)}>
-                Đóng
-              </button>
+              <button type="button" className="admin-btn admin-btn-primary" onClick={() => setSelectedUserForWallet(null)}>Close</button>
             </div>
           </div>
         </div>}
