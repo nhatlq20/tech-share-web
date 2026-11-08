@@ -21,7 +21,7 @@ const MY_BOOKING_TAB_STATUSES = {
   cancelled: ['cancelled', 'rejected'],
 };
 
-const MY_BOOKINGS_DEFAULT_LIMIT = 10;
+const MY_BOOKINGS_DEFAULT_LIMIT = 6;
 const MY_BOOKINGS_MAX_LIMIT = 50;
 const CANCEL_REASON_MAX_LENGTH = 300;
 const CANCELLABLE_STATUS = 'pending';
