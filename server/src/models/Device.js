@@ -148,7 +148,13 @@ const deviceSchema = new mongoose.Schema(
   }
 );
 
-// Virtuals 2 chiều giúp code App và Web truy cập trực tiếp
+// ============================================================================
+// RELATIONSHIPS & VIRTUAL FIELDS
+// Giúp code Controller/Service truy cập tiện lợi mà không làm phình to database
+// ============================================================================
+
+// 1. Virtual relationship: Nối sang User (Owner) thông qua ownerId
+// Giúp dùng Device.populate('owner') tương tự như JOIN trong SQL
 deviceSchema.virtual('owner', {
   ref: 'User',
   localField: 'ownerId',
@@ -156,7 +162,9 @@ deviceSchema.virtual('owner', {
   justOne: true,
 });
 
-// Dynamic location resolved from owner (Single Source of Truth: users.location)
+// 2. Virtual location: Lấy vị trí động từ Owner (Kiến trúc Single Source of Truth)
+// Vị trí địa lý CHỈ lưu ở collection 'users' (User.location). 
+// Khi truy vấn thiết bị, location được suy ra tự động từ Owner của nó.
 deviceSchema.virtual('location').get(function () {
   const owner = (this.ownerId && typeof this.ownerId === 'object' && this.ownerId.location)
     ? this.ownerId

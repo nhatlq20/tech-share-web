@@ -444,18 +444,38 @@ export const getOwnerDevices = async (req, res, next) => {
   }
 };
 
+/**
+ * ============================================================================
+ * CHỨC NĂNG XEM CHI TIẾT THIẾT BỊ CỦA OWNER (OWNER DEVICE DETAIL)
+ * Endpoint: GET /api/owner/devices/:id
+ * Quyền truy cập: Yêu cầu đăng nhập (protect) & Vai trò Owner (requireOwner)
+ * 
+ * Luồng xử lý tuần tự gồm 6 bước:
+ * - Bước 1: Tiếp nhận ID thiết bị từ URL và ID của Owner từ token đăng nhập
+ * - Bước 2: Kiểm tra xác thực và tính hợp lệ của ID (Validation)
+ * - Bước 3: Tìm kiếm thiết bị thuộc quyền sở hữu của Owner trong MongoDB
+ * - Bước 4: Kiểm tra thiết bị có tồn tại trong kho hay không (Handle 404)
+ * - Bước 5: Lấy thông tin vị trí động của Owner và gán vào thiết bị
+ * - Bước 6: Định dạng dữ liệu và trả response về cho Client (HTTP 200 OK)
+ * ============================================================================
+ */
 export const getOwnerDeviceById = async (req, res, next) => {
   try {
-    const { devicesCol, usersCol } = getCollections();
+    // ------------------------------------------------------------------------
+    // BƯỚC 1: TIẾP NHẬN DỮ LIỆU TỪ REQUEST & XÁC THỰC NGƯỜI DÙNG
+    // ------------------------------------------------------------------------
     const ownerId = await resolveOwnerId(req);
     const { id } = req.params;
 
+    // 2.1. Kiểm tra tài khoản đã đăng nhập hay chưa (Authentication)
     if (!ownerId) {
       return res.status(401).json({
         success: false,
         message: 'Yêu cầu đăng nhập tài khoản chủ thiết bị.',
       });
     }
+
+    // 2.2. Kiểm tra định dạng ID MongoDB ObjectId
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
@@ -463,19 +483,22 @@ export const getOwnerDeviceById = async (req, res, next) => {
       });
     }
 
-    const [device, ownerDoc] = await Promise.all([
-      devicesCol.findOne({
-        _id: new mongoose.Types.ObjectId(id),
-        ...buildDeviceOwnerQuery(ownerId),
-        isDeleted: { $ne: true },
-      }),
-      usersCol.findOne({
-        _id: mongoose.Types.ObjectId.isValid(ownerId)
-          ? new mongoose.Types.ObjectId(ownerId)
-          : ownerId,
-      }),
-    ]);
+    const { devicesCol, usersCol } = getCollections();
 
+    // ------------------------------------------------------------------------
+    // BƯỚC 3: TRUY VẤN THIẾT BỊ VÀ THÔNG TIN OWNER TỪ MONGODB
+    // ------------------------------------------------------------------------
+    // Đảm bảo thiết bị phải thuộc về đúng Owner đang đăng nhập và chưa bị xóa mềm
+    const deviceQuery = {
+      _id: new mongoose.Types.ObjectId(id),
+      ...buildDeviceOwnerQuery(ownerId),
+      isDeleted: { $ne: true },
+    };
+    const device = await devicesCol.findOne(deviceQuery);
+
+    // ------------------------------------------------------------------------
+    // BƯỚC 4: KIỂM TRA THIẾT BỊ CÓ TỒN TẠI HAY KHÔNG
+    // ------------------------------------------------------------------------
     if (!device) {
       return res.status(404).json({
         success: false,
@@ -483,31 +506,45 @@ export const getOwnerDeviceById = async (req, res, next) => {
       });
     }
 
+    // Lấy thông tin tài khoản Owner để suy ra tọa độ và địa chỉ
+    const userQueryId = mongoose.Types.ObjectId.isValid(ownerId)
+      ? new mongoose.Types.ObjectId(ownerId)
+      : ownerId;
+    const ownerDoc = await usersCol.findOne({ _id: userQueryId });
+
+    // ------------------------------------------------------------------------
+    // BƯỚC 5: XÁC ĐỊNH VỊ TRÍ ĐỊA LÝ ĐỘNG TỪ OWNER
+    // ------------------------------------------------------------------------
     const loc = resolveDeviceLocation(device, ownerDoc);
+
+    // ------------------------------------------------------------------------
+    // BƯỚC 6: ĐỊNH DẠNG DỮ LIỆU VÀ TRẢ VỀ CHO CLIENT
+    // ------------------------------------------------------------------------
+    const formattedDevice = {
+      ...device,
+      _id: device._id.toString(),
+      id: device._id.toString(),
+      name: device.name || device.title || '',
+      title: device.title || device.name || '',
+      brand: device.brand || '',
+      category: device.category || 'other',
+      yearOfManufacture: device.yearOfManufacture || '',
+      condition: device.condition || 'good',
+      description: device.description || '',
+      dailyRate: Number(device.dailyRate ?? device.pricePerDay) || 0,
+      depositAmount: Number(device.depositAmount ?? device.depositValue) || 0,
+      addressText: loc?.addressText || ownerDoc?.address || device.address || '',
+      location: loc,
+      specs: device.specs || {},
+      images: Array.isArray(device.images) ? device.images : [],
+    };
 
     return res.status(200).json({
       success: true,
-      data: {
-        ...device,
-        _id: device._id.toString(),
-        id: device._id.toString(),
-        name: device.name || device.title || '',
-        title: device.title || device.name || '',
-        brand: device.brand || '',
-        category: device.category || 'other',
-        yearOfManufacture: device.yearOfManufacture || '',
-        condition: device.condition || 'good',
-        description: device.description || '',
-        dailyRate: Number(device.dailyRate ?? device.pricePerDay) || 0,
-        depositAmount: Number(device.depositAmount ?? device.depositValue) || 0,
-        addressText:
-          loc?.addressText || ownerDoc?.address || device.address || '',
-        location: loc,
-        specs: device.specs || {},
-        images: Array.isArray(device.images) ? device.images : [],
-      },
+      data: formattedDevice,
     });
   } catch (error) {
+    // Chuyển lỗi phát sinh cho middleware error handling xử lý tập trung
     return next(error);
   }
 };
