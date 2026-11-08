@@ -268,7 +268,7 @@ export const AdminDashboardScreen = () => {
 
       // 4. Fetch / Extract live Users from MongoDB Atlas
       try {
-        const resUsers = await fetch(`${API_BASE}/admin/users`);
+        const resUsers = await fetch(`${API_BASE}/admin/users`, { headers });
         if (resUsers.ok) {
           const json = await resUsers.json();
           if (json.success && Array.isArray(json.data) && json.data.length > 0) {
@@ -360,11 +360,14 @@ export const AdminDashboardScreen = () => {
   // Action: Toggle user status (Khóa / Mở khóa)
   const handleToggleUserStatus = async (userId, currentStatus) => {
     try {
+      const token = localStorage.getItem('techshare_auth_token') || localStorage.getItem('techshare_token');
+      const authHeaders = {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      };
       const res = await fetch(`${API_BASE}/admin/users/${userId}/status`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: authHeaders,
         body: JSON.stringify({
           isActive: !currentStatus
         })
@@ -393,8 +396,11 @@ export const AdminDashboardScreen = () => {
   // Action: Remove device violation
   const handleRemoveDevice = async deviceId => {
     try {
+      const token = localStorage.getItem('techshare_auth_token') || localStorage.getItem('techshare_token');
+      const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
       const res = await fetch(`${API_BASE}/admin/devices/${deviceId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: authHeaders
       });
       if (res.ok) {
         setDevices(prev => prev.filter(d => d._id !== deviceId));

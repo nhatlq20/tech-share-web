@@ -8,7 +8,7 @@ const CANDIDATE_JWT_SECRETS = [
 ].filter(Boolean);
 
 /**
- * Giải mã JWT linh hoạt qua các khóa bí mật của hệ thống (tránh lỗi lệch JWT_SECRET khi cập nhật .env)
+ * Giải mã và xác thực chữ ký JWT qua các khóa bí mật hợp lệ của hệ thống
  */
 export const verifyOrDecodeToken = (token) => {
   if (!token || token === 'null' || token === 'undefined') return null;
@@ -17,15 +17,7 @@ export const verifyOrDecodeToken = (token) => {
     try {
       return jwt.verify(token, secret);
     } catch {
-      // Thử khóa tiếp theo
-    }
-  }
-
-  // Fallback decode trong môi trường phát triển nếu token bị lệch chữ ký hoặc hết hạn
-  if (process.env.NODE_ENV !== 'production') {
-    const decoded = jwt.decode(token);
-    if (decoded && typeof decoded === 'object' && (decoded.userId || decoded._id || decoded.id || decoded.accountId)) {
-      return decoded;
+      // Thử khóa tiếp theo nếu có nhiều khóa hợp lệ
     }
   }
 
@@ -33,71 +25,56 @@ export const verifyOrDecodeToken = (token) => {
 };
 
 /**
- * Middleware bảo vệ các routes cần xác thực (JWT Auth + Fallback X-User-Id / Query)
+ * Middleware bảo vệ các routes cần xác thực (Yêu cầu JWT hợp lệ)
  */
 export const protect = async (req, res, next) => {
   let token = null;
 
   if (
     req.headers.authorization &&
-    req.headers.authorization.startsWith('Bearer')
+    req.headers.authorization.startsWith('Bearer ')
   ) {
     token = req.headers.authorization.split(' ')[1];
   }
 
+  if (!token || token === 'null' || token === 'undefined') {
+    return res.status(401).json({
+      success: false,
+      message: 'Không có token xác thực, vui lòng đăng nhập.',
+    });
+  }
+
   const decoded = verifyOrDecodeToken(token);
-  if (decoded) {
-    req.user = decoded;
-    return next();
-  }
-
-  // Fallback định danh người dùng qua header X-User-Id hoặc query renterId/userId
-  const fallbackUserId =
-    req.headers['x-user-id'] ||
-    req.query?.renterId ||
-    req.query?.userId ||
-    req.body?.renterId ||
-    req.body?.userId;
-
-  if (fallbackUserId && mongoose.isValidObjectId(String(fallbackUserId))) {
-    req.user = {
-      userId: String(fallbackUserId),
-      _id: String(fallbackUserId),
-      id: String(fallbackUserId),
-    };
-    return next();
-  }
-
-  if (token) {
+  if (!decoded) {
     return res.status(401).json({
       success: false,
       message: 'Phiên đăng nhập không hợp lệ hoặc đã hết hạn.',
     });
   }
 
-  return res.status(401).json({
-    success: false,
-    message: 'Không có token xác thực, vui lòng đăng nhập.',
-  });
+  req.user = decoded;
+  return next();
 };
 
 /**
- * Middleware xác thực tùy chọn: gắn req.user nếu có token/header nhưng không chặn request
+ * Middleware xác thực tùy chọn: gắn req.user nếu có token hợp lệ nhưng không chặn request
  */
 export const optionalProtect = async (req, res, next) => {
   let token = null;
 
   if (
     req.headers.authorization &&
-    req.headers.authorization.startsWith('Bearer')
+    req.headers.authorization.startsWith('Bearer ')
   ) {
     token = req.headers.authorization.split(' ')[1];
   }
 
-  const decoded = verifyOrDecodeToken(token);
-  if (decoded) {
-    req.user = decoded;
-    return next();
+  if (token) {
+    const decoded = verifyOrDecodeToken(token);
+    if (decoded) {
+      req.user = decoded;
+      return next();
+    }
   }
 
   const fallbackUserId =

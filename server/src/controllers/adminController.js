@@ -23,35 +23,32 @@ const getCollections = () => {
  */
 export const resolveAdminProfile = async (req) => {
   try {
+    if (!req.user) {
+      return null;
+    }
+
+    // Nếu middleware requireAdmin đã xác thực và gắn userDoc
+    if (req.user.userDoc) {
+      return req.user.userDoc;
+    }
+
     const { usersCol } = getCollections();
 
-    // 1. Kiểm tra từ req.user (nếu đã qua middleware xác thực)
-    const targetId = req.user?.userId || req.user?.id || req.user?._id;
+    // 1. Tìm theo userId đã được xác thực an toàn qua token JWT
+    const targetId = req.user.userId || req.user.id || req.user._id;
     if (targetId && mongoose.isValidObjectId(targetId)) {
-      const found = await usersCol.findOne({ _id: new mongoose.Types.ObjectId(targetId) });
+      const found = await usersCol.findOne({ _id: new mongoose.Types.ObjectId(String(targetId)) });
       if (found) return found;
     }
 
-    // 2. Kiểm tra từ Bearer token trong req.headers.authorization
-    const authHeader = req.headers?.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.split(' ')[1];
-      try {
-        const secret = process.env.JWT_SECRET || 'techshare_jwt_secret_key_2026';
-        const decoded = jwt.verify(token, secret);
-        const decId = decoded?.userId || decoded?.id || decoded?._id;
-        if (decId && mongoose.isValidObjectId(decId)) {
-          const found = await usersCol.findOne({ _id: new mongoose.Types.ObjectId(decId) });
-          if (found) return found;
-        }
-      } catch {
-        // Token không giải mã được hoặc hết hạn
-      }
+    // 2. Tìm theo accountId của token đã được xác thực
+    const accountId = req.user.accountId;
+    if (accountId && mongoose.isValidObjectId(accountId)) {
+      const found = await usersCol.findOne({ accountId: new mongoose.Types.ObjectId(String(accountId)) });
+      if (found) return found;
     }
 
-    // 3. Truy vấn tài khoản admin đầu tiên trong database
-    const adminUser = await usersCol.findOne({ role: 'admin' });
-    return adminUser;
+    return null;
   } catch (err) {
     console.error('Lỗi khi resolveAdminProfile từ MongoDB:', err);
     return null;
