@@ -4,6 +4,7 @@ import {
   Users,
   Cpu,
   ShieldCheck,
+  Crown,
   ExternalLink,
   LogOut,
   Sparkles,
@@ -44,6 +45,14 @@ const getNavItems = (t) => [
     path: ROUTES.ADMIN_EKYC_VERIFICATION,
     aliases: [ROUTES.ADMIN_EKYC],
   },
+  {
+    id: 'owner-ekyc',
+    label: 'Duyệt Owner',
+    icon: Crown,
+    showBadge: true,
+    path: ROUTES.ADMIN_OWNER_EKYC_VERIFICATION,
+    aliases: [ROUTES.ADMIN_OWNER_EKYC],
+  },
 ];
 
 export const AdminSidebarContent = ({
@@ -51,6 +60,7 @@ export const AdminSidebarContent = ({
   currentPath = '',
   onSelectTab,
   pendingEkycCount = 0,
+  pendingOwnerEkycCount = 0,
   pendingDevicesCount = 0,
   onLogout,
   onSwitchToClient,
@@ -145,6 +155,15 @@ export const AdminSidebarContent = ({
               {item.id === 'ekyc' && item.showBadge && pendingEkycCount > 0 && (
                 <span className="admin-nav-badge" title={t.pendingBadgeTitle(pendingEkycCount)}>
                   {pendingEkycCount}
+                </span>
+              )}
+              {item.id === 'owner-ekyc' && item.showBadge && pendingOwnerEkycCount > 0 && (
+                <span
+                  className="admin-nav-badge"
+                  style={{ backgroundColor: '#286E74', color: '#FFFFFF' }}
+                  title={`${pendingOwnerEkycCount} hồ sơ nâng cấp Owner chờ duyệt`}
+                >
+                  {pendingOwnerEkycCount}
                 </span>
               )}
               {item.id === 'devices' && item.showBadge && pendingDevicesCount > 0 && (

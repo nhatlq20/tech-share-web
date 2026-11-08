@@ -16,11 +16,11 @@ const getBaseUrl = () => {
   if (typeof window !== 'undefined') {
     // Tự động kết nối trực tiếp backend Express local (bỏ qua proxy CRA tránh bottleneck)
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-      return 'http://localhost:5000/api';
+      return 'http://localhost:8000/api';
     }
     return '/api';
   }
-  return 'http://localhost:5000/api';
+  return 'http://localhost:8000/api';
 };
 
 const API_BASE_URL = getBaseUrl();

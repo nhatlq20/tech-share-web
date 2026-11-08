@@ -1,0 +1,548 @@
+/* OwnerEkycSubmitModal.css - Giao diện Modal eKYC Nâng Cấp Owner Đồng Bộ Brand TechShare (#67BEC3 / #286E74) */
+
+.owner-ekyc-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background-color: rgba(15, 23, 42, 0.72);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  overflow-y: auto;
+  animation: ownerEkycFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes ownerEkycFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.owner-ekyc-modal-card {
+  position: relative;
+  width: 100%;
+  max-width: 860px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.35), 0 0 0 1px rgba(226, 232, 240, 0.8);
+  overflow: hidden;
+  animation: ownerEkycSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes ownerEkycSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Header đồng bộ chuẩn TechShare: nền trắng sáng, thanh lịch */
+.owner-ekyc-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 1.25rem 1.75rem;
+  background: #ffffff;
+  color: #0f172a;
+  border-bottom: 1px solid #f1f5f9;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.owner-ekyc-modal-header-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.owner-ekyc-modal-icon-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #e6f7f8 0%, #cbf0f2 100%);
+  color: #286e74;
+  box-shadow: 0 4px 12px rgba(103, 190, 195, 0.25);
+  flex-shrink: 0;
+}
+
+.owner-ekyc-modal-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  letter-spacing: -0.01em;
+}
+
+.owner-ekyc-level-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+  background: #e8f6f7;
+  color: #286e74;
+  border: 1px solid #b2e2e4;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.owner-ekyc-modal-subtitle {
+  font-size: 0.825rem;
+  color: #64748b;
+  margin: 0.2rem 0 0 0;
+}
+
+.owner-ekyc-modal-close-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.owner-ekyc-modal-close-btn:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+/* Modal Body */
+.owner-ekyc-modal-body {
+  padding: 1.5rem 1.75rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* Feature highlight banner - Tone Teal dịu mắt của hệ thống */
+.owner-ekyc-feature-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 1rem 1.25rem;
+  border-radius: 0.875rem;
+  background: linear-gradient(135deg, #e8f6f7 0%, #f0fdfa 100%);
+  border: 1px solid #b2e2e4;
+  color: #1f565b;
+}
+
+.owner-ekyc-feature-banner-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin: 0;
+  color: #1f565b;
+}
+
+.owner-ekyc-feature-banner-desc {
+  font-size: 0.85rem;
+  line-height: 1.5;
+  margin: 0;
+  color: #286e74;
+}
+
+/* Warning & Alerts */
+.owner-ekyc-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.owner-ekyc-alert-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+}
+
+.owner-ekyc-alert-success {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #166534;
+}
+
+.owner-ekyc-alert-pending {
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  color: #0369a1;
+}
+
+.owner-ekyc-alert-rejected {
+  background: #fff1f2;
+  border: 1px solid #fecdd3;
+  color: #9f1239;
+}
+
+/* Readonly Profile Grid */
+.owner-ekyc-section-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 0.75rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.owner-ekyc-profile-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.875rem;
+  padding: 1rem;
+}
+
+.owner-ekyc-profile-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.owner-ekyc-profile-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.owner-ekyc-profile-val {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+/* 3-Image Upload Layout */
+.owner-ekyc-images-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+@media (max-width: 768px) {
+  .owner-ekyc-images-grid {
+    grid-template-columns: 1fr;
+  }
+  .owner-ekyc-profile-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.owner-ekyc-image-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border: 2px dashed #cbd5e1;
+  border-radius: 0.875rem;
+  background: #fdfdfd;
+  overflow: hidden;
+  transition: all 0.2s ease;
+  min-height: 220px;
+}
+
+.owner-ekyc-image-card:hover {
+  border-color: #67bec3;
+  background: #f7fcfd;
+}
+
+.owner-ekyc-image-card.has-preview {
+  border-style: solid;
+  border-color: #e2e8f0;
+  background: #ffffff;
+}
+
+.owner-ekyc-image-badge-tag {
+  position: absolute;
+  top: 0.625rem;
+  left: 0.625rem;
+  z-index: 2;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.25rem 0.55rem;
+  border-radius: 6px;
+  background: rgba(15, 23, 42, 0.75);
+  color: #ffffff;
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.owner-ekyc-image-badge-tag.highlight {
+  background: linear-gradient(135deg, #67bec3 0%, #286e74 100%);
+  box-shadow: 0 2px 6px rgba(103, 190, 195, 0.35);
+}
+
+.owner-ekyc-upload-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2.25rem 1rem 1.25rem 1rem;
+  height: 100%;
+  cursor: pointer;
+  text-align: center;
+}
+
+.owner-ekyc-upload-icon-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #e8f6f7;
+  color: #286e74;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.75rem;
+  transition: all 0.2s ease;
+}
+
+.owner-ekyc-image-card:hover .owner-ekyc-upload-icon-circle {
+  background: #67bec3;
+  color: #ffffff;
+  transform: scale(1.05);
+}
+
+.owner-ekyc-upload-label {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 0.25rem;
+}
+
+.owner-ekyc-upload-subtext {
+  font-size: 0.75rem;
+  color: #64748b;
+  line-height: 1.35;
+}
+
+.owner-ekyc-image-preview-box {
+  position: relative;
+  width: 100%;
+  height: 180px;
+  background: #0f172a;
+  overflow: hidden;
+}
+
+.owner-ekyc-image-preview-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.owner-ekyc-image-preview-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  opacity: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: opacity 0.2s ease;
+}
+
+.owner-ekyc-image-card:hover .owner-ekyc-image-preview-overlay {
+  opacity: 1;
+}
+
+.owner-ekyc-btn-overlay {
+  padding: 0.4rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: all 0.15s ease;
+}
+
+.owner-ekyc-btn-change {
+  background: #ffffff;
+  color: #0f172a;
+}
+
+.owner-ekyc-btn-change:hover {
+  background: #f1f5f9;
+}
+
+.owner-ekyc-btn-remove {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.owner-ekyc-btn-remove:hover {
+  background: #dc2626;
+}
+
+.owner-ekyc-progress-bar-wrap {
+  width: 100%;
+  padding: 0.5rem 1rem;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+}
+
+.owner-ekyc-progress-track {
+  width: 100%;
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.owner-ekyc-progress-fill {
+  height: 100%;
+  background: #67bec3;
+  transition: width 0.2s ease;
+}
+
+/* Card Number Input */
+.owner-ekyc-input-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.owner-ekyc-input-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #334155;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.owner-ekyc-input-field {
+  padding: 0.65rem 0.875rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.625rem;
+  font-size: 0.9rem;
+  color: #0f172a;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.owner-ekyc-input-field:focus {
+  border-color: #67bec3;
+  box-shadow: 0 0 0 3px rgba(103, 190, 195, 0.2);
+}
+
+/* Reusable CTA for using previous renter eKYC CCCD photos */
+.owner-ekyc-reuse-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-radius: 0.625rem;
+  background: #e8f6f7;
+  border: 1px solid #b2e2e4;
+  color: #1f565b;
+  font-size: 0.85rem;
+}
+
+.owner-ekyc-reuse-btn {
+  padding: 0.4rem 0.85rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: 8px;
+  border: 1px solid #67bec3;
+  background: #ffffff;
+  color: #286e74;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.owner-ekyc-reuse-btn:hover {
+  background: #67bec3;
+  color: #ffffff;
+}
+
+/* Footer Actions */
+.owner-ekyc-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1.25rem 1.75rem;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+}
+
+.owner-ekyc-btn-cancel {
+  padding: 0.65rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #475569;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.625rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.owner-ekyc-btn-cancel:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.owner-ekyc-btn-submit {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #ffffff;
+  background: linear-gradient(135deg, #67bec3 0%, #286e74 100%);
+  border: none;
+  border-radius: 0.625rem;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(103, 190, 195, 0.35);
+  transition: all 0.2s ease;
+}
+
+.owner-ekyc-btn-submit:hover:not(:disabled) {
+  opacity: 0.94;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(103, 190, 195, 0.45);
+}
+
+.owner-ekyc-btn-submit:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}

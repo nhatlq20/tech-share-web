@@ -103,6 +103,22 @@ export const AppRoutes = () => {
         }
       />
       <Route
+        path={ROUTES.ADMIN_OWNER_EKYC}
+        element={
+          <ProtectedRoute roles={['admin']}>
+            <AdminPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path={ROUTES.ADMIN_OWNER_EKYC_VERIFICATION}
+        element={
+          <ProtectedRoute roles={['admin']}>
+            <AdminPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path={ROUTES.ADMIN_SETTINGS}
         element={
           <ProtectedRoute roles={['admin']}>

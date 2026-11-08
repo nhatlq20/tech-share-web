@@ -5,16 +5,16 @@ let socket = null;
 
 const getSocketServerUrl = () => {
   if (process.env.REACT_APP_API_URL) {
-    // If REACT_APP_API_URL is 'http://localhost:5000/api', extract 'http://localhost:5000'
+    // If REACT_APP_API_URL is 'http://localhost:8000/api', extract 'http://localhost:8000'
     try {
       const url = new URL(process.env.REACT_APP_API_URL);
       return url.origin;
     } catch {
-      return 'http://localhost:5000';
+      return 'http://localhost:8000';
     }
   }
   if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-    return 'http://localhost:5000';
+    return 'http://localhost:8000';
   }
   return '/';
 };

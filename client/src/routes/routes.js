@@ -31,6 +31,8 @@ export const ROUTES = {
   ADMIN_DEVICE_MANAGER: '/admin/device-manager',
   ADMIN_EKYC: '/admin/ekyc',
   ADMIN_EKYC_VERIFICATION: '/admin/ekyc-verification',
+  ADMIN_OWNER_EKYC: '/admin/owner-ekyc',
+  ADMIN_OWNER_EKYC_VERIFICATION: '/admin/owner-ekyc-verification',
   ADMIN_SETTINGS: '/admin/settings',
   ADMIN_LOGIN: '/admin/login',
   PROFILE: '/profile',
