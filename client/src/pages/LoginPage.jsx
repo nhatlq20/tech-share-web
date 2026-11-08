@@ -10,6 +10,7 @@ import {
   AlertCircle,
   CheckCircle2,
   ShieldCheck,
+  ShieldAlert,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { api } from '../services/api.js';
@@ -26,6 +27,7 @@ export const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [bannedInfo, setBannedInfo] = useState(null);
   const [successMessage, setSuccessMessage] = useState('');
 
   // Trang đích sau khi đăng nhập (nếu bị redirect tới đây)
@@ -34,6 +36,7 @@ export const LoginPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMessage('');
+    setBannedInfo(null);
     setSuccessMessage('');
 
     if (!identifier.trim()) {
@@ -89,11 +92,24 @@ export const LoginPage = () => {
         setErrorMessage(res?.message || 'Invalid username or password.');
       }
     } catch (err) {
-      const msg =
-        err.data?.message ||
-        err.message ||
-        'Invalid username or password.';
-      setErrorMessage(msg);
+      const isBanned =
+        err.status === 403 ||
+        err.data?.isbanned === true ||
+        Boolean(err.data?.banReason) ||
+        (err.data?.message && err.data.message.toLowerCase().includes('khóa'));
+
+      if (isBanned) {
+        const reason = err.data?.banReason || 'Vi phạm chính sách và điều khoản sử dụng TechShare.';
+        setBannedInfo({ isBanned: true, reason });
+        setErrorMessage(err.data?.message || `Tài khoản của bạn đã bị khóa. Lí do: ${reason}`);
+      } else {
+        setBannedInfo(null);
+        const msg =
+          err.data?.message ||
+          err.message ||
+          'Invalid username or password.';
+        setErrorMessage(msg);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -114,13 +130,41 @@ export const LoginPage = () => {
           </p>
         </div>
 
-        {/* Error Alert */}
-        {errorMessage && (
+        {/* Banned Alert with Reason */}
+        {bannedInfo ? (
+          <div
+            className="login-alert-error"
+            role="alert"
+            style={{
+              backgroundColor: '#FEF2F2',
+              borderColor: '#FCA5A5',
+              color: '#991B1B',
+              padding: '16px',
+              borderRadius: '12px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '6px',
+              marginBottom: '18px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700, fontSize: '14.5px' }}>
+              <ShieldAlert size={20} color="#DC2626" />
+              <span>Tài khoản của bạn đã bị khóa</span>
+            </div>
+            <div style={{ fontSize: '13.5px', color: '#7F1D1D', lineHeight: 1.5 }}>
+              <strong>Lí do khóa:</strong> {bannedInfo.reason}
+            </div>
+            <div style={{ fontSize: '12px', color: '#64748B', marginTop: '4px' }}>
+              Nếu bạn cho rằng đây là sự nhầm lẫn, vui lòng liên hệ quản trị viên qua email <strong>support@techshare.vn</strong> để được kiểm tra.
+            </div>
+          </div>
+        ) : errorMessage ? (
+          /* Normal Error Alert */
           <div className="login-alert-error" role="alert">
             <AlertCircle size={18} style={{ flexShrink: 0, marginTop: 2 }} />
             <div>{errorMessage}</div>
           </div>
-        )}
+        ) : null}
 
         {/* Success Alert */}
         {successMessage && (

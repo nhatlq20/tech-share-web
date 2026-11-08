@@ -42,6 +42,20 @@ const accountSchema = new mongoose.Schema(
       default: true,
       index: true,
     },
+    isbanned: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    banReason: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    bannedAt: {
+      type: Date,
+      default: null,
+    },
     isVerified: {
       type: Boolean,
       default: false,

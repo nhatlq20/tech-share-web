@@ -49,6 +49,24 @@ const buildUrl = (endpoint, params) => {
 const handleResponse = async (res) => {
   if (!res.ok) {
     const errorBody = await res.json().catch(() => null);
+
+    // Kích hoạt sự kiện toàn cục nếu nhận phản hồi tài khoản bị khóa
+    if (
+      res.status === 403 &&
+      (errorBody?.isbanned || errorBody?.banReason || (errorBody?.message && errorBody.message.toLowerCase().includes('khóa')))
+    ) {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('techshare:account_banned', {
+            detail: {
+              reason: errorBody?.banReason || errorBody?.message,
+              message: errorBody?.message,
+            },
+          })
+        );
+      }
+    }
+
     const error = new Error(errorBody?.message || `HTTP error! status: ${res.status}`);
     error.status = res.status;
     error.data = errorBody;
