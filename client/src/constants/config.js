@@ -5,6 +5,14 @@
  * Toàn bộ URL endpoint, timeouts, magic numbers, phân trang và ngưỡng logic.
  */
 
+const getBaseApiUrl = () => {
+  const envUrl = process.env.REACT_APP_API_URL;
+  if (envUrl) {
+    return envUrl.includes(':5000') ? envUrl.replace(':5000', ':8000') : envUrl;
+  }
+  return "http://localhost:8000/api";
+};
+
 export const API_CONFIG = {
   BASE_URL: process.env.REACT_APP_API_URL || "http://localhost:8000/api",
   TIMEOUT_MS: 15000,

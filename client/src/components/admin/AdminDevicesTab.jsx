@@ -57,7 +57,7 @@ const QUICK_REJECT_REASONS = [
   'Thiết bị thuộc danh mục hạn chế hoặc không đủ điều kiện an toàn.',
 ];
 
-const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
 
 const formatVND = (num) => {
   return new Intl.NumberFormat('vi-VN', {

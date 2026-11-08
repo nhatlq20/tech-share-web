@@ -3,15 +3,12 @@
  */
 
 const getBaseUrl = () => {
-  if (process.env.REACT_APP_API_URL) {
-    return process.env.REACT_APP_API_URL;
-  }
-  try {
-    if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_URL) {
-      return import.meta.env.VITE_API_URL;
+  let envUrl = process.env.REACT_APP_API_URL;
+  if (envUrl) {
+    if (envUrl.includes(':5000')) {
+      return envUrl.replace(':5000', ':8000');
     }
-  } catch (e) {
-    // Ignore in environments without import.meta support
+    return envUrl;
   }
   if (typeof window !== 'undefined') {
     // Tự động kết nối trực tiếp backend Express local (bỏ qua proxy CRA tránh bottleneck)

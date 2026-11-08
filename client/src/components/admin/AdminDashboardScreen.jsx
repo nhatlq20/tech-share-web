@@ -65,7 +65,7 @@ const DEFAULT_CATEGORIES = [
   { id: 'gaming', name: 'Gaming & VR', count: 4, percent: 3, color: '#34D399' },
   { id: 'accessory', name: 'Phụ kiện công nghệ', count: 12, percent: 10, color: '#14B8A6' },
 ];
-const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
 export const AdminDashboardScreen = () => {
   const { user, logout } = useAuth();
   const location = useLocation();
@@ -292,7 +292,7 @@ export const AdminDashboardScreen = () => {
             return;
           }
         }
-      } catch {}
+      } catch { }
 
       // Nếu route riêng chưa có, tổng hợp người dùng thật từ DB thiết bị và eKYC
       const userMap = new Map();
@@ -560,67 +560,50 @@ export const AdminDashboardScreen = () => {
               value={globalSearch}
               onChange={(e) => setGlobalSearch(e.target.value)}
             />
-          </div>
+          </button>
 
-          {/* Topbar Right Actions */}
-          <div className="admin-topbar-actions">
-            {/* Refresh Button */}
-            <button
-              type="button"
-              onClick={fetchAllData}
-              disabled={isLoading}
-              className="admin-action-btn"
-              title={STRINGS.admin.overview.refreshTooltip}
-            >
-              <RefreshCw
-                size={16}
-                style={{ animation: isLoading ? 'spin 1s linear infinite' : 'none' }}
-              />
-            </button>
+          {/* Notification Bell Dropdown */}
+          <NotificationDropdown />
 
-            {/* Notification Bell Dropdown */}
-            <NotificationDropdown />
-
-            {/* Admin Header Chip */}
-            <div
+          {/* Admin Header Chip */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              paddingLeft: '8px',
+            }}
+          >
+            <img
+              src={(adminProfile || user)?.avatar || (adminProfile || user)?.avatarUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop"}
+              alt={(adminProfile || user)?.name || STRINGS.admin.dashboard.avatarAlt}
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                paddingLeft: '8px',
+                width: '36px',
+                height: '36px',
+                borderRadius: '50%',
+                border: '2px solid #67BEC3',
+                objectFit: 'cover',
               }}
-            >
-              <img
-                src={(adminProfile || user)?.avatar || (adminProfile || user)?.avatarUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop"}
-                alt={(adminProfile || user)?.name || STRINGS.admin.dashboard.avatarAlt}
+            />
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <span
                 style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: '50%',
-                  border: '2px solid #67BEC3',
-                  objectFit: 'cover',
+                  fontSize: '13px',
+                  fontWeight: 700,
+                  color: '#0F172A',
                 }}
-              />
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <span
-                  style={{
-                    fontSize: '13px',
-                    fontWeight: 700,
-                    color: '#0F172A',
-                  }}
-                >
-                  {(adminProfile || user)?.name || 'Admin'}
-                </span>
-                <span
-                  style={{
-                    fontSize: '11px',
-                    color: '#286E74',
-                    fontWeight: 600,
-                  }}
-                >
-                  {(adminProfile || user)?.role === 'admin' ? 'Quản trị viên hệ thống' : ((adminProfile || user)?.role || STRINGS.admin.dashboard.adminRole)}
-                </span>
-              </div>
+              >
+                {(adminProfile || user)?.name || 'Admin'}
+              </span>
+              <span
+                style={{
+                  fontSize: '11px',
+                  color: '#286E74',
+                  fontWeight: 600,
+                }}
+              >
+                {(adminProfile || user)?.role === 'admin' ? 'Quản trị viên hệ thống' : ((adminProfile || user)?.role || STRINGS.admin.dashboard.adminRole)}
+              </span>
             </div>
           </div>
         </header>

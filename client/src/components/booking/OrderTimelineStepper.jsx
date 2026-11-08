@@ -78,16 +78,16 @@ const TERMINAL_CIRCLE_CLASSES = {
 const StepIcon = ({ step, index }) => {
   if (step.state === STEP_STATE.TERMINAL) {
     return step.key === BOOKING_STATUS.REJECTED
-      ? <Ban className="w-4 h-4" aria-hidden="true" />
-      : <X className="w-4 h-4" aria-hidden="true" />;
+      ? <Ban className="w-3.5 h-3.5" aria-hidden="true" />
+      : <X className="w-3.5 h-3.5" aria-hidden="true" />;
   }
-  if (step.state === STEP_STATE.DONE) return <Check className="w-4 h-4" aria-hidden="true" />;
-  if (step.state === STEP_STATE.CURRENT) return <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />;
-  return <span className="text-xs font-bold">{index + 1}</span>;
+  if (step.state === STEP_STATE.DONE) return <Check className="w-3.5 h-3.5" aria-hidden="true" />;
+  if (step.state === STEP_STATE.CURRENT) return <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />;
+  return <span className="text-[11px] font-bold">{index + 1}</span>;
 };
 
 /**
- * Visual stepper of the booking lifecycle (vertical on mobile, horizontal on desktop).
+ * Compact visual stepper of the booking lifecycle (vertical on mobile, horizontal on desktop).
  */
 export const OrderTimelineStepper = ({ status, timeline, createdAt }) => {
   const steps = useMemo(
@@ -110,34 +110,33 @@ export const OrderTimelineStepper = ({ status, timeline, createdAt }) => {
         return (
           <li
             key={step.key}
-            className="relative flex md:flex-col md:items-center md:text-center gap-4 md:gap-3 flex-1 pb-6 md:pb-0"
+            className="relative flex md:flex-col md:items-center md:text-center gap-3 md:gap-1.5 flex-1 pb-3.5 md:pb-0"
             aria-current={step.state === STEP_STATE.CURRENT ? 'step' : undefined}
           >
             {/* Connector line */}
             {!isLast && (
               <span
-                className={`absolute left-4 top-9 bottom-0 w-0.5 md:left-1/2 md:top-4 md:bottom-auto md:w-full md:h-0.5 ${connectorClasses}`}
+                className={`absolute left-3.5 top-7 bottom-0 w-0.5 md:left-1/2 md:top-3.5 md:bottom-auto md:w-full md:h-0.5 ${connectorClasses}`}
                 aria-hidden="true"
               />
             )}
 
             <span
-              className={`relative z-10 w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-300 ${circleClasses}`}
+              className={`relative z-10 w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-300 ${circleClasses}`}
             >
               <StepIcon step={step} index={index} />
             </span>
 
-            <div className="min-w-0 md:px-2">
+            <div className="min-w-0 md:px-1.5">
               <p
-                className={`text-sm font-bold ${
+                className={`text-xs font-bold leading-tight ${
                   step.state === STEP_STATE.UPCOMING ? 'text-slate-400' : 'text-slate-800'
                 }`}
               >
                 {copy.title}
               </p>
-              <p className="text-xs text-slate-500 mt-0.5">{copy.desc}</p>
               <p
-                className={`text-xs mt-1 font-medium ${
+                className={`text-[10px] mt-0.5 font-medium ${
                   step.state === STEP_STATE.CURRENT ? 'text-brand-600' : 'text-slate-400'
                 }`}
               >
