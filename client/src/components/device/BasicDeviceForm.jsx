@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { ImagePlus, Trash2 } from "lucide-react";
+import { ImagePlus, LoaderCircle, Sparkles, Trash2 } from "lucide-react";
 
 const categories = [
   { value: "smartphone", label: "Điện thoại" },
@@ -18,6 +18,10 @@ const BasicDeviceForm = ({
   onChange,
   onAddImages,
   onRemoveImage,
+  onGenerateDescription,
+  canGenerateDescription,
+  isGeneratingDescription,
+  descriptionGenerationError,
 }) => {
   const [imagePreviews, setImagePreviews] = useState([]);
 
@@ -154,11 +158,27 @@ const BasicDeviceForm = ({
         )}
       </label>
 
-      <label className="post-device-field post-device-field-wide">
-        <span>
-          Mô tả <b>*</b>
-        </span>
+      <div className="post-device-field post-device-field-wide">
+        <div className="post-device-description-heading">
+          <label htmlFor="post-device-description">
+            Mô tả <b>*</b>
+          </label>
+          <button
+            type="button"
+            className="post-device-generate-button"
+            onClick={onGenerateDescription}
+            disabled={!canGenerateDescription || isGeneratingDescription}
+          >
+            {isGeneratingDescription ? (
+              <LoaderCircle className="post-device-spinner" size={16} />
+            ) : (
+              <Sparkles size={16} />
+            )}
+            {isGeneratingDescription ? "Đang tạo mô tả..." : "Tạo mô tả bằng AI"}
+          </button>
+        </div>
         <textarea
+          id="post-device-description"
           className={errors.description ? "has-error" : ""}
           rows={5}
           value={values.description}
@@ -169,7 +189,18 @@ const BasicDeviceForm = ({
         {errors.description && (
           <small className="post-device-error">{errors.description}</small>
         )}
-      </label>
+        {descriptionGenerationError && (
+          <small className="post-device-error" role="alert">
+            {descriptionGenerationError}
+          </small>
+        )}
+        {!canGenerateDescription && (
+          <small className="post-device-hint">
+            Nhập tên thiết bị, danh mục, thương hiệu, năm sản xuất và tình trạng
+            để sử dụng AI.
+          </small>
+        )}
+      </div>
 
       <div className="post-device-image-field post-device-field-wide">
         <div className="post-device-image-heading">
