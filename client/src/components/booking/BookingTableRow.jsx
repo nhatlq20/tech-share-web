@@ -8,7 +8,10 @@ import {
   CalendarPlus,
   Star,
   RotateCcw,
-  Receipt,
+  QrCode,
+  Camera,
+  XCircle,
+  Calendar,
 } from 'lucide-react';
 import { STRINGS } from '../../constants/strings.js';
 import { ROUTES } from '../../routes/routes.js';
@@ -17,6 +20,17 @@ import { CountdownBadge, RentalCountdownTimer } from './CountdownBadge.jsx';
 
 const formatPriceVnd = (amount) =>
   `${Math.round(Number(amount) || 0).toLocaleString('en-US')} ${STRINGS.COMMON.VND}`;
+
+const formatShortDate = (value) => {
+  if (!value) return '--';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '--';
+  return d.toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+};
 
 const getDurationLabel = (startDate, endDate, totalDays) => {
   const diffMs = new Date(endDate).getTime() - new Date(startDate).getTime();
@@ -32,7 +46,7 @@ const getDurationLabel = (startDate, endDate, totalDays) => {
 };
 
 /**
- * Shared Action Buttons matching App's BookingItemCard actions + Web Details button
+ * Shared Action Buttons – unified height, single-line non-wrapping layout
  */
 const BookingRowActions = ({
   booking,
@@ -41,93 +55,102 @@ const BookingRowActions = ({
   onExtend,
   onRate,
   onRebook,
+  onOpenHandover,
 }) => {
   const isReviewed = Boolean(booking?.isReviewed || booking?.review);
 
   return (
     <div
-      className="flex items-center justify-end gap-2 flex-wrap"
+      className="inline-flex items-center justify-end gap-1.5 flex-nowrap whitespace-nowrap"
       onClick={(e) => e.stopPropagation()}
     >
+      {/* Pending: Cancel button */}
       {booking.status === 'pending' && onCancel && (
         <button
           type="button"
           onClick={onCancel}
-          className="px-3 py-1.5 rounded-xl border border-red-500 text-red-500 hover:bg-red-50 text-xs font-bold transition-colors"
+          className="h-7 px-2.5 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 text-[11px] font-semibold inline-flex items-center gap-1 transition shrink-0"
         >
-          {STRINGS.BOOKING_ITEM_CARD.CANCEL_BTN}
+          <XCircle className="w-3 h-3 shrink-0" />
+          <span>Cancel</span>
         </button>
       )}
 
+      {/* Approved: QR & Handover button */}
+      {booking.status === 'approved' && onOpenHandover && (
+        <button
+          type="button"
+          onClick={() => onOpenHandover(booking)}
+          className="h-7 px-2.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-[11px] font-semibold inline-flex items-center gap-1 shadow-2xs transition shrink-0"
+        >
+          <QrCode className="w-3 h-3 shrink-0" />
+          <span>QR & Handover</span>
+        </button>
+      )}
+
+      {/* Active: Extend button */}
       {booking.status === 'active' && onExtend && (
         <button
           type="button"
           disabled={booking.extensionRequest?.status === 'pending'}
           onClick={onExtend}
-          className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border text-xs font-bold transition-colors ${
+          className={`h-7 px-2.5 rounded-lg border text-[11px] font-semibold inline-flex items-center gap-1 transition shrink-0 ${
             booking.extensionRequest?.status === 'pending'
-              ? 'border-slate-300 bg-slate-100 text-slate-400 cursor-not-allowed'
-              : 'border-brand-500 bg-brand-50 text-brand-600 hover:bg-brand-100'
+              ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed'
+              : 'border-brand-200 bg-brand-50 text-brand-700 hover:bg-brand-100'
           }`}
         >
-          <CalendarPlus className="w-3.5 h-3.5" />
+          <CalendarPlus className="w-3 h-3 shrink-0" />
           <span>
             {booking.extensionRequest?.status === 'pending'
-              ? STRINGS.BOOKING_ITEM_CARD.EXTEND_PENDING_BTN
-              : STRINGS.BOOKING_ITEM_CARD.EXTEND_BTN}
+              ? 'Ext. Pending'
+              : 'Extend'}
           </span>
         </button>
       )}
 
+      {/* Completed: Write Review (if not reviewed yet) + Rent Again */}
       {booking.status === 'completed' && (
         <>
-          {isReviewed ? (
-            <>
-              <span className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-600 text-xs font-bold">
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>{STRINGS.BOOKING_ITEM_CARD.RATED_BTN}</span>
-              </span>
+          {!isReviewed && onRate && (
+            <button
+              type="button"
+              onClick={onRate}
+              className="h-7 px-2.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-[11px] font-semibold inline-flex items-center gap-1 shadow-2xs transition shrink-0"
+            >
+              <Star className="w-3 h-3 fill-white shrink-0" />
+              <span>Review</span>
+            </button>
+          )}
 
-              {onRebook && (
-                <button
-                  type="button"
-                  onClick={onRebook}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-brand-50 border border-brand-500 text-brand-600 hover:bg-brand-100 text-xs font-bold transition-colors"
-                >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                  <span>{STRINGS.BOOKING_ITEM_CARD.REBOOK_BTN}</span>
-                </button>
-              )}
-            </>
-          ) : (
-            onRate && (
-              <button
-                type="button"
-                onClick={onRate}
-                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition-colors shadow-2xs"
-              >
-                <Star className="w-3.5 h-3.5 fill-white" />
-                <span>{STRINGS.BOOKING_ITEM_CARD.RATE_BTN}</span>
-              </button>
-            )
+          {onRebook && (
+            <button
+              type="button"
+              onClick={onRebook}
+              className="h-7 px-2.5 rounded-lg border border-brand-200 bg-brand-50 hover:bg-brand-100 text-brand-700 text-[11px] font-semibold inline-flex items-center gap-1 transition shrink-0"
+            >
+              <RotateCcw className="w-3 h-3 shrink-0" />
+              <span>Rent Again</span>
+            </button>
           )}
         </>
       )}
 
+      {/* View Details button */}
       <button
         type="button"
         onClick={onViewDetail}
-        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-brand-500 text-slate-700 hover:text-white text-xs font-bold transition-colors"
+        className="h-7 px-2.5 rounded-lg bg-slate-100 hover:bg-brand-600 text-slate-700 hover:text-white text-[11px] font-semibold inline-flex items-center gap-1 transition shrink-0"
       >
-        <span>{STRINGS.booking.myBookings.viewDetailBtn}</span>
-        <ArrowRight className="w-3.5 h-3.5" />
+        <span>Details</span>
+        <ArrowRight className="w-3 h-3 shrink-0" />
       </button>
     </div>
   );
 };
 
 /**
- * BookingTableRow – Desktop Web Table Row with App-synchronized information & actions
+ * BookingTableRow – Compact, clean Desktop Table Row
  */
 export const BookingTableRow = ({
   booking,
@@ -135,6 +158,7 @@ export const BookingTableRow = ({
   onExtend,
   onRate,
   onRebook,
+  onOpenHandover,
 }) => {
   const navigate = useNavigate();
 
@@ -146,16 +170,25 @@ export const BookingTableRow = ({
   const title =
     device.name || device.title || STRINGS.BOOKING_ITEM_CARD.UNKNOWN_DEVICE;
   const thumbnail =
-    Array.isArray(device.images) && device.images.length > 0
+    device.thumbnail ||
+    (Array.isArray(device.images) && device.images.length > 0
       ? device.images[0]
-      : null;
+      : null);
 
   const detailId = booking.bookingCode || booking._id;
+  const codeText =
+    booking.bookingCode || String(booking._id || '').slice(-6).toUpperCase();
   const durationText = getDurationLabel(
     booking.startDate,
     booking.endDate,
     booking.totalDays
   );
+
+  const isReviewed = Boolean(booking?.isReviewed || booking?.review);
+  const beforePhotosCount =
+    booking?.handover?.beforePhotos?.length ||
+    booking?.handoverPhotos?.beforeRental?.length ||
+    0;
 
   const handleGoDetail = () => {
     navigate(ROUTES.BOOKING_DETAIL_PATH(detailId));
@@ -164,63 +197,62 @@ export const BookingTableRow = ({
   return (
     <tr
       onClick={handleGoDetail}
-      className="group border-b border-slate-100 last:border-b-0 hover:bg-brand-50/30 transition cursor-pointer"
+      className="group border-b border-slate-100 last:border-b-0 hover:bg-slate-50/80 transition cursor-pointer"
     >
       {/* 1. Device + Booking Code */}
-      <td className="py-4 pl-6 pr-4">
-        <div className="flex items-center gap-3.5">
-          <div className="w-16 h-16 rounded-xl bg-slate-100 overflow-hidden shrink-0 flex items-center justify-center border border-slate-200/70">
+      <td className="py-2.5 pl-4 pr-2.5">
+        <div className="flex items-center gap-2.5">
+          <div className="w-11 h-11 rounded-xl bg-slate-100 overflow-hidden shrink-0 flex items-center justify-center border border-slate-200/70">
             {thumbnail ? (
-              <img src={thumbnail} alt={title} className="w-full h-full object-cover" />
+              <img
+                src={thumbnail}
+                alt={title}
+                className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+              />
             ) : (
-              <Package className="w-6 h-6 text-slate-400" />
+              <Package className="w-5 h-5 text-slate-400" />
             )}
           </div>
           <div className="min-w-0">
-            <div className="flex items-center gap-1.5 text-xs font-bold text-brand-600 mb-0.5">
-              <Receipt className="w-3.5 h-3.5 text-brand-500" />
-              <span>
-                #{booking.bookingCode || String(booking._id).slice(-6).toUpperCase()}
+            <div className="flex items-center gap-1.5 mb-0.5">
+              <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-mono text-[10px] font-bold">
+                #{codeText}
               </span>
+              {device.brand && (
+                <span className="text-[11px] font-medium text-slate-400 truncate max-w-[110px]">
+                  {device.brand}
+                  {device.category ? ` • ${device.category}` : ''}
+                </span>
+              )}
             </div>
-            <p className="font-bold text-slate-900 group-hover:text-brand-600 transition truncate max-w-xs">
+            <p className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-brand-600 transition truncate max-w-[165px] lg:max-w-[210px]">
               {title}
             </p>
-            {device.brand && (
-              <p className="text-[11px] text-slate-400 mt-0.5">
-                {device.brand}
-                {device.category ? ` • ${device.category}` : ''}
-              </p>
-            )}
           </div>
         </div>
       </td>
 
-      {/* 2. Rental Period + Active Countdown + Extension Tag (App info) */}
-      <td className="py-4 px-4 text-sm text-slate-700">
-        <div className="space-y-1">
-          <p className="text-xs text-slate-500">
-            {STRINGS.BOOKING_ITEM_CARD.FROM_PREFIX}
-            <span className="font-semibold text-slate-900">
-              {new Date(booking.startDate).toLocaleDateString('en-US')}
+      {/* 2. Rental Period + Active Countdown + Extension Tag */}
+      <td className="py-2.5 px-2.5 text-xs text-slate-700 whitespace-nowrap">
+        <div className="flex flex-col gap-1">
+          <div className="inline-flex items-center gap-1 text-slate-800 font-semibold text-xs">
+            <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+            <span>{formatShortDate(booking.startDate)}</span>
+            <span className="text-slate-400">→</span>
+            <span>{formatShortDate(booking.endDate)}</span>
+            <span className="ml-0.5 px-1.5 py-0.5 rounded bg-brand-50 text-brand-700 text-[10px] font-bold">
+              {durationText}
             </span>
-          </p>
-          <p className="text-xs text-slate-500">
-            {STRINGS.BOOKING_ITEM_CARD.TO_PREFIX}
-            <span className="font-semibold text-slate-900">
-              {new Date(booking.endDate).toLocaleDateString('en-US')}
-            </span>{' '}
-            <span className="text-brand-600 font-semibold">({durationText})</span>
-          </p>
+          </div>
 
           {booking.status === 'active' && booking.endDate && (
-            <div className="pt-1">
+            <div>
               <CountdownBadge endDate={booking.endDate} compact />
             </div>
           )}
 
           {booking.extensionRequest?.status === 'pending' && (
-            <div className="inline-flex items-center gap-1 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md text-[11px] font-semibold text-amber-700 mt-1">
+            <div className="inline-flex items-center gap-1 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md text-[10px] font-semibold text-amber-700 w-fit">
               <Clock className="w-3 h-3 text-amber-500 shrink-0" />
               <span>
                 {STRINGS.BOOKING_ITEM_CARD.EXT_PENDING(
@@ -232,7 +264,7 @@ export const BookingTableRow = ({
           )}
 
           {booking.extensionRequest?.status === 'approved' && (
-            <div className="inline-flex items-center gap-1 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md text-[11px] font-semibold text-emerald-700 mt-1">
+            <div className="inline-flex items-center gap-1 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md text-[10px] font-semibold text-emerald-700 w-fit">
               <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0" />
               <span>
                 {STRINGS.BOOKING_ITEM_CARD.EXT_APPROVED(
@@ -245,19 +277,46 @@ export const BookingTableRow = ({
       </td>
 
       {/* 3. Total Payment */}
-      <td className="py-4 px-4">
-        <span className="font-extrabold text-brand-500 text-sm">
+      <td className="py-2.5 px-2.5 whitespace-nowrap">
+        <p className="font-extrabold text-slate-900 text-xs sm:text-sm">
           {formatPriceVnd(booking.totalAmount)}
-        </span>
+        </p>
+        {booking.depositAmount > 0 && (
+          <p className="text-[10px] text-slate-400">
+            Dep: {formatPriceVnd(booking.depositAmount)}
+          </p>
+        )}
       </td>
 
-      {/* 4. Status Badge */}
-      <td className="py-4 px-4">
-        <BookingStatusBadge status={booking.status} size="sm" />
+      {/* 4. Status Badge + Secondary Indicator (Reviewed / Photos uploaded) */}
+      <td className="py-2.5 px-2.5 whitespace-nowrap">
+        <div className="flex items-center gap-1">
+          <BookingStatusBadge status={booking.status} size="sm" />
+
+          {booking.status === 'completed' && isReviewed && (
+            <span
+              title="You have reviewed this rental"
+              className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-semibold"
+            >
+              <CheckCircle2 className="w-2.5 h-2.5 text-emerald-600" />
+              <span>Reviewed</span>
+            </span>
+          )}
+
+          {booking.status === 'approved' && beforePhotosCount > 0 && (
+            <span
+              title={`${beforePhotosCount} handover photo(s) uploaded`}
+              className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200 text-[10px] font-semibold"
+            >
+              <Camera className="w-2.5 h-2.5" />
+              <span>{beforePhotosCount}</span>
+            </span>
+          )}
+        </div>
       </td>
 
-      {/* 5. Actions (Cancel / Extend / Review / Rent Again + Details) */}
-      <td className="py-4 pl-4 pr-6 text-right">
+      {/* 5. Actions (Single-line right-aligned buttons) */}
+      <td className="py-2.5 pl-2.5 pr-4 text-right whitespace-nowrap">
         <BookingRowActions
           booking={booking}
           onViewDetail={handleGoDetail}
@@ -265,6 +324,7 @@ export const BookingTableRow = ({
           onExtend={onExtend}
           onRate={onRate}
           onRebook={onRebook}
+          onOpenHandover={onOpenHandover}
         />
       </td>
     </tr>
@@ -272,7 +332,7 @@ export const BookingTableRow = ({
 };
 
 /**
- * BookingMobileCard – Responsive Card for mobile/tablet viewports
+ * BookingMobileCard – Compact Responsive Card for mobile/tablet viewports
  */
 export const BookingMobileCard = ({
   booking,
@@ -280,6 +340,7 @@ export const BookingMobileCard = ({
   onExtend,
   onRate,
   onRebook,
+  onOpenHandover,
 }) => {
   const navigate = useNavigate();
 
@@ -291,16 +352,20 @@ export const BookingMobileCard = ({
   const title =
     device.name || device.title || STRINGS.BOOKING_ITEM_CARD.UNKNOWN_DEVICE;
   const thumbnail =
-    Array.isArray(device.images) && device.images.length > 0
+    device.thumbnail ||
+    (Array.isArray(device.images) && device.images.length > 0
       ? device.images[0]
-      : null;
+      : null);
 
   const detailId = booking.bookingCode || booking._id;
+  const codeText =
+    booking.bookingCode || String(booking._id || '').slice(-6).toUpperCase();
   const durationText = getDurationLabel(
     booking.startDate,
     booking.endDate,
     booking.totalDays
   );
+  const isReviewed = Boolean(booking?.isReviewed || booking?.review);
 
   const handleGoDetail = () => {
     navigate(ROUTES.BOOKING_DETAIL_PATH(detailId));
@@ -309,42 +374,43 @@ export const BookingMobileCard = ({
   return (
     <div
       onClick={handleGoDetail}
-      className="bg-white rounded-2xl p-4 shadow-xs border border-slate-100 hover:border-brand-200 transition cursor-pointer"
+      className="bg-white rounded-2xl p-3.5 shadow-xs border border-slate-200/80 hover:border-brand-300 transition cursor-pointer"
     >
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between gap-2 mb-2.5">
+        <span className="inline-flex items-center px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-mono text-xs font-bold">
+          #{codeText}
+        </span>
         <div className="flex items-center gap-1.5">
-          <Receipt className="w-4 h-4 text-brand-500" />
-          <span className="text-xs font-bold text-slate-900">
-            #{booking.bookingCode || String(booking._id).slice(-6).toUpperCase()}
-          </span>
+          <BookingStatusBadge status={booking.status} size="sm" />
+          {booking.status === 'completed' && isReviewed && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-semibold">
+              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+              <span>Reviewed</span>
+            </span>
+          )}
         </div>
-        <BookingStatusBadge status={booking.status} size="sm" />
       </div>
 
-      <div className="flex items-center gap-3.5">
-        <div className="w-16 h-16 rounded-xl bg-slate-100 overflow-hidden shrink-0 flex items-center justify-center border border-slate-200/70">
+      <div className="flex items-center gap-3">
+        <div className="w-14 h-14 rounded-xl bg-slate-100 overflow-hidden shrink-0 flex items-center justify-center border border-slate-200/70">
           {thumbnail ? (
             <img src={thumbnail} alt={title} className="w-full h-full object-cover" />
           ) : (
-            <Package className="w-6 h-6 text-slate-400" />
+            <Package className="w-5 h-5 text-slate-400" />
           )}
         </div>
 
         <div className="flex-1 min-w-0">
-          <p className="font-bold text-slate-900 truncate mb-1">{title}</p>
-          <p className="text-xs text-slate-500">
-            {STRINGS.BOOKING_ITEM_CARD.FROM_PREFIX}
-            <span className="font-semibold text-slate-900">
-              {new Date(booking.startDate).toLocaleDateString('en-US')}
+          <p className="text-sm font-bold text-slate-900 truncate mb-1">{title}</p>
+          <div className="flex items-center gap-1.5 text-xs text-slate-600 font-medium">
+            <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+            <span>{formatShortDate(booking.startDate)}</span>
+            <span className="text-slate-400">→</span>
+            <span>{formatShortDate(booking.endDate)}</span>
+            <span className="px-1.5 py-0.5 rounded bg-brand-50 text-brand-700 text-[10px] font-bold">
+              {durationText}
             </span>
-          </p>
-          <p className="text-xs text-slate-500">
-            {STRINGS.BOOKING_ITEM_CARD.TO_PREFIX}
-            <span className="font-semibold text-slate-900">
-              {new Date(booking.endDate).toLocaleDateString('en-US')}
-            </span>{' '}
-            ({durationText})
-          </p>
+          </div>
         </div>
       </div>
 
@@ -356,35 +422,10 @@ export const BookingMobileCard = ({
         />
       )}
 
-      {booking.extensionRequest?.status === 'pending' && (
-        <div className="flex items-center gap-1.5 bg-amber-50 px-2.5 py-1.5 rounded-lg mt-2.5">
-          <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-          <span className="text-xs font-semibold text-amber-600">
-            {STRINGS.BOOKING_ITEM_CARD.EXT_PENDING(
-              booking.extensionRequest.requestedDays,
-              (booking.extensionRequest.additionalFee || 0).toLocaleString('en-US')
-            )}
-          </span>
-        </div>
-      )}
-
-      {booking.extensionRequest?.status === 'approved' && (
-        <div className="flex items-center gap-1.5 bg-emerald-50 px-2.5 py-1.5 rounded-lg mt-2.5">
-          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-          <span className="text-xs font-semibold text-emerald-600">
-            {STRINGS.BOOKING_ITEM_CARD.EXT_APPROVED(
-              booking.extensionRequest.requestedDays
-            )}
-          </span>
-        </div>
-      )}
-
-      <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between gap-2 flex-wrap">
+      <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between gap-2 flex-wrap">
         <div>
-          <span className="text-xs text-slate-500 mr-1.5">
-            {STRINGS.BOOKING_ITEM_CARD.TOTAL_LABEL}
-          </span>
-          <span className="font-extrabold text-brand-500 text-sm">
+          <span className="text-[11px] text-slate-400 mr-1">Total:</span>
+          <span className="font-extrabold text-slate-900 text-sm">
             {formatPriceVnd(booking.totalAmount)}
           </span>
         </div>
@@ -396,6 +437,7 @@ export const BookingMobileCard = ({
           onExtend={onExtend}
           onRate={onRate}
           onRebook={onRebook}
+          onOpenHandover={onOpenHandover}
         />
       </div>
     </div>

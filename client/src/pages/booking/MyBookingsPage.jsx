@@ -25,6 +25,7 @@ import {
 import { CancelBookingModal } from '../../components/booking/CancelBookingModal.jsx';
 import { ExtensionModal } from '../../components/booking/ExtensionModal.jsx';
 import { BookingReviewModal } from '../../components/booking/BookingReviewModal.jsx';
+import { RenterHandoverModal } from '../../components/booking/RenterHandoverSection.jsx';
 
 const T = STRINGS.booking.myBookings;
 
@@ -32,7 +33,7 @@ const resolveTab = (raw) =>
   MY_BOOKING_TABS.includes(raw) ? raw : MY_BOOKING_TABS[0];
 
 /**
- * MyBookingsPage – Web Desktop Table & Tabs layout with App-synchronized data & actions
+ * MyBookingsPage – Compact, unified Web Desktop Table & Tabs layout
  */
 export const MyBookingsPage = () => {
   const navigate = useNavigate();
@@ -55,7 +56,7 @@ export const MyBookingsPage = () => {
   const [error, setError] = useState(null);
   const [toast, setToast] = useState(null);
 
-  // App-synchronized Action Modals
+  // Action Modals
   const [cancellingBooking, setCancellingBooking] = useState(null);
   const [isCancelling, setIsCancelling] = useState(false);
   const [cancelError, setCancelError] = useState('');
@@ -65,6 +66,7 @@ export const MyBookingsPage = () => {
   const [extendError, setExtendError] = useState('');
 
   const [reviewingBooking, setReviewingBooking] = useState(null);
+  const [handoverModalBooking, setHandoverModalBooking] = useState(null);
 
   const showToast = (type, title, message) => {
     setToast({ type, title, message });
@@ -165,44 +167,53 @@ export const MyBookingsPage = () => {
     }
   };
 
+  const handleBookingUpdatedInModal = (updatedBooking) => {
+    if (!updatedBooking?._id) return;
+    setBookings((prev) =>
+      prev.map((item) => (item._id === updatedBooking._id ? updatedBooking : item))
+    );
+    setHandoverModalBooking(updatedBooking);
+  };
+
   const skeletonRows = Array.from({
     length: MAGIC_NUMBERS.BOOKING.TABLE_SKELETON_ROWS,
   });
 
   return (
-    <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-slate-50 py-5 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        {/* Web Breadcrumb */}
-        <nav
-          className="flex items-center gap-2 text-xs text-slate-500 mb-6"
-          aria-label="Breadcrumb"
-        >
-          <Link to={ROUTES.HOME} className="hover:text-brand-600 transition">
-            {STRINGS.booking.checkout.breadcrumbHome}
-          </Link>
-          <ChevronRight className="w-3.5 h-3.5" />
-          <span className="text-brand-600 font-semibold">{T.breadcrumb}</span>
-        </nav>
-
-        {/* Web Page Header */}
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
+        {/* Top Bar: Breadcrumb + Title + Refresh */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-800 tracking-tight flex items-center gap-3">
-              <span className="w-10 h-10 rounded-xl bg-brand-100 text-brand-600 flex items-center justify-center">
-                <Package className="w-5 h-5" />
+            <nav
+              className="flex items-center gap-1.5 text-xs text-slate-500 mb-1"
+              aria-label="Breadcrumb"
+            >
+              <Link to={ROUTES.HOME} className="hover:text-brand-600 transition">
+                {STRINGS.booking.checkout.breadcrumbHome}
+              </Link>
+              <ChevronRight className="w-3 h-3" />
+              <span className="text-brand-600 font-semibold">{T.breadcrumb}</span>
+            </nav>
+
+            <div className="flex items-center gap-2.5">
+              <span className="w-8 h-8 rounded-xl bg-brand-100 text-brand-600 flex items-center justify-center shrink-0">
+                <Package className="w-4 h-4" />
               </span>
-              {T.headerTitle}
-            </h1>
-            <p className="text-slate-500 mt-1 text-sm sm:text-base">
-              {T.headerSubtitle}
-            </p>
+              <div>
+                <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight leading-tight">
+                  {T.headerTitle}
+                </h1>
+                <p className="text-slate-500 text-xs">{T.headerSubtitle}</p>
+              </div>
+            </div>
           </div>
 
           <button
             type="button"
             onClick={() => loadBookings()}
             disabled={isLoading}
-            className="self-start sm:self-auto inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-slate-200 text-xs font-semibold text-slate-700 hover:border-brand-500 hover:text-brand-600 transition disabled:opacity-50"
+            className="self-start sm:self-auto inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-xs font-semibold text-slate-700 hover:border-brand-500 hover:text-brand-600 transition disabled:opacity-50 shadow-2xs"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
             <span>{STRINGS.common.refresh}</span>
@@ -211,23 +222,23 @@ export const MyBookingsPage = () => {
 
         {/* Toast Feedback */}
         {toast && (
-          <div className="mb-5">
+          <div className="mb-4">
             <div
-              className={`flex items-center justify-between gap-3 rounded-2xl px-4 py-3 border shadow-xs ${
+              className={`flex items-center justify-between gap-3 rounded-xl px-4 py-2.5 border shadow-2xs ${
                 toast.type === 'error'
                   ? 'bg-red-50 border-red-200 text-red-700'
                   : 'bg-emerald-50 border-emerald-200 text-emerald-700'
               }`}
             >
-              <div className="flex items-center gap-2.5">
+              <div className="flex items-center gap-2">
                 {toast.type === 'error' ? (
-                  <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
+                  <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
                 ) : (
-                  <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
                 )}
                 <div>
-                  <p className="text-xs font-extrabold">{toast.title}</p>
-                  <p className="text-xs">{toast.message}</p>
+                  <span className="text-xs font-bold mr-1.5">{toast.title}:</span>
+                  <span className="text-xs">{toast.message}</span>
                 </div>
               </div>
               <button
@@ -235,17 +246,17 @@ export const MyBookingsPage = () => {
                 onClick={() => setToast(null)}
                 className="p-1 rounded-lg hover:bg-black/5"
               >
-                <X className="w-4 h-4" />
+                <X className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
         )}
 
-        {/* Web Status Tabs Bar (All 6 tabs synchronized with App: All, Pending, Approved, Active, Completed, Cancelled) */}
+        {/* Status Tabs Bar */}
         <div
           role="tablist"
           aria-label={T.tabsAriaLabel}
-          className="bg-white rounded-2xl p-1.5 shadow-sm border border-slate-100 mb-6 flex overflow-x-auto gap-1"
+          className="bg-white rounded-xl p-1 shadow-2xs border border-slate-200/80 mb-4 flex overflow-x-auto gap-1"
         >
           {MY_BOOKING_TABS.map((tab) => {
             const isActive = tab === activeTab;
@@ -258,20 +269,20 @@ export const MyBookingsPage = () => {
                 role="tab"
                 aria-selected={isActive}
                 onClick={() => handleSelectTab(tab)}
-                className={`flex-1 min-w-[120px] inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition whitespace-nowrap ${
+                className={`flex-1 min-w-[105px] inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition whitespace-nowrap ${
                   isActive
-                    ? 'bg-brand-500 text-white shadow-sm'
+                    ? 'bg-brand-600 text-white shadow-2xs'
                     : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                 }`}
               >
                 <span>{T.tabs[tab] || tab}</span>
                 <span
-                  className={`inline-flex items-center justify-center min-w-[1.5rem] h-5 px-1.5 rounded-full text-[11px] font-extrabold ${
+                  className={`inline-flex items-center justify-center min-w-[1.25rem] h-4 px-1.5 rounded-full text-[10px] font-extrabold ${
                     isActive
                       ? 'bg-white/20 text-white'
                       : badgeCount > 0
-                      ? 'bg-brand-100 text-brand-800'
-                      : 'bg-slate-100 text-slate-500'
+                      ? 'bg-brand-50 text-brand-700'
+                      : 'bg-slate-100 text-slate-400'
                   }`}
                 >
                   {badgeCount}
@@ -283,79 +294,80 @@ export const MyBookingsPage = () => {
 
         {/* Content Area: Loading / Error / Empty / Web Table + Mobile Cards */}
         {isLoading ? (
-          <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-2xs border border-slate-200/80 overflow-hidden">
             <div className="divide-y divide-slate-100">
               {skeletonRows.map((_, idx) => (
                 <div
                   key={idx}
-                  className="p-6 flex items-center justify-between gap-4 animate-pulse"
+                  className="p-4 flex items-center justify-between gap-4 animate-pulse"
                 >
-                  <div className="flex items-center gap-4 flex-1">
-                    <div className="w-16 h-16 rounded-xl bg-slate-200" />
-                    <div className="space-y-2 flex-1 max-w-xs">
+                  <div className="flex items-center gap-3 flex-1">
+                    <div className="w-12 h-12 rounded-xl bg-slate-200" />
+                    <div className="space-y-1.5 flex-1 max-w-xs">
                       <div className="h-3 w-20 bg-slate-200 rounded" />
                       <div className="h-4 w-48 bg-slate-200 rounded" />
-                      <div className="h-3 w-32 bg-slate-100 rounded" />
                     </div>
                   </div>
                   <div className="hidden md:block h-4 w-36 bg-slate-200 rounded" />
                   <div className="hidden md:block h-4 w-24 bg-slate-200 rounded" />
                   <div className="h-6 w-20 bg-slate-200 rounded-full" />
-                  <div className="h-9 w-28 bg-slate-200 rounded-full" />
+                  <div className="h-8 w-28 bg-slate-200 rounded-lg" />
                 </div>
               ))}
             </div>
           </div>
         ) : error ? (
-          <div className="bg-white rounded-3xl p-10 shadow-sm border border-red-100 text-center">
-            <div className="w-14 h-14 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center mx-auto mb-4">
-              <AlertCircle className="w-7 h-7" />
+          <div className="bg-white rounded-2xl p-8 shadow-2xs border border-red-100 text-center">
+            <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center mx-auto mb-3">
+              <AlertCircle className="w-6 h-6" />
             </div>
-            <h2 className="text-lg font-bold text-slate-800">{T.errorTitle}</h2>
-            <p className="text-sm text-slate-500 mt-1 max-w-md mx-auto">{error}</p>
+            <h2 className="text-base font-bold text-slate-800">{T.errorTitle}</h2>
+            <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">{error}</p>
             <button
               type="button"
               onClick={() => loadBookings()}
-              className="mt-5 inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-brand-500 hover:bg-brand-600 text-white text-xs font-bold transition shadow-sm"
+              className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold transition shadow-2xs"
             >
               <RefreshCw className="w-3.5 h-3.5" />
               <span>{T.retryBtn}</span>
             </button>
           </div>
         ) : bookings.length === 0 ? (
-          <div className="bg-white rounded-3xl p-12 shadow-sm border border-slate-100 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-brand-50 text-brand-500 flex items-center justify-center mx-auto mb-4">
-              <Sparkles className="w-8 h-8" />
+          <div className="bg-white rounded-2xl p-10 shadow-2xs border border-slate-200/80 text-center">
+            <div className="w-12 h-12 rounded-2xl bg-brand-50 text-brand-500 flex items-center justify-center mx-auto mb-3">
+              <Sparkles className="w-6 h-6" />
             </div>
-            <h2 className="text-lg font-bold text-slate-800">{T.emptyTitle}</h2>
-            <p className="text-sm text-slate-500 mt-1 max-w-md mx-auto">
+            <h2 className="text-base font-bold text-slate-800">{T.emptyTitle}</h2>
+            <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
               {T.empty[activeTab] || STRINGS.MY_BOOKINGS.EMPTY_TITLE}
             </p>
             <Link
               to={ROUTES.EXPLORE}
-              className="mt-6 inline-flex items-center gap-2 px-6 py-3 rounded-full bg-brand-500 hover:bg-brand-600 text-white text-xs sm:text-sm font-bold transition shadow-sm"
+              className="mt-4 inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold transition shadow-2xs"
             >
               <span>{T.exploreBtn}</span>
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight className="w-3.5 h-3.5" />
             </Link>
           </div>
         ) : (
           <>
             {/* Desktop Table (md and up) */}
-            <div className="hidden md:block bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+            <div className="hidden md:block bg-white rounded-2xl shadow-2xs border border-slate-200/80 overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="border-b border-slate-100 bg-slate-50/70 text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                      <th className="py-3.5 pl-6 pr-4">{T.columns.device}</th>
-                      <th className="py-3.5 px-4">{T.columns.period}</th>
-                      <th className="py-3.5 px-4">{T.columns.total}</th>
-                      <th className="py-3.5 px-4">{T.columns.status}</th>
-                      <th className="py-3.5 pl-4 pr-6 text-right">{T.columns.actions}</th>
+                    <tr className="border-b border-slate-200/80 bg-slate-50/80 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                      <th className="py-2.5 pl-4 pr-2.5">{T.columns.device}</th>
+                      <th className="py-2.5 px-2.5">{T.columns.period}</th>
+                      <th className="py-2.5 px-2.5">{T.columns.total}</th>
+                      <th className="py-2.5 px-2.5">{T.columns.status}</th>
+                      <th className="py-2.5 pl-2.5 pr-4 text-right">{T.columns.actions}</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {bookings.map((b) => {
+                    {bookings
+                      .slice(0, MAGIC_NUMBERS.BOOKING.MY_BOOKINGS_PAGE_SIZE)
+                      .map((b) => {
                       const deviceObj =
                         (typeof b.deviceId === 'object' && b.deviceId) ||
                         (typeof b.device === 'object' && b.device) ||
@@ -370,6 +382,9 @@ export const MyBookingsPage = () => {
                         <BookingTableRow
                           key={b._id || b.bookingCode}
                           booking={b}
+                          onOpenHandover={(targetBooking) =>
+                            setHandoverModalBooking(targetBooking)
+                          }
                           onCancel={() => {
                             setCancelError('');
                             setCancellingBooking(b);
@@ -395,8 +410,10 @@ export const MyBookingsPage = () => {
             </div>
 
             {/* Mobile Card List (below md) */}
-            <div className="md:hidden space-y-3">
-              {bookings.map((b) => {
+            <div className="md:hidden space-y-2.5">
+              {bookings
+                .slice(0, MAGIC_NUMBERS.BOOKING.MY_BOOKINGS_PAGE_SIZE)
+                .map((b) => {
                 const deviceObj =
                   (typeof b.deviceId === 'object' && b.deviceId) ||
                   (typeof b.device === 'object' && b.device) ||
@@ -411,6 +428,9 @@ export const MyBookingsPage = () => {
                   <BookingMobileCard
                     key={b._id || b.bookingCode}
                     booking={b}
+                    onOpenHandover={(targetBooking) =>
+                      setHandoverModalBooking(targetBooking)
+                    }
                     onCancel={() => {
                       setCancelError('');
                       setCancellingBooking(b);
@@ -434,17 +454,17 @@ export const MyBookingsPage = () => {
 
             {/* Pagination Footer */}
             {pagination.totalPages > 1 && (
-              <div className="mt-6 flex items-center justify-between bg-white rounded-2xl px-5 py-3.5 border border-slate-100 shadow-xs text-xs text-slate-600">
+              <div className="mt-4 flex items-center justify-between bg-white rounded-xl px-4 py-2.5 border border-slate-200/80 shadow-2xs text-xs text-slate-600">
                 <span className="font-semibold">
                   {T.pagination.pageOf(pagination.page, pagination.totalPages)}
                 </span>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
                   <button
                     type="button"
                     onClick={() => handlePageChange(pagination.page - 1)}
                     disabled={pagination.page <= 1}
-                    className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-xl border border-slate-200 font-semibold text-slate-700 hover:border-brand-500 hover:text-brand-600 disabled:opacity-40 disabled:pointer-events-none transition"
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 font-semibold text-slate-700 hover:border-brand-500 hover:text-brand-600 disabled:opacity-40 disabled:pointer-events-none transition"
                   >
                     <ChevronLeft className="w-3.5 h-3.5" />
                     <span>{T.pagination.prev}</span>
@@ -453,7 +473,7 @@ export const MyBookingsPage = () => {
                     type="button"
                     onClick={() => handlePageChange(pagination.page + 1)}
                     disabled={pagination.page >= pagination.totalPages}
-                    className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-xl border border-slate-200 font-semibold text-slate-700 hover:border-brand-500 hover:text-brand-600 disabled:opacity-40 disabled:pointer-events-none transition"
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 font-semibold text-slate-700 hover:border-brand-500 hover:text-brand-600 disabled:opacity-40 disabled:pointer-events-none transition"
                   >
                     <span>{T.pagination.next}</span>
                     <ChevronRight className="w-3.5 h-3.5" />
@@ -507,6 +527,14 @@ export const MyBookingsPage = () => {
           setReviewingBooking(null);
           loadBookings();
         }}
+      />
+
+      {/* QR & Before-Rental Handover Modal */}
+      <RenterHandoverModal
+        isOpen={Boolean(handoverModalBooking)}
+        booking={handoverModalBooking}
+        onClose={() => setHandoverModalBooking(null)}
+        onBookingUpdated={handleBookingUpdatedInModal}
       />
     </div>
   );
