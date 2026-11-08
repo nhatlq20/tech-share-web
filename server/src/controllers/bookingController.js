@@ -376,13 +376,26 @@ const generateQrToken = (bookingCode) => {
 };
 
 /**
- * 1. GET /api/devices/:id/availability
- * Retrieve busy schedule (owner's blockedDates and existing booked ranges)
+ * ============================================================================
+ * CHỨC NĂNG XEM LỊCH BẬN CHI TIẾT THIẾT BỊ (DEVICE AVAILABILITY DETAIL)
+ * Endpoint: GET /api/devices/:id/availability
+ * Quyền truy cập: Public (Hiển thị trên trang chi tiết thiết bị để chọn ngày)
+ * 
+ * Luồng xử lý tuần tự gồm:
+ * 1. Lấy ID thiết bị từ URL params
+ * 2. Kiểm tra tính hợp lệ của ID
+ * 3. Kiểm tra thiết bị có tồn tại trong MongoDB hay không
+ * 4. Truy vấn các đơn đặt thuê đang có hiệu lực của thiết bị
+ * 5. Tổng hợp ngày bận từ Owner và ngày đã có người đặt
+ * 6. Trả về danh sách ngày bận cho Client hiển thị trên Calendar
+ * ============================================================================
  */
 export const getDeviceAvailability = async (req, res, next) => {
   try {
+    // Bước 1: Lấy ID thiết bị từ params
     const { id } = req.params;
 
+    // Bước 2: Kiểm tra định dạng ID MongoDB ObjectId
     if (!mongoose.isValidObjectId(id)) {
       return res.status(400).json({
         success: false,
@@ -390,6 +403,7 @@ export const getDeviceAvailability = async (req, res, next) => {
       });
     }
 
+    // Bước 3: Tìm thiết bị trong MongoDB (loại trừ thiết bị đã bị xóa mềm)
     const device = await Device.findOne({ _id: id, isDeleted: { $ne: true } }).lean();
     if (!device) {
       return res.status(404).json({
@@ -961,15 +975,29 @@ export const getMyBookings = async (req, res, next) => {
 };
 
 /**
- * 4. GET /api/bookings/:id
- * Retrieve booking details by ID or bookingCode.
- * Only the renter, the device owner, or an admin may view a booking.
+ * ============================================================================
+ * CHỨC NĂNG XEM CHI TIẾT ĐƠN ĐẶT THUÊ (BOOKING DETAIL)
+ * Endpoint: GET /api/bookings/:id
+ * Quyền truy cập: Yêu cầu đăng nhập (protect); Chỉ Renter, Owner hoặc Admin
+ * 
+ * Luồng xử lý tuần tự gồm:
+ * 1. Lấy ID đơn thuê từ URL params và ID người dùng từ token
+ * 2. Tìm kiếm đơn thuê và Populate thông tin Device, Owner, Renter
+ * 3. Kiểm tra đơn thuê có tồn tại hay không (Handle 404)
+ * 4. Kiểm tra quyền truy cập (Authorization: Renter, Owner hoặc Admin)
+ * 5. Ẩn mã QR nhạy cảm đối với người không phải Renter
+ * 6. Đính kèm thông tin đánh giá (Reviews) và action flags
+ * 7. Trả dữ liệu JSON về Client (HTTP 200 OK)
+ * ============================================================================
  */
 export const getBookingById = async (req, res, next) => {
   try {
+    // Bước 1: Tiếp nhận ID đơn thuê và danh sách ID của người dùng đăng nhập
     const { id } = req.params;
     const userObjIds = await resolveAuthUserIds(req);
 
+    // Bước 2: Truy vấn đơn thuê trong MongoDB, loại bỏ chữ ký số nhạy cảm (-digitalSignature)
+    // Populate các bảng liên quan: Thiết bị, Chủ thiết bị, Người thuê
     const booking = await Booking.findOne(buildBookingLookup(id))
       .select('-digitalSignature')
       .populate('device', BOOKING_DEVICE_DETAIL_FIELDS)
@@ -980,6 +1008,7 @@ export const getBookingById = async (req, res, next) => {
       .populate('renter', BOOKING_PARTY_FIELDS)
       .lean();
 
+    // Bước 3: Kiểm tra đơn thuê có tồn tại hay không
     if (!booking) {
       return res.status(404).json({
         success: false,
@@ -987,6 +1016,7 @@ export const getBookingById = async (req, res, next) => {
       });
     }
 
+    // Bước 4: Kiểm tra quyền xem đơn thuê (Phân quyền người dùng)
     const isRenter = matchesAnyId(booking.renterId, userObjIds) || matchesAnyId(booking.renter, userObjIds);
     const isOwner = matchesAnyId(booking.ownerId, userObjIds) || matchesAnyId(booking.owner, userObjIds);
     const isAdmin = req.user?.role === 'admin';
@@ -998,13 +1028,15 @@ export const getBookingById = async (req, res, next) => {
       });
     }
 
-    // Handover QR token is only meaningful for the renter once the booking is approved
+    // Bước 5: Bảo mật - Ẩn mã QR nhận máy đối với người không phải người thuê
     if (!isRenter || booking.status === CANCELLABLE_STATUS) {
       delete booking.qrToken;
     }
 
+    // Bước 6: Đính kèm thông tin đánh giá và trạng thái có thể hủy/đánh giá
     const [normalizedWithReview] = await attachReviewsToBookings([normalizeBookingAliases(booking)]);
 
+    // Bước 7: Trả dữ liệu về cho Client
     return res.status(200).json({
       success: true,
       data: {
@@ -1014,6 +1046,7 @@ export const getBookingById = async (req, res, next) => {
       },
     });
   } catch (error) {
+    // Chuyển lỗi phát sinh cho middleware error handling xử lý tập trung
     next(error);
   }
 };

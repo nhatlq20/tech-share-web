@@ -23,13 +23,18 @@ const getUsersCollection = () => {
   return db.collection("users");
 };
 
+// Các hằng số mặc định cho chức năng đề xuất Home
 const RECOMMENDATION_DEFAULT_PAGE = 1;
 const RECOMMENDATION_PAGE_SIZE = 24;
-const HOME_RECOMMENDATION_MAX_DISTANCE_METERS = 100000;
-const NEARBY_MAX_DISTANCE_METERS = 10000;
-const MAX_LATITUDE = 90;
-const MAX_LONGITUDE = 180;
+const HOME_RECOMMENDATION_MAX_DISTANCE_METERS = 100000; // Bán kính tối đa 100 km cho Home
+const NEARBY_MAX_DISTANCE_METERS = 10000;              // Bán kính tối đa 10 km cho Nearby
+const MAX_LATITUDE = 90;                                // Giới hạn vĩ độ (-90 đến +90)
+const MAX_LONGITUDE = 180;                              // Giới hạn kinh độ (-180 đến +180)
 
+/**
+ * Danh sách tọa độ trung tâm các thành phố lớn tại Việt Nam
+ * Thứ tự tọa độ theo chuẩn GeoJSON: [Kinh độ (Longitude), Vĩ độ (Latitude)]
+ */
 export const VIETNAM_CITIES = {
   can_tho: {
     key: "can_tho",
@@ -63,36 +68,90 @@ export const VIETNAM_CITIES = {
   },
 };
 
+/**
+ * Hàm tìm kiếm thông tin thành phố theo từ khóa người dùng nhập (hỗ trợ nhiều alias)
+ * @param {string} cityInput - Tên thành phố do client gửi lên
+ * @returns {object|null} - Đối tượng thông tin thành phố gồm key, name, coordinates [lng, lat]
+ */
 export const resolveCityCoordinates = (cityInput) => {
-  if (!cityInput || typeof cityInput !== "string") return null;
+  if (!cityInput || typeof cityInput !== "string") {
+    return null;
+  }
+
   const normalized = cityInput.trim().toLowerCase();
+
   for (const city of Object.values(VIETNAM_CITIES)) {
     if (city.key === normalized || city.aliases.includes(normalized)) {
       return city;
     }
   }
+
   return null;
 };
 
-const isNumericQueryValue = (value) =>
-  typeof value === "string" && value.trim() !== "" && Number.isFinite(Number(value));
+/**
+ * Hàm kiểm tra giá trị query có phải là một số hợp lệ dạng chuỗi hay không
+ * @param {any} value - Giá trị cần kiểm tra
+ * @returns {boolean}
+ */
+const isNumericQueryValue = (value) => {
+  if (typeof value !== "string") {
+    return false;
+  }
+  const trimmed = value.trim();
+  if (trimmed === "") {
+    return false;
+  }
+  return Number.isFinite(Number(trimmed));
+};
 
-const geoPaginationStages = (page, limit) => [
-  {
-    $facet: {
-      data: [{ $skip: (page - 1) * limit }, { $limit: limit }],
-      totals: [{ $count: "total" }],
+/**
+ * Tạo stage phân trang ($facet) cho MongoDB Aggregation Pipeline
+ * @param {number} page - Số trang hiện tại (bắt đầu từ 1)
+ * @param {number} limit - Số lượng bản ghi trên mỗi trang
+ * @returns {Array<object>}
+ */
+const geoPaginationStages = (page, limit) => {
+  const skipCount = (page - 1) * limit;
+
+  return [
+    {
+      $facet: {
+        data: [{ $skip: skipCount }, { $limit: limit }],
+        totals: [{ $count: "total" }],
+      },
     },
-  },
-];
+  ];
+};
 
-/** Helper to escape special regex characters safely */
-const escapeRegex = (string) =>
-  string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+/**
+ * Hàm thoát (escape) các ký tự đặc biệt của Regular Expression
+ * Giúp tìm kiếm từ khóa an toàn, tránh lỗi cú pháp Regex và Regex Injection
+ * @param {string} string - Chuỗi văn bản cần escape
+ * @returns {string}
+ */
+const escapeRegex = (string) => {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+};
 
-/** Home discovery: exact distance first, with stable tie-breaks and a 100 km safety cap. */
+/**
+ * ============================================================================
+ * CHỨC NĂNG HOME: ĐỀ XUẤT THIẾT BỊ THEO VỊ TRÍ VÀ TÌM KIẾM
+ * Endpoint: GET /api/devices/recommended
+ * 
+ * Luồng xử lý gồm 5 bước tuần tự:
+ * - Bước 1: Tiếp nhận dữ liệu từ request query (lat, lng, city, category, q, page, limit)
+ * - Bước 2: Kiểm tra và chuẩn hóa dữ liệu đầu vào (Validation)
+ * - Bước 3: Xây dựng bộ lọc điều kiện cho User và Device (Query Filters)
+ * - Bước 4: Truy vấn cơ sở dữ liệu MongoDB qua Aggregation Pipeline
+ * - Bước 5: Định dạng và trả response về cho Client
+ * ============================================================================
+ */
 export const getRecommendedDevices = async (req, res, next) => {
   try {
+    // ------------------------------------------------------------------------
+    // BƯỚC 1: TIẾP NHẬN DỮ LIỆU TỪ REQUEST QUERY
+    // ------------------------------------------------------------------------
     const {
       lat,
       lng,
@@ -106,16 +165,22 @@ export const getRecommendedDevices = async (req, res, next) => {
       limit,
     } = req.query;
 
+    // ------------------------------------------------------------------------
+    // BƯỚC 2: KIỂM TRA VÀ CHUẨN HÓA DỮ LIỆU ĐẦU VÀO (VALIDATION)
+    // ------------------------------------------------------------------------
+
+    // 2.1. Xác định tọa độ tìm kiếm (ưu tiên tọa độ người dùng, nếu không có thì lấy theo thành phố)
     const hasLat = lat !== undefined || latitude !== undefined;
     const hasLng = lng !== undefined || longitude !== undefined;
-    const rawLat = lat ?? latitude;
-    const rawLng = lng ?? longitude;
+    const rawLat = lat !== undefined ? lat : latitude;
+    const rawLng = lng !== undefined ? lng : longitude;
     const resolvedCity = resolveCityCoordinates(city);
 
     let userLat = NaN;
     let userLng = NaN;
 
     if (hasLat || hasLng) {
+      // Nếu client truyền tọa độ, kiểm tra xem có phải là dạng số hợp lệ không
       if (!isNumericQueryValue(rawLat) || !isNumericQueryValue(rawLng)) {
         return res.status(400).json({
           success: false,
@@ -125,18 +190,28 @@ export const getRecommendedDevices = async (req, res, next) => {
       userLat = Number(rawLat);
       userLng = Number(rawLng);
     } else if (resolvedCity) {
+      // Nếu không truyền tọa độ nhưng truyền tên thành phố hợp lệ, lấy tọa độ trung tâm thành phố
+      userLng = resolvedCity.coordinates[0]; // GeoJSON quy định: [Kinh độ (lng), Vĩ độ (lat)]
       userLat = resolvedCity.coordinates[1];
-      userLng = resolvedCity.coordinates[0];
     } else {
+      // Thiếu cả tọa độ lẫn tên thành phố hợp lệ
       return res.status(400).json({
         success: false,
         message: "Valid lat, lng, page and limit are required.",
       });
     }
 
-    const pageNum = Number(page);
+    // 2.2. Kiểm tra giới hạn địa lý của tọa độ (-90 <= lat <= 90, -180 <= lng <= 180)
+    const isValidLat = Number.isFinite(userLat) && Math.abs(userLat) <= MAX_LATITUDE;
+    const isValidLng = Number.isFinite(userLng) && Math.abs(userLng) <= MAX_LONGITUDE;
+    if (!isValidLat || !isValidLng) {
+      return res.status(400).json({
+        success: false,
+        message: "Valid lat, lng, page and limit are required.",
+      });
+    }
 
-    // Validate optional search keyword
+    // 2.3. Kiểm tra và chuẩn hóa từ khóa tìm kiếm (hỗ trợ cả tham số 'q' và 'keyword')
     const rawKeyword = q !== undefined ? q : keyword;
     if (rawKeyword !== undefined && typeof rawKeyword !== "string") {
       return res.status(400).json({
@@ -144,6 +219,7 @@ export const getRecommendedDevices = async (req, res, next) => {
         message: "Valid search keyword is required.",
       });
     }
+
     const cleanKeyword = rawKeyword ? rawKeyword.trim() : "";
     if (cleanKeyword.length > 100) {
       return res.status(400).json({
@@ -152,36 +228,52 @@ export const getRecommendedDevices = async (req, res, next) => {
       });
     }
 
+    // 2.4. Kiểm tra và tính toán phân trang (page, limit, skip)
+    const pageNum = Number(page);
+
+    // Khi có từ khóa tìm kiếm: tối đa 12 thiết bị/trang; khi duyệt bình thường: tối đa 24 thiết bị/trang
     const defaultLimit = cleanKeyword ? 12 : RECOMMENDATION_PAGE_SIZE;
     const requestedLimit = limit !== undefined ? Number(limit) : defaultLimit;
     const limitNum = Math.min(requestedLimit, cleanKeyword ? 12 : RECOMMENDATION_PAGE_SIZE);
     const skip = (pageNum - RECOMMENDATION_DEFAULT_PAGE) * limitNum;
-    const validCoordinates =
-      Number.isFinite(userLat) &&
-      Number.isFinite(userLng) &&
-      Math.abs(userLat) <= MAX_LATITUDE &&
-      Math.abs(userLng) <= MAX_LONGITUDE;
-    const validPagination =
+
+    const isValidPagination =
       Number.isSafeInteger(pageNum) &&
       pageNum >= RECOMMENDATION_DEFAULT_PAGE &&
       Number.isSafeInteger(requestedLimit) &&
       requestedLimit >= 1 &&
       Number.isSafeInteger(skip);
 
-    if (!validCoordinates || !validPagination) {
+    if (!isValidPagination) {
       return res.status(400).json({
         success: false,
         message: "Valid lat, lng, page and limit are required.",
       });
     }
+
+    // 2.5. Kiểm tra danh mục thiết bị (category)
     if (category !== undefined && typeof category !== "string") {
-      return res.status(400).json({ success: false, message: "Valid device category is required." });
+      return res.status(400).json({
+        success: false,
+        message: "Valid device category is required.",
+      });
     }
+
     const categoryFilter = category ? category.trim().toLowerCase() : "";
     const allowedCategories = Device.schema.path("category").enumValues;
     if (categoryFilter && categoryFilter !== "all" && !allowedCategories.includes(categoryFilter)) {
-      return res.status(400).json({ success: false, message: "Valid device category is required." });
+      return res.status(400).json({
+        success: false,
+        message: "Valid device category is required.",
+      });
     }
+
+    // ------------------------------------------------------------------------
+    // BƯỚC 3: XÂY DỰNG BỘ LỌC ĐIỀU KIỆN (QUERY FILTERS)
+    // ------------------------------------------------------------------------
+
+    // 3.1. Bộ lọc vị trí người dùng (User Geo Filter)
+    // Áp dụng cho collection 'users': chỉ chọn User đang hoạt động và có tọa độ Point GeoJSON hợp lệ
     const userGeoFilter = {
       isActive: { $ne: false },
       "location.type": "Point",
@@ -198,6 +290,8 @@ export const getRecommendedDevices = async (req, res, next) => {
       },
     };
 
+    // 3.2. Bộ lọc thiết bị khả dụng (Device Filter)
+    // Áp dụng cho collection 'devices': chỉ lấy thiết bị sẵn sàng thuê, chưa bị xóa và đã kiểm duyệt
     const deviceFilter = {
       status: "available",
       isDeleted: { $ne: true },
@@ -206,10 +300,13 @@ export const getRecommendedDevices = async (req, res, next) => {
         { moderationStatus: { $exists: false } },
       ],
     };
-    // Filter before sorting/pagination so totals and every page belong to this category.
-    if (categoryFilter && categoryFilter !== "all") deviceFilter.category = categoryFilter;
 
-    // Filter by search keyword (name, title, brand, description)
+    // Lọc theo danh mục sản phẩm nếu người dùng có chọn
+    if (categoryFilter && categoryFilter !== "all") {
+      deviceFilter.category = categoryFilter;
+    }
+
+    // Lọc theo từ khóa tìm kiếm (so khớp không phân biệt hoa thường với tên, tiêu đề, hãng, mô tả)
     if (cleanKeyword) {
       const searchRegex = new RegExp(escapeRegex(cleanKeyword), "i");
       deviceFilter.$and = [
@@ -224,99 +321,135 @@ export const getRecommendedDevices = async (req, res, next) => {
       ];
     }
 
-    const [result] = await getUsersCollection()
-      .aggregate([
-        {
-          $geoNear: {
-            near: { type: "Point", coordinates: [userLng, userLat] },
-            key: "location",
-            distanceField: "distanceMeters",
-            spherical: true,
-            maxDistance: HOME_RECOMMENDATION_MAX_DISTANCE_METERS,
-            query: userGeoFilter,
-          },
+    // ------------------------------------------------------------------------
+    // BƯỚC 4: TRUY VẤN DATABASE QUA MONGODB AGGREGATION PIPELINE
+    // ------------------------------------------------------------------------
+    // Kiến trúc Single Source of Truth: Vị trí tọa độ được lưu tại User.location
+    // Pipeline gồm 8 giai đoạn:
+    // 1. $geoNear: Tìm các Owner gần tọa độ tìm kiếm nhất trong bán kính 100km
+    // 2. $lookup: Nối sang bảng devices để lấy danh sách thiết bị của từng Owner
+    // 3. $unwind: Trải phẳng mảng thiết bị để mỗi thiết bị là một document riêng biệt
+    // 4. $replaceRoot: Đưa thiết bị lên làm document chính, đính kèm thông tin Owner và khoảng cách
+    // 5. $set: Tạo trường tạm _recommendationRating để chuẩn bị sắp xếp theo điểm đánh giá
+    // 6. $sort: Sắp xếp theo thứ tự: Gần nhất -> Đánh giá cao nhất -> Mới nhất -> ID
+    // 7. $unset: Loại bỏ trường tạm _recommendationRating để dữ liệu trả về sạch sẽ
+    // 8. $facet: Phân trang dữ liệu và đếm tổng số lượng trong cùng một câu truy vấn
+    const pipelineStages = [
+      // Stage 1: Tìm User (Owner) gần nhất bằng $geoNear
+      {
+        $geoNear: {
+          near: { type: "Point", coordinates: [userLng, userLat] },
+          key: "location",
+          distanceField: "distanceMeters",
+          spherical: true,
+          maxDistance: HOME_RECOMMENDATION_MAX_DISTANCE_METERS,
+          query: userGeoFilter,
         },
-        {
-          $lookup: {
-            from: "devices",
-            localField: "_id",
-            foreignField: "ownerId",
-            pipeline: [{ $match: deviceFilter }],
-            as: "deviceList",
-          },
+      },
+      // Stage 2: Nối với collection devices để lấy thiết bị thỏa mãn deviceFilter
+      {
+        $lookup: {
+          from: "devices",
+          localField: "_id",
+          foreignField: "ownerId",
+          pipeline: [{ $match: deviceFilter }],
+          as: "deviceList",
         },
-        { $unwind: "$deviceList" },
-        {
-          $replaceRoot: {
-            newRoot: {
-              $mergeObjects: [
-                "$deviceList",
-                {
-                  distanceMeters: "$distanceMeters",
-                  location: {
-                    type: "$location.type",
-                    coordinates: "$location.coordinates",
-                    addressText: { $ifNull: ["$address", ""] },
-                  },
-                  owner: {
-                    _id: "$_id",
-                    name: "$name",
-                    avatar: "$avatar",
-                    address: "$address",
-                    trust: "$trust",
-                    rating: "$rating",
-                    totalReviews: "$totalReviews",
-                  },
+      },
+      // Stage 3: Tách từng phần tử trong deviceList thành từng document
+      { $unwind: "$deviceList" },
+      // Stage 4: Định hình lại document: giữ nguyên các trường của device và bổ sung distance, location, owner
+      {
+        $replaceRoot: {
+          newRoot: {
+            $mergeObjects: [
+              "$deviceList",
+              {
+                distanceMeters: "$distanceMeters",
+                location: {
+                  type: "$location.type",
+                  coordinates: "$location.coordinates",
+                  addressText: { $ifNull: ["$address", ""] },
                 },
-              ],
-            },
+                owner: {
+                  _id: "$_id",
+                  name: "$name",
+                  avatar: "$avatar",
+                  address: "$address",
+                  trust: "$trust",
+                  rating: "$rating",
+                  totalReviews: "$totalReviews",
+                },
+              },
+            ],
           },
         },
-        {
-          $set: {
-            _recommendationRating: {
-              $ifNull: ["$stats.ratingAvg", { $ifNull: ["$rating", { $ifNull: ["$ratingAvg", 0] }] }],
-            },
+      },
+      // Stage 5: Tạo điểm rating thống nhất (_recommendationRating) với fallback an toàn
+      {
+        $set: {
+          _recommendationRating: {
+            $ifNull: [
+              "$stats.ratingAvg",
+              { $ifNull: ["$rating", { $ifNull: ["$ratingAvg", 0] }] },
+            ],
           },
         },
-        {
-          $sort: {
-            distanceMeters: 1,
-            _recommendationRating: -1,
-            createdAt: -1,
-            _id: 1,
-          },
+      },
+      // Stage 6: Sắp xếp theo khoảng cách tăng dần, điểm đánh giá giảm dần
+      {
+        $sort: {
+          distanceMeters: 1,
+          _recommendationRating: -1,
+          createdAt: -1,
+          _id: 1,
         },
-        { $unset: "_recommendationRating" },
-        ...geoPaginationStages(pageNum, limitNum),
-      ])
-      .toArray();
-    const total = result.totals[0]?.total || 0;
+      },
+      // Stage 7: Xóa trường tạm _recommendationRating
+      { $unset: "_recommendationRating" },
+      // Stage 8: Phân trang (skip/limit) và đếm tổng số thiết bị
+      ...geoPaginationStages(pageNum, limitNum),
+    ];
 
+    const [result] = await getUsersCollection().aggregate(pipelineStages).toArray();
+
+    // ------------------------------------------------------------------------
+    // BƯỚC 5: XỬ LÝ DỮ LIỆU VÀ TRẢ VỀ RESPONSE
+    // ------------------------------------------------------------------------
+    const devices = result?.data || [];
+    const total = result?.totals[0]?.total || 0;
+    const totalPages = Math.ceil(total / limitNum) || 1;
+    const hasNextPage = pageNum * limitNum < total;
+
+    // Log thông tin tìm kiếm khi chạy thực tế (bỏ qua khi chạy test)
     if (process.env.NODE_ENV !== "test") {
-      console.log(`[RECOMMENDATIONS] Search city: ${resolvedCity?.name || 'By Coordinates'}`);
+      const cityName = resolvedCity?.name || "By Coordinates";
+      console.log(`[RECOMMENDATIONS] Search city: ${cityName}`);
       console.log(`[RECOMMENDATIONS] Search center [lng, lat]: [${userLng}, ${userLat}] (Radius: 100km)`);
-      console.log(`[RECOMMENDATIONS] Devices returned: ${result.data.length}, total eligible: ${total}`);
-      if (result.data.length > 0) {
-        console.log(`[RECOMMENDATIONS] Sample device: ${result.data[0]?.name} | Owner: ${result.data[0]?.owner?.name} (${(result.data[0]?.distanceMeters / 1000).toFixed(1)} km)`);
+      console.log(`[RECOMMENDATIONS] Devices returned: ${devices.length}, total eligible: ${total}`);
+      if (devices.length > 0) {
+        const firstDevice = devices[0];
+        const distanceKm = (firstDevice.distanceMeters / 1000).toFixed(1);
+        console.log(`[RECOMMENDATIONS] Sample device: ${firstDevice.name} | Owner: ${firstDevice.owner?.name} (${distanceKm} km)`);
       }
     }
 
     return res.status(200).json({
       success: true,
-      count: result.data.length,
-      data: result.data,
+      count: devices.length,
+      data: devices,
       searchCity: resolvedCity?.name || null,
       searchCenter: [userLng, userLat],
       pagination: {
         page: pageNum,
         limit: limitNum,
         total,
-        totalPages: Math.ceil(total / limitNum) || 1,
-        hasNextPage: pageNum * limitNum < total,
+        totalPages,
+        hasNextPage,
       },
     });
   } catch (error) {
+    // Chuyển lỗi phát sinh cho middleware error handling xử lý tập trung
     next(error);
   }
 };
@@ -475,41 +608,83 @@ export const getDevices = async (req, res, next) => {
  * 2. GET /api/devices/nearby
  * Fetches devices within radius from lat/lng
  */
+/**
+ * ============================================================================
+ * CHỨC NĂNG BẢN ĐỒ: TÌM KIẾM THIẾT BỊ GẦN NHẤT (MAP / NEARBY FEATURE)
+ * Endpoint: GET /api/devices/nearby
+ * Quyền truy cập: Public (Công khai, không yêu cầu đăng nhập)
+ * 
+ * Luồng xử lý tuần tự gồm 6 bước:
+ * - Bước 1: Tiếp nhận dữ liệu từ request query (lat, lng, radius, category, availability, sort, page, limit)
+ * - Bước 2: Kiểm tra và chuẩn hóa dữ liệu đầu vào (Validation tọa độ, bán kính, phân trang)
+ * - Bước 3: Xây dựng bộ lọc điều kiện cho User và Device (Query Filters)
+ * - Bước 4: Xây dựng tiêu chí sắp xếp kết quả (Sort Stage)
+ * - Bước 5: Truy vấn MongoDB bằng Aggregation Pipeline ($geoNear, $lookup, $facet)
+ * - Bước 6: Định dạng và trả response về cho Frontend hiển thị Marker trên bản đồ
+ * ============================================================================
+ */
 export const getNearbyDevices = async (req, res, next) => {
   try {
+    // ------------------------------------------------------------------------
+    // BƯỚC 1: TIẾP NHẬN DỮ LIỆU TỪ REQUEST QUERY
+    // ------------------------------------------------------------------------
     const {
       lat,
       lng,
       latitude,
       longitude,
-      radius = 10000,
+      radius = NEARBY_MAX_DISTANCE_METERS, // Bán kính mặc định 10,000 mét (10 km)
       category,
       availability,
       sort,
       page = 1,
       limit = 12,
     } = req.query;
-    const userLat = Number(lat ?? latitude);
-    const userLng = Number(lng ?? longitude);
+
+    // ------------------------------------------------------------------------
+    // BƯỚC 2: KIỂM TRA VÀ CHUẨN HÓA DỮ LIỆU ĐẦU VÀO (VALIDATION)
+    // ------------------------------------------------------------------------
+    // Hỗ trợ cả 2 cách đặt tên tham số tọa độ: lat/lng hoặc latitude/longitude
+    const rawLatitude = lat !== undefined ? lat : latitude;
+    const rawLongitude = lng !== undefined ? lng : longitude;
+
+    // 2.1. Kiểm tra chuỗi tọa độ có phải là số hợp lệ không
+    const isValidLatString = isNumericQueryValue(rawLatitude);
+    const isValidLngString = isNumericQueryValue(rawLongitude);
+
+    const userLat = Number(rawLatitude);
+    const userLng = Number(rawLongitude);
+
+    // 2.2. Kiểm tra giới hạn địa lý của vĩ độ (-90 đến +90) và kinh độ (-180 đến +180)
+    const isValidLatitude = Number.isFinite(userLat) && Math.abs(userLat) <= MAX_LATITUDE;
+    const isValidLongitude = Number.isFinite(userLng) && Math.abs(userLng) <= MAX_LONGITUDE;
+
+    // 2.3. Kiểm tra bán kính tìm kiếm (bán kính phải là số dương, giới hạn tối đa 10 km)
     const requestedRadius = Number(radius);
     const maxDistance = Math.min(requestedRadius, NEARBY_MAX_DISTANCE_METERS);
+    const isValidRadius = Number.isFinite(requestedRadius) && maxDistance > 0;
+
+    // 2.4. Kiểm tra và tính toán phân trang (page, limit, skip)
     const pageNum = Number(page);
     const requestedLimit = Number(limit);
-    const limitNum = Math.min(100, requestedLimit);
+    const limitNum = Math.min(100, requestedLimit); // Giới hạn tối đa 100 sản phẩm/trang
+    const skipCount = (pageNum - 1) * limitNum;
+
+    const isValidPagination =
+      Number.isSafeInteger(pageNum) &&
+      pageNum >= 1 &&
+      Number.isSafeInteger(requestedLimit) &&
+      requestedLimit >= 1 &&
+      Number.isSafeInteger(skipCount);
+
+    // Nếu bất kỳ dữ liệu nào không hợp lệ -> trả về lỗi HTTP 400 Bad Request
     if (
-      !isNumericQueryValue(lat ?? latitude) ||
-      !isNumericQueryValue(lng ?? longitude) ||
-      !Number.isFinite(userLat) ||
-      Math.abs(userLat) > 90 ||
-      !Number.isFinite(userLng) ||
-      Math.abs(userLng) > 180 ||
-      !Number.isFinite(requestedRadius) ||
-      maxDistance <= 0 ||
-      !Number.isSafeInteger(pageNum) ||
-      pageNum < 1 ||
-      !Number.isSafeInteger(requestedLimit) ||
-      requestedLimit < 1 ||
-      !Number.isSafeInteger((pageNum - 1) * limitNum)
+      !isValidLatString ||
+      !isValidLngString ||
+      !isValidLatitude ||
+      !isValidLongitude ||
+      !isValidRadius ||
+      !isValidPagination
     ) {
       return res.status(400).json({
         success: false,
@@ -517,14 +692,22 @@ export const getNearbyDevices = async (req, res, next) => {
       });
     }
 
+    // ------------------------------------------------------------------------
+    // BƯỚC 3: XÂY DỰNG BỘ LỌC ĐIỀU KIỆN (QUERY FILTERS)
+    // ------------------------------------------------------------------------
+
+    // 3.1. Bộ lọc vị trí người dùng (User Geo Filter) trên collection 'users'
+    // Đảm bảo chỉ tìm các Owner đang hoạt động và có tọa độ Point GeoJSON hợp lệ
     const userGeoFilter = {
       isActive: { $ne: false },
       "location.type": "Point",
       "location.coordinates": { $size: 2 },
-      "location.coordinates.0": { $type: "number", $gte: -180, $lte: 180 },
-      "location.coordinates.1": { $type: "number", $gte: -90, $lte: 90 },
+      "location.coordinates.0": { $type: "number", $gte: -MAX_LONGITUDE, $lte: MAX_LONGITUDE },
+      "location.coordinates.1": { $type: "number", $gte: -MAX_LATITUDE, $lte: MAX_LATITUDE },
     };
 
+    // 3.2. Bộ lọc thiết bị khả dụng (Device Filter) trên collection 'devices'
+    // Chỉ lấy thiết bị sẵn sàng cho thuê, chưa bị xóa mềm và đã được kiểm duyệt
     const deviceFilter = {
       status: "available",
       isDeleted: { $ne: true },
@@ -534,75 +717,108 @@ export const getNearbyDevices = async (req, res, next) => {
       ],
     };
 
+    // Lọc theo danh mục sản phẩm nếu người dùng có chọn
     if (category && typeof category === "string" && category.trim().toLowerCase() !== "all") {
       deviceFilter.category = category.trim().toLowerCase();
     }
+
+    // Lọc theo trạng thái khả dụng nếu có
     if (availability && typeof availability === "string" && availability.trim().toLowerCase() !== "all") {
       deviceFilter.status = availability.trim().toLowerCase();
     }
 
+    // ------------------------------------------------------------------------
+    // BƯỚC 4: XÁC ĐỊNH TIÊU CHÍ SẮP XẾP KẾT QUẢ (SORT STAGE)
+    // ------------------------------------------------------------------------
+    // Mặc định: Gần người dùng nhất trước (distanceMeters tăng dần)
     let sortStage = { distanceMeters: 1, _id: 1 };
+
     if (sort === "lowest_price" || sort === "price_asc" || sort === "pricePerDay") {
+      // Sắp xếp theo giá thuê thấp nhất
       sortStage = { pricePerDay: 1, distanceMeters: 1, _id: 1 };
     } else if (sort === "highest_rating" || sort === "rating_desc" || sort === "rating") {
+      // Sắp xếp theo điểm đánh giá sao trung bình cao nhất
       sortStage = { "stats.ratingAvg": -1, distanceMeters: 1, _id: 1 };
     }
 
-    const [result] = await getUsersCollection()
-      .aggregate([
-        {
-          $geoNear: {
-            near: { type: "Point", coordinates: [userLng, userLat] },
-            key: "location",
-            distanceField: "distanceMeters",
-            maxDistance,
-            spherical: true,
-            query: userGeoFilter,
-          },
+    // ------------------------------------------------------------------------
+    // BƯỚC 5: TRUY VẤN MONGODB AGGREGATION PIPELINE
+    // ------------------------------------------------------------------------
+    // Kiến trúc Single Source of Truth: Tọa độ lưu duy nhất tại User.location
+    // Pipeline gồm 6 giai đoạn:
+    // 1. $geoNear: Tìm Owner gần nhất theo khoảng cách thực tế (bán kính max 10km)
+    // 2. $lookup: Nối sang collection 'devices' để lấy thiết bị của các Owner này
+    // 3. $unwind: Trải phẳng mảng thiết bị để mỗi thiết bị thành 1 document độc lập
+    // 4. $replaceRoot: Đưa thiết bị lên làm document chính, gắn thêm owner & distance
+    // 5. $sort: Sắp xếp theo tiêu chí đã chọn (gần nhất / giá thấp / rating cao)
+    // 6. $facet: Phân trang (skip/limit) và đếm tổng số thiết bị trong 1 truy vấn
+    const pipelineStages = [
+      // Stage 1: $geoNear - Tìm Owner gần nhất. Thứ tự GeoJSON bắt buộc: [lng, lat]
+      {
+        $geoNear: {
+          near: { type: "Point", coordinates: [userLng, userLat] },
+          key: "location",
+          distanceField: "distanceMeters",
+          maxDistance,
+          spherical: true,
+          query: userGeoFilter,
         },
-        {
-          $lookup: {
-            from: "devices",
-            localField: "_id",
-            foreignField: "ownerId",
-            pipeline: [{ $match: deviceFilter }],
-            as: "deviceList",
-          },
+      },
+      // Stage 2: $lookup - Nối với collection devices
+      {
+        $lookup: {
+          from: "devices",
+          localField: "_id",
+          foreignField: "ownerId",
+          pipeline: [{ $match: deviceFilter }],
+          as: "deviceList",
         },
-        { $unwind: "$deviceList" },
-        {
-          $replaceRoot: {
-            newRoot: {
-              $mergeObjects: [
-                "$deviceList",
-                {
-                  distanceMeters: "$distanceMeters",
-                  location: {
-                    type: "$location.type",
-                    coordinates: "$location.coordinates",
-                    addressText: { $ifNull: ["$address", ""] },
-                  },
-                  owner: {
-                    _id: "$_id",
-                    name: "$name",
-                    avatar: "$avatar",
-                    address: "$address",
-                    trust: "$trust",
-                    rating: "$rating",
-                    totalReviews: "$totalReviews",
-                  },
+      },
+      // Stage 3: $unwind - Trải phẳng mảng deviceList
+      { $unwind: "$deviceList" },
+      // Stage 4: $replaceRoot - Định hình lại cấu trúc document trả về
+      {
+        $replaceRoot: {
+          newRoot: {
+            $mergeObjects: [
+              "$deviceList",
+              {
+                distanceMeters: "$distanceMeters",
+                location: {
+                  type: "$location.type",
+                  coordinates: "$location.coordinates",
+                  addressText: { $ifNull: ["$address", ""] },
                 },
-              ],
-            },
+                owner: {
+                  _id: "$_id",
+                  name: "$name",
+                  avatar: "$avatar",
+                  address: "$address",
+                  trust: "$trust",
+                  rating: "$rating",
+                  totalReviews: "$totalReviews",
+                },
+              },
+            ],
           },
         },
-        { $sort: sortStage },
-        ...geoPaginationStages(pageNum, limitNum),
-      ])
-      .toArray();
+      },
+      // Stage 5: $sort - Sắp xếp kết quả
+      { $sort: sortStage },
+      // Stage 6: Phân trang (skip/limit) và tính tổng số bản ghi
+      ...geoPaginationStages(pageNum, limitNum),
+    ];
 
+    const [result] = await getUsersCollection().aggregate(pipelineStages).toArray();
+
+    // ------------------------------------------------------------------------
+    // BƯỚC 6: ĐỊNH DẠNG VÀ TRẢ VỀ RESPONSE
+    // ------------------------------------------------------------------------
     const devices = result?.data || [];
     const total = result?.totals?.[0]?.total || 0;
+    const totalPages = Math.ceil(total / limitNum) || 1;
+    const hasNextPage = pageNum * limitNum < total;
+
     return res.status(200).json({
       success: true,
       count: devices.length,
@@ -611,37 +827,75 @@ export const getNearbyDevices = async (req, res, next) => {
         page: pageNum,
         limit: limitNum,
         total,
-        totalPages: Math.ceil(total / limitNum) || 1,
-        hasNextPage: pageNum * limitNum < total,
+        totalPages,
+        hasNextPage,
       },
     });
   } catch (error) {
+    // Chuyển lỗi phát sinh cho middleware error handling xử lý tập trung
     next(error);
   }
 };
 
 /**
- * 3. GET /api/devices/:id
- * Fetches a single device by ID
+ * ============================================================================
+ * CHỨC NĂNG XEM CHI TIẾT THIẾT BỊ (DEVICE DETAIL)
+ * Endpoint: GET /api/devices/:id
+ * Quyền truy cập: Public (Công khai, không yêu cầu đăng nhập)
+ * 
+ * Luồng xử lý tuần tự gồm 6 bước:
+ * - Bước 1: Lấy ID thiết bị từ tham số URL (req.params.id)
+ * - Bước 2: Kiểm tra tính hợp lệ của ID đầu vào (Validation)
+ * - Bước 3: Tìm kiếm thiết bị trong MongoDB và Populate thông tin Owner
+ * - Bước 4: Kiểm tra thiết bị có tồn tại hay không (Xử lý 404 Not Found)
+ * - Bước 5: Xác định vị trí địa lý động từ Owner (Single Source of Truth)
+ * - Bước 6: Trả về kết quả JSON cho Client (HTTP 200 OK)
+ * ============================================================================
  */
 export const getDeviceById = async (req, res, next) => {
   try {
+    // ------------------------------------------------------------------------
+    // BƯỚC 1: LẤY ID TỪ THAM SỐ ĐƯỜNG DẪN (REQ.PARAMS)
+    // ------------------------------------------------------------------------
     const { id } = req.params;
 
+    // ------------------------------------------------------------------------
+    // BƯỚC 2: KIỂM TRA TÍNH HỢP LỆ CỦA ID ĐẦU VÀO (VALIDATION)
+    // ------------------------------------------------------------------------
+    // 2.1. Kiểm tra trường hợp ID bị rỗng hoặc trùng với các từ khóa route đặc biệt
     if (!id || id === "nearby" || id === "owner") {
-      return res
-        .status(400)
-        .json({ success: false, message: "Invalid device ID" });
+      return res.status(400).json({
+        success: false,
+        message: "Invalid device ID",
+      });
     }
 
-    let device = null;
-    if (mongoose.isValidObjectId(id)) {
-      device = await Device.findOne({ _id: id, isDeleted: { $ne: true } })
-        .populate("ownerId", "name email phone avatar address location")
-        .populate("owner", "name email phone avatar address location")
-        .lean({ virtuals: true });
+    // 2.2. Kiểm tra định dạng ID có phải là ObjectId hợp lệ của MongoDB (chuỗi 24 ký tự hex)
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid device ID",
+      });
     }
 
+    // ------------------------------------------------------------------------
+    // BƯỚC 3: TRUY VẤN DỮ LIỆU TỪ MONGODB & POPULATE THÔNG TIN LIÊN QUAN
+    // ------------------------------------------------------------------------
+    // - Device.findOne: Tìm 1 thiết bị theo _id và chưa bị xóa mềm (isDeleted != true)
+    // - .populate("ownerId", "..."): Tự động nối bảng với collection 'users' thông qua
+    //   khóa ngoại ownerId để lấy thông tin Owner (không bao giờ lấy mật khẩu password)
+    // - .lean({ virtuals: true }): Trả về plain JavaScript object, kèm theo virtual fields
+    const device = await Device.findOne({
+      _id: id,
+      isDeleted: { $ne: true },
+    })
+      .populate("ownerId", "name email phone avatar address location")
+      .populate("owner", "name email phone avatar address location")
+      .lean({ virtuals: true });
+
+    // ------------------------------------------------------------------------
+    // BƯỚC 4: KIỂM TRA DỮ LIỆU CÓ TỒN TẠI HAY KHÔNG
+    // ------------------------------------------------------------------------
     if (!device) {
       return res.status(404).json({
         success: false,
@@ -649,19 +903,34 @@ export const getDeviceById = async (req, res, next) => {
       });
     }
 
+    // ------------------------------------------------------------------------
+    // BƯỚC 5: XÁC ĐỊNH VỊ TRÍ ĐỊA LÝ ĐỘNG TỪ OWNER (SINGLE SOURCE OF TRUTH)
+    // ------------------------------------------------------------------------
+    // Tọa độ vị trí địa lý chỉ lưu tại User.location; thiết bị lấy vị trí động từ Owner
     device.location = resolveDeviceLocation(device);
-    device.address =
-      device.location?.addressText ||
-      (typeof device.ownerId === "object" ? device.ownerId?.address : "") ||
-      (typeof device.owner === "object" ? device.owner?.address : "") ||
-      device.address ||
-      "";
 
+    // Xác định địa chỉ hiển thị bằng câu lệnh if/else tuần tự, rõ ràng
+    let displayAddress = "";
+    if (device.location && device.location.addressText) {
+      displayAddress = device.location.addressText;
+    } else if (device.ownerId && typeof device.ownerId === "object" && device.ownerId.address) {
+      displayAddress = device.ownerId.address;
+    } else if (device.owner && typeof device.owner === "object" && device.owner.address) {
+      displayAddress = device.owner.address;
+    } else if (device.address) {
+      displayAddress = device.address;
+    }
+    device.address = displayAddress;
+
+    // ------------------------------------------------------------------------
+    // BƯỚC 6: TRẢ DỮ LIỆU VỀ CHO CLIENT
+    // ------------------------------------------------------------------------
     return res.status(200).json({
       success: true,
       data: device,
     });
   } catch (error) {
+    // Chuyển lỗi phát sinh cho middleware error handling xử lý tập trung
     next(error);
   }
 };

@@ -26,6 +26,7 @@ router.get('/analytics', getOwnerAnalytics);
 
 // Devices
 router.get('/devices', protect, requireOwner, getOwnerDevices);
+// Chức năng Xem chi tiết thiết bị trong kho Owner (Yêu cầu đăng nhập & quyền Owner)
 router.get('/devices/:id', protect, requireOwner, getOwnerDeviceById);
 router.patch('/devices/:id', protect, requireOwner, updateOwnerDevice);
 router.post('/devices', createOwnerDevice);
