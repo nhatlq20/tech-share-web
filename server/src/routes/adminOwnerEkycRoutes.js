@@ -15,9 +15,9 @@ const router = express.Router();
  * - PATCH /api/admin/owner-ekyc/:id/approve: Duyệt đơn và chuyển role thành Owner
  * - PATCH /api/admin/owner-ekyc/:id/reject: Từ chối đơn và gửi lý do
  */
-router.get('/owner-ekyc', protect, requireAdmin, getAdminOwnerEkycList);
-router.patch('/owner-ekyc/:id/approve', protect, requireAdmin, approveAdminOwnerEkyc);
-router.patch('/owner-ekyc/:id/reject', protect, requireAdmin, rejectAdminOwnerEkyc);
+router.get(['/owner-ekyc', '/owner-verification'], protect, requireAdmin, getAdminOwnerEkycList);
+router.patch(['/owner-ekyc/:id/approve', '/owner-verification/:id/approve'], protect, requireAdmin, approveAdminOwnerEkyc);
+router.patch(['/owner-ekyc/:id/reject', '/owner-verification/:id/reject'], protect, requireAdmin, rejectAdminOwnerEkyc);
 
 export default router;
 

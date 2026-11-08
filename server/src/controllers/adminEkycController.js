@@ -101,6 +101,13 @@ export const approveAdminEkyc = async (req, res, next) => {
       });
     }
 
+    if (request.status !== 'pending') {
+      return res.status(400).json({
+        success: false,
+        message: `Hồ sơ eKYC này đã được ${request.status === 'approved' ? 'phê duyệt' : 'từ chối'} trước đó và không thể chỉnh sửa.`,
+      });
+    }
+
     const adminId = req.user?.userId || req.user?._id;
 
     // 1. Cập nhật trạng thái hồ sơ eKYC
@@ -130,7 +137,21 @@ export const approveAdminEkyc = async (req, res, next) => {
         // Cập nhật trường isVerified = true trong collection accounts
         if (user.accountId) {
           await Account.findByIdAndUpdate(user.accountId, { isVerified: true });
+        } else {
+          await Account.findOneAndUpdate({ userId: user._id }, { isVerified: true });
         }
+
+        try {
+          const db = mongoose.connection.db;
+          if (db) {
+            await db.collection('users').updateOne(
+              { _id: user._id },
+              { $set: { isVerified: true, 'trust.isVerified': true } }
+            );
+            const accFilter = user.accountId ? { _id: user.accountId } : { userId: user._id };
+            await db.collection('accounts').updateOne(accFilter, { $set: { isVerified: true } });
+          }
+        } catch {}
       }
 
       // 3. Gửi thông báo thông báo cho người dùng
@@ -181,6 +202,13 @@ export const rejectAdminEkyc = async (req, res, next) => {
       return res.status(404).json({
         success: false,
         message: 'Không tìm thấy hồ sơ eKYC yêu cầu.',
+      });
+    }
+
+    if (request.status !== 'pending') {
+      return res.status(400).json({
+        success: false,
+        message: `Hồ sơ eKYC này đã được ${request.status === 'approved' ? 'phê duyệt' : 'từ chối'} trước đó và không thể chỉnh sửa.`,
       });
     }
 

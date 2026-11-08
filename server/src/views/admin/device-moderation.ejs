@@ -139,8 +139,8 @@
                 <td style="vertical-align: middle; text-align: right; padding-right: 24px; white-space: nowrap;">
                   <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
                     <button type="button" class="admin-btn admin-btn-outline btn-moderate-device" style="padding: 6px 10px; font-size: 12px;">
-                      <i data-lucide="eye" style="width: 13px; height: 13px;"></i>
-                      <span>Kiểm duyệt</span>
+                      <i data-lucide="<%= (d.moderationStatus || 'pending') === 'pending' ? 'clipboard-check' : 'eye' %>" style="width: 13px; height: 13px;"></i>
+                      <span class="btn-moderate-device-label"><%= (d.moderationStatus || 'pending') === 'pending' ? 'Kiểm duyệt' : 'Xem chi tiết' %></span>
                     </button>
                     <button type="button" class="admin-btn admin-btn-danger btn-delete-device" style="padding: 6px 10px; font-size: 12px;">
                       <i data-lucide="trash-2" style="width: 13px; height: 13px;"></i>
@@ -175,16 +175,47 @@
       </div>
     </div>
 
-    <div style="margin-bottom: 16px;">
+    <!-- Read-only Status Notices (when approved or rejected) -->
+    <div id="deviceApprovedNotice" style="display: none; margin-bottom: 16px; background: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 10px; padding: 14px 16px; color: #065F46;">
+      <div style="display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 13.5px;">
+        <i data-lucide="check-circle-2" style="width: 18px; height: 18px; color: #10B981; flex-shrink: 0;"></i>
+        <span>Thiết bị đã được phê duyệt niêm yết</span>
+      </div>
+      <div style="font-size: 12px; color: #047857; margin-top: 4px; margin-left: 26px;">
+        Thiết bị đang hiển thị công khai trên nền tảng. Hồ sơ ở trạng thái đóng chỉ xem chi tiết, không thể chỉnh sửa.
+      </div>
+    </div>
+
+    <div id="deviceRejectedNotice" style="display: none; margin-bottom: 16px; background: #FEF2F2; border: 1px solid #FECACA; border-radius: 10px; padding: 14px 16px; color: #991B1B;">
+      <div style="display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 13.5px;">
+        <i data-lucide="alert-circle" style="width: 18px; height: 18px; color: #EF4444; flex-shrink: 0;"></i>
+        <span>Thiết bị đã bị từ chối niêm yết</span>
+      </div>
+      <div style="font-size: 12.5px; color: #B91C1C; margin-top: 6px; margin-left: 26px;">
+        <strong>Lý do từ chối:</strong> <span id="deviceRejectedReasonText"></span>
+      </div>
+      <div style="font-size: 11.5px; color: #7F1D1D; margin-top: 4px; margin-left: 26px;">
+        Hồ sơ ở trạng thái đóng chỉ xem chi tiết, không thể chỉnh sửa.
+      </div>
+    </div>
+
+    <div id="deviceRejectSection" style="margin-bottom: 16px;">
       <label for="moderateRejectReason" style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px;">
-        Lý do từ chối (nếu không duyệt):
+        Lý do từ chối <span style="color: #EF4444; font-weight: 800;">*</span> (nếu không duyệt):
       </label>
-      <textarea id="moderateRejectReason" rows="3" style="width: 100%; border: 1px solid #CBD5E1; border-radius: 10px; padding: 10px; font-size: 13px; outline: none;" placeholder="Nhập lý do từ chối để gửi thông báo cho chủ sở hữu..."></textarea>
+      <textarea id="moderateRejectReason" rows="3" style="width: 100%; box-sizing: border-box; border: 1px solid #CBD5E1; border-radius: 10px; padding: 10px; font-size: 13px; outline: none; transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;" placeholder="Nhập lý do từ chối để gửi thông báo cho chủ sở hữu..."></textarea>
+      <div id="deviceRejectError" style="display: none; color: #DC2626; font-size: 12px; font-weight: 600; margin-top: 6px; align-items: center; gap: 6px;">
+        <i data-lucide="alert-circle" style="width: 14px; height: 14px; flex-shrink: 0;"></i>
+        <span>Vui lòng nhập lý do từ chối niêm yết thiết bị này.</span>
+      </div>
     </div>
 
     <div style="display: flex; justify-content: flex-end; gap: 10px;">
-      <button type="button" id="btnRejectDeviceSubmit" class="admin-btn admin-btn-danger">Reject Listing</button>
-      <button type="button" id="btnApproveDeviceSubmit" class="admin-btn admin-btn-success">Phê duyệt niêm yết</button>
+      <button type="button" class="btn-close-modal admin-btn admin-btn-outline">Đóng</button>
+      <div id="devicePendingActions" style="display: flex; gap: 10px;">
+        <button type="button" id="btnRejectDeviceSubmit" class="admin-btn admin-btn-danger">Từ chối niêm yết</button>
+        <button type="button" id="btnApproveDeviceSubmit" class="admin-btn admin-btn-success" style="background-color: #16A34A; color: #FFFFFF;">Phê duyệt niêm yết</button>
+      </div>
     </div>
   </div>
 </div>

@@ -102,6 +102,13 @@ export const approveAdminOwnerEkyc = async (req, res, next) => {
       });
     }
 
+    if (request.status !== 'pending') {
+      return res.status(400).json({
+        success: false,
+        message: `Hồ sơ này đã được ${request.status === 'approved' ? 'phê duyệt' : 'từ chối'} trước đó và không thể chỉnh sửa.`,
+      });
+    }
+
     const adminId = req.user?.userId || req.user?._id;
 
     // 1. Cập nhật trạng thái hồ sơ Owner eKYC
@@ -136,12 +143,25 @@ export const approveAdminOwnerEkyc = async (req, res, next) => {
         user.role = 'owner';
         await user.save();
 
-        if (user.accountId && ownerRole) {
-          await Account.findByIdAndUpdate(user.accountId, {
-            roleId: ownerRole._id,
-            isVerified: true,
-          });
+        const accountUpdate = { isVerified: true };
+        if (ownerRole?._id) accountUpdate.roleId = ownerRole._id;
+        if (user.accountId) {
+          await Account.findByIdAndUpdate(user.accountId, accountUpdate);
+        } else {
+          await Account.findOneAndUpdate({ userId: user._id }, accountUpdate);
         }
+
+        try {
+          const db = mongoose.connection.db;
+          if (db) {
+            await db.collection('users').updateOne(
+              { _id: user._id },
+              { $set: { role: 'owner', isVerified: true, 'trust.isVerified': true } }
+            );
+            const accFilter = user.accountId ? { _id: user.accountId } : { userId: user._id };
+            await db.collection('accounts').updateOne(accFilter, { $set: accountUpdate });
+          }
+        } catch {}
       }
 
       // 4. Gửi thông báo chúc mừng nâng cấp thành công cho người dùng
@@ -195,6 +215,13 @@ export const rejectAdminOwnerEkyc = async (req, res, next) => {
       return res.status(404).json({
         success: false,
         message: 'Không tìm thấy hồ sơ nâng cấp Owner yêu cầu.',
+      });
+    }
+
+    if (request.status !== 'pending') {
+      return res.status(400).json({
+        success: false,
+        message: `Hồ sơ này đã được ${request.status === 'approved' ? 'phê duyệt' : 'từ chối'} trước đó và không thể chỉnh sửa.`,
       });
     }
 

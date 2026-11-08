@@ -1,5 +1,5 @@
 import express from 'express';
-import { protect } from '../middlewares/authMiddleware.js';
+import { protect, optionalProtect } from '../middlewares/authMiddleware.js';
 import { requireOwner } from '../middlewares/roleMiddleware.js';
 import {
   getOwnerOverview,
@@ -19,10 +19,10 @@ import {
 
 const router = express.Router();
 
-// Overview & KPI
-router.get('/overview', getOwnerOverview);
-router.get('/kpi', getOwnerOverview);
-router.get('/analytics', getOwnerAnalytics);
+// Overview & KPI (Xác thực người dùng nếu có token để lấy đúng profile & avatar)
+router.get('/overview', optionalProtect, getOwnerOverview);
+router.get('/kpi', optionalProtect, getOwnerOverview);
+router.get('/analytics', optionalProtect, getOwnerAnalytics);
 
 // Devices
 router.get('/devices', protect, requireOwner, getOwnerDevices);

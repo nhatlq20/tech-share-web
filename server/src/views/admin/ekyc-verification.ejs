@@ -1,13 +1,43 @@
 <div style="display: flex; flex-direction: column; gap: 20px;">
+  <!-- 1. Header & Filters -->
   <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
     <div>
-      <h1 style="font-size: 24px; font-weight: 800; color: #0F172A; letter-spacing: -0.02em; margin: 0;">
-        Electronic Identity Verification (eKYC)
-      </h1>
-      <p style="font-size: 12px; color: #64748B; margin-top: 4px; margin-bottom: 0;">
-        Validate citizen ID document authenticity and face matching
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%); display: flex; align-items: center; justify-content: center; color: #16A34A;">
+          <i data-lucide="shield-check" style="width: 20px; height: 20px;"></i>
+        </div>
+        <h1 style="font-size: 22px; font-weight: 800; color: #0F172A; letter-spacing: -0.02em; margin: 0;">
+          Xác thực Căn cước Người thuê (Renter eKYC)
+        </h1>
+      </div>
+      <p style="font-size: 12px; color: #64748B; margin-top: 6px; margin-bottom: 0;">
+        Thẩm định hồ sơ Căn cước công dân (CCCD) 2 mặt để cấp quyền thuê thiết bị cho khách thuê
       </p>
     </div>
+
+    <!-- Filter Toolbar -->
+    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+      <div class="admin-search-pill" style="width: 280px;">
+        <i data-lucide="search" style="color: #16A34A; width: 16px; height: 16px; flex-shrink: 0;"></i>
+        <input type="text" id="renterEkycSearchInput" placeholder="Tìm tên khách thuê, email, số CCCD..." />
+      </div>
+    </div>
+  </div>
+
+  <!-- Status Tabs -->
+  <div style="display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #E2E8F0; padding-bottom: 12px;">
+    <button type="button" class="btn-renter-status-tab active" data-status="all" style="padding: 8px 16px; font-size: 13px; font-weight: 700; border-radius: 12px; border: none; cursor: pointer; background: #ECFDF5; color: #166534;">
+      Tất cả (<%= counts && counts.all !== undefined ? counts.all : (requests ? requests.length : 0) %>)
+    </button>
+    <button type="button" class="btn-renter-status-tab" data-status="pending" style="padding: 8px 16px; font-size: 13px; font-weight: 600; border-radius: 12px; border: none; cursor: pointer; background: transparent; color: #64748B;">
+      Chờ duyệt (<%= counts && counts.pending !== undefined ? counts.pending : 0 %>)
+    </button>
+    <button type="button" class="btn-renter-status-tab" data-status="approved" style="padding: 8px 16px; font-size: 13px; font-weight: 600; border-radius: 12px; border: none; cursor: pointer; background: transparent; color: #64748B;">
+      Đã xác minh (<%= counts && counts.approved !== undefined ? counts.approved : 0 %>)
+    </button>
+    <button type="button" class="btn-renter-status-tab" data-status="rejected" style="padding: 8px 16px; font-size: 13px; font-weight: 600; border-radius: 12px; border: none; cursor: pointer; background: transparent; color: #64748B;">
+      Bị từ chối (<%= counts && counts.rejected !== undefined ? counts.rejected : 0 %>)
+    </button>
   </div>
 
   <!-- Table -->
@@ -16,18 +46,18 @@
       <table class="admin-table w-full text-left" style="width: 100%; min-width: 820px; border-collapse: collapse;">
         <thead>
           <tr>
-            <th style="min-width: 260px; width: 35%; padding-left: 20px;">Applicant Member</th>
-            <th style="min-width: 180px; width: 22%;">Citizen ID / Issue Date</th>
-            <th style="min-width: 140px; width: 18%;">Submitted Date</th>
-            <th style="min-width: 120px; width: 12%;">Status</th>
-            <th style="min-width: 140px; width: 13%; text-align: right; padding-right: 24px;">Actions</th>
+            <th style="min-width: 260px; width: 35%; padding-left: 20px;">Khách thuê đăng ký</th>
+            <th style="min-width: 180px; width: 22%;">Số CCCD & Nơi cấp</th>
+            <th style="min-width: 140px; width: 18%;">Ngày gửi hồ sơ</th>
+            <th style="min-width: 120px; width: 12%;">Trạng thái</th>
+            <th style="min-width: 140px; width: 13%; text-align: right; padding-right: 24px;">Hành động</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody id="renterEkycTableBody">
           <% if (!requests || requests.length === 0) { %>
             <tr>
               <td colspan="5" style="text-align: center; padding: 48px; color: #64748B;">
-                No eKYC verification requests found.
+                Chưa có yêu cầu xác thực eKYC Người thuê nào trong danh sách.
               </td>
             </tr>
           <% } else { %>
@@ -35,42 +65,44 @@
               <tr
                 class="ekyc-row"
                 data-id="<%= req._id %>"
-                data-name="<%= req.user && req.user.name ? req.user.name : (req.fullName || 'User') %>"
-                data-cccd="<%= req.idNumber || req.citizenId || '012345678901' %>"
-                data-dob="<%= req.dateOfBirth || '1995-01-01' %>"
-                data-address="<%= req.address || 'Hà Nội' %>"
+                data-name="<%= req.fullName || (req.user && req.user.name) || 'Người dùng TechShare' %>"
+                data-email="<%= req.email || (req.user && req.user.email) || '' %>"
+                data-phone="<%= req.phone || (req.user && req.user.phone) || '' %>"
+                data-address="<%= req.address || (req.user && req.user.address) || 'Chưa cập nhật' %>"
+                data-cccd="<%= req.idCardNumber || 'Chưa cập nhật' %>"
                 data-status="<%= req.status || 'pending' %>"
-                data-front="<%= req.frontCardUrl || req.frontImage || 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=400' %>"
-                data-back="<%= req.backCardUrl || req.backImage || 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=400' %>"
-                data-portrait="<%= req.portraitUrl || req.selfieImage || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400' %>"
+                data-reason="<%= req.rejectReason || '' %>"
+                data-front="<%= req.idCardFrontUrl || '' %>"
+                data-back="<%= req.idCardBackUrl || '' %>"
+                data-avatar="<%= (req.user && req.user.avatar) || '' %>"
               >
                 <td style="vertical-align: middle; padding-left: 20px;">
                   <div style="display: flex; align-items: center; gap: 12px;">
                     <img
-                      src="<%= req.portraitUrl || req.selfieImage || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400' %>"
+                      src="<%= (req.user && req.user.avatar) || req.idCardFrontUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400' %>"
                       alt=""
                       style="width: 44px; height: 44px; min-width: 44px; border-radius: 50%; object-fit: cover; border: 2px solid #E2E8F0;"
                     />
                     <div>
                       <div style="font-weight: 700; color: #0F172A; font-size: 13.5px;" class="ekyc-user-name">
-                        <%= req.user && req.user.name ? req.user.name : (req.fullName || 'User') %>
+                        <%= req.fullName || (req.user && req.user.name) || 'Người dùng TechShare' %>
                       </div>
                       <div style="font-size: 11.5px; color: #64748B; margin-top: 2px;">
-                        <%= req.user && req.user.email ? req.user.email : 'user@techshare.vn' %>
+                        <%= req.email || (req.user && req.user.email) || 'user@techshare.vn' %>
                       </div>
                     </div>
                   </div>
                 </td>
                 <td style="vertical-align: middle;">
                   <div style="font-weight: 700; font-size: 13px; color: #0F172A; font-family: monospace;">
-                    <%= req.idNumber || req.citizenId || '012345678901' %>
+                    <%= req.idCardNumber || 'Chưa có số CCCD' %>
                   </div>
                   <div style="font-size: 11.5px; color: #64748B; margin-top: 2px;">
-                    Cấp bởi: Cục CSQLHC về TTXH
+                    Cục CSQLHC về TTXH
                   </div>
                 </td>
                 <td style="vertical-align: middle; font-size: 12.5px; color: #64748B;">
-                  <%= new Date(req.createdAt || Date.now()).toLocaleDateString('vi-VN') %>
+                  <%= req.createdAt ? new Date(req.createdAt).toLocaleDateString('vi-VN') : '—' %>
                 </td>
                 <td style="vertical-align: middle;" class="ekyc-status-cell">
                   <% if (req.status === 'approved') { %>
@@ -83,8 +115,8 @@
                 </td>
                 <td style="vertical-align: middle; text-align: right; padding-right: 24px; white-space: nowrap;">
                   <button type="button" class="admin-btn admin-btn-outline btn-inspect-ekyc" style="padding: 6px 12px; font-size: 12px;">
-                    <i data-lucide="eye" style="width: 13px; height: 13px;"></i>
-                    <span>Xét duyệt</span>
+                    <i data-lucide="<%= req.status === 'pending' ? 'clipboard-check' : 'eye' %>" style="width: 13px; height: 13px;"></i>
+                    <span class="btn-inspect-ekyc-label"><%= req.status === 'pending' ? 'Xét duyệt' : 'Xem chi tiết' %></span>
                   </button>
                 </td>
               </tr>
@@ -96,43 +128,120 @@
   </div>
 </div>
 
-<!-- Modal Kiểm tra eKYC -->
+<!-- Modal Kiểm tra eKYC Renter -->
 <div id="ekycModal" class="admin-modal-overlay" style="display: none;">
-  <div class="admin-modal-card" style="max-width: 640px;" onclick="event.stopPropagation();">
-    <div class="admin-modal-header">
-      <h3 class="admin-modal-title">Hồ sơ Căn cước & Chân dung sinh trắc học</h3>
-      <button type="button" class="btn-close-modal" style="background: none; border: none; cursor: pointer; color: #94A3B8;">
+  <div class="admin-modal-card" style="max-width: 680px; width: 95%; max-height: 90vh; overflow-y: auto;" onclick="event.stopPropagation();">
+    <div class="admin-modal-header" style="position: sticky; top: 0; background: #FFFFFF; z-index: 10; padding-bottom: 12px; border-bottom: 1px solid #E2E8F0;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <i data-lucide="shield-check" style="width: 20px; height: 20px; color: #16A34A;"></i>
+        <h3 class="admin-modal-title" style="margin: 0; font-size: 16px; font-weight: 700; color: #0F172A;">
+          Hồ sơ Căn cước Công dân Người thuê (Renter eKYC)
+        </h3>
+      </div>
+      <button type="button" class="btn-close-modal" style="background: none; border: none; cursor: pointer; color: #94A3B8; padding: 4px;">
         <i data-lucide="x" style="width: 18px; height: 18px;"></i>
       </button>
     </div>
 
     <!-- Metadata extracted -->
     <div style="background: #F8FAFC; border-radius: 12px; padding: 14px; margin-top: 14px; border: 1px solid #E2E8F0; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-      <div><span style="font-size: 12px; color: #64748B;">Full Name:</span> <strong id="ekycModalName" style="color: #0F172A; font-size: 13px;"></strong></div>
-      <div><span style="font-size: 12px; color: #64748B;">Citizen ID:</span> <strong id="ekycModalCccd" style="color: #0F172A; font-size: 13px; font-family: monospace;"></strong></div>
-      <div><span style="font-size: 12px; color: #64748B;">Date of Birth:</span> <span id="ekycModalDob" style="font-size: 13px; color: #334155;"></span></div>
-      <div><span style="font-size: 12px; color: #64748B;">Nơi thường trú:</span> <span id="ekycModalAddr" style="font-size: 13px; color: #334155;"></span></div>
+      <div><span style="font-size: 12px; color: #64748B;">Họ và tên:</span> <strong id="ekycModalName" style="color: #0F172A; font-size: 13px;"></strong></div>
+      <div><span style="font-size: 12px; color: #64748B;">Số CCCD:</span> <strong id="ekycModalCccd" style="color: #0F172A; font-size: 13px; font-family: monospace;"></strong></div>
+      <div><span style="font-size: 12px; color: #64748B;">Số điện thoại:</span> <span id="ekycModalPhone" style="font-size: 13px; color: #334155;"></span></div>
+      <div><span style="font-size: 12px; color: #64748B;">Email:</span> <span id="ekycModalEmail" style="font-size: 13px; color: #334155;"></span></div>
+      <div style="grid-column: 1 / -1;"><span style="font-size: 12px; color: #64748B;">Nơi thường trú / Địa chỉ:</span> <span id="ekycModalAddr" style="font-size: 13px; color: #334155;"></span></div>
     </div>
 
-    <!-- 3 Photos -->
-    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 16px; margin-bottom: 20px;">
-      <div>
-        <div style="font-size: 11px; font-weight: 700; color: #64748B; margin-bottom: 4px;">National ID Front</div>
-        <img id="ekycImgFront" src="" alt="" style="width: 100%; height: 110px; object-fit: cover; border-radius: 8px; border: 1px solid #CBD5E1;" />
+    <!-- 2 Photos for Renter (Front & Back CCCD) -->
+    <div style="margin-top: 18px;">
+      <div style="font-size: 12.5px; font-weight: 700; color: #0F172A; margin-bottom: 8px;">
+        Ảnh Căn cước công dân (Mặt trước & Mặt sau)
       </div>
-      <div>
-        <div style="font-size: 11px; font-weight: 700; color: #64748B; margin-bottom: 4px;">National ID Back</div>
-        <img id="ekycImgBack" src="" alt="" style="width: 100%; height: 110px; object-fit: cover; border-radius: 8px; border: 1px solid #CBD5E1;" />
-      </div>
-      <div>
-        <div style="font-size: 11px; font-weight: 700; color: #64748B; margin-bottom: 4px;">Portrait Selfie (Selfie)</div>
-        <img id="ekycImgPortrait" src="" alt="" style="width: 100%; height: 110px; object-fit: cover; border-radius: 8px; border: 1px solid #CBD5E1;" />
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+        <div style="border: 1px solid #E2E8F0; border-radius: 10px; padding: 10px; background: #FFFFFF; text-align: center;">
+          <div style="font-size: 11.5px; font-weight: 700; color: #475569; margin-bottom: 6px;">Mặt trước CCCD</div>
+          <div style="position: relative; overflow: hidden; border-radius: 6px; cursor: pointer;" class="renter-zoom-wrap" data-target="ekycImgFront">
+            <img id="ekycImgFront" src="" alt="Mặt trước CCCD" style="width: 100%; height: 140px; object-fit: cover; display: block; border-radius: 6px; border: 1px solid #CBD5E1;" />
+            <div style="position: absolute; bottom: 4px; right: 4px; background: rgba(15,23,42,0.7); color: #fff; padding: 3px 6px; border-radius: 4px; font-size: 10px; display: flex; align-items: center; gap: 3px;">
+              <i data-lucide="zoom-in" style="width: 12px; height: 12px;"></i> Phóng to
+            </div>
+          </div>
+        </div>
+        <div style="border: 1px solid #E2E8F0; border-radius: 10px; padding: 10px; background: #FFFFFF; text-align: center;">
+          <div style="font-size: 11.5px; font-weight: 700; color: #475569; margin-bottom: 6px;">Mặt sau CCCD</div>
+          <div style="position: relative; overflow: hidden; border-radius: 6px; cursor: pointer;" class="renter-zoom-wrap" data-target="ekycImgBack">
+            <img id="ekycImgBack" src="" alt="Mặt sau CCCD" style="width: 100%; height: 140px; object-fit: cover; display: block; border-radius: 6px; border: 1px solid #CBD5E1;" />
+            <div style="position: absolute; bottom: 4px; right: 4px; background: rgba(15,23,42,0.7); color: #fff; padding: 3px 6px; border-radius: 4px; font-size: 10px; display: flex; align-items: center; gap: 3px;">
+              <i data-lucide="zoom-in" style="width: 12px; height: 12px;"></i> Phóng to
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <div style="display: flex; justify-content: flex-end; gap: 10px;">
-      <button type="button" id="btnRejectEkyc" class="admin-btn admin-btn-danger">Reject eKYC</button>
-      <button type="button" id="btnApproveEkyc" class="admin-btn admin-btn-success">Approve eKYC</button>
+    <!-- Read-only Status Notices (when approved or rejected) -->
+    <div id="renterApprovedNotice" style="display: none; margin-top: 16px; background: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 10px; padding: 14px 16px; color: #065F46;">
+      <div style="display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 13.5px;">
+        <i data-lucide="check-circle-2" style="width: 18px; height: 18px; color: #10B981; flex-shrink: 0;"></i>
+        <span>Hồ sơ eKYC đã được xác minh thành công</span>
+      </div>
+      <div style="font-size: 12px; color: #047857; margin-top: 4px; margin-left: 26px;">
+        Khách thuê đã được cấp chứng nhận eKYC Verified (+20 điểm tín nhiệm). Hồ sơ ở trạng thái đóng chỉ xem chi tiết, không thể chỉnh sửa.
+      </div>
     </div>
+
+    <div id="renterRejectedNotice" style="display: none; margin-top: 16px; background: #FEF2F2; border: 1px solid #FECACA; border-radius: 10px; padding: 14px 16px; color: #991B1B;">
+      <div style="display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 13.5px;">
+        <i data-lucide="alert-circle" style="width: 18px; height: 18px; color: #EF4444; flex-shrink: 0;"></i>
+        <span>Hồ sơ eKYC đã bị từ chối</span>
+      </div>
+      <div style="font-size: 12.5px; color: #B91C1C; margin-top: 6px; margin-left: 26px;">
+        <strong>Lý do từ chối:</strong> <span id="renterRejectedReasonText"></span>
+      </div>
+      <div style="font-size: 11.5px; color: #7F1D1D; margin-top: 4px; margin-left: 26px;">
+        Hồ sơ ở trạng thái đóng chỉ xem chi tiết, không thể chỉnh sửa.
+      </div>
+    </div>
+
+    <!-- Reason input for rejection (only for pending) -->
+    <div id="renterRejectSection" style="margin-top: 16px;">
+      <label for="renterRejectReasonInput" style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 6px;">
+        Lý do từ chối <span style="color: #EF4444; font-weight: 800;">*</span> (bắt buộc khi chọn Từ chối):
+      </label>
+      <textarea
+        id="renterRejectReasonInput"
+        rows="2"
+        placeholder="Ví dụ: Ảnh CCCD bị mờ, lóa sáng hoặc thông tin không rõ ràng..."
+        style="width: 100%; box-sizing: border-box; padding: 10px 12px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 13px; color: #0F172A; resize: vertical; outline: none; transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;"
+      ></textarea>
+      <div id="renterRejectError" style="display: none; color: #DC2626; font-size: 12px; font-weight: 600; margin-top: 6px; align-items: center; gap: 6px;">
+        <i data-lucide="alert-circle" style="width: 14px; height: 14px; flex-shrink: 0;"></i>
+        <span>Vui lòng nhập lý do từ chối hồ sơ eKYC này.</span>
+      </div>
+    </div>
+
+    <!-- Modal Footer Actions -->
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 20px; padding-top: 14px; border-top: 1px solid #E2E8F0;">
+      <div id="renterCurrentStatusBadge"></div>
+      <div style="display: flex; gap: 10px;">
+        <button type="button" class="btn-close-modal admin-btn admin-btn-outline">Đóng</button>
+        <div id="renterPendingActions" style="display: flex; gap: 10px;">
+          <button type="button" id="btnRejectEkyc" class="admin-btn admin-btn-danger">Từ chối eKYC</button>
+          <button type="button" id="btnApproveEkyc" class="admin-btn admin-btn-success" style="background-color: #16A34A; color: #FFFFFF;">
+            Xác nhận eKYC hợp lệ ✓
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Phóng to Ảnh CCCD Renter Zoom -->
+<div id="renterImageZoomModal" class="admin-modal-overlay" style="display: none; z-index: 9999;" onclick="this.style.display='none';">
+  <div style="max-width: 90vw; max-height: 90vh; position: relative;" onclick="event.stopPropagation();">
+    <button type="button" onclick="document.getElementById('renterImageZoomModal').style.display='none';" style="position: absolute; top: -14px; right: -14px; width: 32px; height: 32px; border-radius: 50%; background: #0F172A; color: #fff; border: 2px solid #fff; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+      <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+    </button>
+    <img id="renterZoomModalImg" src="" alt="" style="max-width: 90vw; max-height: 85vh; object-fit: contain; border-radius: 8px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);" />
   </div>
 </div>

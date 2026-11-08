@@ -15,7 +15,7 @@ const getCollections = () => {
     usersCol: db.collection('users'),
     devicesCol: db.collection('devices'),
     bookingsCol: db.collection('bookings'),
-    ekycCol: db.collection('ekycrequests'),
+    ekycCol: db.collection('ekyc_requests'),
   };
 };
 
@@ -691,6 +691,13 @@ export const moderateDevice = async (req, res, next) => {
     const device = await devicesCol.findOne({ _id: objectId, isDeleted: { $ne: true } });
     if (!device) {
       return res.status(404).json({ success: false, message: 'Không tìm thấy thiết bị cần kiểm duyệt' });
+    }
+
+    if (device.moderationStatus && device.moderationStatus !== 'pending') {
+      return res.status(400).json({
+        success: false,
+        message: `Thiết bị này đã được ${device.moderationStatus === 'approved' ? 'phê duyệt' : 'từ chối'} trước đó và không thể chỉnh sửa.`,
+      });
     }
 
     const adminDoc = await resolveAdminProfile(req);

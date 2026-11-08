@@ -90,7 +90,7 @@ export const protectAdminPage = async (req, res, next) => {
 
       // Fetch pending badge counts
       try {
-        pendingEkycCount = await db.collection('ekycrequests').countDocuments({ status: 'pending' });
+        pendingEkycCount = await db.collection('ekyc_requests').countDocuments({ status: 'pending' });
         pendingOwnerEkycCount = await db.collection('owner_request').countDocuments({ status: 'pending' });
         pendingDevicesCount = await db.collection('devices').countDocuments({ moderationStatus: 'pending', isDeleted: { $ne: true } });
       } catch {}
