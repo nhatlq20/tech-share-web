@@ -5,15 +5,19 @@ import { ROUTES } from '../../routes/routes.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useChat } from '../../context/ChatContext.jsx';
 import { NotificationDropdown } from '../notifications/NotificationDropdown.jsx';
-import { fetchWishlist } from '../../services/wishlistService.js';
+import { fetchWishlist, writeLocalWishlistIds } from '../../services/wishlistService.js';
 import './Navbar.css';
 
 export const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuth();
   const { unreadMessagesCount } = useChat();
 
-  // Đồng bộ wishlist từ MongoDB khi người dùng đăng nhập hoặc tải trang
+  // Đồng bộ wishlist từ MongoDB khi người dùng đăng nhập
   useEffect(() => {
+    if (!isAuthenticated) {
+      writeLocalWishlistIds([]);
+      return;
+    }
     const controller = new AbortController();
     fetchWishlist({ mergeLocal: true, signal: controller.signal }).catch(() => {});
     return () => controller.abort();
@@ -48,13 +52,15 @@ export const Navbar = () => {
           <Link to={ROUTES.NEARBY} className="navbar-link">
             Nearby
           </Link>
-          <Link to={ROUTES.WISHLIST} className="navbar-link">
-            Wishlist
-          </Link>
           {isAuthenticated && (
-            <Link to={ROUTES.MY_BOOKINGS} className="navbar-link">
-              My Bookings
-            </Link>
+            <>
+              <Link to={ROUTES.WISHLIST} className="navbar-link">
+                Wishlist
+              </Link>
+              <Link to={ROUTES.MY_BOOKINGS} className="navbar-link">
+                My Bookings
+              </Link>
+            </>
           )}
           {/* Nút dành riêng cho Admin */}
           {user?.role === 'admin' && (
