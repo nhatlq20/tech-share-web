@@ -47,7 +47,7 @@ const getNavItems = (t) => [
   },
   {
     id: 'owner-ekyc',
-    label: 'Duyệt Owner',
+    label: t.ownerEkycTab || 'Owner Verification',
     icon: Crown,
     showBadge: true,
     path: ROUTES.ADMIN_OWNER_EKYC_VERIFICATION,
@@ -161,7 +161,7 @@ export const AdminSidebarContent = ({
                 <span
                   className="admin-nav-badge"
                   style={{ backgroundColor: '#286E74', color: '#FFFFFF' }}
-                  title={`${pendingOwnerEkycCount} hồ sơ nâng cấp Owner chờ duyệt`}
+                  title={`${pendingOwnerEkycCount} pending Owner applications`}
                 >
                   {pendingOwnerEkycCount}
                 </span>
