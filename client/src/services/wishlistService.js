@@ -1,12 +1,3 @@
-/**
- * wishlistService.js
- * ─────────────────────────────────────────────────────────────────────────────
- * Quản lý Danh sách Yêu thích (Wishlist / Favorites):
- *   - Đồng bộ 2 chiều giữa MongoDB (`users.wishlist`) và `localStorage` (`techshare:favorite-devices`)
- *   - Phát sự kiện realtime `'techshare:wishlist-updated'` để Header (Navbar),
- *     DeviceCard, DeviceDetailPage và WishlistPage cập nhật tức thì khi thả tim.
- * ─────────────────────────────────────────────────────────────────────────────
- */
 import { api } from './api.js';
 import { STORAGE_KEYS } from '../constants/config.js';
 
@@ -40,6 +31,12 @@ const getStoredUserId = () => {
  */
 export const readLocalWishlistIds = () => {
   if (typeof window === 'undefined') return [];
+  const hasAuth = Boolean(
+    getStoredUserId() ||
+      localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN) ||
+      localStorage.getItem('techshare_token')
+  );
+  if (!hasAuth) return [];
   try {
     const raw = localStorage.getItem(FAVORITES_STORAGE_KEY) || '[]';
     const parsed = JSON.parse(raw);
