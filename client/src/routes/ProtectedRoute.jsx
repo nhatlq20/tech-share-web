@@ -70,7 +70,11 @@ export const ProtectedRoute = ({ children, roles, redirectTo }) => {
   // 2. Đã đăng nhập nhưng role không khớp → về HOME
   if (roles) {
     const allowedRoles = Array.isArray(roles) ? roles : [roles];
-    if (!allowedRoles.includes(user?.role)) {
+    const userRole = user?.role;
+    const hasAllowedRole =
+      allowedRoles.includes(userRole) ||
+      (userRole === 'both' && allowedRoles.some((role) => role === 'owner' || role === 'renter'));
+    if (!hasAllowedRole) {
       return <Navigate to={redirectTo || ROUTES.HOME} replace />;
     }
   }

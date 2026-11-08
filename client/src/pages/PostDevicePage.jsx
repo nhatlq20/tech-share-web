@@ -16,16 +16,16 @@ import { compressImage } from "../services/uploadService.js";
 import "./PostDevicePage.css";
 
 const steps = [
-  { title: "Thông tin cơ bản", description: "Giới thiệu thiết bị" },
-  { title: "Thông tin cho thuê", description: "Giá và địa điểm" },
-  { title: "Thông số kỹ thuật", description: "Chi tiết thiết bị" },
+  { title: "Basic Information", description: "Introduce your device" },
+  { title: "Rental Information", description: "Set your price and location" },
+  { title: "Technical Specifications", description: "Device details" },
 ];
 
 const convertBlobToDataUrl = (blob) =>
   new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result);
-    reader.onerror = () => reject(new Error("Không thể đọc ảnh đã chọn."));
+    reader.onerror = () => reject(new Error("Unable to read the selected image."));
     reader.readAsDataURL(blob);
   });
 
@@ -112,7 +112,7 @@ const PostDevicePage = ({ onBack, onDeviceCreated }) => {
       }));
     } catch (error) {
       setDescriptionGenerationError(
-        error.message || "Không thể tạo mô tả lúc này. Vui lòng thử lại.",
+        error.message || "Unable to generate a description right now. Please try again.",
       );
     } finally {
       setIsGeneratingDescription(false);
@@ -135,9 +135,9 @@ const PostDevicePage = ({ onBack, onDeviceCreated }) => {
 
     let imageError = "";
     if (validImages.length !== selectedImages.length) {
-      imageError = "Chỉ hỗ trợ ảnh JPG, PNG, WEBP có dung lượng tối đa 10MB.";
+      imageError = "Only JPG, PNG, and WEBP images up to 10 MB are supported.";
     } else if (validImages.length > remainingSlots) {
-      imageError = "Bạn chỉ có thể chọn tối đa 3 ảnh.";
+      imageError = "You can select up to 3 images.";
     }
 
     setErrors((previousErrors) => ({
@@ -164,47 +164,47 @@ const PostDevicePage = ({ onBack, onDeviceCreated }) => {
     const nextErrors = {};
 
     if (currentStep === 1) {
-      if (!formData.title.trim()) nextErrors.title = "Vui lòng nhập tiêu đề.";
+      if (!formData.title.trim()) nextErrors.title = "Please enter a listing title.";
       if (!formData.name.trim())
-        nextErrors.name = "Vui lòng nhập tên thiết bị.";
-      if (!formData.category) nextErrors.category = "Vui lòng chọn danh mục.";
+        nextErrors.name = "Please enter a device name.";
+      if (!formData.category) nextErrors.category = "Please select a category.";
       if (!formData.brand.trim())
-        nextErrors.brand = "Vui lòng nhập thương hiệu.";
+        nextErrors.brand = "Please enter a brand.";
       if (formData.images.length < 2) {
-        nextErrors.images = "Vui lòng thêm ít nhất 2 ảnh thiết bị.";
+        nextErrors.images = "Please add at least 2 device photos.";
       }
 
       const year = Number(formData.yearOfManufacture);
       if (!formData.yearOfManufacture) {
-        nextErrors.yearOfManufacture = "Vui lòng nhập năm sản xuất.";
+        nextErrors.yearOfManufacture = "Please enter the year of manufacture.";
       } else if (
         !Number.isInteger(year) ||
         year < 1990 ||
         year > new Date().getFullYear()
       ) {
         nextErrors.yearOfManufacture =
-          "Năm sản xuất phải từ 1990 đến hiện tại.";
+          "The year of manufacture must be between 1990 and the current year.";
       }
 
       if (!formData.condition)
-        nextErrors.condition = "Vui lòng chọn tình trạng thiết bị.";
+        nextErrors.condition = "Please select the device condition.";
     }
 
     if (currentStep === 2) {
       if (!formData.pricePerDay) {
-        nextErrors.pricePerDay = "Vui lòng nhập giá thuê mỗi ngày.";
+        nextErrors.pricePerDay = "Please enter the daily rental price.";
       } else if (Number(formData.pricePerDay) <= 0) {
-        nextErrors.pricePerDay = "Giá thuê phải lớn hơn 0.";
+        nextErrors.pricePerDay = "The rental price must be greater than 0.";
       }
 
       if (formData.depositAmount === "") {
-        nextErrors.depositAmount = "Vui lòng nhập tiền đặt cọc.";
+        nextErrors.depositAmount = "Please enter the security deposit.";
       } else if (Number(formData.depositAmount) < 0) {
-        nextErrors.depositAmount = "Tiền đặt cọc không được âm.";
+        nextErrors.depositAmount = "The security deposit cannot be negative.";
       }
 
       if (!formData.addressText.trim()) {
-        nextErrors.addressText = "Vui lòng nhập địa chỉ thiết bị.";
+        nextErrors.addressText = "Please enter the device location address.";
       }
 
       const latitude = Number(formData.latitude);
@@ -215,7 +215,7 @@ const PostDevicePage = ({ onBack, onDeviceCreated }) => {
         latitude < -90 ||
         latitude > 90
       ) {
-        nextErrors.latitude = "Vui lòng nhập vĩ độ hợp lệ từ -90 đến 90.";
+        nextErrors.latitude = "Please enter a valid latitude between -90 and 90.";
       }
       if (
         formData.longitude === "" ||
@@ -223,7 +223,7 @@ const PostDevicePage = ({ onBack, onDeviceCreated }) => {
         longitude < -180 ||
         longitude > 180
       ) {
-        nextErrors.longitude = "Vui lòng nhập kinh độ hợp lệ từ -180 đến 180.";
+        nextErrors.longitude = "Please enter a valid longitude between -180 and 180.";
       }
     }
 
@@ -242,9 +242,9 @@ const PostDevicePage = ({ onBack, onDeviceCreated }) => {
       );
 
       if (hasEmptyName)
-        nextErrors.specs = "Vui lòng nhập tên cho mỗi thông số.";
+        nextErrors.specs = "Please enter a name for each specification.";
       if (hasDuplicateName)
-        nextErrors.specs = "Tên thông số không được trùng nhau.";
+        nextErrors.specs = "Specification names must be unique.";
     }
 
     setErrors(nextErrors);
@@ -274,7 +274,7 @@ const PostDevicePage = ({ onBack, onDeviceCreated }) => {
     if (!navigator.geolocation) {
       setErrors((previousErrors) => ({
         ...previousErrors,
-        location: "Trình duyệt không hỗ trợ lấy vị trí hiện tại.",
+        location: "Your browser does not support location access.",
       }));
       return;
     }
@@ -295,13 +295,13 @@ const PostDevicePage = ({ onBack, onDeviceCreated }) => {
       },
       (error) => {
         const messages = {
-          1: "Bạn cần cho phép truy cập vị trí để sử dụng tính năng này.",
-          2: "Không xác định được vị trí. Vui lòng thử lại hoặc nhập tọa độ.",
-          3: "Lấy vị trí quá lâu. Vui lòng thử lại.",
+          1: "Allow location access in your browser to use this feature.",
+          2: "Unable to determine your location. Please try again or enter the coordinates manually.",
+          3: "The location request timed out. Please try again.",
         };
         setErrors((previousErrors) => ({
           ...previousErrors,
-          location: messages[error.code] || "Không thể lấy vị trí hiện tại.",
+          location: messages[error.code] || "Unable to get your current location.",
         }));
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 },
@@ -317,9 +317,8 @@ const PostDevicePage = ({ onBack, onDeviceCreated }) => {
     const token = localStorage.getItem("techshare_token");
     if (!token) {
       setSubmissionModal({
-        title: "Bạn chưa đăng nhập",
-        message:
-          "Vui lòng đăng nhập bằng tài khoản chủ thiết bị rồi thử đăng thiết bị lại.",
+        title: "You are not signed in",
+        message: "Please sign in with an equipment owner account and try listing your device again.",
         isSuccess: false,
       });
       setIsSubmitting(false);
@@ -330,7 +329,7 @@ const PostDevicePage = ({ onBack, onDeviceCreated }) => {
       const imageData = [];
       for (let index = 0; index < formData.images.length; index += 1) {
         setUploadMessage(
-          `Đang chuẩn bị ảnh ${index + 1}/${formData.images.length}...`,
+          `Preparing image ${index + 1} of ${formData.images.length}...`,
         );
         const compressedImage = await compressImage(formData.images[index], {
           maxWidth: 1600,
@@ -339,7 +338,7 @@ const PostDevicePage = ({ onBack, onDeviceCreated }) => {
         });
         if (compressedImage.size > 3 * 1024 * 1024) {
           throw new Error(
-            `Ảnh ${index + 1} vẫn quá lớn sau khi nén. Vui lòng chọn ảnh khác.`,
+            `Image ${index + 1} is still too large after compression. Please choose another image.`,
           );
         }
         imageData.push(await convertBlobToDataUrl(compressedImage));
@@ -351,7 +350,7 @@ const PostDevicePage = ({ onBack, onDeviceCreated }) => {
         return result;
       }, {});
 
-      setUploadMessage("Đang tải ảnh lên và lưu thông tin thiết bị...");
+      setUploadMessage("Uploading images and saving device details...");
       const response = await api.post(
         "/devices",
         {
@@ -383,20 +382,20 @@ const PostDevicePage = ({ onBack, onDeviceCreated }) => {
 
       if (!response.success || !response.data) {
         throw new Error(
-          response.message || "Máy chủ chưa xác nhận thiết bị đã được tạo.",
+          response.message || "The server did not confirm that the device was created.",
         );
       }
 
       onDeviceCreated(response.data);
       setSubmissionModal({
-        title: "Đăng thiết bị thành công",
-        message: "Bài đăng của bạn đang chờ Admin kiểm duyệt trước khi hiển thị công khai trên sàn cho thuê.",
+        title: "Device Listed Successfully",
+        message: "Your listing is awaiting admin review before it becomes visible on the marketplace.",
         isSuccess: true,
       });
     } catch (error) {
       setSubmissionModal({
-        title: "Không thể đăng thiết bị",
-        message: error.message || "Đã có lỗi xảy ra. Vui lòng thử lại.",
+        title: "Unable to List Device",
+        message: error.message || "Something went wrong. Please try again.",
         isSuccess: false,
       });
     } finally {
@@ -414,7 +413,7 @@ const PostDevicePage = ({ onBack, onDeviceCreated }) => {
           onClick={onBack}
         >
           <ArrowLeft size={17} />
-          <span>Quay lại kho thiết bị</span>
+          <span>Back to My Devices</span>
         </button>
 
         <div className="post-device-page-heading">
@@ -422,16 +421,16 @@ const PostDevicePage = ({ onBack, onDeviceCreated }) => {
             <PackagePlus size={23} />
           </div>
           <div>
-            <h1>Đăng thiết bị cho thuê</h1>
+            <h1>List a Device for Rent</h1>
             <p>
-              Hoàn thành các thông tin bên dưới để giới thiệu thiết bị của bạn.
+              Complete the details below to list your device for rent.
             </p>
           </div>
         </div>
 
         <nav
           className="post-device-progress"
-          aria-label="Tiến trình đăng thiết bị"
+          aria-label="Device listing progress"
         >
           {steps.map((step, index) => {
             const stepNumber = index + 1;
@@ -462,7 +461,7 @@ const PostDevicePage = ({ onBack, onDeviceCreated }) => {
         <div className="post-device-card">
           <div className="post-device-card-heading">
             <span>
-              BƯỚC {currentStep} / {steps.length}
+              STEP {currentStep} OF {steps.length}
             </span>
             <h2>{steps[currentStep - 1].title}</h2>
           </div>
@@ -528,7 +527,7 @@ const PostDevicePage = ({ onBack, onDeviceCreated }) => {
               disabled={isSubmitting}
             >
               <ArrowLeft size={17} />
-              <span>{currentStep === 1 ? "Hủy" : "Quay lại"}</span>
+              <span>{currentStep === 1 ? "Cancel" : "Back"}</span>
             </button>
 
             {currentStep < steps.length ? (
@@ -537,7 +536,7 @@ const PostDevicePage = ({ onBack, onDeviceCreated }) => {
                 className="post-device-primary-button"
                 onClick={handleNext}
               >
-                <span>Tiếp tục</span>
+                <span>Continue</span>
                 <ArrowRight size={17} />
               </button>
             ) : (
@@ -552,7 +551,7 @@ const PostDevicePage = ({ onBack, onDeviceCreated }) => {
                 ) : (
                   <Check size={17} />
                 )}
-                <span>{isSubmitting ? "Đang gửi..." : "Gửi thiết bị"}</span>
+                <span>{isSubmitting ? "Submitting..." : "Submit Listing"}</span>
               </button>
             )}
           </div>
@@ -571,7 +570,7 @@ const PostDevicePage = ({ onBack, onDeviceCreated }) => {
               type="button"
               className="post-device-modal-close"
               onClick={() => setSubmissionModal(null)}
-              aria-label="Đóng thông báo"
+              aria-label="Close notification"
             >
               <X size={19} />
             </button>
@@ -593,7 +592,7 @@ const PostDevicePage = ({ onBack, onDeviceCreated }) => {
                 submissionModal.isSuccess ? onBack() : setSubmissionModal(null)
               }
             >
-              {submissionModal.isSuccess ? "Về kho thiết bị" : "Đã hiểu"}
+              {submissionModal.isSuccess ? "Back to My Devices" : "Got It"}
             </button>
           </div>
         </div>

@@ -65,8 +65,8 @@ export const LoginPage = () => {
           return;
         }
 
-        // Chỉ cho phép owner và renter
-        if (role !== 'owner' && role !== 'renter') {
+        // Accounts with the "both" role can use both renter and owner features.
+        if (!['owner', 'renter', 'both'].includes(role)) {
           setErrorMessage('Invalid username or password.');
           return;
         }
@@ -80,11 +80,17 @@ export const LoginPage = () => {
         setSuccessMessage('Login successful! Redirecting...');
         setTimeout(() => {
           // Phân quyền điều hướng theo role
-          if (role === 'owner') {
-            navigate(ROUTES.OWNER, { replace: true });
+          const isOwnerDestination =
+            from === ROUTES.OWNER || from.startsWith(`${ROUTES.OWNER}/`);
+          if (role === 'owner' || (role === 'both' && isOwnerDestination)) {
+            navigate(isOwnerDestination ? from : ROUTES.OWNER, { replace: true });
           } else {
-            // Renter: điều hướng về trang home (hoặc route người thuê trước đó)
-            const isRenterSafeRoute = from && !from.startsWith('/admin') && !from.startsWith('/owner') && from !== ROUTES.LOGIN;
+            // Renters and dual-role accounts can return to their requested public route.
+            const isRenterSafeRoute =
+              from &&
+              !from.startsWith('/admin') &&
+              !isOwnerDestination &&
+              from !== ROUTES.LOGIN;
             navigate(isRenterSafeRoute ? from : ROUTES.HOME, { replace: true });
           }
         }, 600);

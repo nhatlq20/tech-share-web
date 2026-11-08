@@ -31,19 +31,19 @@ const SpecsBuilderForm = ({ specifications, showValidation, onChange }) => {
   return (
     <div className="post-device-specs">
       <div className="post-device-specs-heading">
-        <h3>Thông số kỹ thuật</h3>
-        <p>Thêm thông tin giúp người thuê hiểu rõ hơn về thiết bị.</p>
+        <h3>Technical Specifications</h3>
+        <p>Add details to help renters learn more about your device.</p>
       </div>
 
       {specifications.length === 0 ? (
         <div className="post-device-specs-empty">
-          Chưa có thông số nào. Bạn có thể bỏ qua hoặc thêm thông tin bên dưới.
+          No specifications added. You can skip this step or add details below.
         </div>
       ) : (
         <div className="post-device-specs-list">
           <div className="post-device-specs-labels">
-            <span>Tên thông số</span>
-            <span>Giá trị</span>
+            <span>Specification</span>
+            <span>Value</span>
             <span aria-hidden="true" />
           </div>
           {specifications.map((specification, index) => {
@@ -53,33 +53,33 @@ const SpecsBuilderForm = ({ specifications, showValidation, onChange }) => {
             return (
               <div className="post-device-spec-row" key={specification.id}>
                 <label className="post-device-field">
-                  <span className="post-device-mobile-label">Tên thông số</span>
+                  <span className="post-device-mobile-label">Specification</span>
                   <input
                     className={isEmptyName || isDuplicateName ? 'has-error' : ''}
                     value={specification.key}
                     onChange={(event) => handleFieldChange(specification.id, 'key', event.target.value)}
-                    placeholder="Ví dụ: RAM"
-                    aria-label={`Tên thông số ${index + 1}`}
+                    placeholder="e.g. RAM"
+                    aria-label={`Specification ${index + 1}`}
                     aria-invalid={isEmptyName || isDuplicateName}
                   />
-                  {isDuplicateName && <small className="post-device-error">Tên thông số không được trùng.</small>}
-                  {isEmptyName && <small className="post-device-error">Vui lòng nhập tên thông số.</small>}
+                  {isDuplicateName && <small className="post-device-error">Specification names must be unique.</small>}
+                  {isEmptyName && <small className="post-device-error">Please enter a specification name.</small>}
                 </label>
                 <label className="post-device-field">
-                  <span className="post-device-mobile-label">Giá trị</span>
+                  <span className="post-device-mobile-label">Value</span>
                   <input
                     value={specification.value}
                     onChange={(event) => handleFieldChange(specification.id, 'value', event.target.value)}
-                    placeholder="Ví dụ: 16GB"
-                    aria-label={`Giá trị thông số ${index + 1}`}
+                    placeholder="e.g. 16 GB"
+                    aria-label={`Specification value ${index + 1}`}
                   />
                 </label>
                 <button
                   type="button"
                   className="post-device-remove-spec"
                   onClick={() => removeSpecification(specification.id)}
-                  aria-label={`Xóa thông số ${index + 1}`}
-                  title="Xóa thông số"
+                  aria-label={`Remove specification ${index + 1}`}
+                  title="Remove specification"
                 >
                   <Trash2 size={17} />
                 </button>
@@ -91,7 +91,7 @@ const SpecsBuilderForm = ({ specifications, showValidation, onChange }) => {
 
       <button type="button" className="post-device-add-spec" onClick={addSpecification}>
         <Plus size={17} />
-        <span>Thêm thông số</span>
+        <span>Add Specification</span>
       </button>
     </div>
   );
