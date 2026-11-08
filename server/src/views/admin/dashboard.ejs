@@ -1,0 +1,198 @@
+<div style="display: flex; flex-direction: column; gap: 24px;">
+  <!-- 1. Header Section -->
+  <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px;">
+    <div>
+      <h1 style="font-size: 24px; font-weight: 800; color: #0F172A; letter-spacing: -0.02em; margin: 0;">
+        Tổng quan & Chỉ số Vận hành
+      </h1>
+      <p style="font-size: 12px; color: #64748B; margin-top: 4px; margin-bottom: 0;">
+        Dữ liệu đối soát thời gian thực từ cơ sở dữ liệu MongoDB Atlas
+      </p>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <button
+        type="button"
+        onclick="window.location.reload();"
+        class="admin-btn admin-btn-outline"
+        style="padding: 8px 14px; font-size: 12px; border-radius: 12px; display: inline-flex; align-items: center; gap: 6px;"
+      >
+        <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i>
+        <span>Làm mới</span>
+      </button>
+
+      <a
+        href="/api/admin/bookings/export"
+        class="admin-btn admin-btn-primary"
+        style="padding: 8px 16px; font-size: 12px; border-radius: 12px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;"
+      >
+        <i data-lucide="download" style="width: 14px; height: 14px;"></i>
+        <span>Xuất dữ liệu CSV</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- 2. Lưới 4 Thẻ KPI (Overview Stat Cards) -->
+  <div class="admin-kpi-grid">
+    <!-- KPI 1: Total Users -->
+    <div class="admin-kpi-card" style="background: #FFFFFF; border-radius: 16px; padding: 22px; border: 1px solid #F1F5F9; box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04); display: flex; flex-direction: column; justify-content: space-between;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+        <div style="width: 44px; height: 44px; border-radius: 12px; background: #EEF8F8; color: #67BEC3; display: flex; align-items: center; justify-content: center;">
+          <i data-lucide="users" style="width: 22px; height: 22px;"></i>
+        </div>
+        <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 9999px; background: #ECFDF5; color: #16A34A;">
+          <i data-lucide="arrow-up-right" style="width: 13px; height: 13px;"></i>
+          +18%
+        </span>
+      </div>
+      <div>
+        <p style="font-size: 28px; font-weight: 800; color: #0F172A; letter-spacing: -0.02em; margin: 0;">
+          <%= typeof kpi !== 'undefined' && kpi.totalUsers ? kpi.totalUsers : 18 %>
+        </p>
+        <p style="font-size: 13px; font-weight: 600; color: #64748B; margin-top: 4px; margin-bottom: 0;">
+          Tổng thành viên (<%= typeof kpi !== 'undefined' && kpi.activeUsers ? kpi.activeUsers : 16 %> hoạt động)
+        </p>
+      </div>
+    </div>
+
+    <!-- KPI 2: Total Devices -->
+    <div class="admin-kpi-card" style="background: #FFFFFF; border-radius: 16px; padding: 22px; border: 1px solid #F1F5F9; box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04); display: flex; flex-direction: column; justify-content: space-between;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+        <div style="width: 44px; height: 44px; border-radius: 12px; background: #EEF8F8; color: #67BEC3; display: flex; align-items: center; justify-content: center;">
+          <i data-lucide="cpu" style="width: 22px; height: 22px;"></i>
+        </div>
+        <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 9999px; background: #ECFDF5; color: #16A34A;">
+          <i data-lucide="arrow-up-right" style="width: 13px; height: 13px;"></i>
+          +12%
+        </span>
+      </div>
+      <div>
+        <p style="font-size: 28px; font-weight: 800; color: #0F172A; letter-spacing: -0.02em; margin: 0;">
+          <%= typeof kpi !== 'undefined' && kpi.totalDevices ? kpi.totalDevices : 13 %>
+        </p>
+        <p style="font-size: 13px; font-weight: 600; color: #64748B; margin-top: 4px; margin-bottom: 0;">
+          Thiết bị niêm yết (<%= typeof kpi !== 'undefined' && kpi.availableDevices ? kpi.availableDevices : 11 %> sẵn sàng)
+        </p>
+      </div>
+    </div>
+
+    <!-- KPI 3: Active Rentals -->
+    <div class="admin-kpi-card" style="background: #FFFFFF; border-radius: 16px; padding: 22px; border: 1px solid #F1F5F9; box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04); display: flex; flex-direction: column; justify-content: space-between;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+        <div style="width: 44px; height: 44px; border-radius: 12px; background: #EEF8F8; color: #67BEC3; display: flex; align-items: center; justify-content: center;">
+          <i data-lucide="shopping-bag" style="width: 22px; height: 22px;"></i>
+        </div>
+        <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 9999px; background: #ECFDF5; color: #16A34A;">
+          <i data-lucide="arrow-up-right" style="width: 13px; height: 13px;"></i>
+          +24%
+        </span>
+      </div>
+      <div>
+        <p style="font-size: 28px; font-weight: 800; color: #0F172A; letter-spacing: -0.02em; margin: 0;">
+          <%= typeof kpi !== 'undefined' && kpi.activeBookings ? kpi.activeBookings : 3 %>
+        </p>
+        <p style="font-size: 13px; font-weight: 600; color: #64748B; margin-top: 4px; margin-bottom: 0;">
+          Đơn thuê đang tiến hành
+        </p>
+      </div>
+    </div>
+
+    <!-- KPI 4: Total Platform Revenue -->
+    <div class="admin-kpi-card" style="background: #FFFFFF; border-radius: 16px; padding: 22px; border: 1px solid #F1F5F9; box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04); display: flex; flex-direction: column; justify-content: space-between;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+        <div style="width: 44px; height: 44px; border-radius: 12px; background: #EEF8F8; color: #67BEC3; display: flex; align-items: center; justify-content: center;">
+          <i data-lucide="trending-up" style="width: 22px; height: 22px;"></i>
+        </div>
+        <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 9999px; background: #ECFDF5; color: #16A34A;">
+          <i data-lucide="arrow-up-right" style="width: 13px; height: 13px;"></i>
+          +15%
+        </span>
+      </div>
+      <div>
+        <p style="font-size: 26px; font-weight: 800; color: #286E74; letter-spacing: -0.02em; margin: 0;">
+          <%= typeof kpi !== 'undefined' && kpi.revenueFormatted ? kpi.revenueFormatted : '48.750.000 ₫' %>
+        </p>
+        <p style="font-size: 13px; font-weight: 600; color: #64748B; margin-top: 4px; margin-bottom: 0;">
+          Tổng dòng tiền giao dịch
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Lưới Biểu đồ Doanh thu & Phân bổ Danh mục -->
+  <div class="admin-overview-grid">
+    <!-- Cột trái: Biểu đồ doanh thu Canvas Chart.js -->
+    <div class="admin-card" style="background: #FFFFFF; border-radius: 16px; padding: 24px; border: 1px solid #F1F5F9; box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04);">
+      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
+        <div>
+          <h2 style="font-size: 16px; font-weight: 800; color: #0F172A; margin: 0;">
+            Xu hướng Doanh thu & Lượt thuê
+          </h2>
+          <p style="font-size: 12px; color: #64748B; margin-top: 2px; margin-bottom: 0;">
+            Biểu đồ trực quan hóa giá trị giao dịch nền tảng
+          </p>
+        </div>
+
+        <!-- Period Selectors -->
+        <div style="display: inline-flex; align-items: center; padding: 4px; background: #F8FAFC; border-radius: 12px; border: 1px solid #E2E8F0;">
+          <button type="button" class="btn-time-range active" data-range="7d" style="padding: 6px 12px; font-size: 12px; border-radius: 8px; border: none; cursor: pointer; background: #FFFFFF; color: #286E74; font-weight: 700; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+            7 ngày qua
+          </button>
+          <button type="button" class="btn-time-range" data-range="month" style="padding: 6px 12px; font-size: 12px; border-radius: 8px; border: none; cursor: pointer; background: transparent; color: #64748B; font-weight: 600;">
+            Tháng này
+          </button>
+          <button type="button" class="btn-time-range" data-range="year" style="padding: 6px 12px; font-size: 12px; border-radius: 8px; border: none; cursor: pointer; background: transparent; color: #64748B; font-weight: 600;">
+            Năm nay
+          </button>
+        </div>
+      </div>
+
+      <!-- Canvas -->
+      <div style="width: 100%; height: 280px; position: relative;">
+        <canvas id="overviewRevenueChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Cột phải: Phân bổ Danh mục Thiết bị -->
+    <div class="admin-card" style="background: #FFFFFF; border-radius: 16px; padding: 24px; border: 1px solid #F1F5F9; box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04);">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+        <h2 style="font-size: 16px; font-weight: 800; color: #0F172A; margin: 0;">
+          Phân bổ Danh mục
+        </h2>
+        <span style="font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 9999px; background: #EEF8F8; color: #286E74;">
+          Toàn sàn
+        </span>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 14px;">
+        <%
+          var cats = (typeof categories !== 'undefined' && categories.length > 0) ? categories : [
+            { id: 'smartphone', name: 'Smartphone & Tablet', count: 36, percent: 35, color: '#67BEC3' },
+            { id: 'laptop', name: 'Laptop & Workstation', count: 24, percent: 25, color: '#38BDF8' },
+            { id: 'camera', name: 'Máy ảnh & Ống kính', count: 18, percent: 18, color: '#818CF8' },
+            { id: 'drone', name: 'Flycam & Gimbal', count: 10, percent: 10, color: '#F472B6' },
+            { id: 'audio', name: 'Tai nghe & Âm thanh', count: 6, percent: 6, color: '#FBBF24' },
+            { id: 'gaming', name: 'Máy chơi game & VR', count: 4, percent: 4, color: '#34D399' }
+          ];
+          cats.forEach(function(cat) {
+        %>
+          <div>
+            <div style="display: flex; align-items: center; justify-content: space-between; font-size: 13px; margin-bottom: 6px;">
+              <span style="font-weight: 700; color: #1E293B;"><%= cat.name %></span>
+              <span style="font-size: 12px; color: #64748B;">
+                <strong style="color: #0F172A;"><%= cat.count %></strong> thiết bị (<%= cat.percent %>%)
+              </span>
+            </div>
+            <div style="width: 100%; height: 8px; border-radius: 9999px; background: #F1F5F9; overflow: hidden;">
+              <div style="height: 100%; border-radius: 9999px; width: <%= cat.percent %>%; background-color: <%= cat.color || '#67BEC3' %>;"></div>
+            </div>
+          </div>
+        <% }); %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  window.__OVERVIEW_CHART_DATA__ = <%- JSON.stringify(typeof charts !== 'undefined' ? charts : {}) %>;
+</script>

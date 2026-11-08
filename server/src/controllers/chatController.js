@@ -465,39 +465,90 @@ export const uploadImage = async (req, res, next) => {
 export const sendMessage = async (req, res, next) => {
   try {
     const currentUserId = getUserId(req);
+    if (!currentUserId) {
+      return res.status(401).json({ success: false, message: 'Authentication required.' });
+    }
+
     const { bookingId } = req.params;
     const { type = 'text', content = '', mediaUrl = '', location = null } = req.body;
 
-    if (!mongoose.Types.ObjectId.isValid(bookingId)) {
+    if (!bookingId || !mongoose.Types.ObjectId.isValid(bookingId)) {
       return res.status(400).json({ success: false, message: 'Invalid booking ID.' });
     }
 
+    // 1. Kiểm tra loại tin nhắn hợp lệ
+    const validTypes = ['text', 'image', 'location', 'quick_template'];
+    if (type && !validTypes.includes(type)) {
+      return res.status(400).json({ success: false, message: 'Invalid message type.' });
+    }
+
+    // 2. Kiểm tra nội dung tin nhắn không được rỗng
+    if ((type === 'text' || type === 'quick_template') && (!content || typeof content !== 'string' || !content.trim())) {
+      return res.status(400).json({ success: false, message: 'Message content cannot be empty.' });
+    }
+
+    if (type === 'image' && !mediaUrl && (!content || !content.trim())) {
+      return res.status(400).json({ success: false, message: 'Image message requires mediaUrl or content.' });
+    }
+
+    if (type === 'location' && (!location || typeof location.latitude !== 'number' || typeof location.longitude !== 'number')) {
+      return res.status(400).json({ success: false, message: 'Location message requires valid latitude and longitude.' });
+    }
+
+    // 3. Kiểm tra booking tồn tại
     const booking = await Booking.findById(bookingId).lean();
     if (!booking) {
       return res.status(404).json({ success: false, message: 'Booking not found.' });
     }
 
-    const renterIdStr = (booking.renterId || booking.renter)?._id?.toString() || (booking.renterId || booking.renter)?.toString();
-    const ownerIdStr = (booking.ownerId || booking.owner)?._id?.toString() || (booking.ownerId || booking.owner)?.toString();
+    const renterIdStr = (booking.renterId?._id || booking.renterId || booking.renter?._id || booking.renter)?.toString();
+    const ownerIdStr = (booking.ownerId?._id || booking.ownerId || booking.owner?._id || booking.owner)?.toString();
 
-    // Kiểm tra quyền
-    if (currentUserId !== renterIdStr && currentUserId !== ownerIdStr && req.user?.role !== 'admin') {
-      return res.status(403).json({ success: false, message: 'Access denied to this conversation.' });
+    if (!renterIdStr || !ownerIdStr) {
+      return res.status(400).json({ success: false, message: 'Booking participants are invalid or missing.' });
     }
 
-    // Xác định người nhận
-    const receiverIdStr = currentUserId === renterIdStr ? ownerIdStr : renterIdStr;
+    // 4. Kiểm tra quyền hạn của người gửi
+    const userIds = [
+      req.user?.userId,
+      req.user?._id,
+      req.user?.id,
+      req.user?.accountId,
+      currentUserId,
+    ].filter(Boolean).map(String);
+
+    const isRenter = userIds.includes(renterIdStr);
+    const isOwner = userIds.includes(ownerIdStr);
+    const isAdmin = req.user?.role === 'admin';
+
+    if (!isRenter && !isOwner && !isAdmin) {
+      return res.status(403).json({ success: false, message: 'You are not a participant of this booking.' });
+    }
+
+    // 5. Xác định người nhận chính xác (Renter -> Owner, Owner -> Renter)
+    let receiverIdStr;
+    if (isRenter) {
+      receiverIdStr = ownerIdStr;
+    } else if (isOwner) {
+      receiverIdStr = renterIdStr;
+    } else {
+      receiverIdStr = currentUserId === renterIdStr ? ownerIdStr : renterIdStr;
+    }
+
     if (!receiverIdStr) {
       return res.status(400).json({ success: false, message: 'Could not determine receiver for booking.' });
     }
 
-    // Tạo bản ghi tin nhắn mới
+    const senderId = new mongoose.Types.ObjectId(currentUserId);
+    const receiverId = new mongoose.Types.ObjectId(receiverIdStr);
+
+    // 6. Lưu bản ghi tin nhắn mới vào MongoDB
     const messageDoc = await Message.create({
       bookingId: new mongoose.Types.ObjectId(bookingId),
-      senderId: new mongoose.Types.ObjectId(currentUserId),
-      receiverId: new mongoose.Types.ObjectId(receiverIdStr),
+      senderId,
+      receiverId,
       type,
-      content: content.trim(),
+      content: (content || '').trim(),
       mediaUrl: mediaUrl || '',
       location: location && location.latitude && location.longitude ? location : null,
       status: 'sent',
@@ -507,48 +558,51 @@ export const sendMessage = async (req, res, next) => {
       .populate('senderId', 'name avatar role isVerified')
       .lean();
 
-    // Lấy thông tin người gửi để gắn vào In-App Notification
-    const senderUser = await User.findById(currentUserId).select('name avatar').lean();
+    // 7. Truyền phát thời gian thực qua Socket.IO (Bảo vệ bằng try-catch để không ảnh hưởng dữ liệu đã lưu)
+    try {
+      const io = getIO();
+      if (io) {
+        const chatRoom = `chat_${bookingId}`;
+        const receiverRoom = `user_${receiverIdStr}`;
 
-    // Truyền phát thời gian thực qua Socket.IO
-    const io = getIO();
-    if (io) {
-      const chatRoom = `chat_${bookingId}`;
-      const receiverRoom = `user_${receiverIdStr}`;
+        // Phát sự kiện nhận tin nhắn mới (hỗ trợ cả receive_message và new_message)
+        io.to(chatRoom).emit('receive_message', populatedMessage);
+        io.to(chatRoom).emit('new_message', populatedMessage);
 
-      // 1. Gửi vào phòng chat cho cả 2 người đang mở
-      io.to(chatRoom).emit('new_message', populatedMessage);
+        io.to(receiverRoom).emit('receive_message', populatedMessage);
+        io.to(receiverRoom).emit('new_message', populatedMessage);
 
-      // 2. Gửi vào room riêng của người nhận để cập nhật danh sách hội thoại
-      io.to(receiverRoom).emit('new_message', populatedMessage);
+        // Bắn In-App Notification Banner cho người nhận
+        const senderUser = await User.findById(currentUserId).select('name avatar').lean().catch(() => null);
+        io.to(receiverRoom).emit('new_notification', {
+          type: 'chat',
+          bookingId,
+          messageId: populatedMessage._id.toString(),
+          sender: {
+            id: currentUserId,
+            name: senderUser?.name || 'Đối tác TechShare',
+            avatar: senderUser?.avatar || '',
+          },
+          content:
+            type === 'image'
+              ? '[Hình ảnh]'
+              : type === 'location'
+                ? '[Chia sẻ vị trí]'
+                : populatedMessage.content || 'Bạn có tin nhắn mới',
+          createdAt: populatedMessage.createdAt,
+        });
 
-      // 3. Bắn In-App Notification Banner cho người nhận nếu đang ở trang khác
-      io.to(receiverRoom).emit('new_notification', {
-        type: 'chat',
-        bookingId,
-        messageId: populatedMessage._id.toString(),
-        sender: {
-          id: currentUserId,
-          name: senderUser?.name || 'Đối tác TechShare',
-          avatar: senderUser?.avatar || '',
-        },
-        content:
-          type === 'image'
-            ? '[Hình ảnh]'
-            : type === 'location'
-              ? '[Chia sẻ vị trí]'
-              : populatedMessage.content || 'Bạn có tin nhắn mới',
-        createdAt: populatedMessage.createdAt,
-      });
-
-      // Tính tổng số tin nhắn chưa đọc của người nhận và emit socket
-      const receiverUnreadCount = await Message.countDocuments({
-        receiverId: new mongoose.Types.ObjectId(receiverId),
-        status: { $ne: 'read' },
-      });
-      io.to(receiverRoom).emit('unread_messages_count', {
-        count: receiverUnreadCount,
-      });
+        // Tính tổng số tin nhắn chưa đọc của người nhận và emit socket
+        const receiverUnreadCount = await Message.countDocuments({
+          receiverId,
+          status: { $ne: 'read' },
+        });
+        io.to(receiverRoom).emit('unread_messages_count', {
+          count: receiverUnreadCount,
+        });
+      }
+    } catch (socketError) {
+      console.warn('⚠️ Lỗi truyền phát Socket.IO (tin nhắn đã được lưu DB an toàn):', socketError.message);
     }
 
     return res.status(201).json({

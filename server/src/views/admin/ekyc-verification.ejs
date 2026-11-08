@@ -1,0 +1,138 @@
+<div style="display: flex; flex-direction: column; gap: 20px;">
+  <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+    <div>
+      <h1 style="font-size: 24px; font-weight: 800; color: #0F172A; letter-spacing: -0.02em; margin: 0;">
+        Xác minh Danh tính Điện tử (eKYC)
+      </h1>
+      <p style="font-size: 12px; color: #64748B; margin-top: 4px; margin-bottom: 0;">
+        Kiểm tra tính pháp lý của giấy tờ căn cước công dân và ảnh chân dung đối chiếu
+      </p>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="admin-card" style="padding: 0; overflow: hidden;">
+    <div class="w-full overflow-x-auto hide-scrollbar admin-table-container">
+      <table class="admin-table w-full text-left" style="width: 100%; min-width: 820px; border-collapse: collapse;">
+        <thead>
+          <tr>
+            <th style="min-width: 260px; width: 35%; padding-left: 20px;">Thành viên yêu cầu</th>
+            <th style="min-width: 180px; width: 22%;">Số CCCD / Ngày cấp</th>
+            <th style="min-width: 140px; width: 18%;">Ngày gửi</th>
+            <th style="min-width: 120px; width: 12%;">Trạng thái</th>
+            <th style="min-width: 140px; width: 13%; text-align: right; padding-right: 24px;">Hành động</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (!requests || requests.length === 0) { %>
+            <tr>
+              <td colspan="5" style="text-align: center; padding: 48px; color: #64748B;">
+                Không có yêu cầu xác minh eKYC nào.
+              </td>
+            </tr>
+          <% } else { %>
+            <% requests.forEach(function(req) { %>
+              <tr
+                class="ekyc-row"
+                data-id="<%= req._id %>"
+                data-name="<%= req.user && req.user.name ? req.user.name : (req.fullName || 'Người dùng') %>"
+                data-cccd="<%= req.idNumber || req.citizenId || '012345678901' %>"
+                data-dob="<%= req.dateOfBirth || '1995-01-01' %>"
+                data-address="<%= req.address || 'Hà Nội' %>"
+                data-status="<%= req.status || 'pending' %>"
+                data-front="<%= req.frontCardUrl || req.frontImage || 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=400' %>"
+                data-back="<%= req.backCardUrl || req.backImage || 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=400' %>"
+                data-portrait="<%= req.portraitUrl || req.selfieImage || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400' %>"
+              >
+                <td style="vertical-align: middle; padding-left: 20px;">
+                  <div style="display: flex; align-items: center; gap: 12px;">
+                    <img
+                      src="<%= req.portraitUrl || req.selfieImage || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400' %>"
+                      alt=""
+                      style="width: 44px; height: 44px; min-width: 44px; border-radius: 50%; object-fit: cover; border: 2px solid #E2E8F0;"
+                    />
+                    <div>
+                      <div style="font-weight: 700; color: #0F172A; font-size: 13.5px;" class="ekyc-user-name">
+                        <%= req.user && req.user.name ? req.user.name : (req.fullName || 'Người dùng') %>
+                      </div>
+                      <div style="font-size: 11.5px; color: #64748B; margin-top: 2px;">
+                        <%= req.user && req.user.email ? req.user.email : 'user@techshare.vn' %>
+                      </div>
+                    </div>
+                  </div>
+                </td>
+                <td style="vertical-align: middle;">
+                  <div style="font-weight: 700; font-size: 13px; color: #0F172A; font-family: monospace;">
+                    <%= req.idNumber || req.citizenId || '012345678901' %>
+                  </div>
+                  <div style="font-size: 11.5px; color: #64748B; margin-top: 2px;">
+                    Cấp bởi: Cục CSQLHC về TTXH
+                  </div>
+                </td>
+                <td style="vertical-align: middle; font-size: 12.5px; color: #64748B;">
+                  <%= new Date(req.createdAt || Date.now()).toLocaleDateString('vi-VN') %>
+                </td>
+                <td style="vertical-align: middle;" class="ekyc-status-cell">
+                  <% if (req.status === 'approved') { %>
+                    <span class="admin-pill-badge" style="background-color: #ECFDF5; color: #16A34A;">Đã xác minh</span>
+                  <% } else if (req.status === 'rejected') { %>
+                    <span class="admin-pill-badge" style="background-color: #FEF2F2; color: #DC2626;">Bị từ chối</span>
+                  <% } else { %>
+                    <span class="admin-pill-badge" style="background-color: #FEF3C7; color: #D97706;">Chờ duyệt</span>
+                  <% } %>
+                </td>
+                <td style="vertical-align: middle; text-align: right; padding-right: 24px; white-space: nowrap;">
+                  <button type="button" class="admin-btn admin-btn-outline btn-inspect-ekyc" style="padding: 6px 12px; font-size: 12px;">
+                    <i data-lucide="eye" style="width: 13px; height: 13px;"></i>
+                    <span>Xét duyệt</span>
+                  </button>
+                </td>
+              </tr>
+            <% }); %>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Kiểm tra eKYC -->
+<div id="ekycModal" class="admin-modal-overlay" style="display: none;">
+  <div class="admin-modal-card" style="max-width: 640px;" onclick="event.stopPropagation();">
+    <div class="admin-modal-header">
+      <h3 class="admin-modal-title">Hồ sơ Căn cước & Chân dung sinh trắc học</h3>
+      <button type="button" class="btn-close-modal" style="background: none; border: none; cursor: pointer; color: #94A3B8;">
+        <i data-lucide="x" style="width: 18px; height: 18px;"></i>
+      </button>
+    </div>
+
+    <!-- Metadata extracted -->
+    <div style="background: #F8FAFC; border-radius: 12px; padding: 14px; margin-top: 14px; border: 1px solid #E2E8F0; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+      <div><span style="font-size: 12px; color: #64748B;">Họ và tên:</span> <strong id="ekycModalName" style="color: #0F172A; font-size: 13px;"></strong></div>
+      <div><span style="font-size: 12px; color: #64748B;">Số CCCD:</span> <strong id="ekycModalCccd" style="color: #0F172A; font-size: 13px; font-family: monospace;"></strong></div>
+      <div><span style="font-size: 12px; color: #64748B;">Ngày sinh:</span> <span id="ekycModalDob" style="font-size: 13px; color: #334155;"></span></div>
+      <div><span style="font-size: 12px; color: #64748B;">Nơi thường trú:</span> <span id="ekycModalAddr" style="font-size: 13px; color: #334155;"></span></div>
+    </div>
+
+    <!-- 3 Photos -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 16px; margin-bottom: 20px;">
+      <div>
+        <div style="font-size: 11px; font-weight: 700; color: #64748B; margin-bottom: 4px;">Mặt trước CCCD</div>
+        <img id="ekycImgFront" src="" alt="" style="width: 100%; height: 110px; object-fit: cover; border-radius: 8px; border: 1px solid #CBD5E1;" />
+      </div>
+      <div>
+        <div style="font-size: 11px; font-weight: 700; color: #64748B; margin-bottom: 4px;">Mặt sau CCCD</div>
+        <img id="ekycImgBack" src="" alt="" style="width: 100%; height: 110px; object-fit: cover; border-radius: 8px; border: 1px solid #CBD5E1;" />
+      </div>
+      <div>
+        <div style="font-size: 11px; font-weight: 700; color: #64748B; margin-bottom: 4px;">Ảnh chân dung (Selfie)</div>
+        <img id="ekycImgPortrait" src="" alt="" style="width: 100%; height: 110px; object-fit: cover; border-radius: 8px; border: 1px solid #CBD5E1;" />
+      </div>
+    </div>
+
+    <div style="display: flex; justify-content: flex-end; gap: 10px;">
+      <button type="button" id="btnRejectEkyc" class="admin-btn admin-btn-danger">Từ chối eKYC</button>
+      <button type="button" id="btnApproveEkyc" class="admin-btn admin-btn-success">Phê duyệt eKYC</button>
+    </div>
+  </div>
+</div>

@@ -31,7 +31,7 @@ tech-share/
 │   │   ├── middlewares/        # Middlewares (auth JWT, error handler)
 │   │   ├── models/             # Mongoose Schemas (User, Device...)
 │   │   ├── routes/             # RESTful API endpoints (/api/auth, /api/devices...)
-│   │   └── index.js            # Điểm khởi chạy Express server (Port 5000)
+│   │   └── index.js            # Điểm khởi chạy Express server (Port 8000)
 │   ├── .env.example
 │   └── package.json
 │
@@ -55,11 +55,17 @@ npm run install:all
 ### 2. Cấu hình biến môi trường Server
 Tạo file `server/.env` dựa theo mẫu `server/.env.example`:
 ```env
-PORT=5000
+PORT=8000
 NODE_ENV=development
 MONGO_URI=mongodb://localhost:27017/techshare
 JWT_SECRET=your_jwt_secret_key_here
-CLIENT_URL=http://localhost:5173
+CLIENT_URL=http://localhost:3001
+```
+
+Tạo hoặc cập nhật `client/.env` với cổng frontend và URL backend:
+```env
+PORT=3001
+REACT_APP_API_URL=http://localhost:8000/api
 ```
 
 ### 3. Khởi chạy phát triển (Development)
@@ -68,8 +74,10 @@ CLIENT_URL=http://localhost:5173
   ```bash
   npm run dev
   ```
-  - Backend: `http://localhost:5000`
-  - Frontend: `http://localhost:5173`
+  - Backend: `http://localhost:8000`
+  - Frontend: `http://localhost:3001`
+
+  Nếu dev server vẫn báo proxy tới cổng `5000`, dừng tiến trình frontend cũ rồi chạy lại `npm run dev`. Kiểm tra `http://localhost:8000/api/health` để xác nhận backend đã sẵn sàng.
 
 * **Hoặc chạy riêng lẻ:**
   ```bash

@@ -1,40 +1,28 @@
 const { createProxyMiddleware } = require('http-proxy-middleware');
 
-/**
- * Configure Create React App dev-server proxy
- * Only proxies /api and /socket.io requests to backend on port 8000
- * Prevents Webpack internal *.hot-update.json files from being routed to the backend
- */
 module.exports = function (app) {
-  app.use(
-    '/api',
-    createProxyMiddleware({
-      target: 'http://localhost:8000',
-      changeOrigin: true,
-      logLevel: 'warn',
-      onError: (err, req, res) => {
-        if (!res.headersSent) {
-          res.writeHead(503, { 'Content-Type': 'application/json' });
-          res.end(
-            JSON.stringify({
-              success: false,
-              message:
-                'Backend server is not reachable on http://localhost:8000. Please run "npm run dev" in tech-share-web/server.',
-            })
-          );
-        }
-      },
-    })
-  );
+  const target = process.env.REACT_APP_API_URL?.replace(/\/api\/?$/, '') || 'http://localhost:8000';
+  const options = { target, changeOrigin: true, logLevel: 'warn' };
 
-  app.use(
-    '/socket.io',
-    createProxyMiddleware({
-      target: 'http://localhost:8000',
-      changeOrigin: true,
-      ws: true,
-      logLevel: 'warn',
-    })
-  );
+  // Register on all requests so the first page load can attach the upgrade listener.
+  app.use(createProxyMiddleware(
+    (pathname) => pathname === '/socket.io' || pathname.startsWith('/socket.io/'),
+    { ...options, ws: true }
+  ));
+
+  app.use('/api', createProxyMiddleware({
+    ...options,
+    onError: (_error, _req, res) => {
+      if (res.headersSent) {
+        res.end();
+        return;
+      }
+      res.status(503).json({
+        success: false,
+        message: `Backend server is not reachable at ${target}. Run "npm run dev:server" from the project root.`,
+      });
+    },
+  }));
+
+  app.use(['/admin', '/css', '/js/admin', '/uploads'], createProxyMiddleware(options));
 };
-

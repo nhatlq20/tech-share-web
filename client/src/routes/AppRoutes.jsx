@@ -126,6 +126,78 @@ export const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
+      <Route
+        path={ROUTES.ADMIN_BOOKINGS}
+        element={
+          <ProtectedRoute roles={['admin']}>
+            <AdminPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path={ROUTES.ADMIN_DISPUTES}
+        element={
+          <ProtectedRoute roles={['admin']}>
+            <AdminPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path={ROUTES.ADMIN_WALLET}
+        element={
+          <ProtectedRoute roles={['admin']}>
+            <AdminPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path={ROUTES.ADMIN_AUDIT_LOGS}
+        element={
+          <ProtectedRoute roles={['admin']}>
+            <AdminPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path={ROUTES.ADMIN_VOUCHERS}
+        element={
+          <ProtectedRoute roles={['admin']}>
+            <AdminPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path={ROUTES.ADMIN_REVIEWS}
+        element={
+          <ProtectedRoute roles={['admin']}>
+            <AdminPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path={ROUTES.ADMIN_ROLES}
+        element={
+          <ProtectedRoute roles={['admin']}>
+            <AdminPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path={ROUTES.ADMIN_ANALYTICS}
+        element={
+          <ProtectedRoute roles={['admin']}>
+            <AdminPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path={ROUTES.ADMIN_NOTIFICATIONS}
+        element={
+          <ProtectedRoute roles={['admin']}>
+            <AdminPage />
+          </ProtectedRoute>
+        }
+      />
 
       {/* ── Owner Hub (Chủ thiết bị) - Dedicated Workspace Layout ─────── */}
       <Route

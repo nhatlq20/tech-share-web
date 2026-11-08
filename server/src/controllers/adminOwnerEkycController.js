@@ -13,70 +13,68 @@ import { createAndSendNotification } from '../services/notificationService.js';
  * 1. GET /api/admin/owner-ekyc
  * Danh sách hồ sơ xét duyệt nâng cấp Owner từ collection owner_request
  */
+export const listOwnerEkycRequests = async ({ status, limit = 100, page = 1 }) => {
+  const query = {};
+  if (status && status !== 'all') {
+    query.status = status;
+  }
+
+  const pageNum = Math.max(1, parseInt(page, 10) || 1);
+  const limitNum = Math.min(500, Math.max(1, parseInt(limit, 10) || 100));
+  const skip = (pageNum - 1) * limitNum;
+
+  const [total, rawRequests] = await Promise.all([
+    OwnerEkycRequest.countDocuments(query),
+    OwnerEkycRequest.find(query)
+      .populate({
+        path: 'userId',
+        select: 'name email phone address avatar trust isVerified role',
+      })
+      .populate({
+        path: 'reviewedBy',
+        select: 'name email',
+      })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limitNum)
+      .lean(),
+  ]);
+
+  // Chuẩn hóa dữ liệu trả về cho giao diện Admin (bao gồm cả 3 ảnh)
+  const formatted = rawRequests.map((r) => {
+    const u = r.userId && typeof r.userId === 'object' ? r.userId : {};
+    return {
+      _id: r._id,
+      id: r._id,
+      userId: u._id || r.userId,
+      fullName: r.fullName || u.name || 'Người dùng TechShare',
+      name: r.fullName || u.name || 'Người dùng TechShare',
+      email: r.email || u.email || '',
+      phone: r.phone || u.phone || '',
+      address: r.address || u.address || 'Chưa cập nhật',
+      avatar: u.avatar || '',
+      idCardNumber: r.idCardNumber || '',
+      idCardFrontUrl: r.idCardFrontUrl || '',
+      idCardBackUrl: r.idCardBackUrl || '',
+      idCardHoldingUrl: r.idCardHoldingUrl || '', // 3rd image: Ảnh chân dung cầm CCCD
+      status: r.status || 'pending',
+      rejectReason: r.rejectReason || '',
+      reviewedBy: r.reviewedBy || null,
+      reviewedAt: r.reviewedAt || null,
+      createdAt: r.createdAt,
+      updatedAt: r.updatedAt,
+      userTrust: u.trust || null,
+      userRole: u.role || 'renter',
+    };
+  });
+
+  return { count: formatted.length, total, data: formatted, page: pageNum, limit: limitNum };
+};
+
 export const getAdminOwnerEkycList = async (req, res, next) => {
   try {
-    const { status, limit = 100, page = 1 } = req.query;
-
-    const query = {};
-    if (status && status !== 'all') {
-      query.status = status;
-    }
-
-    const pageNum = Math.max(1, parseInt(page, 10) || 1);
-    const limitNum = Math.min(500, Math.max(1, parseInt(limit, 10) || 100));
-    const skip = (pageNum - 1) * limitNum;
-
-    const [total, rawRequests] = await Promise.all([
-      OwnerEkycRequest.countDocuments(query),
-      OwnerEkycRequest.find(query)
-        .populate({
-          path: 'userId',
-          select: 'name email phone address avatar trust isVerified role',
-        })
-        .populate({
-          path: 'reviewedBy',
-          select: 'name email',
-        })
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limitNum)
-        .lean(),
-    ]);
-
-    // Chuẩn hóa dữ liệu trả về cho giao diện Admin (bao gồm cả 3 ảnh)
-    const formatted = rawRequests.map((r) => {
-      const u = r.userId && typeof r.userId === 'object' ? r.userId : {};
-      return {
-        _id: r._id,
-        id: r._id,
-        userId: u._id || r.userId,
-        fullName: r.fullName || u.name || 'Người dùng TechShare',
-        name: r.fullName || u.name || 'Người dùng TechShare',
-        email: r.email || u.email || '',
-        phone: r.phone || u.phone || '',
-        address: r.address || u.address || 'Chưa cập nhật',
-        avatar: u.avatar || '',
-        idCardNumber: r.idCardNumber || '',
-        idCardFrontUrl: r.idCardFrontUrl || '',
-        idCardBackUrl: r.idCardBackUrl || '',
-        idCardHoldingUrl: r.idCardHoldingUrl || '', // 3rd image: Ảnh chân dung cầm CCCD
-        status: r.status || 'pending',
-        rejectReason: r.rejectReason || '',
-        reviewedBy: r.reviewedBy || null,
-        reviewedAt: r.reviewedAt || null,
-        createdAt: r.createdAt,
-        updatedAt: r.updatedAt,
-        userTrust: u.trust || null,
-        userRole: u.role || 'renter',
-      };
-    });
-
-    return res.json({
-      success: true,
-      count: formatted.length,
-      total,
-      data: formatted,
-    });
+    const { count, total, data } = await listOwnerEkycRequests(req.query);
+    return res.json({ success: true, count, total, data });
   } catch (error) {
     next(error);
   }

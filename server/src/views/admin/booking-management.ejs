@@ -1,0 +1,130 @@
+<div style="display: flex; flex-direction: column; gap: 20px;">
+  <!-- Header -->
+  <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+    <div>
+      <h1 style="font-size: 24px; font-weight: 800; color: #0F172A; letter-spacing: -0.02em; margin: 0;">
+        Quản lý Đơn thuê Thiết bị
+      </h1>
+      <p style="font-size: 12px; color: #64748B; margin-top: 4px; margin-bottom: 0;">
+        Giám sát toàn bộ vòng đời đơn thuê, thời hạn bàn giao, hoàn tất và giải ngân ký quỹ
+      </p>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <a href="/api/admin/bookings/export" class="admin-btn admin-btn-outline" style="text-decoration: none; font-size: 12px; padding: 8px 14px; display: inline-flex; align-items: center; gap: 6px;">
+        <i data-lucide="download" style="width: 14px; height: 14px;"></i>
+        <span>Xuất CSV</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+    <div class="admin-search-pill" style="width: 280px;">
+      <i data-lucide="search" style="color: #67BEC3; width: 16px; height: 16px; flex-shrink: 0;"></i>
+      <input type="text" id="bookingSearchInput" placeholder="Tìm theo Mã đơn, Khách thuê, Thiết bị..." />
+    </div>
+
+    <select id="bookingStatusFilter" style="padding: 8px 14px; border-radius: 9999px; border: 1px solid #E2E8F0; background-color: #FFFFFF; font-size: 13px; color: #334155; cursor: pointer; outline: none;">
+      <option value="all">Tất cả trạng thái</option>
+      <option value="pending">Chờ xác nhận</option>
+      <option value="confirmed">Đã duyệt / Chuẩn bị</option>
+      <option value="delivering">Đang giao nhận</option>
+      <option value="in_progress">Đang trong thời gian thuê</option>
+      <option value="completed">Đã hoàn thành</option>
+      <option value="cancelled">Đã hủy</option>
+      <option value="disputed">Đang tranh chấp</option>
+    </select>
+  </div>
+
+  <!-- Bookings Table -->
+  <div class="admin-card" style="padding: 0; overflow: hidden;">
+    <div class="w-full overflow-x-auto hide-scrollbar admin-table-container">
+      <table class="admin-table w-full text-left" style="width: 100%; min-width: 900px; border-collapse: collapse;">
+        <thead>
+          <tr>
+            <th style="min-width: 240px; width: 28%; padding-left: 20px;">Đơn thuê & Thiết bị</th>
+            <th style="min-width: 200px; width: 24%;">Bên thuê & Bên cho thuê</th>
+            <th style="min-width: 160px; width: 18%;">Thời hạn thuê</th>
+            <th style="min-width: 140px; width: 16%;">Tổng tiền / Cọc</th>
+            <th style="min-width: 140px; width: 14%; text-align: right; padding-right: 24px;">Trạng thái</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (!bookings || bookings.length === 0) { %>
+            <tr>
+              <td colspan="5" style="text-align: center; padding: 48px; color: #64748B;">
+                Chưa có đơn thuê nào trong hệ thống.
+              </td>
+            </tr>
+          <% } else { %>
+            <% bookings.forEach(function(b) { %>
+              <tr
+                class="booking-row"
+                data-id="<%= b._id %>"
+                data-code="<%= (b.bookingCode || b._id.slice(-6)).toUpperCase() %>"
+                data-renter="<%= (b.renter && b.renter.name ? b.renter.name : '').toLowerCase() %>"
+                data-owner="<%= (b.owner && b.owner.name ? b.owner.name : '').toLowerCase() %>"
+                data-device="<%= (b.device && (b.device.name || b.device.title) ? (b.device.name || b.device.title) : '').toLowerCase() %>"
+                data-status="<%= b.status %>"
+              >
+                <!-- Đơn & Thiết bị -->
+                <td style="vertical-align: middle; padding-left: 20px;">
+                  <div style="font-weight: 800; font-size: 13.5px; color: #0F172A; font-family: monospace;">
+                    #<%= (b.bookingCode || b._id.slice(-6)).toUpperCase() %>
+                  </div>
+                  <div style="font-size: 12.5px; color: #334155; margin-top: 2px;">
+                    <%= b.device && (b.device.name || b.device.title) ? (b.device.name || b.device.title) : 'Thiết bị công nghệ' %>
+                  </div>
+                </td>
+
+                <!-- Các bên -->
+                <td style="vertical-align: middle;">
+                  <div style="font-size: 12.5px; color: #0F172A;">
+                    <span style="color: #64748B;">Thuê:</span> <strong><%= b.renter && b.renter.name ? b.renter.name : 'Khách thuê' %></strong>
+                  </div>
+                  <div style="font-size: 12.5px; color: #0F172A; margin-top: 2px;">
+                    <span style="color: #64748B;">Chủ:</span> <strong><%= b.owner && b.owner.name ? b.owner.name : 'Đối tác cho thuê' %></strong>
+                  </div>
+                </td>
+
+                <!-- Thời hạn -->
+                <td style="vertical-align: middle; font-size: 12px; color: #475569;">
+                  <%= new Date(b.startDate || Date.now()).toLocaleDateString('vi-VN') %> → <%= new Date(b.endDate || Date.now()).toLocaleDateString('vi-VN') %>
+                </td>
+
+                <!-- Tổng tiền & Cọc -->
+                <td style="vertical-align: middle;">
+                  <div style="font-weight: 700; font-size: 13px; color: #0F172A;">
+                    <%= new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(b.totalPrice || b.rentalFee || 0) %>
+                  </div>
+                  <div style="font-size: 11.5px; color: #286E74; font-weight: 600; margin-top: 2px;">
+                    Cọc: <%= new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(b.depositAmount || 0) %>
+                  </div>
+                </td>
+
+                <!-- Trạng thái -->
+                <td style="vertical-align: middle; text-align: right; padding-right: 24px;">
+                  <%
+                    var statusMap = {
+                      pending: { bg: '#FEF3C7', color: '#D97706', label: 'Chờ duyệt' },
+                      confirmed: { bg: '#E0F2FE', color: '#0369A1', label: 'Đã duyệt' },
+                      in_progress: { bg: '#E8F6F7', color: '#286E74', label: 'Đang thuê' },
+                      completed: { bg: '#ECFDF5', color: '#16A34A', label: 'Hoàn thành' },
+                      cancelled: { bg: '#F1F5F9', color: '#64748B', label: 'Đã hủy' },
+                      disputed: { bg: '#FEF2F2', color: '#DC2626', label: 'Tranh chấp' },
+                    };
+                    var st = statusMap[b.status] || { bg: '#F1F5F9', color: '#64748B', label: b.status };
+                  %>
+                  <span class="admin-pill-badge" style="background-color: <%= st.bg %>; color: <%= st.color %>;">
+                    <%= st.label %>
+                  </span>
+                </td>
+              </tr>
+            <% }); %>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

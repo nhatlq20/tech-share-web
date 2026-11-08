@@ -1,0 +1,109 @@
+<header class="admin-topbar">
+  <!-- Pill Search Bar -->
+  <div class="admin-search-pill">
+    <i data-lucide="search" style="color: #67BEC3; width: 16px; height: 16px; flex-shrink: 0;"></i>
+    <input
+      type="text"
+      id="globalAdminSearch"
+      placeholder="Tìm kiếm nhanh thiết bị, thành viên, đơn thuê..."
+      autocomplete="off"
+    />
+  </div>
+
+  <!-- Topbar Right Actions -->
+  <div class="admin-topbar-actions">
+    <!-- Refresh Button -->
+    <button
+      type="button"
+      id="adminRefreshBtn"
+      class="admin-action-btn"
+      title="Làm mới đồng bộ dữ liệu"
+      onclick="window.location.reload();"
+    >
+      <i data-lucide="refresh-cw" style="width: 16px; height: 16px;"></i>
+    </button>
+
+    <!-- Notification Bell -->
+    <div style="position: relative;">
+      <button
+        type="button"
+        id="adminNotifBtn"
+        class="admin-action-btn"
+        title="Thông báo hệ thống"
+        onclick="toggleNotificationDropdown();"
+      >
+        <i data-lucide="bell" style="width: 16px; height: 16px;"></i>
+        <% if (typeof pendingCounts !== 'undefined' && (pendingCounts.ekyc + pendingCounts.devices + pendingCounts.disputes) > 0) { %>
+          <span class="admin-notif-badge">
+            <%= (pendingCounts.ekyc + pendingCounts.devices + pendingCounts.disputes) %>
+          </span>
+        <% } %>
+      </button>
+
+      <!-- Dropdown -->
+      <div id="adminNotifDropdown" class="admin-notif-dropdown" style="display: none;">
+        <div class="admin-notif-dropdown-header">
+          <span style="font-weight: 700; font-size: 13.5px; color: #0F172A;">Thông báo Quản trị</span>
+          <span style="font-size: 11px; color: #64748B;">Hôm nay</span>
+        </div>
+        <div class="admin-notif-dropdown-list">
+          <% if (typeof pendingCounts !== 'undefined' && pendingCounts.ekyc > 0) { %>
+            <a href="/admin/ekyc-verification" class="admin-notif-item">
+              <div class="admin-notif-icon" style="background-color: #E8F6F7; color: #286E74;">
+                <i data-lucide="shield-check" style="width: 16px; height: 16px;"></i>
+              </div>
+              <div class="admin-notif-text">
+                <div style="font-weight: 600; font-size: 12.5px; color: #0F172A;">Xác minh eKYC mới</div>
+                <div style="font-size: 11.5px; color: #64748B;">Có <%= pendingCounts.ekyc %> hồ sơ eKYC đang chờ xem xét.</div>
+              </div>
+            </a>
+          <% } %>
+          <% if (typeof pendingCounts !== 'undefined' && pendingCounts.devices > 0) { %>
+            <a href="/admin/device-moderation" class="admin-notif-item">
+              <div class="admin-notif-icon" style="background-color: #FEF3C7; color: #D97706;">
+                <i data-lucide="cpu" style="width: 16px; height: 16px;"></i>
+              </div>
+              <div class="admin-notif-text">
+                <div style="font-weight: 600; font-size: 12.5px; color: #0F172A;">Thiết bị chờ duyệt</div>
+                <div style="font-size: 11.5px; color: #64748B;">Có <%= pendingCounts.devices %> thiết bị cần kiểm duyệt niêm yết.</div>
+              </div>
+            </a>
+          <% } %>
+          <% if (typeof pendingCounts !== 'undefined' && pendingCounts.disputes > 0) { %>
+            <a href="/admin/dispute-resolution" class="admin-notif-item">
+              <div class="admin-notif-icon" style="background-color: #FEE2E2; color: #DC2626;">
+                <i data-lucide="scale" style="width: 16px; height: 16px;"></i>
+              </div>
+              <div class="admin-notif-text">
+                <div style="font-weight: 600; font-size: 12.5px; color: #0F172A;">Tranh chấp khiếu nại</div>
+                <div style="font-size: 11.5px; color: #64748B;">Có <%= pendingCounts.disputes %> tranh chấp cần xử lý giữ cọc.</div>
+              </div>
+            </a>
+          <% } %>
+          <% if (typeof pendingCounts === 'undefined' || (pendingCounts.ekyc + pendingCounts.devices + pendingCounts.disputes) === 0) { %>
+            <div style="padding: 24px; text-align: center; color: #94A3B8; font-size: 12.5px;">
+              Không có việc xử lý tồn đọng. Hệ thống ổn định.
+            </div>
+          <% } %>
+        </div>
+      </div>
+    </div>
+
+    <!-- Admin Header Chip -->
+    <div class="admin-topbar-profile-chip">
+      <img
+        src="<%= admin && (admin.avatar || admin.avatarUrl) ? (admin.avatar || admin.avatarUrl) : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop' %>"
+        alt="<%= admin && admin.name ? admin.name : 'Admin' %>"
+        class="admin-topbar-avatar"
+      />
+      <div class="admin-topbar-user-info">
+        <span class="admin-topbar-name">
+          <%= admin && admin.name ? admin.name : 'Admin Quản trị' %>
+        </span>
+        <span class="admin-topbar-role">
+          <%= admin && admin.role === 'admin' ? 'Quản trị viên hệ thống' : (admin && admin.role ? admin.role : 'Quản trị viên') %>
+        </span>
+      </div>
+    </div>
+  </div>
+</header>
