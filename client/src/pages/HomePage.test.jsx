@@ -20,7 +20,10 @@ jest.mock('../components/home/HeroSection', () => ({
     </div>
   ),
 }));
-jest.mock('react-router-dom', () => ({ Link: ({ to, children, ...props }) => <a href={to} {...props}>{children}</a> }));
+jest.mock('react-router-dom', () => ({
+  Link: ({ to, children, ...props }) => <a href={to} {...props}>{children}</a>,
+  useNavigate: () => jest.fn(),
+}));
 
 let container, root, success, failure, hook;
 const cached = (extra = {}) => ({ latitude: 21.0285, longitude: 105.8542, accuracy: 20, timestamp: Date.now(), ...extra });
@@ -736,4 +739,15 @@ test('race condition protection: stale earlier search response does not overwrit
   // Stale response must be dropped, Canon must remain displayed
   expect(container.textContent).toContain('Canon Device');
   expect(container.textContent).not.toContain('Sony Stale Device');
+});
+
+test('clicking Book now navigates directly to checkout', async () => {
+  const mockNavigate = jest.fn();
+  jest.spyOn(require('react-router-dom'), 'useNavigate').mockReturnValue(mockNavigate);
+  save();
+  await mount();
+  const bookBtn = [...container.querySelectorAll('button')].find(b => b.textContent.includes('Book now'));
+  expect(bookBtn).toBeDefined();
+  await act(async () => bookBtn.click());
+  expect(mockNavigate).toHaveBeenCalledWith('/booking/Cached device');
 });

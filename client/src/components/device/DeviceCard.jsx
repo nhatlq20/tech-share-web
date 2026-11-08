@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Star, ImageOff, MapPin, Heart } from 'lucide-react';
 import { ROUTES } from '../../routes/routes.js';
 import { formatPrice } from '../../utils/formatters.js';
@@ -57,6 +57,7 @@ export const formatConditionLabel = (condition) => {
  * @param {Function} [props.onFavoriteChange] Optional callback when favorite state is toggled
  */
 export const DeviceCard = ({ device, onFavoriteChange }) => {
+  const navigate = useNavigate();
   const deviceId = String(device?._id || device?.id || '');
   const [imgError, setImgError] = useState(false);
   const [isFavorite, setIsFavorite] = useState(() => isDeviceInWishlist(deviceId));
@@ -120,6 +121,14 @@ export const DeviceCard = ({ device, onFavoriteChange }) => {
     }
   };
 
+  const handleBookNow = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (deviceId) {
+      navigate(ROUTES.BOOKING_CHECKOUT_PATH(deviceId));
+    }
+  };
+
   return (
     <article className="device-card-item">
       {deviceId && (
@@ -136,6 +145,7 @@ export const DeviceCard = ({ device, onFavoriteChange }) => {
       )}
       <Link
         to={detailUrl}
+        state={{ from: ROUTES.HOME, fromLabel: 'Back to Home' }}
         className="device-card-link"
         aria-label={`View details for ${title}`}
       >
@@ -191,7 +201,14 @@ export const DeviceCard = ({ device, onFavoriteChange }) => {
               </div>
             ) : null}
           </div>
-          <span className="device-card-rent-cta">View device <span aria-hidden="true">↗</span></span>
+          <button
+            type="button"
+            className="device-card-rent-cta"
+            onClick={handleBookNow}
+            aria-label={`Book now: ${title}`}
+          >
+            Book now <span aria-hidden="true">↗</span>
+          </button>
         </div>
       </Link>
     </article>

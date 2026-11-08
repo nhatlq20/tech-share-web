@@ -194,7 +194,7 @@
 }
 
 .device-card-distance { display: flex; align-items: center; gap: 4px; color: #7b8aa0; font-size: 11px; margin-bottom: 8px; }
-.device-card-rent-cta { display: none; }
+.device-card-rent-cta { display: none; border: none; outline: none; cursor: pointer; font-family: inherit; }
 .device-card-distance { display: none; }
 
 .device-card-item { position: relative; }
