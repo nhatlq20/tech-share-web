@@ -88,13 +88,86 @@
 
 /* Keep the compact comparison rows local to Home. */
 .home-page-root .device-card-image-wrap { height: 125px; }
-.home-page-root .device-card-content { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 5px; align-content: start; }
-.home-page-root .device-card-meta-row, .home-page-root .device-card-title { grid-column: 1 / -1; }
-.home-page-root .device-card-title { margin: 0 0 2px; }
-.home-page-root .device-card-distance { display: flex; grid-column: 1; grid-row: 3; font-size: 9px; margin: 0; }
-.home-page-root .device-card-footer { display: contents; }
-.home-page-root .device-card-rating-wrap { grid-column: 2; grid-row: 3; align-self: center; }
-.home-page-root .device-card-price-wrap { grid-column: 1; grid-row: 4; align-self: center; margin-top: 7px; }
-.home-page-root .device-card-price { font-size: 10px; letter-spacing: -.2px; }
-.home-page-root .device-card-rent-cta { grid-column: 2; grid-row: 4; margin-top: 7px; padding: 7px; font-size: 9px; }
-@media (max-width: 400px) { .home-page-root .device-card-content { grid-template-columns: 1fr; } .home-page-root .device-card-rating-wrap { grid-column: 1; grid-row: 4; } .home-page-root .device-card-price-wrap { grid-row: 5; } .home-page-root .device-card-rent-cta { grid-column: 1; grid-row: 6; } }
+.home-page-root .device-card-content { display: flex; flex-direction: column; gap: 4px; }
+.home-page-root .device-card-title { margin: 0 0 2px; font-size: 13px; line-height: 1.3; }
+.home-page-root .device-card-owner-row { margin: 0; font-size: 11px; }
+.home-page-root .device-card-location-row { margin: 0; font-size: 11px; }
+.home-page-root .device-card-distance { display: flex; font-size: 11px; margin: 0 0 4px 0; }
+.home-page-root .device-card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: auto; padding-top: 6px; }
+.home-page-root .device-card-price { font-size: 13px; font-weight: 700; }
+.home-page-root .device-card-rent-cta { margin-top: 6px; padding: 6px 10px; font-size: 11px; }
+
+/* City Selector on Home */
+.home-city-selector-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 9999px;
+  padding: 4px 10px 4px 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.home-city-selector-wrap:focus-within {
+  border-color: #0d9488;
+  box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.15);
+}
+
+.city-selector-icon {
+  color: #0d9488;
+  flex-shrink: 0;
+}
+
+.home-city-select {
+  border: none;
+  background: transparent;
+  color: #0f172a;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  font-family: inherit;
+  padding-right: 2px;
+}
+
+.home-quick-city-select {
+  margin: 12px 0 16px 0;
+  text-align: center;
+}
+
+.quick-city-title {
+  font-size: 12px;
+  color: #64748b;
+  margin-bottom: 8px;
+}
+
+.quick-city-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+}
+
+.quick-city-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 12px;
+  border-radius: 9999px;
+  background-color: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #0f172a;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.18s, border-color 0.18s, color 0.18s;
+}
+
+.quick-city-btn:hover,
+.quick-city-btn.active {
+  background-color: #0d9488;
+  border-color: #0d9488;
+  color: #ffffff;
+}

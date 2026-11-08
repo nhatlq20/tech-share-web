@@ -10,6 +10,8 @@ import {
   CheckCircle2,
   SlidersHorizontal,
   Package,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { useUserLocation } from '../hooks/useUserLocation';
 import { deviceService } from '../services/deviceService';
@@ -37,13 +39,40 @@ const CATEGORIES = [
   { id: 'all', label: 'All' },
   { id: 'camera', label: 'Cameras' },
   { id: 'smartphone', label: 'Phones' },
+  { id: 'gadgets', label: 'Gadgets' },
   { id: 'laptop', label: 'Laptops' },
   { id: 'drone', label: 'Drones' },
   { id: 'audio', label: 'Audio' },
   { id: 'tablet', label: 'Tablets' },
   { id: 'gaming', label: 'Gaming' },
-  { id: 'accessory', label: 'Accessories' },
 ];
+
+const CATEGORY_ALIASES = {
+  camera: ['camera', 'cameras', 'cam'],
+  smartphone: ['smartphone', 'smartphones', 'phone', 'phones', 'mobile'],
+  gadgets: ['gadget', 'gadgets', 'accessory', 'accessories'],
+  accessory: ['accessory', 'accessories', 'gadget', 'gadgets'],
+  laptop: ['laptop', 'laptops', 'computer', 'computers', 'pc', 'macbook'],
+  drone: ['drone', 'drones', 'flycam'],
+  audio: ['audio', 'sound', 'headphone', 'headphones', 'speaker', 'speakers'],
+  tablet: ['tablet', 'tablets', 'ipad'],
+  gaming: ['gaming', 'game', 'games', 'console', 'playstation', 'xbox'],
+};
+
+export const matchesCategory = (deviceCategory, filterId) => {
+  if (!filterId || filterId === 'all') return true;
+  const cat = String(deviceCategory || '').toLowerCase().trim();
+  const target = String(filterId || '').toLowerCase().trim();
+  if (cat === target) return true;
+
+  const targetAliases = CATEGORY_ALIASES[target];
+  if (targetAliases && targetAliases.includes(cat)) return true;
+
+  const catAliases = CATEGORY_ALIASES[cat];
+  if (catAliases && catAliases.includes(target)) return true;
+
+  return false;
+};
 
 const DEFAULT_AVATAR = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400';
 
@@ -60,6 +89,7 @@ export const NearbyPage = () => {
   // Selection states: selected owner group and selected device
   const [selectedOwnerKey, setSelectedOwnerKey] = useState(null);
   const [selectedDeviceId, setSelectedDeviceId] = useState(null);
+  const [isDevicesCollapsed, setIsDevicesCollapsed] = useState(false);
 
   // Data fetching state
   const locationKey = JSON.stringify([latitude, longitude, revision, radiusMeters]);
@@ -181,10 +211,7 @@ export const NearbyPage = () => {
 
     // Category filter
     if (selectedCategory !== 'all') {
-      list = list.filter((device) => {
-        const cat = (device.category || '').toLowerCase();
-        return cat === selectedCategory.toLowerCase();
-      });
+      list = list.filter((device) => matchesCategory(device.category, selectedCategory));
     }
 
     // Availability filter
@@ -242,6 +269,20 @@ export const NearbyPage = () => {
     return ownerGroups.find((g) => g.key === activeOwnerKey) || ownerGroups[0];
   }, [ownerGroups, activeOwnerKey]);
 
+  // Keep selectedDeviceId in sync when owner or filter changes
+  useEffect(() => {
+    if (!selectedGroup) {
+      if (selectedDeviceId !== null) setSelectedDeviceId(null);
+      return;
+    }
+    const hasDevice = selectedGroup.devices.some(
+      (d) => String(d._id || d.id) === String(selectedDeviceId)
+    );
+    if (!hasDevice && selectedGroup.devices.length > 0) {
+      setSelectedDeviceId(String(selectedGroup.devices[0]._id || selectedGroup.devices[0].id));
+    }
+  }, [selectedGroup, selectedDeviceId]);
+
   // Marker click from MapView (accepts groupKey and optional primaryDeviceId, or deviceId)
   const handleMarkerClick = useCallback((groupKeyOrDeviceId, maybeDeviceId) => {
     const targetGroup = ownerGroups.find(
@@ -265,6 +306,7 @@ export const NearbyPage = () => {
   // Owner card select
   const handleOwnerSelect = (group) => {
     setSelectedOwnerKey(group.key);
+    setIsDevicesCollapsed(false);
     const firstDevId = group.devices[0]?._id || group.devices[0]?.id;
     if (firstDevId) {
       setSelectedDeviceId(String(firstDevId));
@@ -371,22 +413,27 @@ export const NearbyPage = () => {
                 </div>
               </div>
 
-              {/* 3. Category Filter (Horizontal Scroll Pills) */}
-              <div className="nearby-category-scroll-wrap" role="toolbar" aria-label="Category filters">
-                {CATEGORIES.map((cat) => {
-                  const isActive = selectedCategory === cat.id;
-                  return (
-                    <button
-                      key={cat.id}
-                      type="button"
-                      className={`nearby-cat-pill ${isActive ? 'is-active' : ''}`}
-                      onClick={() => setSelectedCategory(cat.id)}
-                      aria-pressed={isActive}
-                    >
-                      {cat.label}
-                    </button>
-                  );
-                })}
+              {/* 3. Category Filter Header & Pills (Matching Reference Image 1) */}
+              <div className="nearby-category-section">
+                <div className="nearby-available-header">
+                  <span className="nearby-available-title">Available Nearby ({filteredDevices.length})</span>
+                </div>
+                <div className="nearby-category-scroll-wrap" role="toolbar" aria-label="Category filters">
+                  {CATEGORIES.map((cat) => {
+                    const isActive = selectedCategory === cat.id;
+                    return (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        className={`nearby-cat-pill ${isActive ? 'is-active' : ''}`}
+                        onClick={() => setSelectedCategory(cat.id)}
+                        aria-pressed={isActive}
+                      >
+                        {cat.label}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               {/* 4. Sort & Availability Filters Row */}
@@ -517,10 +564,28 @@ export const NearbyPage = () => {
                   <div className="nearby-owner-card-actions">
                     <button
                       type="button"
-                      className="nearby-owner-view-btn"
-                      onClick={handleScrollToDevices}
+                      className={`nearby-owner-view-btn ${isDevicesCollapsed ? 'is-collapsed' : ''}`}
+                      onClick={() => {
+                        if (isDevicesCollapsed) {
+                          setIsDevicesCollapsed(false);
+                          handleScrollToDevices();
+                        } else {
+                          setIsDevicesCollapsed(true);
+                        }
+                      }}
+                      aria-expanded={!isDevicesCollapsed}
                     >
-                      View Devices ({selectedGroup.devices.length})
+                      {isDevicesCollapsed ? (
+                        <>
+                          <span>View Devices ({selectedGroup.devices.length})</span>
+                          <ChevronDown size={14} className="inline ml-1" />
+                        </>
+                      ) : (
+                        <>
+                          <span>Collapse Devices ({selectedGroup.devices.length})</span>
+                          <ChevronUp size={14} className="inline ml-1" />
+                        </>
+                      )}
                     </button>
                   </div>
                 </div>
@@ -530,14 +595,46 @@ export const NearbyPage = () => {
               {selectedGroup && (
                 <div className="nearby-owner-devices-section" ref={devicesSectionRef}>
                   <div className="nearby-owner-devices-header">
-                    <h3 className="nearby-owner-devices-title">
-                      Devices by {selectedGroup.owner?.name || 'Owner'}
-                      <span className="nearby-owner-devices-count">({selectedGroup.devices.length})</span>
-                    </h3>
-                    <span className="nearby-owner-devices-sub">Available at this location</span>
+                    <div>
+                      <h3 className="nearby-owner-devices-title">
+                        Devices by {selectedGroup.owner?.name || 'Owner'}
+                        <span className="nearby-owner-devices-count">({selectedGroup.devices.length})</span>
+                      </h3>
+                      <span className="nearby-owner-devices-sub">Available at this location</span>
+                    </div>
+                    <button
+                      type="button"
+                      className="nearby-devices-collapse-btn"
+                      onClick={() => setIsDevicesCollapsed((prev) => !prev)}
+                      aria-expanded={!isDevicesCollapsed}
+                      title={isDevicesCollapsed ? 'Expand device list' : 'Collapse device list'}
+                    >
+                      {isDevicesCollapsed ? (
+                        <>
+                          <span>Expand</span>
+                          <ChevronDown size={14} />
+                        </>
+                      ) : (
+                        <>
+                          <span>Collapse</span>
+                          <ChevronUp size={14} />
+                        </>
+                      )}
+                    </button>
                   </div>
 
-                  <ul className="nearby-device-list">
+                  {isDevicesCollapsed ? (
+                    <div
+                      className="nearby-devices-collapsed-notice"
+                      onClick={() => setIsDevicesCollapsed(false)}
+                      role="button"
+                      tabIndex={0}
+                    >
+                      <span>Device list is collapsed ({selectedGroup.devices.length} devices). Click to expand.</span>
+                      <ChevronDown size={14} />
+                    </div>
+                  ) : (
+                    <ul className="nearby-device-list">
                     {selectedGroup.devices.map((dev) => {
                       const id = String(dev._id || dev.id);
                       const isSelected = id === selectedDeviceId;
@@ -564,7 +661,7 @@ export const NearbyPage = () => {
                           aria-label={isSelected ? 'Selected device' : undefined}
                           onClick={() => handleCardClick(id)}
                         >
-                          {/* Left: Thumbnail Image (88px square) */}
+                          {/* Left: Thumbnail Image (88-92px square) with badge */}
                           <div className="nearby-card-thumb-wrap">
                             {imageUrl ? (
                               <img src={imageUrl} alt={title} className="nearby-card-thumb" loading="lazy" />
@@ -573,16 +670,16 @@ export const NearbyPage = () => {
                                 <ImageOff size={22} className="text-slate-400" />
                               </div>
                             )}
-                            {conditionText && (
-                              <span className="nearby-card-condition-pill">{conditionText}</span>
-                            )}
+                            <span className="nearby-card-condition-pill nearby-card-popular-badge">
+                              {rating && Number(rating) >= 4.8 ? 'Popular' : (conditionText || 'Verified')}
+                            </span>
                           </div>
 
-                          {/* Right: Body & Information */}
+                          {/* Right: Body & Information matching Image 2 */}
                           <div className="nearby-card-body">
-                            {/* Row 1: Category & Heart Wishlist Button */}
+                            {/* Row 1: Title & Heart Wishlist Button */}
                             <div className="nearby-card-top-row">
-                              <span className="nearby-card-category">{categoryText || 'Tech'}</span>
+                              <h4 className="nearby-card-title" title={title}>{title}</h4>
                               <button
                                 type="button"
                                 className={`nearby-card-heart-btn ${isFav ? 'is-fav' : ''}`}
@@ -590,12 +687,16 @@ export const NearbyPage = () => {
                                 aria-label={isFav ? 'Remove from wishlist' : 'Add to wishlist'}
                                 title={isFav ? 'Remove from wishlist' : 'Add to wishlist'}
                               >
-                                <Heart size={14} fill={isFav ? '#ef4444' : 'none'} stroke={isFav ? '#ef4444' : '#94a3b8'} />
+                                <Heart size={15} fill={isFav ? '#ef4444' : 'none'} stroke={isFav ? '#ef4444' : '#94a3b8'} />
                               </button>
                             </div>
 
-                            {/* Row 2: Title */}
-                            <h4 className="nearby-card-title" title={title}>{title}</h4>
+                            {/* Row 2: Location / Neighborhood */}
+                            <div className="nearby-card-sub-row">
+                              <span className="nearby-card-location-text">
+                                {dev.location?.addressText || selectedGroup.addressText || categoryText || 'Local Rental'}
+                              </span>
+                            </div>
 
                             {/* Row 3: Distance, Status & Rating */}
                             <div className="nearby-card-meta-line">
@@ -644,6 +745,7 @@ export const NearbyPage = () => {
                       );
                     })}
                   </ul>
+                  )}
                 </div>
               )}
 

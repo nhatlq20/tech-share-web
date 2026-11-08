@@ -2,6 +2,86 @@ import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
+// Safeguard Leaflet projections, DivOverlay & Popup against missing _latlng during flyTo animations and resets
+if (typeof L !== 'undefined') {
+  // 1. Guard Map projections against undefined / null / malformed latlng
+  if (L.Map && L.Map.prototype) {
+    const origLatLngToLayerPoint = L.Map.prototype.latLngToLayerPoint;
+    if (origLatLngToLayerPoint) {
+      L.Map.prototype.latLngToLayerPoint = function (latlng) {
+        if (!latlng || typeof latlng !== 'object') return new L.Point(0, 0);
+        try {
+          const pt = origLatLngToLayerPoint.call(this, latlng);
+          return pt || new L.Point(0, 0);
+        } catch (e) {
+          return new L.Point(0, 0);
+        }
+      };
+    }
+
+    const origProject = L.Map.prototype.project;
+    if (origProject) {
+      L.Map.prototype.project = function (latlng, zoom) {
+        if (!latlng || typeof latlng !== 'object') return new L.Point(0, 0);
+        try {
+          const pt = origProject.call(this, latlng, zoom);
+          return pt || new L.Point(0, 0);
+        } catch (e) {
+          return new L.Point(0, 0);
+        }
+      };
+    }
+
+    const origLatLngToPoint = L.Map.prototype.latLngToPoint;
+    if (origLatLngToPoint) {
+      L.Map.prototype.latLngToPoint = function (latlng, zoom) {
+        if (!latlng || typeof latlng !== 'object') return new L.Point(0, 0);
+        try {
+          const pt = origLatLngToPoint.call(this, latlng, zoom);
+          return pt || new L.Point(0, 0);
+        } catch (e) {
+          return new L.Point(0, 0);
+        }
+      };
+    }
+  }
+
+  // 2. Guard CRS coordinate projection against undefined / null
+  const crsList = [L.CRS?.EPSG3857, L.CRS?.EPSG4326, L.CRS?.EPSG3395, L.CRS?.Simple, L.CRS].filter(Boolean);
+  crsList.forEach((crs) => {
+    if (crs && crs.latLngToPoint) {
+      const origCrsPoint = crs.latLngToPoint;
+      crs.latLngToPoint = function (latlng, zoom) {
+        if (!latlng || typeof latlng.lat !== 'number' || typeof (latlng.lng ?? latlng.lon) !== 'number') {
+          return new L.Point(0, 0);
+        }
+        try {
+          return origCrsPoint.call(this, latlng, zoom) || new L.Point(0, 0);
+        } catch (e) {
+          return new L.Point(0, 0);
+        }
+      };
+    }
+  });
+
+  // 3. Guard DivOverlay, Popup, and Tooltip position updates
+  [L.DivOverlay, L.Popup, L.Tooltip].forEach((cls) => {
+    if (cls && cls.prototype) {
+      const orig = cls.prototype._updatePosition;
+      if (orig) {
+        cls.prototype._updatePosition = function () {
+          if (!this._map || !this._latlng) return;
+          try {
+            return orig.apply(this, arguments);
+          } catch (e) {
+            // safely swallow animation / reposition race conditions
+          }
+        };
+      }
+    }
+  });
+}
+
 const FAVI_MAP_API_KEY = process.env.REACT_APP_FAVI_MAP_API_KEY || process.env.VITE_FAVI_MAP_API_KEY || '';
 
 export const GOOGLE_MAPS_TILE_CONFIG = {
@@ -237,11 +317,20 @@ export const MapView = ({
         clearMarkers: () => {
           if (leafletInstance) {
             try {
+              if (typeof leafletInstance.stop === 'function') {
+                leafletInstance.stop();
+              }
               leafletInstance.closePopup();
+              if (leafletInstance._popup) {
+                leafletInstance.removeLayer(leafletInstance._popup);
+                leafletInstance._popup = null;
+              }
             } catch (e) {}
           }
           if (markersLayerRef.current) {
-            markersLayerRef.current.clearLayers();
+            try {
+              markersLayerRef.current.clearLayers();
+            } catch (e) {}
           }
         },
         addMarker: (coords, opts = {}) => {
@@ -265,19 +354,23 @@ export const MapView = ({
             zIndexOffset: isUser ? 1000 : (isSelected ? 900 : 100),
           });
 
+          // Add to marker layer first so marker._map is established
+          markersLayerRef.current.addLayer(marker);
+
           if (opts.popup) {
             marker.bindPopup(opts.popup, {
               maxWidth: 240,
               minWidth: 180,
               offset: [0, -22],
               className: 'nearby-leaflet-popup',
+              autoPan: false,
             });
             if (opts.openPopup) {
-              marker.openPopup();
+              try {
+                marker.openPopup();
+              } catch (e) {}
             }
           }
-
-          markersLayerRef.current.addLayer(marker);
 
           const markerHandle = {
             leafletMarker: marker,
@@ -348,7 +441,7 @@ export const MapView = ({
     }
 
     // Determine owner groups to render
-    const groups = Array.isArray(ownerGroups) && ownerGroups.length > 0
+    const groups = Array.isArray(ownerGroups)
       ? ownerGroups
       : groupDevicesByOwnerLocation(devices);
 
@@ -442,9 +535,6 @@ export const MapView = ({
 
         if (marker) {
           const handleSelect = () => {
-            if (typeof marker.togglePopup === 'function' && !marker.getPopup()?.isOpen?.()) {
-              marker.togglePopup();
-            }
             if (typeof onMarkerClick === 'function') {
               onMarkerClick(group.key, primaryDeviceId);
             }
@@ -458,18 +548,6 @@ export const MapView = ({
           if (typeof marker.on === 'function') {
             marker.on('click', handleSelect);
           }
-
-          if (isSelected) {
-            try {
-              if (typeof marker.leafletMarker?.openPopup === 'function') {
-                marker.leafletMarker.openPopup();
-              } else if (typeof marker.openPopup === 'function') {
-                marker.openPopup();
-              }
-            } catch (e) {
-              // ignore popup sync error
-            }
-          }
         }
       });
     }
@@ -482,7 +560,7 @@ export const MapView = ({
     if (previousOwnerKeyRef.current === selectedOwnerKey) return;
     previousOwnerKeyRef.current = selectedOwnerKey;
 
-    const groups = Array.isArray(ownerGroups) && ownerGroups.length > 0
+    const groups = Array.isArray(ownerGroups)
       ? ownerGroups
       : groupDevicesByOwnerLocation(devices);
     const selectedGroup = groups.find((g) => g.key === selectedOwnerKey);

@@ -1,0 +1,175 @@
+[
+  {
+    "_id": "6ad1cfadf8e0116329d9b974",
+    "accountId": "6ad1cfacf8e0116329d9b972",
+    "username": "owner1",
+    "name": "Nguyễn Văn Owner1",
+    "phone": "0902000001",
+    "address": "Số 15 phố Tràng Tiền, Hoàn Kiếm, Hà Nội",
+    "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400",
+    "trust": {
+      "isVerified": false,
+      "score": 90,
+      "badges": [
+        "identity_verified",
+        "phone_verified",
+        "fast_responder"
+      ]
+    },
+    "wallet": {
+      "balance": 6500000,
+      "escrowBalance": 0
+    },
+    "pushConfig": {
+      "expoPushToken": "ExponentPushToken[user_owner1_seed]",
+      "fcmTokens": [],
+      "biometricEnabled": true
+    },
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.8572,
+        21.0255
+      ]
+    },
+    "wishlist": [],
+    "referralCode": "TSOWNER1",
+    "referredBy": null,
+    "rating": 4.5,
+    "totalReviews": 6,
+    "isActive": true,
+    "createdAt": "2026-10-16T07:18:05.049Z",
+    "updatedAt": "2026-11-08T05:10:09.715Z",
+    "__v": 4,
+    "role": "owner"
+  },
+  {
+    "_id": "6ad1cfadf8e0116329d9b980",
+    "accountId": "6ad1cfadf8e0116329d9b97e",
+    "username": "owner4",
+    "name": "Phạm Minh Owner4",
+    "phone": "0902000004",
+    "address": "Số 45 Đại Cồ Việt, Hai Bà Trưng, Hà Nội",
+    "avatar": "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=400",
+    "trust": {
+      "isVerified": true,
+      "score": 98,
+      "badges": [
+        "identity_verified",
+        "phone_verified",
+        "fast_responder"
+      ]
+    },
+    "wallet": {
+      "balance": 3800000,
+      "escrowBalance": 0
+    },
+    "pushConfig": {
+      "expoPushToken": "ExponentPushToken[user_owner4_seed]",
+      "fcmTokens": [],
+      "biometricEnabled": false
+    },
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.8458,
+        21.0078
+      ]
+    },
+    "wishlist": [],
+    "referralCode": "TSOWNER4",
+    "referredBy": null,
+    "rating": 5,
+    "totalReviews": 4,
+    "isActive": true,
+    "createdAt": "2026-10-16T07:18:05.362Z",
+    "updatedAt": "2026-11-08T05:10:09.788Z",
+    "__v": 0
+  },
+  {
+    "_id": "6ad1cfadf8e0116329d9b984",
+    "accountId": "6ad1cfadf8e0116329d9b982",
+    "username": "owner5",
+    "name": "Vũ Hải Yến (Studio Setup)",
+    "phone": "0902000005",
+    "address": "Quận Cái Răng, Cần Thơ",
+    "avatar": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400",
+    "trust": {
+      "isVerified": true,
+      "score": 160,
+      "badges": [
+        "identity_verified",
+        "phone_verified",
+        "fast_responder"
+      ]
+    },
+    "wallet": {
+      "balance": 7300000,
+      "escrowBalance": 0
+    },
+    "pushConfig": {
+      "expoPushToken": "ExponentPushToken[user_owner5_seed]",
+      "fcmTokens": [],
+      "biometricEnabled": false
+    },
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.776,
+        10.011
+      ]
+    },
+    "wishlist": [],
+    "referralCode": "TSOWNER5",
+    "referredBy": null,
+    "rating": 5,
+    "totalReviews": 12,
+    "isActive": true,
+    "createdAt": "2026-10-16T07:18:05.465Z",
+    "updatedAt": "2026-10-20T10:45:27.103Z",
+    "__v": 0
+  },
+  {
+    "_id": "6ae06ae20c5440a85c226254",
+    "accountId": "6ae06ae20c5440a85c226253",
+    "name": "Trung Kiên",
+    "phone": "0971243359",
+    "address": "600, NVC, Long Tuyền, Bình Thủy, Cần Thơ",
+    "avatar": "",
+    "trust": {
+      "isVerified": true,
+      "score": 100,
+      "badges": [
+        "eKYC Verified",
+        "Owner Verified"
+      ]
+    },
+    "wallet": {
+      "balance": 0,
+      "escrowBalance": 0
+    },
+    "pushConfig": {
+      "expoPushToken": "",
+      "fcmTokens": [],
+      "biometricEnabled": false
+    },
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.7469,
+        10.0452
+      ]
+    },
+    "wishlist": [],
+    "referralCode": "",
+    "referredBy": null,
+    "rating": 5,
+    "totalReviews": 0,
+    "isActive": true,
+    "createdAt": "2026-10-27T09:12:02.301Z",
+    "updatedAt": "2026-11-08T05:10:09.607Z",
+    "__v": 2,
+    "lockReason": "",
+    "lockedAt": null
+  }
+]

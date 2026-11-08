@@ -1,5 +1,6 @@
 import api from "./api.js";
 import { API_CONFIG, MAGIC_NUMBERS } from "../constants/config";
+import { getCityByKey } from "../constants/cities.js";
 
 /**
  * Normalizes category query parameter.
@@ -146,11 +147,15 @@ export const getNearbyDevices = async (params = {}) => {
 };
 
 export const getRecommendedDevices = async (params = {}) => {
+  const resolvedCity = typeof params.city === "string" ? getCityByKey(params.city) : null;
+  const lat = Number.isFinite(params.lat) ? params.lat : resolvedCity?.lat;
+  const lng = Number.isFinite(params.lng) ? params.lng : resolvedCity?.lng;
+
   if (
-    !Number.isFinite(params.lat) ||
-    Math.abs(params.lat) > 90 ||
-    !Number.isFinite(params.lng) ||
-    Math.abs(params.lng) > 180
+    !Number.isFinite(lat) ||
+    Math.abs(lat) > 90 ||
+    !Number.isFinite(lng) ||
+    Math.abs(lng) > 180
   ) {
     throw new Error("Valid coordinates are required for recommendations");
   }
@@ -158,10 +163,11 @@ export const getRecommendedDevices = async (params = {}) => {
   const cleanKeyword = (params.q || params.keyword || "").toString().trim();
   const response = await api.get(API_CONFIG.ENDPOINTS.DEVICES_RECOMMENDED, {
     params: {
-      lat: params.lat,
-      lng: params.lng,
+      lat,
+      lng,
       page: params.page ?? MAGIC_NUMBERS.HOME_RECOMMENDATIONS.INITIAL_PAGE,
       limit: params.limit ?? (cleanKeyword ? 12 : MAGIC_NUMBERS.HOME_RECOMMENDATIONS.PAGE_SIZE),
+      ...(params.city ? { city: params.city } : {}),
       ...(category ? { category } : {}),
       ...(cleanKeyword ? { q: cleanKeyword } : {}),
     },

@@ -64,7 +64,7 @@ const userSchema = new mongoose.Schema(
     // 4. Vị trí Địa lý GeoJSON & Cá nhân hóa
     location: {
       type: { type: String, enum: ['Point'], default: 'Point' },
-      coordinates: { type: [Number], default: [105.7826, 21.0285] }, // [lng, lat]
+      coordinates: { type: [Number], default: undefined }, // [lng, lat]
     },
     wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Device' }],
 
