@@ -9,6 +9,7 @@ import { Otp } from '../models/Otp.js';
 import { sendOtpEmail, sendResetPasswordOtpEmail } from '../services/emailService.js';
 import { uploadToCloudinary, deleteFromCloudinary } from '../services/cloudinaryService.js';
 import { isValidCoordinates } from '../utils/locationHelper.js';
+import { syncUserRatingAndTrustScore } from '../services/reviewService.js';
 
 const USER_RESPONSE_PROJECTION = '-passwordHash -wallet -walletBalance -walletEscrowBalance';
 
@@ -235,7 +236,7 @@ export const login = async (req, res) => {
 /**
  * 2. GET /api/auth/profile
  * GET /api/auth/profile/:userId
- * Load dữ liệu profile từ collection `users`
+ * Load dữ liệu profile từ collection `users`, tính toán lại trustScore và rating từ collection `reviews` / `rating`
  */
 export const getProfile = async (req, res) => {
   try {
@@ -247,6 +248,9 @@ export const getProfile = async (req, res) => {
         message: 'Thiếu định danh người dùng (userId).',
       });
     }
+
+    // Tự động tính toán lại số lượng rating, điểm trung bình sao và trustScore từ collection reviews / rating
+    const reputation = await syncUserRatingAndTrustScore(targetUserId);
 
     // Truy vấn collection users
     const user = await User.findById(targetUserId).select(USER_RESPONSE_PROJECTION).lean();
@@ -278,6 +282,21 @@ export const getProfile = async (req, res) => {
     if (account?.email && !safeUser.email) safeUser.email = account.email;
     safeUser.role = roleCode;
 
+    // Đảm bảo các chỉ số rating và trustScore mới nhất được phản hồi ngay
+    if (reputation) {
+      safeUser.rating = reputation.rating;
+      safeUser.totalReviews = reputation.totalReviews;
+      safeUser.trustScore = reputation.trustScore;
+      if (!safeUser.trust) safeUser.trust = {};
+      safeUser.trust.score = reputation.trustScore;
+    } else {
+      safeUser.trustScore = typeof safeUser.trust?.score === 'number'
+        ? safeUser.trust.score
+        : (typeof safeUser.trustScore === 'number' ? safeUser.trustScore : 100);
+      safeUser.rating = typeof safeUser.rating === 'number' ? safeUser.rating : 5.0;
+      safeUser.totalReviews = typeof safeUser.totalReviews === 'number' ? safeUser.totalReviews : 0;
+    }
+
     if (account) {
       account.role = roleCode;
     }
@@ -299,12 +318,18 @@ export const getProfile = async (req, res) => {
 
 /**
  * 3. GET /api/auth/me
- * Trả về thông tin của tài khoản và user hiện tại từ token đã xác thực
+ * Trả về thông tin của tài khoản và user hiện tại từ token đã xác thực, tự động đồng bộ trustScore và rating
  */
 export const getCurrentUser = async (req, res) => {
   try {
     const userId = req.user?.userId;
     const accountId = req.user?.accountId;
+
+    // Tự động tính toán lại số lượng rating và trustScore từ collection reviews / rating
+    let reputation = null;
+    if (userId) {
+      reputation = await syncUserRatingAndTrustScore(userId);
+    }
 
     let [user, account] = await Promise.all([
       userId ? User.findById(userId).select(USER_RESPONSE_PROJECTION).lean() : null,
@@ -318,6 +343,9 @@ export const getCurrentUser = async (req, res) => {
 
     if (!user && account) {
       user = await User.findOne({ accountId: account._id }).select(USER_RESPONSE_PROJECTION).lean();
+      if (user && !reputation) {
+        reputation = await syncUserRatingAndTrustScore(user._id);
+      }
     }
     if (!account && user?.accountId) {
       account = await Account.findById(user.accountId)
@@ -343,6 +371,20 @@ export const getCurrentUser = async (req, res) => {
         role: roleCode,
       };
       if (account?.email && !safeUser.email) safeUser.email = account.email;
+
+      if (reputation) {
+        safeUser.rating = reputation.rating;
+        safeUser.totalReviews = reputation.totalReviews;
+        safeUser.trustScore = reputation.trustScore;
+        if (!safeUser.trust) safeUser.trust = {};
+        safeUser.trust.score = reputation.trustScore;
+      } else {
+        safeUser.trustScore = typeof safeUser.trust?.score === 'number'
+          ? safeUser.trust.score
+          : (typeof safeUser.trustScore === 'number' ? safeUser.trustScore : 100);
+        safeUser.rating = typeof safeUser.rating === 'number' ? safeUser.rating : 5.0;
+        safeUser.totalReviews = typeof safeUser.totalReviews === 'number' ? safeUser.totalReviews : 0;
+      }
     } else {
       safeUser = {
         _id: userId,
@@ -351,6 +393,10 @@ export const getCurrentUser = async (req, res) => {
         email: account?.email,
         name: account?.username,
         role: roleCode,
+        trustScore: reputation?.trustScore || 100,
+        rating: reputation?.rating || 5.0,
+        totalReviews: reputation?.totalReviews || 0,
+        trust: { isVerified: false, score: reputation?.trustScore || 100, badges: [] },
       };
     }
 

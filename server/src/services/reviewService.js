@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import Review from '../models/Review.js';
 import Device from '../models/Device.js';
+import User from '../models/User.js';
 
 export const REVIEW_MAX_LENGTH = 2000;
 
@@ -112,4 +113,137 @@ export async function mutateDeviceReviews(deviceId, mutation) {
     const summary = await syncDeviceRating(deviceId, session);
     return { review, summary };
   });
+}
+
+/**
+ * Tính toán và đồng bộ lại average rating, totalReviews và trustScore cho User
+ * dựa trên tất cả các review/rating hợp lệ trong collection `reviews` (và `rating`/`ratings` nếu có).
+ *
+ * @param {string|mongoose.Types.ObjectId} userId - ID người dùng trong collection users
+ * @returns {Promise<{ rating: number, totalReviews: number, trustScore: number } | null>}
+ */
+export async function syncUserRatingAndTrustScore(userId) {
+  try {
+    if (!userId) return null;
+    const userStr = String(userId._id || userId);
+    if (!mongoose.Types.ObjectId.isValid(userStr)) return null;
+    const userObjId = new mongoose.Types.ObjectId(userStr);
+
+    const userIds = [userObjId, userStr];
+
+    // 1. Tìm tất cả các reviews hợp lệ của user trong collection reviews
+    // Người dùng nhận review khi:
+    // - Là người thuê: renterId khớp và targetType: 'renter'
+    // - Là chủ máy: ownerId khớp (đánh giá thiết bị/chủ máy do người thuê để lại)
+    // - Đánh giá chỉ định trực tiếp: targetUserId khớp
+    const reviewFilter = {
+      $or: [
+        { renterId: { $in: userIds }, targetType: 'renter' },
+        { ownerId: { $in: userIds }, targetType: { $in: ['owner', 'device', null] }, reviewerId: { $nin: userIds } },
+        { targetUserId: { $in: userIds } },
+        { userId: { $in: userIds }, reviewerId: { $nin: userIds } },
+      ],
+      isHidden: { $ne: true },
+      moderationStatus: { $ne: 'hidden' },
+    };
+
+    const reviewDocs = await Review.find(reviewFilter).lean().catch(() => []);
+
+    // 2. Tìm thêm từ collection `rating` hoặc `ratings` (nếu có tồn tại trong MongoDB)
+    const extraRatingDocs = [];
+    const db = mongoose.connection.db;
+    if (db) {
+      try {
+        const ratingCol = db.collection('rating');
+        if (ratingCol) {
+          const r1 = await ratingCol.find({
+            $or: [
+              { userId: { $in: userIds } },
+              { renterId: { $in: userIds } },
+              { ownerId: { $in: userIds } },
+              { targetUserId: { $in: userIds } },
+            ],
+          }).toArray().catch(() => []);
+          if (Array.isArray(r1)) extraRatingDocs.push(...r1);
+        }
+      } catch {}
+
+      try {
+        const ratingsCol = db.collection('ratings');
+        if (ratingsCol) {
+          const r2 = await ratingsCol.find({
+            $or: [
+              { userId: { $in: userIds } },
+              { renterId: { $in: userIds } },
+              { ownerId: { $in: userIds } },
+              { targetUserId: { $in: userIds } },
+            ],
+          }).toArray().catch(() => []);
+          if (Array.isArray(r2)) extraRatingDocs.push(...r2);
+        }
+      } catch {}
+    }
+
+    // 3. Gom tất cả các điểm số rating (từ 1 đến 5)
+    const validRatings = [];
+    const seenIds = new Set();
+
+    const processDoc = (doc) => {
+      if (!doc) return;
+      const idKey = doc._id ? String(doc._id) : null;
+      if (idKey && seenIds.has(idKey)) return;
+      if (idKey) seenIds.add(idKey);
+
+      const val = Number(doc.rating ?? doc.stars ?? doc.score);
+      if (Number.isFinite(val) && val >= 1 && val <= 5) {
+        validRatings.push(val);
+      }
+    };
+
+    if (Array.isArray(reviewDocs)) {
+      reviewDocs.forEach(processDoc);
+    }
+    if (Array.isArray(extraRatingDocs)) {
+      extraRatingDocs.forEach(processDoc);
+    }
+
+    const totalReviews = validRatings.length;
+    let avgRating = 5.0;
+    let trustScore = 100;
+
+    if (totalReviews > 0) {
+      const sum = validRatings.reduce((acc, curr) => acc + curr, 0);
+      avgRating = Number((sum / totalReviews).toFixed(1));
+      // Điểm trust score quy đổi theo rating (thang 100): 5 sao = 100 điểm, 4.5 sao = 90 điểm, ...
+      trustScore = Math.min(100, Math.max(50, Math.round(avgRating * 20)));
+    } else {
+      // Nếu chưa có review nào, giữ nguyên hoặc mặc định 100 trustScore / 5.0 sao
+      const existingUser = await User.findById(userObjId).select('trust rating totalReviews').lean().catch(() => null);
+      avgRating = typeof existingUser?.rating === 'number' ? existingUser.rating : 5.0;
+      trustScore = typeof existingUser?.trust?.score === 'number'
+        ? existingUser.trust.score
+        : (typeof existingUser?.trustScore === 'number' ? existingUser.trustScore : 100);
+    }
+
+    // 4. Cập nhật vào collection users
+    await User.findByIdAndUpdate(userObjId, {
+      $set: {
+        rating: avgRating,
+        totalReviews: totalReviews,
+        'trust.score': trustScore,
+        trustScore: trustScore,
+        'reputation.ratingAvg': avgRating,
+        'reputation.ratingCount': totalReviews,
+      },
+    }).catch((err) => console.warn('Cannot update user reputation in DB:', err.message));
+
+    return {
+      rating: avgRating,
+      totalReviews,
+      trustScore,
+    };
+  } catch (err) {
+    console.warn('Lỗi trong syncUserRatingAndTrustScore:', err.message);
+    return null;
+  }
 }
