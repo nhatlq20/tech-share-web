@@ -278,4 +278,10 @@ document.addEventListener('DOMContentLoaded', function() {
   const btnReject = document.getElementById('btnRejectEkyc');
   if (btnApprove) btnApprove.addEventListener('click', () => handleEkycAction('approve'));
   if (btnReject) btnReject.addEventListener('click', () => handleEkycAction('reject'));
+
+  const requestedId = new URLSearchParams(window.location.search).get('id');
+  if (requestedId) {
+    const row = Array.from(document.querySelectorAll('.ekyc-row')).find((item) => item.dataset.id === requestedId);
+    row?.querySelector('.btn-inspect-ekyc')?.click();
+  }
 });

@@ -125,9 +125,10 @@
         <div style="display: flex; align-items: center; gap: 11px; min-width: 0; flex: 1;">
           <i data-lucide="bell" style="width: 17px; height: 17px; flex-shrink: 0;"></i>
           <span style="font-size: 12.5px; font-weight: <%= activePage === 'notifications' ? '700' : '600' %>; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-            Broadcast Notifications
+            Admin Notifications
           </span>
         </div>
+        <span class="admin-nav-badge" data-admin-unread-badge hidden></span>
       </a>
       <a href="/admin/settings" class="admin-nav-item <%= activePage === 'settings' ? 'active' : '' %>">
         <div style="display: flex; align-items: center; gap: 11px; min-width: 0; flex: 1;">

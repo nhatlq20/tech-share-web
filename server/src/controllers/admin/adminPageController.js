@@ -5,7 +5,6 @@ import { Account } from '../../models/Account.js';
 import { User } from '../../models/User.js';
 import { resolveRoleCode } from '../authController.js';
 import { getAdminAnalytics } from '../adminController.js';
-import { listOwnerEkycRequests } from '../adminOwnerEkycController.js';
 import { calculateAnalyticsData, resolveDateRange } from './adminAdvancedAnalyticsController.js';
 
 const CANDIDATE_JWT_SECRETS = [
@@ -385,9 +384,17 @@ export const renderUserManagerPage = async (req, res) => {
   }
 };
 
+function focusedRecordId(value) {
+  return typeof value === 'string' && mongoose.isObjectIdOrHexString(value)
+    ? new mongoose.Types.ObjectId(value)
+    : null;
+}
+
 // 6. GET /admin/device-moderation & /admin/devices
 export const renderDeviceModerationPage = async (req, res) => {
   try {
+    const id = focusedRecordId(req.query.id);
+    if (req.query.id !== undefined && !id) return res.status(400).send('Invalid device ID.');
     const db = mongoose.connection.db;
     let devices = [];
     let counts = { all: 0, pending: 0, approved: 0, rejected: 0 };
@@ -396,7 +403,10 @@ export const renderDeviceModerationPage = async (req, res) => {
       const devicesCol = db.collection('devices');
       const usersCol = db.collection('users');
 
-      const rawDevices = await devicesCol.find({ isDeleted: { $ne: true } }).sort({ createdAt: -1 }).limit(100).toArray();
+      const rawDevices = await devicesCol.find({
+        isDeleted: { $ne: true },
+        ...(id && { _id: id }),
+      }).sort({ createdAt: -1 }).limit(100).toArray();
 
       devices = await Promise.all(rawDevices.map(async (d) => {
         let owner = { name: 'Device Owner', email: 'owner@techshare.vn', phone: '0901234567' };
@@ -439,6 +449,8 @@ export const renderDeviceModerationPage = async (req, res) => {
 // 7. GET /admin/ekyc-verification & /admin/ekyc (Renter eKYC Verification)
 export const renderEkycVerificationPage = async (req, res) => {
   try {
+    const id = focusedRecordId(req.query.id);
+    if (req.query.id !== undefined && !id) return res.status(400).send('Invalid request ID.');
     const db = mongoose.connection.db;
     let requests = [];
     let counts = { all: 0, pending: 0, approved: 0, rejected: 0 };
@@ -446,7 +458,7 @@ export const renderEkycVerificationPage = async (req, res) => {
     if (db) {
       const ekycCol = db.collection('ekyc_requests');
       const usersCol = db.collection('users');
-      const raw = await ekycCol.find({}).sort({ createdAt: -1 }).limit(100).toArray();
+      const raw = await ekycCol.find(id ? { _id: id } : {}).sort({ createdAt: -1 }).limit(100).toArray();
 
       requests = await Promise.all(raw.map(async (r) => {
         let user = {
@@ -490,7 +502,7 @@ export const renderEkycVerificationPage = async (req, res) => {
       counts.rejected = requests.filter(r => r.status === 'rejected').length;
     }
 
-    return res.render('admin/layouts/main', {
+    return res.set('Cache-Control', 'no-store').render('admin/layouts/main', {
       title: 'Xác thực eKYC Người thuê (Renter) — TechShare Admin',
       activePage: 'ekyc',
       pageScript: '/js/admin/ekyc-verification.js',
@@ -510,6 +522,8 @@ export const renderEkycVerificationPage = async (req, res) => {
 // 7b. GET /admin/owner-verification & /admin/owner-ekyc-verification (Owner Upgrade Verification)
 export const renderOwnerEkycPage = async (req, res, next) => {
   try {
+    const id = focusedRecordId(req.query.id);
+    if (req.query.id !== undefined && !id) return res.status(400).send('Invalid request ID.');
     const db = mongoose.connection.db;
     let requests = [];
     let counts = { all: 0, pending: 0, approved: 0, rejected: 0 };
@@ -518,7 +532,7 @@ export const renderOwnerEkycPage = async (req, res, next) => {
       const ownerReqCol = db.collection('owner_request');
       const usersCol = db.collection('users');
 
-      const raw = await ownerReqCol.find({}).sort({ createdAt: -1 }).limit(100).toArray();
+      const raw = await ownerReqCol.find(id ? { _id: id } : {}).sort({ createdAt: -1 }).limit(100).toArray();
 
       requests = await Promise.all(raw.map(async (r) => {
         let user = {
@@ -700,20 +714,13 @@ export const renderReviewModerationPage = async (req, res) => {
 // 14. GET /admin/notification-management & /admin/notifications
 export const renderNotificationManagementPage = async (req, res) => {
   try {
-    const db = mongoose.connection.db;
-    let notifications = [];
-
-    if (db) {
-      const notifCol = db.collection('notifications');
-      notifications = await notifCol.find({}).sort({ createdAt: -1 }).limit(50).toArray();
-    }
-
     return res.render('admin/layouts/main', {
-      title: 'Notification Management — TechShare Admin',
+      title: 'Admin Notifications — TechShare Admin',
       activePage: 'notifications',
+      pageStyle: '/css/notification-management.css',
       pageScript: '/js/admin/notification-management.js',
       body: await new Promise((resolve, reject) => {
-        res.render('admin/notification-management', { notifications }, (err, html) => {
+        res.render('admin/notification-management', {}, (err, html) => {
           if (err) reject(err);
           else resolve(html);
         });

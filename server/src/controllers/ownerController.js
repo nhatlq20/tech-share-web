@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
 import { createAndSendNotification } from '../services/notificationService.js';
+import { recordAdminNotification } from '../services/adminNotificationService.js';
 import { getIO } from '../socket.js';
 import { resolveDeviceLocation } from '../utils/locationHelper.js';
 
@@ -756,7 +757,7 @@ export const updateOwnerDevice = async (req, res, next) => {
  */
 export const createOwnerDevice = async (req, res, next) => {
   try {
-    const { devicesCol } = getCollections();
+    const { devicesCol, usersCol } = getCollections();
     const ownerId = await resolveOwnerId(req);
 
     if (!ownerId) {
@@ -816,6 +817,7 @@ export const createOwnerDevice = async (req, res, next) => {
     };
 
     const result = await devicesCol.insertOne(newDevice);
+    await recordAdminNotification('devices', result.insertedId, newDevice.createdAt);
 
     const ownerDoc = await usersCol.findOne({
       _id: mongoose.Types.ObjectId.isValid(ownerId)

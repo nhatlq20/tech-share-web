@@ -250,4 +250,10 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
   });
+
+  const requestedId = new URLSearchParams(window.location.search).get('id');
+  if (requestedId) {
+    const row = Array.from(rows).find((item) => item.dataset.deviceId === requestedId);
+    row?.querySelector('.btn-moderate-device')?.click();
+  }
 });

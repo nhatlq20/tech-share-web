@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import Device from "../models/Device.js";
 import User from "../models/User.js";
 import { uploadToCloudinary } from "../services/cloudinaryService.js";
+import { recordAdminNotification } from "../services/adminNotificationService.js";
 import { resolveDeviceLocation } from "../utils/locationHelper.js";
 
 /**
@@ -1094,6 +1095,8 @@ export const createDevice = async (req, res) => {
       moderatedAt: null,
       reviewedAt: null,
     });
+
+    await recordAdminNotification('devices', device._id, device.createdAt);
 
     const ownerDoc = await User.findById(ownerId).lean();
     const responseData = device.toObject({ virtuals: true });

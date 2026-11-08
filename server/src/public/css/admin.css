@@ -222,6 +222,22 @@ a.admin-nav-item {
   box-shadow: 0 1px 3px rgba(239, 68, 68, 0.3);
 }
 
+[data-admin-unread-badge][hidden] { display: none !important; }
+
+#adminNotifBtn .admin-notif-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  border: 1px solid white;
+  border-radius: 999px;
+  padding: 2px 4px;
+  background: #b91c1c;
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+}
+
 /* Sidebar Footer */
 .admin-sidebar-footer {
   padding: 12px 14px;

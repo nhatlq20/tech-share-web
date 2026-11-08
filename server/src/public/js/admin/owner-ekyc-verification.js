@@ -305,4 +305,10 @@ document.addEventListener('DOMContentLoaded', function() {
   const btnReject = document.getElementById('btnRejectOwner');
   if (btnApprove) btnApprove.addEventListener('click', () => handleOwnerAction('approve'));
   if (btnReject) btnReject.addEventListener('click', () => handleOwnerAction('reject'));
+
+  const requestedId = new URLSearchParams(window.location.search).get('id');
+  if (requestedId) {
+    const row = Array.from(document.querySelectorAll('.owner-ekyc-row')).find((item) => item.dataset.id === requestedId);
+    row?.querySelector('.btn-inspect-owner')?.click();
+  }
 });
