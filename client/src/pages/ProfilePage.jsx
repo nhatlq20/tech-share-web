@@ -154,6 +154,12 @@ export const ProfilePage = () => {
           if (res.account) {
             setAccountData(res.account);
           }
+          // Đồng bộ lại AuthContext & localStorage để Navbar và các màn hình khác nhận được trustScore & rating mới nhất
+          login({
+            token,
+            user: res.user,
+            account: res.account || accountData || authAccount,
+          });
         }
       } catch (err) {
         console.error('Failed to load profile from users collection:', err);
@@ -558,7 +564,7 @@ export const ProfilePage = () => {
             </div>
             <div className="profile-kpi-info">
               <span className="profile-kpi-label">Trust Score</span>
-              <span className="profile-kpi-value">{profile.trustScore ?? 100} / 100</span>
+              <span className="profile-kpi-value">{profile.trustScore ?? profile.trust?.score ?? 100} / 100</span>
               <span className="profile-kpi-sub">Maximum trust rating</span>
             </div>
           </div>
