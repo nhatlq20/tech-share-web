@@ -5,7 +5,7 @@
     <input
       type="text"
       id="globalAdminSearch"
-      placeholder="Tìm kiếm nhanh thiết bị, thành viên, đơn thuê..."
+      placeholder="Quick search devices, users, rentals..."
       autocomplete="off"
     />
   </div>
@@ -17,7 +17,7 @@
       type="button"
       id="adminRefreshBtn"
       class="admin-action-btn"
-      title="Làm mới đồng bộ dữ liệu"
+      title="Refresh data"
       onclick="window.location.reload();"
     >
       <i data-lucide="refresh-cw" style="width: 16px; height: 16px;"></i>
@@ -29,7 +29,7 @@
         type="button"
         id="adminNotifBtn"
         class="admin-action-btn"
-        title="Thông báo hệ thống"
+        title="System notifications"
         onclick="toggleNotificationDropdown();"
       >
         <i data-lucide="bell" style="width: 16px; height: 16px;"></i>
@@ -43,8 +43,8 @@
       <!-- Dropdown -->
       <div id="adminNotifDropdown" class="admin-notif-dropdown" style="display: none;">
         <div class="admin-notif-dropdown-header">
-          <span style="font-weight: 700; font-size: 13.5px; color: #0F172A;">Thông báo Quản trị</span>
-          <span style="font-size: 11px; color: #64748B;">Hôm nay</span>
+          <span style="font-weight: 700; font-size: 13.5px; color: #0F172A;">Admin Notifications</span>
+          <span style="font-size: 11px; color: #64748B;">Today</span>
         </div>
         <div class="admin-notif-dropdown-list">
           <% if (typeof pendingCounts !== 'undefined' && pendingCounts.ekyc > 0) { %>
@@ -53,8 +53,8 @@
                 <i data-lucide="shield-check" style="width: 16px; height: 16px;"></i>
               </div>
               <div class="admin-notif-text">
-                <div style="font-weight: 600; font-size: 12.5px; color: #0F172A;">Xác minh eKYC mới</div>
-                <div style="font-size: 11.5px; color: #64748B;">Có <%= pendingCounts.ekyc %> hồ sơ eKYC đang chờ xem xét.</div>
+                <div style="font-weight: 600; font-size: 12.5px; color: #0F172A;">New eKYC Verification</div>
+                <div style="font-size: 11.5px; color: #64748B;"><%= pendingCounts.ekyc %> eKYC profiles awaiting review.</div>
               </div>
             </a>
           <% } %>
@@ -64,8 +64,8 @@
                 <i data-lucide="cpu" style="width: 16px; height: 16px;"></i>
               </div>
               <div class="admin-notif-text">
-                <div style="font-weight: 600; font-size: 12.5px; color: #0F172A;">Thiết bị chờ duyệt</div>
-                <div style="font-size: 11.5px; color: #64748B;">Có <%= pendingCounts.devices %> thiết bị cần kiểm duyệt niêm yết.</div>
+                <div style="font-weight: 600; font-size: 12.5px; color: #0F172A;">Devices Pending Approval</div>
+                <div style="font-size: 11.5px; color: #64748B;"><%= pendingCounts.devices %> devices awaiting listing review.</div>
               </div>
             </a>
           <% } %>
@@ -75,14 +75,14 @@
                 <i data-lucide="scale" style="width: 16px; height: 16px;"></i>
               </div>
               <div class="admin-notif-text">
-                <div style="font-weight: 600; font-size: 12.5px; color: #0F172A;">Tranh chấp khiếu nại</div>
-                <div style="font-size: 11.5px; color: #64748B;">Có <%= pendingCounts.disputes %> tranh chấp cần xử lý giữ cọc.</div>
+                <div style="font-weight: 600; font-size: 12.5px; color: #0F172A;">Active Disputes</div>
+                <div style="font-size: 11.5px; color: #64748B;"><%= pendingCounts.disputes %> disputes requiring escrow resolution.</div>
               </div>
             </a>
           <% } %>
           <% if (typeof pendingCounts === 'undefined' || (pendingCounts.ekyc + pendingCounts.devices + pendingCounts.disputes) === 0) { %>
             <div style="padding: 24px; text-align: center; color: #94A3B8; font-size: 12.5px;">
-              Không có việc xử lý tồn đọng. Hệ thống ổn định.
+              No pending tasks. System operating normally.
             </div>
           <% } %>
         </div>
@@ -98,10 +98,10 @@
       />
       <div class="admin-topbar-user-info">
         <span class="admin-topbar-name">
-          <%= admin && admin.name ? admin.name : 'Admin Quản trị' %>
+          <%= admin && admin.name ? admin.name : 'System Admin' %>
         </span>
         <span class="admin-topbar-role">
-          <%= admin && admin.role === 'admin' ? 'Quản trị viên hệ thống' : (admin && admin.role ? admin.role : 'Quản trị viên') %>
+          <%= admin && admin.role === 'admin' ? 'System Administrator' : (admin && admin.role ? admin.role : 'Administrator') %>
         </span>
       </div>
     </div>

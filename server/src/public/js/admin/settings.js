@@ -46,13 +46,13 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         const data = await res.json();
         if (res.ok && data.success) {
-          if (window.showAdminToast) window.showAdminToast('Thành công', 'Đã lưu cấu hình tham số.', 'success');
+          if (window.showAdminToast) window.showAdminToast('Success', 'System setting saved successfully.', 'success');
           setTimeout(() => window.location.reload(), 500);
         } else {
-          if (window.showAdminToast) window.showAdminToast('Lỗi cập nhật', data.message || 'Không thể lưu tham số.', 'error');
+          if (window.showAdminToast) window.showAdminToast('Update Error', data.message || 'Failed to save setting.', 'error');
         }
       } catch (err) {
-        if (window.showAdminToast) window.showAdminToast('Lỗi mạng', err.message, 'error');
+        if (window.showAdminToast) window.showAdminToast('Network Error', err.message, 'error');
       }
     });
   }

@@ -1,27 +1,27 @@
 <section class="admin-card" aria-labelledby="owner-ekyc-title">
   <header class="admin-card-header">
-    <h1 class="admin-card-title" id="owner-ekyc-title">Xác minh Chủ thiết bị</h1>
+    <h1 class="admin-card-title" id="owner-ekyc-title">Owner Verification</h1>
     <form method="get">
-      <label for="owner-ekyc-status">Trạng thái</label>
+      <label for="owner-ekyc-status">Status</label>
       <select id="owner-ekyc-status" name="status">
         <% Object.entries(statuses).forEach(([value, label]) => { %>
           <option value="<%= value %>" <%= value === status ? 'selected' : '' %>><%= label %></option>
         <% }); %>
       </select>
-      <button class="admin-btn admin-btn-outline" type="submit">Lọc</button>
+      <button class="admin-btn admin-btn-outline" type="submit">Filter</button>
     </form>
   </header>
   <% if (requests.length === 0) { %>
-    <p>Không có hồ sơ phù hợp.</p>
+    <p>No matching requests found.</p>
   <% } else { %>
     <div class="admin-table-container">
       <table class="admin-table">
         <thead>
           <tr>
-            <th scope="col">Người gửi</th>
-            <th scope="col">Ngày gửi</th>
-            <th scope="col">Trạng thái</th>
-            <th scope="col">Hồ sơ</th>
+            <th scope="col">Applicant</th>
+            <th scope="col">Submitted Date</th>
+            <th scope="col">Status</th>
+            <th scope="col">Dossier</th>
           </tr>
         </thead>
         <tbody>
@@ -32,36 +32,36 @@
               <td><%= statuses[request.status] || request.status %></td>
               <td>
                 <details>
-                  <summary>Xem hồ sơ của <%= request.fullName %></summary>
+                  <summary>View dossier of <%= request.fullName %></summary>
                   <p>CCCD <%= request.idCardNumber || '—' %></p>
                   <p><%= request.address %></p>
                   <ul>
                     <% [
-                      ['Mặt trước CCCD', request.idCardFrontUrl],
-                      ['Mặt sau CCCD', request.idCardBackUrl],
-                      ['Chân dung cầm CCCD', request.idCardHoldingUrl],
+                      ['Citizen ID Front', request.idCardFrontUrl],
+                      ['Citizen ID Back', request.idCardBackUrl],
+                      ['Selfie Holding ID', request.idCardHoldingUrl],
                     ].forEach(([label, url]) => { %>
                       <li>
                         <% if (/^https?:\/\//i.test(url)) { %>
-                          <a href="<%= url %>" target="_blank" rel="noreferrer"><%= label %> (mở ảnh trong tab mới)</a>
+                          <a href="<%= url %>" target="_blank" rel="noreferrer"><%= label %> (open image in new tab)</a>
                         <% } else if (/^data:image\/(png|jpeg|webp);base64,/i.test(url)) { %>
                           <img src="<%= url %>" alt="<%= label %>" loading="lazy" width="160" />
                         <% } else { %>
-                          <%= label %> · Không có ảnh
+                          <%= label %> · No image
                         <% } %>
                       </li>
                     <% }); %>
                   </ul>
                   <% if (request.rejectReason) { %>
-                    <p>Lý do từ chối · <%= request.rejectReason %></p>
+                    <p>Rejection reason · <%= request.rejectReason %></p>
                   <% } %>
                   <% if (request.status === 'pending') { %>
                     <form method="post" data-owner-ekyc-review="<%= request._id %>">
-                      <label for="reason-<%= request._id %>">Lý do từ chối</label>
+                      <label for="reason-<%= request._id %>">Rejection reason</label>
                       <textarea id="reason-<%= request._id %>" name="reason" required></textarea>
                       <div>
-                        <button class="admin-btn admin-btn-success" type="submit" value="approve" formnovalidate>Duyệt</button>
-                        <button class="admin-btn admin-btn-danger" type="submit" value="reject">Từ chối</button>
+                        <button class="admin-btn admin-btn-success" type="submit" value="approve" formnovalidate>Approve</button>
+                        <button class="admin-btn admin-btn-danger" type="submit" value="reject">Reject</button>
                       </div>
                       <p role="status" aria-live="polite"></p>
                     </form>
@@ -74,12 +74,12 @@
       </table>
     </div>
   <% } %>
-  <nav aria-label="Trang hồ sơ eKYC">
+  <nav aria-label="eKYC requests pagination">
     <% if (page > 1) { %>
-      <a href="?status=<%= status %>&amp;page=<%= page - 1 %>">Trang trước</a>
+      <a href="?status=<%= status %>&amp;page=<%= page - 1 %>">Previous Page</a>
     <% } %>
     <% if (hasNextPage) { %>
-      <a href="?status=<%= status %>&amp;page=<%= page + 1 %>">Trang sau</a>
+      <a href="?status=<%= status %>&amp;page=<%= page + 1 %>">Next Page</a>
     <% } %>
   </nav>
 </section>

@@ -69,7 +69,7 @@ document.addEventListener('DOMContentLoaded', function() {
       data: {
         labels: labels,
         datasets: [{
-          label: 'Doanh thu (₫)',
+          label: 'Revenue (₫)',
           data: revenues,
           borderColor: '#67BEC3',
           borderWidth: 3,
@@ -101,8 +101,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 const formatted = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
                 const orderCount = rawData[context.dataIndex]?.orders;
                 return orderCount !== undefined
-                  ? ` Doanh thu: ${formatted} (${orderCount} đơn)`
-                  : ` Doanh thu: ${formatted}`;
+                  ? ` Revenue: ${formatted} (${orderCount} orders)`
+                  : ` Revenue: ${formatted}`;
               }
             }
           }

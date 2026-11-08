@@ -1,15 +1,12 @@
 import mongoose from 'mongoose';
-import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { getDatabaseConfig } from '../config/env.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Load server .env
-dotenv.config({ path: path.resolve(__dirname, '../../.env') });
-
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://qnhat202005_db_user:qnhat202005@tech-share.0srn8rv.mongodb.net/techshare?retryWrites=true&w=majority&appName=tech-share';
+const { uri: MONGODB_URI } = getDatabaseConfig();
 
 export async function runMigration({ execute = false } = {}) {
   console.log('========================================================');

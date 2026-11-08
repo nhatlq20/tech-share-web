@@ -1,8 +1,7 @@
 import mongoose from 'mongoose';
-import dotenv from 'dotenv';
-dotenv.config();
+import { getDatabaseConfig } from '../config/env.js';
 
-const uri = process.env.MONGODB_URI || 'mongodb+srv://qnhat202005_db_user:qnhat202005@tech-share.0srn8rv.mongodb.net/techshare?retryWrites=true&w=majority&appName=tech-share';
+const { uri } = getDatabaseConfig();
 
 async function inspect() {
   await mongoose.connect(uri);
