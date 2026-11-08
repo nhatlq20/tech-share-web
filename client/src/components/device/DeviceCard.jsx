@@ -131,6 +131,14 @@ export const DeviceCard = ({ device, onFavoriteChange }) => {
     }
   };
 
+  const handleBookNow = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (deviceId) {
+      navigate(ROUTES.BOOKING_CHECKOUT_PATH(deviceId));
+    }
+  };
+
   return (
     <article className="device-card-item">
       {deviceId && (
@@ -147,6 +155,7 @@ export const DeviceCard = ({ device, onFavoriteChange }) => {
       )}
       <Link
         to={detailUrl}
+        state={{ from: ROUTES.HOME, fromLabel: 'Back to Home' }}
         className="device-card-link"
         aria-label={`View details for ${title}`}
       >
@@ -202,7 +211,14 @@ export const DeviceCard = ({ device, onFavoriteChange }) => {
               </div>
             ) : null}
           </div>
-          <span className="device-card-rent-cta">View device <span aria-hidden="true">↗</span></span>
+          <button
+            type="button"
+            className="device-card-rent-cta"
+            onClick={handleBookNow}
+            aria-label={`Book now: ${title}`}
+          >
+            Book now <span aria-hidden="true">↗</span>
+          </button>
         </div>
       </Link>
     </article>
