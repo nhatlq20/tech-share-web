@@ -1,0 +1,662 @@
+{
+  "lockedDevicesList": [
+    {
+      "deviceId": "662c0d9a17a8b8874f1704d4",
+      "deviceName": "Lumix S5 II Body",
+      "category": "camera",
+      "ownerUsername": "owner4",
+      "ownerName": "Phạm Minh Owner4",
+      "ownerId": "6ad1cfadf8e0116329d9b980",
+      "bookingCount": 9,
+      "bookingStatuses": "completed, completed, completed, disputed, completed, completed, completed, completed, approved",
+      "reviewCount": 4,
+      "avgRating": "4.5"
+    },
+    {
+      "deviceId": "c1bdd8b95ec8c86be695f58f",
+      "deviceName": "iPhone 16 Pro Max 256GB",
+      "category": "smartphone",
+      "ownerUsername": "owner4",
+      "ownerName": "Phạm Minh Owner4",
+      "ownerId": "6ad1cfadf8e0116329d9b980",
+      "bookingCount": 1,
+      "bookingStatuses": "active",
+      "reviewCount": 0,
+      "avgRating": "N/A"
+    },
+    {
+      "deviceId": "77f252320e0df59c5f701ef2",
+      "deviceName": "EOS R8 Body",
+      "category": "camera",
+      "ownerUsername": "kiendepzai",
+      "ownerName": "Trung Kiên",
+      "ownerId": "6ae06ae20c5440a85c226254",
+      "bookingCount": 2,
+      "bookingStatuses": "pending, active",
+      "reviewCount": 0,
+      "avgRating": "N/A"
+    },
+    {
+      "deviceId": "a5f77dd183294464f6edbe6b",
+      "deviceName": "V30 5G 256GB",
+      "category": "smartphone",
+      "ownerUsername": "owner1",
+      "ownerName": "Nguyễn Văn Owner1",
+      "ownerId": "6ad1cfadf8e0116329d9b974",
+      "bookingCount": 3,
+      "bookingStatuses": "active, approved, completed",
+      "reviewCount": 1,
+      "avgRating": "5.0"
+    },
+    {
+      "deviceId": "78272418fa81a81406199910",
+      "deviceName": "EVO Nano+ Premium Bundle",
+      "category": "drone",
+      "ownerUsername": "owner4",
+      "ownerName": "Phạm Minh Owner4",
+      "ownerId": "6ad1cfadf8e0116329d9b980",
+      "bookingCount": 2,
+      "bookingStatuses": "completed, approved",
+      "reviewCount": 1,
+      "avgRating": "5.0"
+    },
+    {
+      "deviceId": "45996b8eb6256f3d94b37b33",
+      "deviceName": "Steam Deck LCD 256GB",
+      "category": "gaming",
+      "ownerUsername": "owner2",
+      "ownerName": "Trần Thị Bích (Tech Rental)",
+      "ownerId": "6ad1cfadf8e0116329d9b978",
+      "bookingCount": 5,
+      "bookingStatuses": "completed, approved, active, completed, active",
+      "reviewCount": 0,
+      "avgRating": "N/A"
+    },
+    {
+      "deviceId": "6ad1cfaef8e0116329d9b99a",
+      "deviceName": "Sony Alpha A7 Mark IV + Lens 24-70mm GM II",
+      "category": "camera",
+      "ownerUsername": "owner1",
+      "ownerName": "Nguyễn Văn Owner1",
+      "ownerId": "6ad1cfadf8e0116329d9b974",
+      "bookingCount": 1,
+      "bookingStatuses": "approved",
+      "reviewCount": 5,
+      "avgRating": "4.4"
+    },
+    {
+      "deviceId": "0a74b6495bdaeeb99a503a89",
+      "deviceName": "Surface Laptop 7 13.8-inch",
+      "category": "laptop",
+      "ownerUsername": "owner5",
+      "ownerName": "Vũ Hải Yến (Studio Setup)",
+      "ownerId": "6ad1cfadf8e0116329d9b984",
+      "bookingCount": 2,
+      "bookingStatuses": "pending, pending",
+      "reviewCount": 0,
+      "avgRating": "N/A"
+    },
+    {
+      "deviceId": "093ae1abeac24459f874d772",
+      "deviceName": "Cinema Line FX30 Body",
+      "category": "camera",
+      "ownerUsername": "owner2",
+      "ownerName": "Trần Thị Bích (Tech Rental)",
+      "ownerId": "6ad1cfadf8e0116329d9b978",
+      "bookingCount": 7,
+      "bookingStatuses": "completed, completed, active, active, completed, completed, completed",
+      "reviewCount": 7,
+      "avgRating": "3.9"
+    },
+    {
+      "deviceId": "0b1db77956d95990233beb05",
+      "deviceName": "Pad 6 Wi-Fi 256GB",
+      "category": "tablet",
+      "ownerUsername": "owner4",
+      "ownerName": "Phạm Minh Owner4",
+      "ownerId": "6ad1cfadf8e0116329d9b980",
+      "bookingCount": 1,
+      "bookingStatuses": "active",
+      "reviewCount": 0,
+      "avgRating": "N/A"
+    },
+    {
+      "deviceId": "e31dd458ee7a19a6549ce295",
+      "deviceName": "AORUS 15 RTX 4070",
+      "category": "laptop",
+      "ownerUsername": "owner5",
+      "ownerName": "Vũ Hải Yến (Studio Setup)",
+      "ownerId": "6ad1cfadf8e0116329d9b984",
+      "bookingCount": 1,
+      "bookingStatuses": "pending",
+      "reviewCount": 0,
+      "avgRating": "N/A"
+    },
+    {
+      "deviceId": "dd8e8d2e521479bd5aaba87a",
+      "deviceName": "Find X7 Ultra 512GB",
+      "category": "smartphone",
+      "ownerUsername": "owner2",
+      "ownerName": "Trần Thị Bích (Tech Rental)",
+      "ownerId": "6ad1cfadf8e0116329d9b978",
+      "bookingCount": 2,
+      "bookingStatuses": "active, completed",
+      "reviewCount": 2,
+      "avgRating": "3.0"
+    },
+    {
+      "deviceId": "4b1a09899093ef70333ddfe0",
+      "deviceName": "Surface Pro 11 Snapdragon X Plus",
+      "category": "laptop",
+      "ownerUsername": "owner2",
+      "ownerName": "Trần Thị Bích (Tech Rental)",
+      "ownerId": "6ad1cfadf8e0116329d9b978",
+      "bookingCount": 1,
+      "bookingStatuses": "completed",
+      "reviewCount": 0,
+      "avgRating": "N/A"
+    },
+    {
+      "deviceId": "e31d2abc38bbaa24217c67f9",
+      "deviceName": "Quest 3S 128GB VR Headset",
+      "category": "gaming",
+      "ownerUsername": "owner4",
+      "ownerName": "Phạm Minh Owner4",
+      "ownerId": "6ad1cfadf8e0116329d9b980",
+      "bookingCount": 2,
+      "bookingStatuses": "pending, pending",
+      "reviewCount": 0,
+      "avgRating": "N/A"
+    },
+    {
+      "deviceId": "de17baa36ac604822dc3a469",
+      "deviceName": "QuietComfort Ultra Headphones",
+      "category": "audio",
+      "ownerUsername": "owner3",
+      "ownerName": "Lê Hoàng Long (Audio & Drone)",
+      "ownerId": "6ad1cfadf8e0116329d9b97c",
+      "bookingCount": 1,
+      "bookingStatuses": "pending",
+      "reviewCount": 0,
+      "avgRating": "N/A"
+    }
+  ],
+  "lockedCountPerOwner": {
+    "owner4": 5,
+    "kiendepzai": 1,
+    "owner1": 2,
+    "owner2": 4,
+    "owner5": 2,
+    "owner3": 1
+  },
+  "allocationTable": [
+    {
+      "order": 1,
+      "username": "kiendepzai",
+      "ownerName": "Trung Kiên",
+      "city": "Can Tho",
+      "district": "Bình Thủy",
+      "retainedCount": 1,
+      "allocatedCount": 9,
+      "totalCount": 10
+    },
+    {
+      "order": 2,
+      "username": "owner5",
+      "ownerName": "Vũ Hải Yến (Studio Setup)",
+      "city": "Can Tho",
+      "district": "Ninh Kiều",
+      "retainedCount": 2,
+      "allocatedCount": 8,
+      "totalCount": 10
+    },
+    {
+      "order": 3,
+      "username": "owner2",
+      "ownerName": "Trần Thị Bích (Tech Rental)",
+      "city": "Can Tho",
+      "district": "Cái Răng",
+      "retainedCount": 4,
+      "allocatedCount": 6,
+      "totalCount": 10
+    },
+    {
+      "order": 4,
+      "username": "owner6",
+      "ownerName": "Hoàng Văn Owner6",
+      "city": "Can Tho",
+      "district": "Ô Môn",
+      "retainedCount": 0,
+      "allocatedCount": 10,
+      "totalCount": 10
+    },
+    {
+      "order": 5,
+      "username": "owner7",
+      "ownerName": "Đặng Thị Owner7",
+      "city": "Can Tho",
+      "district": "Phong Điền",
+      "retainedCount": 0,
+      "allocatedCount": 10,
+      "totalCount": 10
+    },
+    {
+      "order": 6,
+      "username": "owner8",
+      "ownerName": "Bùi Văn Owner8",
+      "city": "Can Tho",
+      "district": "Thốt Nốt",
+      "retainedCount": 0,
+      "allocatedCount": 10,
+      "totalCount": 10
+    },
+    {
+      "order": 7,
+      "username": "owner9",
+      "ownerName": "Võ Thị Owner9",
+      "city": "Can Tho",
+      "district": "Thới Lai",
+      "retainedCount": 0,
+      "allocatedCount": 10,
+      "totalCount": 10
+    },
+    {
+      "order": 8,
+      "username": "owner10",
+      "ownerName": "Dương Minh Owner10",
+      "city": "Can Tho",
+      "district": "Cờ Đỏ",
+      "retainedCount": 0,
+      "allocatedCount": 10,
+      "totalCount": 10
+    },
+    {
+      "order": 9,
+      "username": "owner1",
+      "ownerName": "Nguyễn Văn Owner1",
+      "city": "Hanoi",
+      "district": "Ba Đình",
+      "retainedCount": 2,
+      "allocatedCount": 8,
+      "totalCount": 10
+    },
+    {
+      "order": 10,
+      "username": "owner4",
+      "ownerName": "Phạm Minh Owner4",
+      "city": "Hanoi",
+      "district": "Đống Đa",
+      "retainedCount": 5,
+      "allocatedCount": 5,
+      "totalCount": 10
+    },
+    {
+      "order": 11,
+      "username": "owner3",
+      "ownerName": "Lê Hoàng Long (Audio & Drone)",
+      "city": "Hanoi",
+      "district": "Cầu Giấy",
+      "retainedCount": 1,
+      "allocatedCount": 9,
+      "totalCount": 10
+    },
+    {
+      "order": 12,
+      "username": "owner11",
+      "ownerName": "Trần Văn Owner11",
+      "city": "Hanoi",
+      "district": "Hoàn Kiếm",
+      "retainedCount": 0,
+      "allocatedCount": 10,
+      "totalCount": 10
+    },
+    {
+      "order": 13,
+      "username": "owner12",
+      "ownerName": "Ngô Thị Owner12",
+      "city": "Hanoi",
+      "district": "Hai Bà Trưng",
+      "retainedCount": 0,
+      "allocatedCount": 10,
+      "totalCount": 10
+    },
+    {
+      "order": 14,
+      "username": "owner13",
+      "ownerName": "Đinh Văn Owner13",
+      "city": "Hanoi",
+      "district": "Hà Đông",
+      "retainedCount": 0,
+      "allocatedCount": 10,
+      "totalCount": 10
+    },
+    {
+      "order": 15,
+      "username": "owner14",
+      "ownerName": "Vũ Thị Owner14",
+      "city": "Hanoi",
+      "district": "Long Biên",
+      "retainedCount": 0,
+      "allocatedCount": 10,
+      "totalCount": 10
+    },
+    {
+      "order": 16,
+      "username": "owner15",
+      "ownerName": "Lý Văn Owner15",
+      "city": "Hanoi",
+      "district": "Hoàng Mai",
+      "retainedCount": 0,
+      "allocatedCount": 10,
+      "totalCount": 10
+    }
+  ],
+  "geoJsonVerification": [
+    {
+      "order": 1,
+      "username": "kiendepzai",
+      "city": "Can Tho",
+      "district": "Bình Thủy",
+      "longitude": 105.7469,
+      "latitude": 10.0452,
+      "distanceKm": "0 km",
+      "validGeoJSON": true,
+      "within100km": true
+    },
+    {
+      "order": 2,
+      "username": "owner5",
+      "city": "Can Tho",
+      "district": "Ninh Kiều",
+      "longitude": 105.7865,
+      "latitude": 10.0338,
+      "distanceKm": "4.52 km",
+      "validGeoJSON": true,
+      "within100km": true
+    },
+    {
+      "order": 3,
+      "username": "owner2",
+      "city": "Can Tho",
+      "district": "Cái Răng",
+      "longitude": 105.758,
+      "latitude": 10.005,
+      "distanceKm": "4.63 km",
+      "validGeoJSON": true,
+      "within100km": true
+    },
+    {
+      "order": 4,
+      "username": "owner6",
+      "city": "Can Tho",
+      "district": "Ô Môn",
+      "longitude": 105.628,
+      "latitude": 10.117,
+      "distanceKm": "15.27 km",
+      "validGeoJSON": true,
+      "within100km": true
+    },
+    {
+      "order": 5,
+      "username": "owner7",
+      "city": "Can Tho",
+      "district": "Phong Điền",
+      "longitude": 105.67,
+      "latitude": 9.998,
+      "distanceKm": "9.92 km",
+      "validGeoJSON": true,
+      "within100km": true
+    },
+    {
+      "order": 6,
+      "username": "owner8",
+      "city": "Can Tho",
+      "district": "Thốt Nốt",
+      "longitude": 105.545,
+      "latitude": 10.278,
+      "distanceKm": "34.04 km",
+      "validGeoJSON": true,
+      "within100km": true
+    },
+    {
+      "order": 7,
+      "username": "owner9",
+      "city": "Can Tho",
+      "district": "Thới Lai",
+      "longitude": 105.558,
+      "latitude": 10.065,
+      "distanceKm": "20.8 km",
+      "validGeoJSON": true,
+      "within100km": true
+    },
+    {
+      "order": 8,
+      "username": "owner10",
+      "city": "Can Tho",
+      "district": "Cờ Đỏ",
+      "longitude": 105.438,
+      "latitude": 10.102,
+      "distanceKm": "34.4 km",
+      "validGeoJSON": true,
+      "within100km": true
+    },
+    {
+      "order": 9,
+      "username": "owner1",
+      "city": "Hanoi",
+      "district": "Ba Đình",
+      "longitude": 105.8248,
+      "latitude": 21.0315,
+      "distanceKm": "3.07 km",
+      "validGeoJSON": true,
+      "within100km": true
+    },
+    {
+      "order": 10,
+      "username": "owner4",
+      "city": "Hanoi",
+      "district": "Đống Đa",
+      "longitude": 105.8352,
+      "latitude": 21.0142,
+      "distanceKm": "2.53 km",
+      "validGeoJSON": true,
+      "within100km": true
+    },
+    {
+      "order": 11,
+      "username": "owner3",
+      "city": "Hanoi",
+      "district": "Cầu Giấy",
+      "longitude": 105.792,
+      "latitude": 21.035,
+      "distanceKm": "6.5 km",
+      "validGeoJSON": true,
+      "within100km": true
+    },
+    {
+      "order": 12,
+      "username": "owner11",
+      "city": "Hanoi",
+      "district": "Hoàn Kiếm",
+      "longitude": 105.8572,
+      "latitude": 21.0255,
+      "distanceKm": "0.46 km",
+      "validGeoJSON": true,
+      "within100km": true
+    },
+    {
+      "order": 13,
+      "username": "owner12",
+      "city": "Hanoi",
+      "district": "Hai Bà Trưng",
+      "longitude": 105.8458,
+      "latitude": 21.0078,
+      "distanceKm": "2.46 km",
+      "validGeoJSON": true,
+      "within100km": true
+    },
+    {
+      "order": 14,
+      "username": "owner13",
+      "city": "Hanoi",
+      "district": "Hà Đông",
+      "longitude": 105.773,
+      "latitude": 20.972,
+      "distanceKm": "10.51 km",
+      "validGeoJSON": true,
+      "within100km": true
+    },
+    {
+      "order": 15,
+      "username": "owner14",
+      "city": "Hanoi",
+      "district": "Long Biên",
+      "longitude": 105.882,
+      "latitude": 21.045,
+      "distanceKm": "3.42 km",
+      "validGeoJSON": true,
+      "within100km": true
+    },
+    {
+      "order": 16,
+      "username": "owner15",
+      "city": "Hanoi",
+      "district": "Hoàng Mai",
+      "longitude": 105.848,
+      "latitude": 20.978,
+      "distanceKm": "5.65 km",
+      "validGeoJSON": true,
+      "within100km": true
+    }
+  ],
+  "dryRunResults": [
+    {
+      "order": 1,
+      "username": "kiendepzai",
+      "city": "Can Tho",
+      "district": "Bình Thủy",
+      "simulatedDeviceCount": 10,
+      "status": "OK (10 devices)"
+    },
+    {
+      "order": 2,
+      "username": "owner5",
+      "city": "Can Tho",
+      "district": "Ninh Kiều",
+      "simulatedDeviceCount": 10,
+      "status": "OK (10 devices)"
+    },
+    {
+      "order": 3,
+      "username": "owner2",
+      "city": "Can Tho",
+      "district": "Cái Răng",
+      "simulatedDeviceCount": 10,
+      "status": "OK (10 devices)"
+    },
+    {
+      "order": 4,
+      "username": "owner6",
+      "city": "Can Tho",
+      "district": "Ô Môn",
+      "simulatedDeviceCount": 10,
+      "status": "OK (10 devices)"
+    },
+    {
+      "order": 5,
+      "username": "owner7",
+      "city": "Can Tho",
+      "district": "Phong Điền",
+      "simulatedDeviceCount": 10,
+      "status": "OK (10 devices)"
+    },
+    {
+      "order": 6,
+      "username": "owner8",
+      "city": "Can Tho",
+      "district": "Thốt Nốt",
+      "simulatedDeviceCount": 10,
+      "status": "OK (10 devices)"
+    },
+    {
+      "order": 7,
+      "username": "owner9",
+      "city": "Can Tho",
+      "district": "Thới Lai",
+      "simulatedDeviceCount": 10,
+      "status": "OK (10 devices)"
+    },
+    {
+      "order": 8,
+      "username": "owner10",
+      "city": "Can Tho",
+      "district": "Cờ Đỏ",
+      "simulatedDeviceCount": 10,
+      "status": "OK (10 devices)"
+    },
+    {
+      "order": 9,
+      "username": "owner1",
+      "city": "Hanoi",
+      "district": "Ba Đình",
+      "simulatedDeviceCount": 10,
+      "status": "OK (10 devices)"
+    },
+    {
+      "order": 10,
+      "username": "owner4",
+      "city": "Hanoi",
+      "district": "Đống Đa",
+      "simulatedDeviceCount": 10,
+      "status": "OK (10 devices)"
+    },
+    {
+      "order": 11,
+      "username": "owner3",
+      "city": "Hanoi",
+      "district": "Cầu Giấy",
+      "simulatedDeviceCount": 10,
+      "status": "OK (10 devices)"
+    },
+    {
+      "order": 12,
+      "username": "owner11",
+      "city": "Hanoi",
+      "district": "Hoàn Kiếm",
+      "simulatedDeviceCount": 10,
+      "status": "OK (10 devices)"
+    },
+    {
+      "order": 13,
+      "username": "owner12",
+      "city": "Hanoi",
+      "district": "Hai Bà Trưng",
+      "simulatedDeviceCount": 10,
+      "status": "OK (10 devices)"
+    },
+    {
+      "order": 14,
+      "username": "owner13",
+      "city": "Hanoi",
+      "district": "Hà Đông",
+      "simulatedDeviceCount": 10,
+      "status": "OK (10 devices)"
+    },
+    {
+      "order": 15,
+      "username": "owner14",
+      "city": "Hanoi",
+      "district": "Long Biên",
+      "simulatedDeviceCount": 10,
+      "status": "OK (10 devices)"
+    },
+    {
+      "order": 16,
+      "username": "owner15",
+      "city": "Hanoi",
+      "district": "Hoàng Mai",
+      "simulatedDeviceCount": 10,
+      "status": "OK (10 devices)"
+    }
+  ]
+}

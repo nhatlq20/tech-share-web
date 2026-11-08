@@ -280,14 +280,29 @@
   box-shadow: 0 1px 3px rgba(13, 148, 136, 0.3);
 }
 
-/* Category Filter Pills (Horizontal Scrollbarless) */
+/* Category Filter Header & Pills (Matching Reference Image 1) */
+.nearby-category-section {
+  margin-bottom: 8px;
+}
+
+.nearby-available-header {
+  margin-bottom: 6px;
+}
+
+.nearby-available-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.2px;
+}
+
 .nearby-category-scroll-wrap {
   display: flex;
   align-items: center;
   gap: 6px;
   overflow-x: auto;
-  padding-bottom: 8px;
-  margin-bottom: 8px;
+  padding-bottom: 4px;
+  margin-bottom: 4px;
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
@@ -567,12 +582,16 @@
 }
 
 .nearby-owner-view-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   background: #0d9488;
   color: #ffffff;
   border: none;
   border-radius: 8px;
-  padding: 7px 16px;
-  font-size: 12px;
+  padding: 8px 16px;
+  font-size: 13px;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -581,6 +600,16 @@
 
 .nearby-owner-view-btn:hover {
   background: #0f766e;
+}
+
+.nearby-owner-view-btn.is-collapsed {
+  background: #f1f5f9;
+  color: #0d9488;
+  border: 1px solid #cbd5e1;
+}
+
+.nearby-owner-view-btn.is-collapsed:hover {
+  background: #e2e8f0;
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -594,10 +623,53 @@
 
 .nearby-owner-devices-header {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 8px;
   padding: 0 2px;
+}
+
+.nearby-devices-collapse-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.nearby-devices-collapse-btn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+  border-color: #94a3b8;
+}
+
+.nearby-devices-collapsed-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.nearby-devices-collapsed-notice:hover {
+  background: #f1f5f9;
+  color: #0d9488;
+  border-color: #0d9488;
 }
 
 .nearby-owner-devices-title {
@@ -660,7 +732,7 @@
   width: 88px;
   height: 88px;
   flex-shrink: 0;
-  border-radius: 8px;
+  border-radius: 10px;
   overflow: hidden;
   background: #f1f5f9;
 }
@@ -687,16 +759,21 @@
 
 .nearby-card-condition-pill {
   position: absolute;
-  top: 4px;
-  left: 4px;
-  padding: 2px 5px;
-  background: rgba(15, 23, 42, 0.8);
+  top: 5px;
+  left: 5px;
+  padding: 2px 6px;
+  background: rgba(15, 23, 42, 0.82);
   backdrop-filter: blur(4px);
   color: #ffffff;
   border-radius: 4px;
   font-size: 8px;
   font-weight: 700;
-  letter-spacing: 0.1px;
+  letter-spacing: 0.2px;
+}
+
+.nearby-card-condition-pill.nearby-card-popular-badge {
+  background: #ea580c;
+  color: #ffffff;
 }
 
 /* Card Body */
@@ -710,20 +787,23 @@
 
 .nearby-card-top-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  margin-bottom: 2px;
+  gap: 8px;
 }
 
-.nearby-card-category {
-  font-size: 9px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-  color: #0f766e;
-  background: #ccfbf1;
-  padding: 1px 5px;
-  border-radius: 3px;
+.nearby-card-sub-row {
+  margin-top: 1px;
+  margin-bottom: 4px;
+}
+
+.nearby-card-location-text {
+  font-size: 11px;
+  color: #64748b;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .nearby-card-heart-btn {
@@ -835,24 +915,24 @@
 .nearby-card-details-link {
   font-size: 11px;
   font-weight: 600;
-  color: #64748b;
+  color: #475569;
   text-decoration: none;
-  padding: 4px 8px;
+  padding: 5px 10px;
   border-radius: 6px;
   transition: all 0.15s ease;
 }
 
 .nearby-card-details-link:hover {
-  color: #0d9488;
-  background: #f0fdfa;
+  color: #0f172a;
+  background: #f1f5f9;
 }
 
 .nearby-card-book-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 5px 12px;
-  background: #0d9488;
+  padding: 6px 14px;
+  background: #0f172a;
   color: #ffffff;
   border-radius: 9999px;
   font-size: 11px;
@@ -860,12 +940,13 @@
   text-decoration: none;
   border: none;
   cursor: pointer;
-  transition: background 0.15s ease, transform 0.15s ease;
+  transition: background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .nearby-card-book-btn:hover {
-  background: #0f766e;
+  background: #1e293b;
   transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.2);
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
