@@ -47,6 +47,7 @@ export const API_CONFIG = {
     DEVICES_RECOMMENDED: "/devices/recommended",
     DEVICE_BY_ID: (id) => `/devices/${id}`,
     DEVICE_AVAILABILITY: (id) => `/devices/${id}/availability`,
+    DEVICE_BUSY_DATES: (id) => `/bookings/busy-dates/${id}`,
     BOOKINGS: "/bookings",
     BOOKINGS_MY: "/bookings/my-bookings",
     BOOKING_BY_ID: (id) => `/bookings/${id}`,
@@ -148,6 +149,7 @@ export const MODERATION_STATUS = {
 
 /** Tabs of the My Bookings hub, in display order (key = `status` query param). */
 export const MY_BOOKING_TABS = [
+  'all',
   BOOKING_STATUS.PENDING,
   BOOKING_STATUS.APPROVED,
   BOOKING_STATUS.ACTIVE,

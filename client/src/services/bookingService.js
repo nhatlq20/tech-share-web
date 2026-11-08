@@ -38,8 +38,9 @@ export const fetchMyBookings = async ({
   signal,
 } = {}) => {
   const effectiveRenterId = renterId || getStoredUserId();
+  const queryStatus = status && status !== 'all' ? status : undefined;
   const res = await api.get(API_CONFIG.ENDPOINTS.BOOKINGS_MY, {
-    params: { status, page, limit, renterId: effectiveRenterId },
+    params: { status: queryStatus, page, limit, renterId: effectiveRenterId },
     signal,
   });
 
@@ -87,12 +88,22 @@ export const submitRenterHandoverPhotos = async (bookingId, { beforePhotos = [],
 /**
  * POST /api/bookings/:id/extend
  */
-export const requestBookingExtension = async (bookingId, { days, note = '' }) => {
+export const requestBookingExtension = async (bookingId, { days, additionalDays, note = '' }) => {
+  const effectiveDays = Number(additionalDays ?? days);
   const res = await api.post(API_CONFIG.ENDPOINTS.BOOKING_EXTEND(bookingId), {
-    days: Number(days),
+    days: effectiveDays,
+    additionalDays: effectiveDays,
     note: (note || '').trim(),
   });
   return res?.data || null;
+};
+
+/**
+ * GET /api/bookings/busy-dates/:deviceId
+ */
+export const getDeviceBusyDates = async (deviceId) => {
+  const res = await api.get(API_CONFIG.ENDPOINTS.DEVICE_BUSY_DATES(deviceId));
+  return res?.busyRanges || res?.data?.busyRanges || res?.data?.bookedRanges || [];
 };
 
 const bookingService = {
@@ -101,6 +112,7 @@ const bookingService = {
   cancelBooking,
   submitRenterHandoverPhotos,
   requestBookingExtension,
+  getDeviceBusyDates,
 };
 
 export default bookingService;

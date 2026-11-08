@@ -1,455 +1,310 @@
-import React, { useEffect, useState } from 'react';
-import {
-  Star,
-  X,
-  CheckCircle2,
-  AlertCircle,
-  Loader2,
-  MessageSquare,
-  Sparkles,
-  Trash2,
-  Edit3,
-  Package,
-} from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Star, X, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { reviewService } from '../../services/reviewService.js';
-import { formatDateTime } from '../../utils/formatters.js';
-
-const REVIEW_MAX_LENGTH = 2000;
-
-const RATING_LABELS = {
-  1: 'Poor',
-  2: 'Fair',
-  3: 'Good',
-  4: 'Very Good',
-  5: 'Excellent',
-};
-
-const QUICK_REVIEW_TAGS = [
-  'Great device condition',
-  'Fast & smooth handover',
-  'Helpful & responsive owner',
-  'Works exactly as described',
-  'Great value for money',
-];
+import { STRINGS } from '../../constants/strings.js';
 
 /**
- * Interactive Modal for creating, editing, or deleting a review on a completed booking.
+ * BookingReviewModal – Synchronized with App's ReviewModal.tsx
+ * Supports both `isOpen` and `visible` props.
  */
 export const BookingReviewModal = ({
   isOpen,
+  visible,
   booking,
   onClose,
+  onSuccess,
   onReviewSaved,
 }) => {
-  const existingReview = booking?.review || null;
-  const isEditing = Boolean(existingReview?._id);
-
-  const [rating, setRating] = useState(existingReview?.rating || 5);
-  const [hoverRating, setHoverRating] = useState(0);
-  const [comment, setComment] = useState(existingReview?.comment || '');
+  const open = Boolean(isOpen ?? visible);
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState('');
+  const [selectedTags, setSelectedTags] = useState([]);
   const [submitting, setSubmitting] = useState(false);
-  const [deleting, setDeleting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
-  const [successMsg, setSuccessMsg] = useState('');
+  const [showSuccess, setShowSuccess] = useState(false);
 
   useEffect(() => {
-    if (isOpen && booking) {
-      const rev = booking.review || null;
-      setRating(rev?.rating || 5);
-      setHoverRating(0);
-      setComment(rev?.comment || '');
+    if (open) {
+      setRating(5);
+      setComment('');
+      setSelectedTags([]);
       setErrorMsg('');
-      setSuccessMsg('');
+      setShowSuccess(false);
     }
-  }, [isOpen, booking]);
+  }, [open, booking?._id]);
 
-  if (!isOpen || !booking) return null;
+  if (!open || !booking) return null;
 
-  const device = booking.device || booking.deviceId || {};
-  const deviceId = device._id || booking.deviceId || booking.device;
-  const deviceTitle = device.title || device.name || 'Rented Device';
-  const deviceImage = Array.isArray(device.images) && device.images.length > 0 ? device.images[0] : '';
-  const activeRating = hoverRating || rating;
+  const device =
+    (typeof booking.deviceId === 'object' && booking.deviceId) ||
+    (typeof booking.device === 'object' && booking.device) ||
+    {};
 
-  const handleQuickTagClick = (tag) => {
-    setErrorMsg('');
-    setComment((prev) => {
-      const trimmed = prev.trim();
-      if (!trimmed) return `${tag}. `;
-      if (trimmed.toLowerCase().includes(tag.toLowerCase())) return prev;
-      const separator = trimmed.endsWith('.') || trimmed.endsWith('!') ? ' ' : '. ';
-      const next = `${trimmed}${separator}${tag}.`;
-      return next.slice(0, REVIEW_MAX_LENGTH);
-    });
+  const deviceId =
+    device._id ||
+    device.id ||
+    (typeof booking.deviceId === 'string' ? booking.deviceId : '') ||
+    (typeof booking.device === 'string' ? booking.device : '');
+
+  const deviceName =
+    device.name || device.title || STRINGS.REVIEW_MODAL.DEFAULT_DEVICE_NAME;
+  const deviceImage =
+    device.images?.[0] || 'https://placehold.co/100x100/e2e8f0/64748b?text=Device';
+
+  const toggleTag = (tag) => {
+    setSelectedTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+    );
+  };
+
+  const getRatingLabel = (stars) => {
+    if (stars === 5) return STRINGS.REVIEW_MODAL.STAR_5;
+    if (stars === 4) return STRINGS.REVIEW_MODAL.STAR_4;
+    if (stars === 3) return STRINGS.REVIEW_MODAL.STAR_3;
+    if (stars === 2) return STRINGS.REVIEW_MODAL.STAR_2;
+    return STRINGS.REVIEW_MODAL.STAR_1;
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!deviceId) {
-      setErrorMsg('Unable to identify the device for this booking.');
-      return;
-    }
-    if (!rating || rating < 1 || rating > 5) {
-      setErrorMsg('Please select a star rating from 1 to 5.');
-      return;
-    }
-    if (!comment.trim()) {
-      setErrorMsg('Please write a short review about your rental experience.');
+    if (e) e.preventDefault();
+    const finalComment = [...selectedTags, comment.trim()].filter(Boolean).join('. ');
+    if (!finalComment) {
+      setErrorMsg(STRINGS.REVIEW_MODAL.ERR_EMPTY_COMMENT);
       return;
     }
 
+    setSubmitting(true);
+    setErrorMsg('');
     try {
-      setSubmitting(true);
-      setErrorMsg('');
-      setSuccessMsg('');
-
-      let savedReview = null;
-      if (isEditing) {
-        const res = await reviewService.updateReview(deviceId, existingReview._id, {
-          rating,
-          comment: comment.trim(),
-        });
-        savedReview = res.review;
-      } else {
-        const res = await reviewService.createReview(deviceId, {
-          bookingId: booking._id,
-          rating,
-          comment: comment.trim(),
-        });
-        savedReview = res.review;
-      }
-
-      const updatedBooking = {
-        ...booking,
-        review: savedReview,
-        isReviewed: true,
-        canReview: false,
+      const response = await reviewService.createReview(deviceId, {
+        bookingId: booking._id,
+        rating,
+        comment: finalComment,
+      });
+      const createdReview = response?.review || response?.data || {
+        rating,
+        comment: finalComment,
+        createdAt: new Date().toISOString(),
       };
-
-      setSuccessMsg(isEditing ? 'Your review has been updated!' : 'Thank you! Your review has been submitted.');
-      if (typeof onReviewSaved === 'function') {
-        onReviewSaved(updatedBooking);
-      }
+      setShowSuccess(true);
       setTimeout(() => {
-        onClose();
-      }, 700);
+        onSuccess?.(createdReview);
+        onReviewSaved?.({ ...booking, isReviewed: true, review: createdReview });
+        onClose?.();
+      }, 900);
     } catch (err) {
-      setErrorMsg(
-        err?.response?.data?.message ||
-          err?.message ||
-          'Failed to submit review. Please try again.'
-      );
+      setErrorMsg(err?.message || STRINGS.REVIEW_MODAL.ERR_SUBMIT_FAILED);
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleDelete = async () => {
-    if (!isEditing || !deviceId || !existingReview?._id) return;
-    try {
-      setDeleting(true);
-      setErrorMsg('');
-      await reviewService.deleteReview(deviceId, existingReview._id);
-      const updatedBooking = {
-        ...booking,
-        review: null,
-        isReviewed: false,
-        canReview: booking.status === 'completed',
-      };
-      if (typeof onReviewSaved === 'function') {
-        onReviewSaved(updatedBooking);
-      }
-      onClose();
-    } catch (err) {
-      setErrorMsg(
-        err?.response?.data?.message ||
-          err?.message ||
-          'Failed to delete review. Please try again.'
-      );
-    } finally {
-      setDeleting(false);
-    }
-  };
-
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/50 backdrop-blur-xs p-0 sm:p-4"
       role="dialog"
       aria-modal="true"
-      aria-labelledby="booking-review-modal-title"
     >
-      <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-slate-100 overflow-hidden">
-        {/* Modal Header */}
-        <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-amber-50/90 via-white to-brand-50/50 border-b border-slate-100">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center shadow-xs">
-              <Star className="w-5 h-5 fill-current" />
-            </div>
-            <div>
-              <h2 id="booking-review-modal-title" className="text-base font-extrabold text-slate-900">
-                {isEditing ? 'Edit Your Rental Review' : 'Rate & Review Your Rental'}
-              </h2>
-              <p className="text-xs text-slate-500">
-                Booking <span className="font-mono font-bold text-slate-700">{booking.bookingCode}</span>
-              </p>
-            </div>
-          </div>
+      <div className="w-full max-w-lg bg-white rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-200">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-extrabold text-slate-900">
+            {STRINGS.REVIEW_MODAL.HEADER_TITLE}
+          </h3>
           <button
             type="button"
+            disabled={submitting}
             onClick={onClose}
-            disabled={submitting || deleting}
-            className="p-2 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
-            aria-label="Close modal"
+            className="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-700 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Modal Body */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
-          {/* Device Summary */}
-          <div className="flex items-center gap-3.5 p-3.5 rounded-2xl bg-slate-50 border border-slate-100">
-            <div className="w-14 h-14 rounded-xl bg-white border border-slate-200/80 overflow-hidden flex-shrink-0 flex items-center justify-center">
-              {deviceImage ? (
-                <img src={deviceImage} alt={deviceTitle} className="w-full h-full object-cover" />
-              ) : (
-                <Package className="w-6 h-6 text-slate-400" />
-              )}
-            </div>
-            <div className="min-w-0 flex-1">
-              <h3 className="text-sm font-bold text-slate-900 truncate">{deviceTitle}</h3>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Completed rental · Share your honest experience with the community
-              </p>
-            </div>
+        {/* Device Row */}
+        <div className="flex items-center bg-slate-50 p-3 rounded-xl mb-5">
+          <img
+            src={deviceImage}
+            alt={deviceName}
+            className="w-12 h-12 rounded-lg object-cover bg-slate-200 shrink-0"
+          />
+          <div className="ml-3 flex-1 min-w-0">
+            <p className="text-sm font-bold text-slate-900 truncate">{deviceName}</p>
+            <p className="text-xs text-slate-500 mt-0.5">
+              #{booking.bookingCode || String(booking._id).slice(-6).toUpperCase()}
+            </p>
           </div>
+        </div>
 
-          {/* Star Rating Picker */}
-          <div className="flex flex-col items-center p-4 rounded-2xl bg-amber-50/50 border border-amber-100">
-            <span className="text-xs font-bold uppercase tracking-wider text-amber-800 mb-2">
-              Overall Rating
-            </span>
-            <div className="flex items-center gap-2" onMouseLeave={() => setHoverRating(0)}>
-              {[1, 2, 3, 4, 5].map((value) => {
-                const isFilled = value <= activeRating;
+        {showSuccess ? (
+          <div className="py-8 flex flex-col items-center text-center">
+            <div className="w-16 h-16 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center mb-3">
+              <CheckCircle2 className="w-10 h-10" />
+            </div>
+            <h4 className="text-lg font-extrabold text-slate-900 mb-1">
+              {STRINGS.REVIEW_MODAL.SUCCESS_TITLE}
+            </h4>
+            <p className="text-sm text-slate-500">{STRINGS.REVIEW_MODAL.SUCCESS_MSG}</p>
+          </div>
+        ) : (
+          <>
+            {/* Star Selector */}
+            <p className="text-sm font-semibold text-slate-900 text-center mb-3">
+              {STRINGS.REVIEW_MODAL.RATING_TITLE}
+            </p>
+            <div className="flex items-center justify-center gap-2.5 mb-2">
+              {[1, 2, 3, 4, 5].map((star) => {
+                const isActive = star <= rating;
                 return (
                   <button
-                    key={value}
+                    key={star}
                     type="button"
-                    onClick={() => setRating(value)}
-                    onMouseEnter={() => setHoverRating(value)}
-                    className="p-1.5 rounded-xl transition-transform hover:scale-110 focus:outline-none"
-                    aria-label={`Rate ${value} out of 5 stars`}
+                    onClick={() => setRating(star)}
+                    className="p-1 transition-transform hover:scale-110 focus:outline-hidden"
                   >
                     <Star
-                      className={`w-8 h-8 transition-colors ${
-                        isFilled
-                          ? 'fill-amber-400 text-amber-400 drop-shadow-2xs'
-                          : 'fill-white text-slate-300'
+                      className={`w-9 h-9 ${
+                        isActive
+                          ? 'text-amber-400 fill-amber-400'
+                          : 'text-slate-300'
                       }`}
                     />
                   </button>
                 );
               })}
             </div>
-            <span className="mt-1.5 inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-white text-amber-800 text-xs font-bold border border-amber-200 shadow-2xs">
-              {activeRating}.0 — {RATING_LABELS[activeRating]}
-            </span>
-          </div>
+            <p className="text-[13px] font-bold text-brand-500 text-center mb-4">
+              {getRatingLabel(rating)}
+            </p>
 
-          {/* Quick Review Tag Chips */}
-          <div>
-            <span className="text-xs font-semibold text-slate-500 flex items-center gap-1.5 mb-2">
-              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-              Quick feedback tags (click to add):
-            </span>
-            <div className="flex flex-wrap gap-1.5">
-              {QUICK_REVIEW_TAGS.map((tag) => (
-                <button
-                  key={tag}
-                  type="button"
-                  onClick={() => handleQuickTagClick(tag)}
-                  className="px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700 hover:bg-brand-50 hover:text-brand-700 hover:border-brand-200 border border-transparent transition"
-                >
-                  + {tag}
-                </button>
-              ))}
+            {/* Quick Review Tags */}
+            <p className="text-[13px] font-bold text-slate-900 mb-2">
+              {STRINGS.REVIEW_MODAL.QUICK_TAGS_LABEL}
+            </p>
+            <div className="flex flex-wrap gap-2 mb-4">
+              {STRINGS.REVIEW_MODAL.TAGS.map((tag) => {
+                const active = selectedTags.includes(tag);
+                return (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => toggleTag(tag)}
+                    className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${
+                      active
+                        ? 'bg-brand-50 border-brand-500 text-brand-500 font-semibold'
+                        : 'bg-slate-100 border-slate-200 text-slate-600 hover:border-brand-300'
+                    }`}
+                  >
+                    {tag}
+                  </button>
+                );
+              })}
             </div>
-          </div>
 
-          {/* Review Comment Textarea */}
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label htmlFor="booking-review-comment" className="text-xs font-bold text-slate-700">
-                Your Review
-              </label>
-              <span className="text-[11px] text-slate-400">
-                {comment.length}/{REVIEW_MAX_LENGTH}
-              </span>
-            </div>
+            {/* Detailed Review Textarea */}
+            <label className="block text-[13px] font-bold text-slate-900 mb-2">
+              {STRINGS.REVIEW_MODAL.COMMENT_LABEL}
+            </label>
             <textarea
-              id="booking-review-comment"
               rows={4}
-              maxLength={REVIEW_MAX_LENGTH}
               value={comment}
               onChange={(e) => {
-                setErrorMsg('');
                 setComment(e.target.value);
+                if (errorMsg) setErrorMsg('');
               }}
-              placeholder="How was the device performance, battery life, and handover process with the owner?"
-              className="w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-brand-500 focus:outline-none transition resize-none"
+              placeholder={STRINGS.REVIEW_MODAL.COMMENT_PLACEHOLDER}
+              className="w-full border border-slate-200 rounded-xl p-3 text-sm text-slate-900 bg-slate-50 placeholder:text-slate-400 focus:bg-white focus:border-brand-500 focus:outline-hidden resize-none mb-4"
             />
-          </div>
 
-          {/* Error / Success Messages */}
-          {errorMsg && (
-            <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-medium flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 flex-shrink-0" />
-              <span>{errorMsg}</span>
-            </div>
-          )}
-
-          {successMsg && (
-            <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
-              <span>{successMsg}</span>
-            </div>
-          )}
-
-          {/* Actions */}
-          <div className="flex items-center justify-between gap-3 pt-2 border-t border-slate-100">
-            {isEditing ? (
-              <button
-                type="button"
-                onClick={handleDelete}
-                disabled={submitting || deleting}
-                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 transition disabled:opacity-50"
-              >
-                {deleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
-                <span>Delete</span>
-              </button>
-            ) : (
-              <div />
+            {errorMsg && (
+              <div className="mb-3 flex items-center gap-2 rounded-xl bg-red-50 border border-red-200 px-3.5 py-2.5 text-xs font-medium text-red-600">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{errorMsg}</span>
+              </div>
             )}
 
-            <div className="flex items-center gap-2.5">
-              <button
-                type="button"
-                onClick={onClose}
-                disabled={submitting || deleting}
-                className="px-4 py-2.5 rounded-full text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                id="booking-review-submit-btn"
-                disabled={submitting || deleting}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-bold text-white bg-amber-500 hover:bg-amber-600 shadow-sm transition disabled:opacity-60"
-              >
-                {submitting ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Saving...</span>
-                  </>
-                ) : (
-                  <>
-                    <Star className="w-4 h-4 fill-current" />
-                    <span>{isEditing ? 'Update Review' : 'Submit Review'}</span>
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </form>
+            <button
+              type="button"
+              disabled={submitting}
+              onClick={handleSubmit}
+              className="w-full py-3.5 rounded-xl bg-brand-500 hover:bg-brand-600 disabled:opacity-60 text-white font-bold text-[15px] flex items-center justify-center gap-2 transition-colors shadow-sm"
+            >
+              {submitting ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                STRINGS.REVIEW_MODAL.SUBMIT_BTN
+              )}
+            </button>
+          </>
+        )}
       </div>
     </div>
   );
 };
 
-/**
- * Dedicated Review Banner / Card shown on BookingDetailPage when booking.status === 'completed'.
- */
 export const BookingReviewSection = ({ booking, onOpenReviewModal }) => {
   if (!booking || booking.status !== 'completed') return null;
 
-  const review = booking.review || null;
+  const isReviewed = Boolean(booking.isReviewed || booking.review);
+  const reviewData = booking.review;
 
   return (
-    <div className="bg-white rounded-2xl p-4 shadow-sm border border-amber-200/80 mb-3.5 relative overflow-hidden">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+    <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-100 shadow-xs">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-200 text-amber-500 flex items-center justify-center flex-shrink-0">
-            <Star className="w-5 h-5 fill-amber-400 text-amber-400" />
+          <div
+            className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+              isReviewed
+                ? 'bg-emerald-50 text-emerald-600'
+                : 'bg-amber-50 text-amber-500'
+            }`}
+          >
+            {isReviewed ? (
+              <CheckCircle2 className="w-5 h-5" />
+            ) : (
+              <Star className="w-5 h-5 fill-amber-400" />
+            )}
           </div>
           <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="text-sm font-extrabold text-slate-900">
-                {review ? 'Your Rental Review' : 'How was your rental experience?'}
-              </h2>
-              {review ? (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                  <CheckCircle2 className="w-3 h-3" />
-                  Reviewed ({review.rating}.0 ★)
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
-                  Completed Order
-                </span>
-              )}
-            </div>
-            <p className="text-xs text-slate-500 mt-0.5">
-              {review
-                ? `Submitted on ${formatDateTime(review.updatedAt || review.createdAt)}`
-                : 'Your order is completed! Rate this device to help other renters and the owner.'}
+            <h3 className="text-sm font-bold text-slate-900">
+              {isReviewed
+                ? STRINGS.BOOKING_ITEM_CARD.RATED_BTN
+                : STRINGS.REVIEW_MODAL.HEADER_TITLE}
+            </h3>
+            <p className="text-xs text-slate-500">
+              {isReviewed && reviewData?.comment
+                ? reviewData.comment
+                : STRINGS.REVIEW_MODAL.RATING_TITLE}
             </p>
           </div>
         </div>
 
-        <button
-          type="button"
-          id="booking-detail-review-btn"
-          onClick={() => onOpenReviewModal(booking)}
-          className={`self-start sm:self-auto inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold transition shadow-2xs ${
-            review
-              ? 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-              : 'bg-amber-500 text-white hover:bg-amber-600'
-          }`}
-        >
-          {review ? (
-            <>
-              <Edit3 className="w-3.5 h-3.5" />
-              <span>Edit Review</span>
-            </>
-          ) : (
-            <>
-              <Star className="w-3.5 h-3.5 fill-current" />
-              <span>Write a Review</span>
-            </>
-          )}
-        </button>
+        {isReviewed ? (
+          <div className="flex items-center gap-1 bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-200">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <Star
+                key={star}
+                className={`w-4 h-4 ${
+                  star <= (reviewData?.rating || 5)
+                    ? 'text-amber-400 fill-amber-400'
+                    : 'text-slate-300'
+                }`}
+              />
+            ))}
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={onOpenReviewModal}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition-colors shadow-2xs"
+          >
+            <Star className="w-4 h-4 fill-white" />
+            <span>{STRINGS.BOOKING_ITEM_CARD.RATE_BTN}</span>
+          </button>
+        )}
       </div>
-
-      {review && (
-        <div className="mt-3 pt-3 border-t border-slate-100">
-          <p className="text-xs text-slate-700 whitespace-pre-line leading-relaxed bg-slate-50 px-3.5 py-2.5 rounded-xl border border-slate-100">
-            {review.comment}
-          </p>
-
-          {review.ownerReply?.comment && (
-            <div className="mt-2 ml-3 px-3 py-2 rounded-xl bg-brand-50/60 border border-brand-100 text-xs">
-              <div className="font-bold text-brand-800 flex items-center gap-1.5 mb-0.5">
-                <MessageSquare className="w-3 h-3" />
-                <span>Owner Response</span>
-              </div>
-              <p className="text-slate-700">{review.ownerReply.comment}</p>
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 };
 
 export default BookingReviewModal;
-

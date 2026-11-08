@@ -1,786 +1,717 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import {
   ChevronRight,
-  User,
-  Phone,
   MapPin,
-  FileText,
-  CreditCard,
-  AlertCircle,
-  CheckCircle2,
-  Copy,
-  ArrowLeft,
-  MessageSquare,
   Truck,
   Store,
-  ShieldCheck,
+  CheckCircle2,
+  XCircle,
+  CalendarDays,
+  ArrowLeft,
+  ShieldAlert,
+  UserCheck,
+  Loader2,
 } from 'lucide-react';
 import { STRINGS } from '../../constants/strings.js';
 import { API_CONFIG, MAGIC_NUMBERS } from '../../constants/config.js';
 import { ROUTES } from '../../routes/routes.js';
-import { api } from '../../services/api.js';
-import { useAuth } from '../../context/AuthContext.jsx';
 import { WebDatePicker } from '../../components/booking/WebDatePicker.jsx';
 import { OrderSummaryCard } from '../../components/booking/OrderSummaryCard.jsx';
-import { formatPrice, formatDate } from '../../utils/formatters.js';
+import { api } from '../../services/api.js';
+import { useAuth } from '../../context/AuthContext.jsx';
 
+const formatPriceVnd = (amount) =>
+  `${Math.round(Number(amount) || 0).toLocaleString('en-US')} ${STRINGS.COMMON.VND}`;
+
+const formatDisplayDate = (dateStr) => {
+  if (!dateStr) return '--/--/----';
+  const [y, m, d] = dateStr.split('-');
+  return `${d}/${m}/${y}`;
+};
+
+/**
+ * BookingCheckoutPage - Web 2-column Checkout layout with App-synchronized information
+ * - Left column (7 cols): WebDatePicker (Step 1 Pickup, Step 2 Return, Quick Presets, Time Suggestions) + Handover Method (Self Pickup vs Doorstep Delivery)
+ * - Right column (5 cols): Sticky OrderSummaryCard (Device summary + App Payment Breakdown)
+ */
 export const BookingCheckoutPage = () => {
-  const { deviceId, id } = useParams();
-  const currentDeviceId = deviceId || id;
+  const { deviceId } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const location = useLocation();
+  const { user, isAuthenticated } = useAuth();
 
-  // Device & Availability state
-  const [device, setDevice] = useState(null);
+  const passedDevice = location.state?.device || null;
+
+  const [device, setDevice] = useState(passedDevice);
   const [disabledDates, setDisabledDates] = useState([]);
-  const [bookedRanges, setBookedRanges] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [fetchError, setFetchError] = useState(null);
+  const [busyRanges, setBusyRanges] = useState([]);
+  const [isLoadingDevice, setIsLoadingDevice] = useState(!passedDevice);
 
-  // Booking Form State
-  const [startDate, setStartDate] = useState(null);
-  const [endDate, setEndDate] = useState(null);
-  const [totalDays, setTotalDays] = useState(1);
-  const [pickupTime, setPickupTime] = useState('09:00');
-  const [returnTime, setReturnTime] = useState('18:00');
+  // Rental Schedule State (matching App's information)
+  const [dateSelection, setDateSelection] = useState({
+    startDate: null,
+    endDate: null,
+    pickupTime: '08:00',
+    returnTime: '08:00',
+  });
 
-  const [deliveryMethod, setDeliveryMethod] = useState('delivery');
-  const [recipientName, setRecipientName] = useState(user?.name || '');
-  const [phone, setPhone] = useState(user?.phone || '');
-  const [address, setAddress] = useState(user?.address || '');
-  const [note, setNote] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState('escrow');
+  // Handover Method State (default 'pickup' matching App)
+  const [deliveryMethod, setDeliveryMethod] = useState('pickup');
+  const [deliveryAddress, setDeliveryAddress] = useState(() => {
+    if (!user?.address) return '';
+    return typeof user.address === 'string'
+      ? user.address
+      : user.address?.fullAddress || user.address?.street || '';
+  });
 
-  useEffect(() => {
-    if (user) {
-      setRecipientName((prev) => prev || user.name || '');
-      setPhone((prev) => prev || user.phone || '');
-      setAddress((prev) => prev || user.address || '');
-    }
-  }, [user]);
-
-  const [agreedTerms, setAgreedTerms] = useState(true);
-  const [pledgedCondition, setPledgedCondition] = useState(true);
-
+  // Submission & Modals
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formError, setFormError] = useState(null);
-  const [successBooking, setSuccessBooking] = useState(null);
-  const [copiedCode, setCopiedCode] = useState(false);
+  const [validationError, setValidationError] = useState(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [resultModal, setResultModal] = useState({
+    visible: false,
+    type: 'error',
+    title: '',
+    message: '',
+  });
+  const [authAlertModal, setAuthAlertModal] = useState(null); // 'login' | 'verify' | null
 
-  // Load device details and availability
+  // Sync user address if loaded later
+  useEffect(() => {
+    if (user?.address && !deliveryAddress) {
+      const addr =
+        typeof user.address === 'string'
+          ? user.address
+          : user.address?.fullAddress || user.address?.street || '';
+      if (addr) setDeliveryAddress(addr);
+    }
+  }, [user, deliveryAddress]);
+
+  // Load device details & availability from MongoDB
   useEffect(() => {
     let isMounted = true;
-    const fetchDeviceData = async () => {
-      if (!currentDeviceId) {
-        setFetchError('Device ID not found');
-        setLoading(false);
-        return;
-      }
 
+    const loadDeviceAndAvailability = async () => {
       try {
-        setLoading(true);
-        setFetchError(null);
-
-        const deviceRes = await api.get(API_CONFIG.ENDPOINTS.DEVICE_BY_ID(currentDeviceId));
-        const deviceData = deviceRes.data || deviceRes;
-
-        if (isMounted) {
-          setDevice(deviceData);
+        if (!passedDevice) {
+          setIsLoadingDevice(true);
         }
 
-        try {
-          const availRes = await api.get(API_CONFIG.ENDPOINTS.DEVICE_AVAILABILITY(currentDeviceId));
-          if (isMounted && availRes.success && availRes.data) {
-            setDisabledDates(availRes.data.disabledDates || []);
-            setBookedRanges(availRes.data.bookedRanges || []);
+        const [deviceRes, availabilityRes] = await Promise.allSettled([
+          api.get(API_CONFIG.ENDPOINTS.DEVICE_BY_ID(deviceId)),
+          api.get(API_CONFIG.ENDPOINTS.DEVICE_BUSY_DATES(deviceId)),
+        ]);
+
+        if (!isMounted) return;
+
+        if (deviceRes.status === 'fulfilled' && deviceRes.value?.data) {
+          setDevice(deviceRes.value.data);
+        }
+
+        if (availabilityRes.status === 'fulfilled') {
+          const val = availabilityRes.value;
+          const availData = val?.data || val || {};
+          if (Array.isArray(availData.disabledDates)) {
+            setDisabledDates(availData.disabledDates);
           }
-        } catch (availErr) {
-          console.warn('Could not load dynamic availability, using empty array', availErr);
+          const ranges =
+            val?.busyRanges || availData?.busyRanges || availData?.bookedRanges || [];
+          setBusyRanges(Array.isArray(ranges) ? ranges : []);
         }
       } catch (err) {
-        if (isMounted) {
-          setFetchError(err.message || 'Unable to load device information');
-        }
+        console.error('Error loading checkout data:', err);
       } finally {
         if (isMounted) {
-          setLoading(false);
+          setIsLoadingDevice(false);
         }
       }
     };
 
-    fetchDeviceData();
+    if (deviceId) {
+      loadDeviceAndAvailability();
+    }
 
     return () => {
       isMounted = false;
     };
-  }, [currentDeviceId]);
+  }, [deviceId, passedDevice]);
 
-  // Pricing Calculation
-  const dailyRate = device?.dailyRate ?? device?.pricePerDay ?? 0;
-  const rentalFee = dailyRate * Math.max(1, totalDays);
+  // Construct start & end Date objects with time
+  const startDateObj = useMemo(() => {
+    if (!dateSelection.startDate) return null;
+    const [y, m, d] = dateSelection.startDate.split('-').map(Number);
+    const [hh, mm] = (dateSelection.pickupTime || '08:00').split(':').map(Number);
+    return new Date(y, m - 1, d, hh || 0, mm || 0, 0, 0);
+  }, [dateSelection.startDate, dateSelection.pickupTime]);
 
-  const { longRentalDiscount, longRentalDiscountPercent } = useMemo(() => {
-    if (totalDays >= MAGIC_NUMBERS.BOOKING.LONG_RENTAL_TIER_2_DAYS) {
+  const endDateObj = useMemo(() => {
+    const targetDateStr = dateSelection.endDate || dateSelection.startDate;
+    if (!targetDateStr) return null;
+    const [y, m, d] = targetDateStr.split('-').map(Number);
+    const [hh, mm] = (dateSelection.returnTime || '08:00').split(':').map(Number);
+    const dt = new Date(y, m - 1, d, hh || 0, mm || 0, 0, 0);
+    if (!dateSelection.endDate && startDateObj && dt <= startDateObj) {
+      dt.setDate(dt.getDate() + 1);
+    }
+    return dt;
+  }, [dateSelection.endDate, dateSelection.startDate, dateSelection.returnTime, startDateObj]);
+
+  // Rental duration calculation synchronized with App
+  const rentalDurationInfo = useMemo(() => {
+    if (!startDateObj || !endDateObj) {
+      return { days: 0, hours: 0, totalHours: 0, billingDays: 0 };
+    }
+    const diffMs = endDateObj.getTime() - startDateObj.getTime();
+    if (diffMs <= 0) {
+      return { days: 0, hours: 0, totalHours: 0, billingDays: 0 };
+    }
+    const totalHours = Math.max(1, Math.round(diffMs / (1000 * 60 * 60)));
+    const days = Math.floor(totalHours / 24);
+    const hours = totalHours % 24;
+    const billingDays = Math.max(1, Math.ceil(totalHours / 24));
+    return { days, hours, totalHours, billingDays };
+  }, [startDateObj, endDateObj]);
+
+  const rentalDays = rentalDurationInfo.billingDays;
+  const deviceDailyRate = Number(device?.dailyRate ?? device?.pricePerDay ?? 0);
+  const deviceDeposit = Number(device?.depositValue ?? device?.depositAmount ?? 0);
+
+  // Price breakdown synchronized with App
+  const priceDetails = useMemo(() => {
+    if (rentalDays <= 0 || !device) {
       return {
-        longRentalDiscount: Math.round(rentalFee * (MAGIC_NUMBERS.BOOKING.LONG_RENTAL_TIER_2_DISCOUNT_PERCENT / 100)),
-        longRentalDiscountPercent: MAGIC_NUMBERS.BOOKING.LONG_RENTAL_TIER_2_DISCOUNT_PERCENT,
+        rentalFee: 0,
+        discountPercent: 0,
+        discountAmount: 0,
+        depositFee: deviceDeposit,
+        totalAmount: 0,
       };
     }
-    if (totalDays >= MAGIC_NUMBERS.BOOKING.LONG_RENTAL_TIER_1_DAYS) {
-      return {
-        longRentalDiscount: Math.round(rentalFee * (MAGIC_NUMBERS.BOOKING.LONG_RENTAL_TIER_1_DISCOUNT_PERCENT / 100)),
-        longRentalDiscountPercent: MAGIC_NUMBERS.BOOKING.LONG_RENTAL_TIER_1_DISCOUNT_PERCENT,
-      };
+
+    const rentalFee = deviceDailyRate * rentalDays;
+    let discountPercent = 0;
+    if (rentalDays >= MAGIC_NUMBERS.BOOKING.LONG_RENTAL_TIER_2_DAYS) {
+      discountPercent = MAGIC_NUMBERS.BOOKING.LONG_RENTAL_TIER_2_DISCOUNT_PERCENT;
+    } else if (rentalDays >= MAGIC_NUMBERS.BOOKING.LONG_RENTAL_TIER_1_DAYS) {
+      discountPercent = MAGIC_NUMBERS.BOOKING.LONG_RENTAL_TIER_1_DISCOUNT_PERCENT;
     }
-    return { longRentalDiscount: 0, longRentalDiscountPercent: 0 };
-  }, [totalDays, rentalFee]);
 
-  const depositValue = device?.depositValue ?? device?.depositAmount ?? 0;
-  const finalRentalFee = Math.max(0, rentalFee - longRentalDiscount);
-  const totalAmount = finalRentalFee + depositValue;
+    const discountAmount = Math.round((rentalFee * discountPercent) / 100);
+    const depositFee = deviceDeposit;
+    const totalAmount = rentalFee - discountAmount + depositFee;
 
-  const handleDateChange = useCallback(({ startDate: start, endDate: end, totalDays: days, pickupTime: pTime, returnTime: rTime }) => {
-    setStartDate(start);
-    setEndDate(end);
-    setTotalDays(days || 1);
-    if (pTime) setPickupTime(pTime);
-    if (rTime) setReturnTime(rTime);
-    setFormError(null);
-  }, []);
+    return {
+      rentalFee,
+      discountPercent,
+      discountAmount,
+      depositFee,
+      totalAmount,
+    };
+  }, [rentalDays, device, deviceDailyRate, deviceDeposit]);
 
-  const ownerPickupAddress =
-    device?.address ||
+  const devicePickupLocation =
+    device?.addressText ||
     device?.location?.addressText ||
-    device?.ownerId?.address ||
-    device?.owner?.address ||
-    STRINGS.booking.delivery.methods?.pickup?.noAddress ||
-    'Owner address pending confirmation';
+    (typeof device?.address === 'string' ? device.address : '') ||
+    STRINGS.BOOKING_CREATE.PICKUP_DEFAULT_NOTE;
 
-  const canSubmit = useMemo(() => {
-    const isAddressValid = deliveryMethod === 'pickup' ? true : address.trim().length > 0;
-    return (
-      Boolean(startDate) &&
-      Boolean(endDate) &&
-      recipientName.trim().length > 0 &&
-      phone.trim().length >= 10 &&
-      isAddressValid &&
-      agreedTerms &&
-      pledgedCondition
-    );
-  }, [startDate, endDate, recipientName, phone, address, deliveryMethod, agreedTerms, pledgedCondition]);
+  const checkRangeOverlapWithBusy = (start, end) => {
+    return busyRanges.some((range) => {
+      const bStart = new Date(range.startDate);
+      const bEnd = new Date(range.endDate);
+      return start < bEnd && end > bStart;
+    });
+  };
 
   const handleSubmitBooking = async () => {
-    setFormError(null);
+    setValidationError(null);
 
-    if (user && !user.isVerified && !user.trust?.isVerified) {
-      setFormError('Please complete identity verification (eKYC) in your Profile before booking a device.');
-      window.scrollTo({ top: 100, behavior: 'smooth' });
+    if (!isAuthenticated || !user) {
+      setAuthAlertModal('login');
       return;
     }
 
-    if (!startDate || !endDate) {
-      setFormError(STRINGS.booking.validation.noDatesSelected);
-      window.scrollTo({ top: 100, behavior: 'smooth' });
+    const isVerified = Boolean(
+      user?.isVerified === true ||
+        user?.account?.isVerified === true ||
+        user?.trust?.isVerified === true
+    );
+    if (user.role === 'renter' && !isVerified) {
+      setAuthAlertModal('verify');
       return;
     }
 
-    if (!recipientName.trim()) {
-      setFormError(STRINGS.booking.validation.missingRecipientName);
-      window.scrollTo({ top: 350, behavior: 'smooth' });
+    if (!startDateObj || !endDateObj || !dateSelection.startDate) {
+      setValidationError(STRINGS.BOOKING_CREATE.ERR_MISSING_DATES_MSG);
+      setResultModal({
+        visible: true,
+        type: 'error',
+        title: STRINGS.BOOKING_CREATE.ERR_MISSING_DATES,
+        message: STRINGS.BOOKING_CREATE.ERR_MISSING_DATES_MSG,
+      });
       return;
     }
 
-    if (!phone.trim() || phone.trim().length < 10) {
-      setFormError(STRINGS.booking.validation.invalidPhone);
-      window.scrollTo({ top: 350, behavior: 'smooth' });
+    if (endDateObj <= startDateObj) {
+      setValidationError(STRINGS.BOOKING_CREATE.ERR_END_BEFORE_START_MSG);
+      setResultModal({
+        visible: true,
+        type: 'error',
+        title: STRINGS.BOOKING_CREATE.ERR_END_BEFORE_START,
+        message: STRINGS.BOOKING_CREATE.ERR_END_BEFORE_START_MSG,
+      });
       return;
     }
 
-    if (deliveryMethod === 'delivery' && !address.trim()) {
-      setFormError(STRINGS.booking.validation.missingAddress);
-      window.scrollTo({ top: 400, behavior: 'smooth' });
+    if (checkRangeOverlapWithBusy(startDateObj, endDateObj)) {
+      setValidationError(STRINGS.BOOKING_CREATE.CONFLICT_MSG);
+      setResultModal({
+        visible: true,
+        type: 'error',
+        title: STRINGS.BOOKING_CREATE.CONFLICT_TITLE,
+        message: STRINGS.BOOKING_CREATE.CONFLICT_MSG,
+      });
       return;
     }
 
-    if (!agreedTerms || !pledgedCondition) {
-      setFormError(STRINGS.booking.validation.mustAgreeTerms);
-      window.scrollTo({ top: 600, behavior: 'smooth' });
+    if (deliveryMethod === 'delivery' && !deliveryAddress.trim()) {
+      setValidationError(STRINGS.BOOKING_CREATE.ERR_MISSING_ADDRESS_MSG);
+      setResultModal({
+        visible: true,
+        type: 'error',
+        title: STRINGS.BOOKING_CREATE.ERR_MISSING_ADDRESS,
+        message: STRINGS.BOOKING_CREATE.ERR_MISSING_ADDRESS_MSG,
+      });
       return;
     }
 
+    setIsSubmitting(true);
     try {
-      setIsSubmitting(true);
-
-      const effectiveAddress = deliveryMethod === 'pickup' ? ownerPickupAddress : address.trim();
-
-      const buildIsoDateTime = (dateStr, timeStr, fallbackTime) => {
-        if (!dateStr) return null;
-        const time = timeStr || fallbackTime || '09:00';
-        const [year, month, day] = dateStr.split('-').map(Number);
-        const [hours, minutes] = time.split(':').map(Number);
-        const d = new Date(year, month - 1, day, hours || 0, minutes || 0, 0, 0);
-        return d.toISOString();
-      };
-
-      const startDateTime = buildIsoDateTime(startDate, pickupTime, '09:00');
-      const endDateTime = buildIsoDateTime(endDate || startDate, returnTime, '18:00');
-
-      const payload = {
-        deviceId: currentDeviceId,
-        renterId: user?._id || user?.id || null,
-        startDate: startDateTime,
-        endDate: endDateTime,
-        pickupTime,
-        returnTime,
+      await api.post(API_CONFIG.ENDPOINTS.BOOKINGS, {
+        deviceId: device?._id || device?.id || deviceId,
+        startDate: startDateObj.toISOString(),
+        endDate: endDateObj.toISOString(),
         deliveryMethod,
-        deliveryAddress: {
-          recipientName: recipientName.trim(),
-          phone: phone.trim(),
-          address: effectiveAddress,
-        },
-        renterInfo: {
-          name: recipientName.trim(),
-          phone: phone.trim(),
-          email: user?.email || '',
-        },
-        voucherCode: '',
-        note: note.trim(),
-        paymentMethod,
-      };
+        deliveryAddress:
+          deliveryMethod === 'delivery'
+            ? deliveryAddress.trim()
+            : devicePickupLocation,
+      });
 
-      const res = await api.post(API_CONFIG.ENDPOINTS.BOOKINGS, payload);
-
-      if (res.success && res.data) {
-        setSuccessBooking(res.data);
+      setShowSuccessModal(true);
+    } catch (error) {
+      if (error?.requireEkyc || error?.code === 'RENTER_EKYC_REQUIRED') {
+        setAuthAlertModal('verify');
       } else {
-        throw new Error(res.message || 'Booking creation failed');
+        const msg = error?.message || STRINGS.BOOKING_CREATE.ERR_BOOKING_DEFAULT;
+        setValidationError(msg);
+        setResultModal({
+          visible: true,
+          type: 'error',
+          title: STRINGS.BOOKING_CREATE.ERR_BOOKING_FAILED,
+          message: msg,
+        });
       }
-    } catch (err) {
-      setFormError(err.message || 'An error occurred while creating booking. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleCopyCode = () => {
-    if (successBooking?.bookingCode) {
-      navigator.clipboard.writeText(successBooking.bookingCode);
-      setCopiedCode(true);
-      setTimeout(() => setCopiedCode(false), 2000);
-    }
-  };
-
-  if (loading) {
+  if (isLoadingDevice) {
     return (
-      <div className="min-h-[70vh] flex flex-col items-center justify-center gap-3">
-        <div className="w-10 h-10 border-4 border-brand-500 border-t-transparent rounded-full animate-spin" />
-        <span className="text-sm font-semibold text-slate-600">
-          {STRINGS.common.loading}
-        </span>
+      <div className="min-h-[70vh] flex flex-col items-center justify-center gap-3 bg-slate-50">
+        <Loader2 className="w-10 h-10 text-brand-500 animate-spin" />
+        <span className="text-sm font-semibold text-slate-600">{STRINGS.COMMON.LOADING}</span>
       </div>
     );
   }
 
-  if (fetchError || !device) {
-    return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center p-6 text-center">
-        <AlertCircle className="w-12 h-12 text-red-500 mb-3" />
-        <h2 className="text-lg font-bold text-slate-800">
-          Device Not Found
-        </h2>
-        <p className="text-sm text-slate-500 max-w-md mt-1 mb-6">
-          {fetchError || 'The device you requested does not exist or has been removed.'}
-        </p>
-        <Link
-          to={ROUTES.HOME}
-          className="px-5 py-2.5 rounded-xl bg-brand-500 text-white font-semibold text-sm hover:bg-brand-600 transition shadow-sm"
-        >
-          &larr; Back to Home
-        </Link>
-      </div>
-    );
-  }
+  const deviceTitle =
+    device?.name || device?.title || STRINGS.booking.myBookings.untitledDevice;
 
   return (
-    <div className="min-h-screen bg-slate-50/60 py-4 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Compact Top Bar: Breadcrumb + Title + Stepper in one row */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4 bg-white rounded-2xl px-4 py-3 shadow-2xs border border-slate-100">
-          <div className="flex items-center gap-3 min-w-0">
+    <div className="min-h-screen bg-slate-50 py-5 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-6xl mx-auto">
+        {/* Web Top Header: Back + Breadcrumb + Title + 3-Step Indicator */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5 pb-3.5 border-b border-slate-200/80">
+          <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => navigate(-1)}
-              className="p-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 hover:text-brand-600 hover:border-brand-200 transition flex-shrink-0"
-              aria-label="Back"
+              className="p-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:text-brand-600 hover:border-brand-200 transition shadow-2xs"
+              aria-label={STRINGS.COMMON.BACK}
             >
               <ArrowLeft className="w-4 h-4" />
             </button>
-            <div className="min-w-0">
-              <nav className="flex items-center gap-1.5 text-[11px] text-slate-400">
+            <div>
+              <nav className="flex items-center gap-1.5 text-xs text-slate-400 mb-0.5">
                 <Link to={ROUTES.HOME} className="hover:text-brand-600 transition">
                   {STRINGS.booking.checkout.breadcrumbHome}
                 </Link>
                 <ChevronRight className="w-3 h-3" />
-                <Link
-                  to={ROUTES.DEVICE_DETAIL_PATH(currentDeviceId)}
-                  className="hover:text-brand-600 truncate max-w-[160px] transition"
-                >
-                  {device.title || device.name}
+                <Link to={ROUTES.EXPLORE} className="hover:text-brand-600 transition">
+                  {STRINGS.booking.checkout.breadcrumbExplore}
                 </Link>
+                <ChevronRight className="w-3 h-3" />
+                <span className="text-slate-600 truncate max-w-[180px]">{deviceTitle}</span>
                 <ChevronRight className="w-3 h-3" />
                 <span className="text-brand-600 font-semibold">
                   {STRINGS.booking.checkout.breadcrumbCheckout}
                 </span>
               </nav>
-              <h1 className="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight truncate">
-                {STRINGS.booking.checkout.headerTitle}
+              <h1 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
+                {STRINGS.BOOKING_CREATE.HEADER_TITLE}
               </h1>
             </div>
           </div>
 
-          {/* Inline 3-Step Pills */}
-          <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand-50 border border-brand-200 text-brand-800 text-xs font-bold whitespace-nowrap">
-              <span className="w-4 h-4 rounded-full bg-brand-500 text-white flex items-center justify-center text-[10px]">
-                1
-              </span>
-              <span>{STRINGS.booking.checkout.steps.step1}</span>
-            </div>
-            <ChevronRight className="w-3.5 h-3.5 text-slate-300 flex-shrink-0" />
-            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-slate-600 text-xs font-semibold whitespace-nowrap">
-              <span className="w-4 h-4 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center text-[10px]">
-                2
-              </span>
-              <span>{STRINGS.booking.checkout.steps.step2}</span>
-            </div>
-            <ChevronRight className="w-3.5 h-3.5 text-slate-300 flex-shrink-0" />
-            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-slate-400 text-xs font-medium whitespace-nowrap">
-              <span className="w-4 h-4 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center text-[10px]">
-                3
-              </span>
-              <span>{STRINGS.booking.checkout.steps.step3}</span>
-            </div>
+          {/* 3-Step Pills */}
+          <div className="flex items-center gap-2 text-xs font-semibold">
+            <span className="px-3 py-1 rounded-full bg-brand-500 text-white shadow-2xs">
+              {STRINGS.booking.checkout.steps.step1}
+            </span>
+            <span className="text-slate-300">→</span>
+            <span className="px-3 py-1 rounded-full bg-brand-50 text-brand-700 border border-brand-200">
+              {STRINGS.booking.checkout.steps.step2}
+            </span>
+            <span className="text-slate-300 hidden sm:inline">→</span>
+            <span className="px-3 py-1 rounded-full bg-white text-slate-500 border border-slate-200 hidden sm:inline-block">
+              {STRINGS.booking.checkout.steps.step3}
+            </span>
           </div>
         </div>
 
-        {/* Main 2-Column Content Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
-          {/* Left Column: Compact Form Sections (8 cols) */}
-          <div className="lg:col-span-8 flex flex-col gap-3.5">
-            {/* Compact eKYC Warning Banner if unverified */}
-            {user && !user.isVerified && !user.trust?.isVerified && (
-              <div className="px-4 py-2.5 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 flex flex-wrap items-center justify-between gap-2 shadow-2xs">
-                <div className="flex items-center gap-2 text-xs">
-                  <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
-                  <span>
-                    <strong>Identity verification (eKYC) required:</strong> Complete your ID verification before booking.
-                  </span>
-                </div>
-                <Link
-                  to={ROUTES.PROFILE}
-                  className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-amber-600 hover:bg-amber-700 text-white font-semibold text-[11px] transition"
-                >
-                  <ShieldCheck className="w-3.5 h-3.5" />
-                  <span>Verify eKYC</span>
-                </Link>
-              </div>
-            )}
-
-            {/* Section 1: Compact Side-by-Side Calendar & Time Picker */}
+        {/* Main 2-Column Web Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+          {/* Left Column (7 cols): Rental Period Calendar + Handover Method */}
+          <div className="lg:col-span-7 flex flex-col gap-4">
+            {/* 1. Interactive Web Calendar & Schedule Selector */}
             <WebDatePicker
-              startDate={startDate}
-              endDate={endDate}
-              pickupTime={pickupTime}
-              returnTime={returnTime}
-              onChange={handleDateChange}
+              startDate={dateSelection.startDate}
+              endDate={dateSelection.endDate}
+              pickupTime={dateSelection.pickupTime}
+              returnTime={dateSelection.returnTime}
+              rentalDurationInfo={rentalDurationInfo}
+              onChange={(newSelection) => {
+                setDateSelection(newSelection);
+                setValidationError(null);
+              }}
               disabledDates={disabledDates}
-              bookedRanges={bookedRanges}
             />
 
-            {/* Section 2: Compact Handover, Delivery & Contact Info */}
-            <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
-              <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-100 mb-3">
-                <div className="flex items-center gap-2">
-                  <Truck className="w-4 h-4 text-brand-500" />
-                  <h2 className="text-sm font-bold text-slate-800">
-                    {STRINGS.booking.delivery.title}
+            {/* 2. Handover Method Section (Synchronized with App: Self Pickup vs Doorstep Delivery) */}
+            <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-100">
+              <div className="flex items-center gap-2.5 pb-3.5 mb-3.5 border-b border-slate-100">
+                <div className="w-9 h-9 rounded-xl bg-brand-50 flex items-center justify-center text-brand-500 shrink-0">
+                  <Truck className="w-4 h-4" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-extrabold text-slate-900">
+                    {STRINGS.BOOKING_CREATE.DELIVERY_METHOD_TITLE}
                   </h2>
+                  <p className="text-[11px] text-slate-500">
+                    {STRINGS.booking.delivery.subtitle}
+                  </p>
                 </div>
+              </div>
 
-                {/* Inline Delivery Method Toggle Pills */}
-                <div className="inline-flex p-1 rounded-xl bg-slate-100 border border-slate-200/70">
-                  <button
-                    type="button"
-                    onClick={() => setDeliveryMethod('pickup')}
-                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition ${
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3.5">
+                {/* Option 1: Self Pickup */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDeliveryMethod('pickup');
+                    setValidationError(null);
+                  }}
+                  className={`p-3.5 rounded-xl border-2 text-left transition flex items-start gap-3 cursor-pointer ${
+                    deliveryMethod === 'pickup'
+                      ? 'border-brand-500 bg-brand-50/40 shadow-2xs'
+                      : 'border-slate-200 bg-slate-50/60 hover:border-brand-300'
+                  }`}
+                >
+                  <div
+                    className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
                       deliveryMethod === 'pickup'
-                        ? 'bg-white text-brand-700 shadow-2xs'
-                        : 'text-slate-600 hover:text-slate-900'
+                        ? 'bg-brand-500 text-white'
+                        : 'bg-brand-50 text-brand-500'
                     }`}
                   >
-                    <Store className="w-3.5 h-3.5" />
-                    <span>{STRINGS.booking.delivery.methods?.pickup?.title || 'Self Pickup'}</span>
-                    <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-emerald-50 text-emerald-700">
-                      Free
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setDeliveryMethod('delivery')}
-                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition ${
+                    <Store className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-1.5">
+                      <span className="font-bold text-slate-900 text-xs sm:text-sm">
+                        {STRINGS.BOOKING_CREATE.PICKUP_TITLE}
+                      </span>
+                      <div
+                        className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                          deliveryMethod === 'pickup'
+                            ? 'border-brand-500'
+                            : 'border-slate-300'
+                        }`}
+                      >
+                        {deliveryMethod === 'pickup' && (
+                          <span className="w-2 h-2 rounded-full bg-brand-500" />
+                        )}
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-slate-500 mt-1 leading-snug">
+                      {STRINGS.BOOKING_CREATE.PICKUP_SUB}
+                    </p>
+                  </div>
+                </button>
+
+                {/* Option 2: Doorstep Delivery */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDeliveryMethod('delivery');
+                    setValidationError(null);
+                  }}
+                  className={`p-3.5 rounded-xl border-2 text-left transition flex items-start gap-3 cursor-pointer ${
+                    deliveryMethod === 'delivery'
+                      ? 'border-brand-500 bg-brand-50/40 shadow-2xs'
+                      : 'border-slate-200 bg-slate-50/60 hover:border-brand-300'
+                  }`}
+                >
+                  <div
+                    className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
                       deliveryMethod === 'delivery'
-                        ? 'bg-white text-brand-700 shadow-2xs'
-                        : 'text-slate-600 hover:text-slate-900'
+                        ? 'bg-brand-500 text-white'
+                        : 'bg-brand-50 text-brand-500'
                     }`}
                   >
-                    <Truck className="w-3.5 h-3.5" />
-                    <span>{STRINGS.booking.delivery.methods?.delivery?.title || 'Doorstep Delivery'}</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Compact Contact & Address Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
-                {/* Recipient Name (4 cols) */}
-                <div className="sm:col-span-4">
-                  <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                    {STRINGS.booking.delivery.recipientNameLabel}
-                  </label>
-                  <div className="relative">
-                    <User className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
-                    <input
-                      type="text"
-                      value={recipientName}
-                      onChange={(e) => setRecipientName(e.target.value)}
-                      placeholder={STRINGS.booking.delivery.recipientNamePlaceholder}
-                      className="w-full pl-8 pr-3 py-2 text-xs font-medium rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:border-brand-500 transition"
-                      required
-                    />
+                    <Truck className="w-5 h-5" />
                   </div>
-                </div>
-
-                {/* Phone Number (4 cols) */}
-                <div className="sm:col-span-4">
-                  <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                    {STRINGS.booking.delivery.phoneLabel}
-                  </label>
-                  <div className="relative">
-                    <Phone className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
-                    <input
-                      type="tel"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      placeholder={STRINGS.booking.delivery.phonePlaceholder}
-                      className="w-full pl-8 pr-3 py-2 text-xs font-medium rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:border-brand-500 transition"
-                      required
-                    />
-                  </div>
-                </div>
-
-                {/* Note (4 cols) */}
-                <div className="sm:col-span-4">
-                  <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                    {STRINGS.booking.delivery.noteLabel}
-                  </label>
-                  <div className="relative">
-                    <FileText className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
-                    <input
-                      type="text"
-                      value={note}
-                      onChange={(e) => setNote(e.target.value)}
-                      placeholder={STRINGS.booking.delivery.notePlaceholder}
-                      className="w-full pl-8 pr-3 py-2 text-xs font-medium rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:border-brand-500 transition"
-                    />
-                  </div>
-                </div>
-
-                {/* Address / Pickup Location (Full 12 cols) */}
-                <div className="sm:col-span-12">
-                  {deliveryMethod === 'pickup' ? (
-                    <div className="px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <MapPin className="w-4 h-4 text-brand-600 flex-shrink-0" />
-                        <div className="min-w-0">
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mr-2">
-                            {STRINGS.booking.delivery.methods?.pickup?.locationLabel || 'Pickup Address'}:
-                          </span>
-                          <span className="text-xs font-bold text-slate-800">{ownerPickupAddress}</span>
-                        </div>
-                      </div>
-                      <span className="hidden sm:inline-flex items-center gap-1 text-[11px] text-emerald-700 font-semibold whitespace-nowrap">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                        Inspect on pickup
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-1.5">
+                      <span className="font-bold text-slate-900 text-xs sm:text-sm">
+                        {STRINGS.BOOKING_CREATE.DELIVERY_TITLE}
                       </span>
-                    </div>
-                  ) : (
-                    <div>
-                      <div className="relative">
-                        <MapPin className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
-                        <input
-                          type="text"
-                          value={address}
-                          onChange={(e) => setAddress(e.target.value)}
-                          placeholder={
-                            STRINGS.booking.delivery.methods?.delivery?.addressPlaceholder ||
-                            STRINGS.booking.delivery.addressPlaceholder
-                          }
-                          className="w-full pl-8 pr-3 py-2 text-xs font-medium rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:border-brand-500 transition"
-                          required
-                        />
+                      <div
+                        className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                          deliveryMethod === 'delivery'
+                            ? 'border-brand-500'
+                            : 'border-slate-300'
+                        }`}
+                      >
+                        {deliveryMethod === 'delivery' && (
+                          <span className="w-2 h-2 rounded-full bg-brand-500" />
+                        )}
                       </div>
                     </div>
-                  )}
+                    <p className="text-[11px] text-slate-500 mt-1 leading-snug">
+                      {STRINGS.BOOKING_CREATE.DELIVERY_SUB}
+                    </p>
+                  </div>
+                </button>
+              </div>
+
+              {/* Conditional Handover Location / Delivery Address Box */}
+              {deliveryMethod === 'pickup' ? (
+                <div className="p-3.5 rounded-xl bg-brand-50/60 border border-brand-200 flex items-start gap-2.5">
+                  <MapPin className="w-4 h-4 text-brand-600 shrink-0 mt-0.5" />
+                  <p className="text-xs text-slate-700 leading-relaxed">
+                    {STRINGS.BOOKING_CREATE.PICKUP_LOCATION_PREFIX}
+                    <span className="font-bold text-slate-900">{devicePickupLocation}</span>
+                  </p>
                 </div>
-              </div>
-            </div>
-
-            {/* Section 3: Compact 3-Column Payment Method + Inline Terms */}
-            <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
-              <div className="flex items-center gap-2 pb-2.5 border-b border-slate-100 mb-3">
-                <CreditCard className="w-4 h-4 text-brand-500" />
-                <h2 className="text-sm font-bold text-slate-800">
-                  {STRINGS.booking.payment.title} &amp; {STRINGS.booking.agreement.title}
-                </h2>
-              </div>
-
-              {/* 3-Column Payment Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mb-3">
-                {/* Escrow */}
-                <label
-                  className={`flex items-start gap-2.5 p-3 rounded-xl border cursor-pointer transition ${
-                    paymentMethod === 'escrow'
-                      ? 'border-brand-500 bg-brand-50/40 ring-1 ring-brand-500/30'
-                      : 'border-slate-200 hover:bg-slate-50'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    value="escrow"
-                    checked={paymentMethod === 'escrow'}
-                    onChange={() => setPaymentMethod('escrow')}
-                    className="mt-0.5 accent-brand-500"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-1">
-                      <span className="text-xs font-bold text-slate-800 truncate">
-                        {STRINGS.booking.payment.methods.escrow.title}
-                      </span>
-                      <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-brand-100 text-brand-700 font-bold shrink-0">
-                        {STRINGS.booking.payment.methods.escrow.badge}
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-2 leading-tight">
-                      {STRINGS.booking.payment.methods.escrow.desc}
-                    </p>
+              ) : (
+                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+                  <label className="block text-xs font-bold text-slate-900 mb-1.5">
+                    {STRINGS.BOOKING_CREATE.DELIVERY_ADDRESS_LABEL}
+                  </label>
+                  <div className="relative">
+                    <MapPin className="w-4 h-4 text-brand-500 absolute left-3 top-3" />
+                    <textarea
+                      rows={2}
+                      value={deliveryAddress}
+                      onChange={(e) => {
+                        setDeliveryAddress(e.target.value);
+                        setValidationError(null);
+                      }}
+                      placeholder={STRINGS.BOOKING_CREATE.DELIVERY_ADDRESS_PLACEHOLDER}
+                      className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 focus:border-brand-500 focus:outline-hidden text-xs sm:text-sm text-slate-800 bg-white resize-none"
+                    />
                   </div>
-                </label>
-
-                {/* Bank Transfer */}
-                <label
-                  className={`flex items-start gap-2.5 p-3 rounded-xl border cursor-pointer transition ${
-                    paymentMethod === 'bank_transfer'
-                      ? 'border-brand-500 bg-brand-50/40 ring-1 ring-brand-500/30'
-                      : 'border-slate-200 hover:bg-slate-50'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    value="bank_transfer"
-                    checked={paymentMethod === 'bank_transfer'}
-                    onChange={() => setPaymentMethod('bank_transfer')}
-                    className="mt-0.5 accent-brand-500"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-1">
-                      <span className="text-xs font-bold text-slate-800 truncate">
-                        {STRINGS.booking.payment.methods.bankTransfer.title}
-                      </span>
-                      <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-bold shrink-0">
-                        {STRINGS.booking.payment.methods.bankTransfer.badge}
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-2 leading-tight">
-                      {STRINGS.booking.payment.methods.bankTransfer.desc}
-                    </p>
-                  </div>
-                </label>
-
-                {/* COD */}
-                <label
-                  className={`flex items-start gap-2.5 p-3 rounded-xl border cursor-pointer transition ${
-                    paymentMethod === 'cash_on_delivery'
-                      ? 'border-brand-500 bg-brand-50/40 ring-1 ring-brand-500/30'
-                      : 'border-slate-200 hover:bg-slate-50'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    value="cash_on_delivery"
-                    checked={paymentMethod === 'cash_on_delivery'}
-                    onChange={() => setPaymentMethod('cash_on_delivery')}
-                    className="mt-0.5 accent-brand-500"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-1">
-                      <span className="text-xs font-bold text-slate-800 truncate">
-                        {STRINGS.booking.payment.methods.cod.title}
-                      </span>
-                      <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600 font-bold shrink-0">
-                        {STRINGS.booking.payment.methods.cod.badge}
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-2 leading-tight">
-                      {STRINGS.booking.payment.methods.cod.desc}
-                    </p>
-                  </div>
-                </label>
-              </div>
-
-              {/* Compact Inline Terms Checkboxes */}
-              <div className="pt-2.5 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <label className="flex items-start gap-2 text-[11px] text-slate-600 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={agreedTerms}
-                    onChange={(e) => setAgreedTerms(e.target.checked)}
-                    className="mt-0.5 rounded accent-brand-500"
-                  />
-                  <span className="leading-snug">{STRINGS.booking.agreement.termsText}</span>
-                </label>
-
-                <label className="flex items-start gap-2 text-[11px] text-slate-600 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={pledgedCondition}
-                    onChange={(e) => setPledgedCondition(e.target.checked)}
-                    className="mt-0.5 rounded accent-brand-500"
-                  />
-                  <span className="leading-snug">{STRINGS.booking.agreement.pledgeText}</span>
-                </label>
-              </div>
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Right Column: Compact Sticky Order Summary (4 cols) */}
-          <div className="lg:col-span-4 flex flex-col gap-4">
+          {/* Right Column (5 cols): Sticky OrderSummaryCard */}
+          <div className="lg:col-span-5">
             <OrderSummaryCard
               device={device}
-              totalDays={totalDays}
-              dailyRate={dailyRate}
-              rentalFee={rentalFee}
-              longRentalDiscount={longRentalDiscount}
-              longRentalDiscountPercent={longRentalDiscountPercent}
-              depositValue={depositValue}
-              totalAmount={totalAmount}
+              rentalDays={rentalDays}
+              rentalDurationInfo={rentalDurationInfo}
+              dailyRate={deviceDailyRate}
+              rentalFee={priceDetails.rentalFee}
+              discountPercent={priceDetails.discountPercent}
+              discountAmount={priceDetails.discountAmount}
+              depositFee={priceDetails.depositFee}
+              totalAmount={priceDetails.totalAmount}
               isSubmitting={isSubmitting}
-              canSubmit={canSubmit}
-              errorMessage={formError}
+              errorMessage={validationError}
               onSubmit={handleSubmitBooking}
             />
           </div>
         </div>
       </div>
 
-      {/* Success Modal */}
-      {successBooking && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-100 flex flex-col items-center text-center animate-in fade-in zoom-in-95 duration-200">
-            <div className="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center mb-4 shadow-xs">
-              <CheckCircle2 className="w-9 h-9" />
+      {/* Booking Success Modal (Synchronized with App's BookingSuccessModal) */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/55 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 flex flex-col items-center text-center animate-in fade-in zoom-in-95 duration-200">
+            <div className="w-20 h-20 rounded-full bg-brand-50 flex items-center justify-center mb-4">
+              <div className="w-14 h-14 rounded-full bg-brand-100 flex items-center justify-center">
+                <CheckCircle2 className="w-9 h-9 text-brand-500" />
+              </div>
             </div>
 
-            <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-              {STRINGS.booking.successModal.title}
-            </h2>
-            <p className="text-xs text-slate-500 mt-1 max-w-md">
-              {STRINGS.booking.successModal.subtitle}
+            <h3 className="text-xl font-extrabold text-slate-900 mb-1.5">
+              {STRINGS.BOOKING_CREATE.SUCCESS_MODAL_TITLE}
+            </h3>
+            <p className="text-xs sm:text-sm text-slate-500 leading-relaxed mb-5">
+              {STRINGS.BOOKING_CREATE.SUCCESS_MODAL_DESC}
             </p>
 
-            {/* Booking Code Snippet */}
-            <div className="my-5 p-4 rounded-2xl bg-brand-50/70 border border-brand-200/80 w-full flex items-center justify-between">
-              <div className="text-left">
-                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">
-                  {STRINGS.booking.successModal.codePrefix}
-                </span>
-                <span className="text-lg font-black text-brand-800 tracking-wider">
-                  #{successBooking.bookingCode}
-                </span>
+            <div className="w-full bg-slate-50 rounded-2xl p-4 border border-slate-200 mb-5 text-left space-y-2.5">
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 tracking-wider">
+                  {STRINGS.BOOKING_CREATE.SUCCESS_SUMMARY_DEVICE}
+                </p>
+                <p className="text-sm font-bold text-slate-900 truncate">{deviceTitle}</p>
               </div>
-              <button
-                type="button"
-                onClick={handleCopyCode}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white border border-brand-200 text-brand-700 text-xs font-bold hover:bg-brand-50 transition shadow-xs"
-              >
-                <Copy className="w-3.5 h-3.5" />
-                <span>
-                  {copiedCode
-                    ? STRINGS.booking.successModal.copiedText
-                    : STRINGS.booking.successModal.copyCodeBtn}
-                </span>
-              </button>
-            </div>
 
-            {/* Summary Details */}
-            <div className="w-full bg-slate-50 rounded-2xl p-4 text-xs text-slate-600 flex flex-col gap-2.5 mb-5 text-left border border-slate-100">
-              <div className="flex justify-between">
-                <span className="text-slate-400">{STRINGS.booking.successModal.deviceInfo}</span>
-                <strong className="text-slate-800">{device.title || device.name}</strong>
+              <div className="h-px bg-slate-200" />
+
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 tracking-wider">
+                  {STRINGS.BOOKING_CREATE.SUCCESS_SUMMARY_PERIOD}
+                </p>
+                <p className="text-xs font-semibold text-slate-900">
+                  {dateSelection.pickupTime} - {formatDisplayDate(dateSelection.startDate)} →{' '}
+                  {dateSelection.returnTime} -{' '}
+                  {formatDisplayDate(dateSelection.endDate || dateSelection.startDate)}
+                </p>
               </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">{STRINGS.booking.successModal.durationInfo}</span>
-                <span className="text-slate-800 font-medium">
-                  {formatDate(startDate)} ➔ {formatDate(endDate)} ({totalDays} {totalDays === 1 ? 'day' : 'days'})
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">{STRINGS.booking.successModal.totalInfo}</span>
-                <strong className="text-brand-800 font-extrabold text-sm">{formatPrice(totalAmount)}</strong>
-              </div>
-              <div className="flex justify-between items-center pt-2 border-t border-slate-200/60">
-                <span className="text-slate-500">Status:</span>
-                <span className="px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 font-bold text-[11px]">
-                  {STRINGS.booking.successModal.statusPendingBadge}
-                </span>
+
+              <div className="h-px bg-slate-200" />
+
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 tracking-wider">
+                  {STRINGS.BOOKING_CREATE.SUCCESS_SUMMARY_TOTAL}
+                </p>
+                <p className="text-base font-extrabold text-brand-500">
+                  {formatPriceVnd(priceDetails.totalAmount)}
+                </p>
               </div>
             </div>
 
-            <p className="text-[11px] text-slate-400 mb-6 italic leading-relaxed">
-              {STRINGS.booking.successModal.noticeText}
-            </p>
-
-            {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-2.5 w-full">
               <button
                 type="button"
-                onClick={() =>
-                  navigate(
-                    ROUTES.MESSAGES_PATH(
-                      successBooking._id || successBooking.id || successBooking.bookingId
-                    )
-                  )
-                }
-                className="flex-1 py-3 px-4 rounded-full bg-teal-50 hover:bg-teal-500 text-teal-700 hover:text-white border border-teal-200 hover:border-teal-500 font-bold text-xs transition shadow-xs flex items-center justify-center gap-1.5"
+                onClick={() => {
+                  setShowSuccessModal(false);
+                  navigate(-1);
+                }}
+                className="flex-1 py-3 px-4 rounded-xl border border-slate-200 font-semibold text-xs sm:text-sm text-slate-600 hover:bg-slate-50 transition"
               >
-                <MessageSquare className="w-3.5 h-3.5" />
-                <span>Chat with Owner</span>
+                {STRINGS.BOOKING_CREATE.SUCCESS_DONE_BTN}
               </button>
               <button
                 type="button"
-                onClick={() => navigate(ROUTES.EXPLORE)}
-                className="flex-1 py-3 px-4 rounded-full border border-slate-200 text-slate-700 font-bold text-xs hover:bg-slate-100 transition"
+                onClick={() => {
+                  setShowSuccessModal(false);
+                  navigate(ROUTES.MY_BOOKINGS);
+                }}
+                className="flex-1 py-3 px-4 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-bold text-xs sm:text-sm transition flex items-center justify-center gap-1.5 shadow-sm"
               >
-                {STRINGS.booking.successModal.continueExploreBtn}
+                <CalendarDays className="w-4 h-4" />
+                <span>{STRINGS.BOOKING_CREATE.SUCCESS_VIEW_BOOKINGS_BTN}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Booking Result Modal */}
+      {resultModal.visible && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-6">
+          <div className="w-full max-w-sm bg-white rounded-3xl p-6 flex flex-col items-center text-center shadow-2xl">
+            <div
+              className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${
+                resultModal.type === 'success'
+                  ? 'bg-emerald-50 text-emerald-500'
+                  : 'bg-red-50 text-red-500'
+              }`}
+            >
+              {resultModal.type === 'success' ? (
+                <CheckCircle2 className="w-10 h-10" />
+              ) : (
+                <XCircle className="w-10 h-10" />
+              )}
+            </div>
+            <h3 className="text-lg font-extrabold text-slate-900 mb-1.5">
+              {resultModal.title}
+            </h3>
+            <p className="text-sm text-slate-500 leading-5 mb-5">{resultModal.message}</p>
+            <button
+              type="button"
+              onClick={() => setResultModal((prev) => ({ ...prev, visible: false }))}
+              className="w-full py-3 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-bold text-sm transition-colors"
+            >
+              {STRINGS.BOOKING_CREATE.RESULT_OK_BTN}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Login / eKYC Verification Prompt Modal */}
+      {authAlertModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-6">
+          <div className="w-full max-w-sm bg-white rounded-3xl p-6 flex flex-col items-center text-center shadow-2xl">
+            <div className="w-16 h-16 rounded-full bg-brand-50 text-brand-500 flex items-center justify-center mb-4">
+              {authAlertModal === 'login' ? (
+                <UserCheck className="w-8 h-8" />
+              ) : (
+                <ShieldAlert className="w-8 h-8" />
+              )}
+            </div>
+            <h3 className="text-lg font-extrabold text-slate-900 mb-2">
+              {authAlertModal === 'login'
+                ? STRINGS.AUTH_LOGIN_ALERT.TITLE
+                : STRINGS.AUTH_VERIFY_ALERT.TITLE}
+            </h3>
+            <p className="text-sm text-slate-500 leading-5 mb-5">
+              {authAlertModal === 'login'
+                ? STRINGS.AUTH_LOGIN_ALERT.MESSAGE
+                : STRINGS.AUTH_VERIFY_ALERT.MESSAGE}
+            </p>
+            <div className="flex items-center gap-3 w-full">
+              <button
+                type="button"
+                onClick={() => setAuthAlertModal(null)}
+                className="flex-1 py-3 rounded-xl border border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50 transition-colors"
+              >
+                {authAlertModal === 'login'
+                  ? STRINGS.AUTH_LOGIN_ALERT.LATER
+                  : STRINGS.AUTH_VERIFY_ALERT.LATER}
               </button>
               <button
                 type="button"
-                onClick={() => navigate(successBooking?.bookingCode ? ROUTES.BOOKING_DETAIL_PATH(successBooking.bookingCode) : ROUTES.MY_BOOKINGS)}
-                className="flex-1 py-3 px-4 rounded-full bg-brand-500 hover:bg-brand-600 text-white font-bold text-xs shadow-md shadow-brand-500/20 transition"
+                onClick={() => {
+                  const target = authAlertModal;
+                  setAuthAlertModal(null);
+                  navigate(target === 'login' ? ROUTES.LOGIN : ROUTES.PROFILE);
+                }}
+                className="flex-1 py-3 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-bold text-sm transition-colors"
               >
-                {STRINGS.booking.successModal.viewMyBookingsBtn}
+                {authAlertModal === 'login'
+                  ? STRINGS.AUTH_LOGIN_ALERT.LOGIN_NOW
+                  : STRINGS.AUTH_VERIFY_ALERT.VERIFY_NOW}
               </button>
             </div>
           </div>

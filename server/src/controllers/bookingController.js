@@ -403,10 +403,41 @@ export const getDeviceAvailability = async (req, res, next) => {
 
     const disabledDatesSet = new Set();
 
-    // 1. Get dates explicitly blocked by owner (blockedDates)
+    // 1. Get dates explicitly blocked by owner (blockedDates: [{ startDate, endDate, reason }] or raw Date)
     const blockedDates = Array.isArray(device.blockedDates) ? device.blockedDates : [];
-    blockedDates.forEach((date) => {
-      disabledDatesSet.add(formatDateKey(date));
+    const normalizedBlockedRanges = [];
+    blockedDates.forEach((b) => {
+      if (b && typeof b === 'object' && (b.startDate || b.endDate)) {
+        const bStart = new Date(b.startDate || b.endDate);
+        const bEnd = new Date(b.endDate || b.startDate);
+        if (!isNaN(bStart.getTime()) && !isNaN(bEnd.getTime())) {
+          const cur = new Date(bStart);
+          cur.setHours(0, 0, 0, 0);
+          const endClean = new Date(bEnd);
+          endClean.setHours(0, 0, 0, 0);
+          while (cur <= endClean) {
+            disabledDatesSet.add(formatDateKey(cur));
+            cur.setDate(cur.getDate() + 1);
+          }
+          normalizedBlockedRanges.push({
+            startDate: bStart,
+            endDate: bEnd,
+            status: 'blocked',
+            reason: b.reason || 'Owner blocked dates',
+          });
+        }
+      } else if (b) {
+        const d = new Date(b);
+        if (!isNaN(d.getTime())) {
+          disabledDatesSet.add(formatDateKey(d));
+          normalizedBlockedRanges.push({
+            startDate: d,
+            endDate: d,
+            status: 'blocked',
+            reason: 'Owner blocked date',
+          });
+        }
+      }
     });
 
     // 2. Get date ranges already booked by renters
@@ -432,8 +463,13 @@ export const getDeviceAvailability = async (req, res, next) => {
       };
     });
 
+    const busyRanges = [...bookedRanges, ...normalizedBlockedRanges];
+
     return res.status(200).json({
       success: true,
+      busyRanges,
+      bookedBookings: bookedRanges,
+      blockedDates,
       data: {
         deviceId: id,
         title: device.title || device.name,
@@ -443,6 +479,7 @@ export const getDeviceAvailability = async (req, res, next) => {
         depositValue: device.depositValue || 0,
         blockedDates,
         bookedRanges,
+        busyRanges,
         disabledDates: Array.from(disabledDatesSet),
       },
     });
@@ -499,6 +536,13 @@ export const createBooking = async (req, res, next) => {
       formattedDeliveryAddress = deliveryAddress.trim();
     }
 
+    if (!formattedDeliveryAddress && deliveryMethod === 'pickup') {
+      formattedDeliveryAddress =
+        device.location?.addressText ||
+        device.address ||
+        'Coordinate directly with owner after booking is approved';
+    }
+
     if (!formattedDeliveryAddress) {
       return res.status(400).json({
         success: false,
@@ -548,9 +592,10 @@ export const createBooking = async (req, res, next) => {
       });
     }
 
-    // Calculate total rental days
+    // Calculate total rental days (synchronized with tech-share-app calculation)
     const diffTime = end.getTime() - start.getTime();
-    const totalDays = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+    const totalHours = Math.max(1, Math.round(diffTime / (1000 * 60 * 60)));
+    const totalDays = Math.max(1, Math.ceil(totalHours / 24));
 
     // 1. Check date conflict against active / approved / pending bookings
     const deviceObjId = new mongoose.Types.ObjectId(deviceId);
@@ -570,8 +615,15 @@ export const createBooking = async (req, res, next) => {
 
     // 2. Check date conflict against owner blockedDates
     if (Array.isArray(device.blockedDates) && device.blockedDates.length > 0) {
-      const hasBlockedConflict = device.blockedDates.some((bDate) => {
-        const bd = new Date(bDate);
+      const hasBlockedConflict = device.blockedDates.some((b) => {
+        if (b && typeof b === 'object' && (b.startDate || b.endDate)) {
+          const bStart = new Date(b.startDate || b.endDate);
+          const bEnd = new Date(b.endDate || b.startDate);
+          if (isNaN(bStart.getTime()) || isNaN(bEnd.getTime())) return false;
+          return start < bEnd && end > bStart;
+        }
+        const bd = new Date(b);
+        if (isNaN(bd.getTime())) return false;
         bd.setHours(12, 0, 0, 0);
         return bd >= start && bd <= end;
       });
@@ -834,6 +886,7 @@ export const getMyBookings = async (req, res, next) => {
           .reduce((sum, group) => sum + group.count, 0),
       ])
     );
+    counts.all = Object.values(counts).reduce((sum, val) => sum + val, 0);
 
     const normalizedList = await attachReviewsToBookings(bookings.map(normalizeBookingAliases));
 
@@ -1107,16 +1160,17 @@ export const validatePricing = async (req, res, next) => {
 export const requestBookingExtension = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const userObjId = getAuthUserObjectId(req);
+    const userObjIds = await resolveAuthUserIds(req);
 
-    if (!userObjId) {
+    if (userObjIds.length === 0) {
       return res.status(401).json({
         success: false,
         message: 'Please log in to request an extension.',
       });
     }
 
-    const days = parseInt(req.body?.days, 10);
+    const rawDays = req.body?.additionalDays ?? req.body?.days ?? req.body?.requestedDays;
+    const days = parseInt(rawDays, 10);
     if (!days || days < 1 || days > 30) {
       return res.status(400).json({
         success: false,
@@ -1137,7 +1191,8 @@ export const requestBookingExtension = async (req, res, next) => {
       });
     }
 
-    const isRenter = isSameId(booking.renterId, userObjId) || isSameId(booking.renter, userObjId);
+    const isRenter =
+      matchesAnyId(booking.renterId, userObjIds) || matchesAnyId(booking.renter, userObjIds);
     if (!isRenter) {
       return res.status(403).json({
         success: false,
@@ -1191,8 +1246,14 @@ export const requestBookingExtension = async (req, res, next) => {
       }
 
       if (Array.isArray(rawDevice?.blockedDates) && rawDevice.blockedDates.length > 0) {
-        const hasBlockedConflict = rawDevice.blockedDates.some((bDate) => {
-          const bd = new Date(bDate);
+        const hasBlockedConflict = rawDevice.blockedDates.some((b) => {
+          if (b && typeof b === 'object' && (b.startDate || b.endDate)) {
+            const bStart = new Date(b.startDate || b.endDate);
+            const bEnd = new Date(b.endDate || b.startDate);
+            if (isNaN(bStart.getTime()) || isNaN(bEnd.getTime())) return false;
+            return currentEnd < bEnd && requestedEndDate > bStart;
+          }
+          const bd = new Date(b);
           return bd >= currentEnd && bd <= requestedEndDate;
         });
 
