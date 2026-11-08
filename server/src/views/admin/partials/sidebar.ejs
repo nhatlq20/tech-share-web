@@ -9,26 +9,6 @@
         Tech<span>Share</span> <span style="font-size: 11px; font-weight: 600; color: #64748B;">ADMIN</span>
       </div>
     </a>
-
-    <!-- Profile Card synced from Database -->
-    <div class="admin-profile-badge-wrap">
-      <img
-        src="<%= admin && (admin.avatar || admin.avatarUrl) ? (admin.avatar || admin.avatarUrl) : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop' %>"
-        alt="<%= admin && admin.name ? admin.name : 'Admin Quản trị' %>"
-        class="admin-profile-avatar"
-      />
-      <div class="admin-profile-info">
-        <div class="admin-profile-name" title="<%= admin && admin.name ? admin.name : 'Admin' %>">
-          <%= admin && admin.name ? admin.name : 'Admin Quản trị' %>
-        </div>
-        <div class="admin-profile-role">
-          <%= admin && admin.role === 'admin' ? 'Quản trị viên hệ thống' : (admin && admin.role ? admin.role : 'Quản trị viên') %>
-        </div>
-        <div class="admin-profile-email" title="<%= admin && admin.email ? admin.email : '' %>">
-          <%= admin && admin.email ? admin.email : '' %>
-        </div>
-      </div>
-    </div>
   </div>
 
   <!-- Divider -->

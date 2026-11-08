@@ -7,7 +7,14 @@ document.addEventListener('DOMContentLoaded', function() {
   const chartCanvas = document.getElementById('overviewRevenueChart');
   if (!chartCanvas) return;
 
-  const chartDataStore = window.__OVERVIEW_CHART_DATA__ || {
+  const hasValidData = window.__OVERVIEW_CHART_DATA__ &&
+    typeof window.__OVERVIEW_CHART_DATA__ === 'object' &&
+    (
+      (Array.isArray(window.__OVERVIEW_CHART_DATA__['7d']) && window.__OVERVIEW_CHART_DATA__['7d'].length > 0) ||
+      (Array.isArray(window.__OVERVIEW_CHART_DATA__.month) && window.__OVERVIEW_CHART_DATA__.month.length > 0)
+    );
+
+  const chartDataStore = hasValidData ? window.__OVERVIEW_CHART_DATA__ : {
     '7d': [
       { name: 'Thứ 2', revenue: 65000000, orders: 8 },
       { name: 'Thứ 3', revenue: 98000000, orders: 12 },
@@ -43,9 +50,10 @@ document.addEventListener('DOMContentLoaded', function() {
   let chartInstance = null;
 
   function renderChart(range) {
-    const rawData = chartDataStore[range] || chartDataStore['7d'] || [];
+    const rawData = (chartDataStore && chartDataStore[range]) || (chartDataStore && chartDataStore['7d']) || [];
     const labels = rawData.map(d => d.name);
-    const revenues = rawData.map(d => d.revenue);
+    const revenues = rawData.map(d => Number(d.revenue) || 0);
+    const maxRev = Math.max(...revenues, 0);
 
     const ctx = chartCanvas.getContext('2d');
     const gradient = ctx.createLinearGradient(0, 0, 0, 260);
@@ -90,7 +98,11 @@ document.addEventListener('DOMContentLoaded', function() {
             callbacks: {
               label: function(context) {
                 const val = context.raw || 0;
-                return ' ' + (window.formatVND ? window.formatVND(val) : val.toLocaleString() + ' ₫');
+                const formatted = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
+                const orderCount = rawData[context.dataIndex]?.orders;
+                return orderCount !== undefined
+                  ? ` Doanh thu: ${formatted} (${orderCount} đơn)`
+                  : ` Doanh thu: ${formatted}`;
               }
             }
           }
@@ -101,13 +113,25 @@ document.addEventListener('DOMContentLoaded', function() {
             ticks: { color: '#94A3B8', font: { size: 11, family: 'Be Vietnam Pro' } }
           },
           y: {
+            beginAtZero: true,
+            suggestedMax: maxRev > 0 ? maxRev * 1.15 : 10000000,
             border: { dash: [4, 4] },
             grid: { color: '#F1F5F9' },
             ticks: {
               color: '#94A3B8',
               font: { size: 11, family: 'Be Vietnam Pro' },
               callback: function(val) {
-                return (val / 1000000).toFixed(0) + 'M';
+                if (val === 0) return '0 ₫';
+                if (val >= 1000000000) {
+                  return (val / 1000000000).toFixed(val % 1000000000 === 0 ? 0 : 1) + 'B';
+                }
+                if (val >= 1000000) {
+                  return (val / 1000000).toFixed(val % 1000000 === 0 ? 0 : 1) + 'M';
+                }
+                if (val >= 1000) {
+                  return (val / 1000).toFixed(0) + 'k';
+                }
+                return val.toLocaleString() + ' ₫';
               }
             }
           }

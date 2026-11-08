@@ -116,6 +116,28 @@
     }
 
     if (window.lucide) window.lucide.createIcons();
+
+    // Auto-sync token if arriving from React client with admin privileges
+    (function checkLocalStorageToken() {
+      const token = localStorage.getItem('techshare_auth_token') || localStorage.getItem('techshare_token');
+      if (token && !document.cookie.includes('techshare_admin_token') && !sessionStorage.getItem('techshare_sync_attempted')) {
+        sessionStorage.setItem('techshare_sync_attempted', '1');
+        fetch('/api/auth/sync-cookie', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+          },
+          credentials: 'include'
+        }).then(res => res.json()).then(data => {
+          if (data && data.success) {
+            sessionStorage.removeItem('techshare_sync_attempted');
+            const redirectUrl = new URLSearchParams(window.location.search).get('redirect') || '/admin/dashboard';
+            window.location.href = redirectUrl;
+          }
+        }).catch(() => {});
+      }
+    })();
   </script>
 </body>
 </html>

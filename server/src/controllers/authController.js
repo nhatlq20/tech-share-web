@@ -169,6 +169,15 @@ export const login = async (req, res) => {
       };
     }
 
+    if (roleCode === 'admin') {
+      res.cookie('techshare_admin_token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      });
+    }
+
     return res.status(200).json({
       success: true,
       message: 'Login successful!',
@@ -1161,3 +1170,28 @@ export const resendForgotPasswordOtp = async (req, res) => {
 
 
 
+
+
+export const syncAdminCookie = async (req, res) => {
+  try {
+    if (!req.user || req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Yêu cầu quyền admin' });
+    }
+    let token = null;
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+      token = req.headers.authorization.split(' ')[1];
+    }
+    if (token) {
+      res.cookie('techshare_admin_token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      });
+      return res.json({ success: true, message: 'Cookie synchronized' });
+    }
+    return res.status(400).json({ success: false, message: 'Thiếu token' });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+};

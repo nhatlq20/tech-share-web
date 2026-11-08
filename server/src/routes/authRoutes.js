@@ -12,6 +12,7 @@ import {
   forgotPasswordVerifyOtp,
   forgotPasswordReset,
   resendForgotPasswordOtp,
+  syncAdminCookie,
 } from '../controllers/authController.js';
 import { protect } from '../middlewares/authMiddleware.js';
 
@@ -19,6 +20,7 @@ const router = express.Router();
 
 // Đăng nhập
 router.post('/login', login);
+router.post('/sync-cookie', protect, syncAdminCookie);
 
 // Đăng ký tài khoản (Luồng xác thực OTP Email)
 router.post('/register-init', registerInit);

@@ -64,9 +64,9 @@ export const Navbar = () => {
           )}
           {/* Nút dành riêng cho Admin */}
           {user?.role === 'admin' && (
-            <Link to={ROUTES.ADMIN} className="navbar-link navbar-link-admin">
+            <a href="/admin/dashboard" className="navbar-link navbar-link-admin">
               Admin Portal
-            </Link>
+            </a>
           )}
           {/* Nút dành riêng cho Owner */}
           {user?.role === 'owner' && (
