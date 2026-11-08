@@ -116,6 +116,37 @@ export const login = async (req, res) => {
     // Tra cứu mã quyền thực tế từ roleId (trong collection roles)
     const roleCode = await resolveRoleCode(account, user);
 
+    // Auto-heal: nếu tài khoản có trong accounts nhưng thiếu profile tương ứng trong users
+    if (!user) {
+      try {
+        const autoUserId = account.userId || new mongoose.Types.ObjectId();
+        const autoRefCode = `TS${account._id.toString().slice(-6).toUpperCase()}${Math.random().toString(36).substring(2, 4).toUpperCase()}`;
+        const autoUser = new User({
+          _id: autoUserId,
+          accountId: account._id,
+          username: account.username,
+          name: account.username,
+          email: account.email,
+          phone: '',
+          address: '',
+          avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(account.username)}`,
+          role: roleCode || 'renter',
+          trust: { isVerified: false, score: 100, badges: [] },
+          pushConfig: { expoPushToken: '', fcmTokens: [], biometricEnabled: false },
+          referralCode: autoRefCode,
+          isActive: true,
+        });
+        await autoUser.save();
+        user = autoUser.toObject();
+        if (!account.userId || String(account.userId) !== String(autoUserId)) {
+          account.userId = autoUserId;
+          await Account.updateOne({ _id: account._id }, { userId: autoUserId });
+        }
+      } catch (autoErr) {
+        console.warn('Could not auto-heal user document on login:', autoErr.message);
+      }
+    }
+
     const { portal } = req.body;
     if (portal === 'admin' && roleCode !== 'admin') {
       return res.status(401).json({
@@ -490,17 +521,24 @@ export const registerInit = async (req, res) => {
     }).lean();
 
     if (existingAccount) {
-      if (existingAccount.username.toLowerCase() === cleanUsername) {
-        return res.status(400).json({
-          success: false,
-          message: 'This username is already taken. Please choose another one.',
-        });
-      }
-      if (existingAccount.email.toLowerCase() === cleanEmail) {
-        return res.status(400).json({
-          success: false,
-          message: 'This email is already registered. Please use another email or sign in.',
-        });
+      // Check if existingAccount is an orphan from a previously failed registration
+      const existingUser = await User.findOne({ accountId: existingAccount._id }).lean();
+      if (!existingUser) {
+        console.warn(`Cleaning up orphaned account ${existingAccount._id} with no matching user`);
+        await Account.deleteOne({ _id: existingAccount._id });
+      } else {
+        if (existingAccount.username && existingAccount.username.toLowerCase() === cleanUsername) {
+          return res.status(400).json({
+            success: false,
+            message: 'This username is already taken. Please choose another one.',
+          });
+        }
+        if (existingAccount.email && existingAccount.email.toLowerCase() === cleanEmail) {
+          return res.status(400).json({
+            success: false,
+            message: 'This email is already registered. Please use another email or sign in.',
+          });
+        }
       }
     }
 
@@ -631,10 +669,16 @@ export const registerVerifyOtp = async (req, res) => {
       $or: [{ username: payload.username }, { email: payload.email }],
     });
     if (doubleCheck) {
-      return res.status(400).json({
-        success: false,
-        message: 'This account has already been created. Please log in.',
-      });
+      const orphanUser = await User.findOne({ accountId: doubleCheck._id }).lean();
+      if (!orphanUser) {
+        console.warn(`Cleaning up orphaned account ${doubleCheck._id} for username: ${payload.username}`);
+        await Account.deleteOne({ _id: doubleCheck._id });
+      } else {
+        return res.status(400).json({
+          success: false,
+          message: 'This account has already been created. Please log in.',
+        });
+      }
     }
 
     // 3. Find roleId for role 'renter' dynamically from roles collection
@@ -674,31 +718,48 @@ export const registerVerifyOtp = async (req, res) => {
     await newAccount.save();
 
     // 6. Save to users collection
+    const refCode = `TS${userId.toString().slice(-6).toUpperCase()}${Math.random().toString(36).substring(2, 4).toUpperCase()}`;
     const newUser = new User({
       _id: userId,
+      accountId: accountId,
+      username: payload.username,
       name: payload.name,
       email: payload.email,
-      phone: payload.phone,
-      address: null,
-      avatar: null,
+      phone: payload.phone || '',
+      address: '',
+      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(payload.username)}`,
       role: 'renter',
-      isVerified: true,
-      trustScore: 100,
-      badges: [],
-      referralCode: '',
+      trust: {
+        isVerified: false,
+        score: 100,
+        badges: [],
+      },
+      pushConfig: {
+        expoPushToken: '',
+        fcmTokens: [],
+        biometricEnabled: false,
+      },
+      referralCode: refCode,
       referredBy: null,
       wishlist: [],
-      expoPushToken: '',
-      pushTokens: [],
-      fcmTokens: [],
-      biometricEnabled: false,
-      location: null,
       rating: 5,
       totalReviews: 0,
       isActive: true,
-      accountId: accountId,
+      isbanned: false,
+      banReason: '',
     });
-    await newUser.save();
+
+    try {
+      await newUser.save();
+    } catch (userSaveErr) {
+      console.error('Error saving newUser in registerVerifyOtp, rolling back account:', userSaveErr);
+      try {
+        await Account.deleteOne({ _id: accountId });
+      } catch (rollbackErr) {
+        console.error('Failed to rollback orphaned account:', rollbackErr);
+      }
+      throw userSaveErr;
+    }
 
     // 7. Delete verified OTP
     await Otp.deleteOne({ _id: otpRecord._id });

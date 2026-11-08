@@ -1,5 +1,13 @@
 import mongoose from 'mongoose';
 
+const pointSchema = new mongoose.Schema(
+  {
+    type: { type: String, enum: ['Point'], default: 'Point' },
+    coordinates: { type: [Number], required: true },
+  },
+  { _id: false }
+);
+
 /**
  * 3. Bảng users (Tier 1 - Hồ sơ Đa nền tảng Web & Mobile)
  * Nhóm thông tin tín nhiệm và cấu hình thông báo cho web và ứng dụng di động.
@@ -25,6 +33,16 @@ const userSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    email: {
+      type: String,
+      sparse: true,
+      trim: true,
+      lowercase: true,
+      index: true,
+      get: function (v) {
+        return v || this.account?.email || this._email || '';
+      },
+    },
     phone: {
       type: String,
       default: '',
@@ -37,6 +55,14 @@ const userSchema = new mongoose.Schema(
     avatar: {
       type: String,
       default: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400',
+    },
+    role: {
+      type: String,
+      enum: ['renter', 'owner', 'both', 'admin'],
+      default: 'renter',
+      get: function (v) {
+        return v || this.account?.roleId?.code || this.account?.roleId || this._role || 'renter';
+      },
     },
 
     // 1. Nhóm Tín nhiệm & Định danh (Issue #7, #8)
@@ -55,12 +81,18 @@ const userSchema = new mongoose.Schema(
 
     // 4. Vị trí Địa lý GeoJSON & Cá nhân hóa
     location: {
-      type: { type: String, enum: ['Point'], default: 'Point' },
-      coordinates: { type: [Number], default: undefined }, // [lng, lat]
+      type: pointSchema,
+      default: undefined,
+      required: false,
     },
     wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Device' }],
 
-    referralCode: { type: String, unique: true, sparse: true },
+    referralCode: {
+      type: String,
+      unique: true,
+      sparse: true,
+      set: (v) => (v && v.trim() ? v.trim() : undefined),
+    },
     referredBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
 
     rating: { type: Number, default: 5.0, min: 1.0, max: 5.0 },
@@ -71,8 +103,8 @@ const userSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-    toJSON: { virtuals: true },
-    toObject: { virtuals: true },
+    toJSON: { virtuals: true, getters: true },
+    toObject: { virtuals: true, getters: true },
     collection: 'users',
   }
 );
@@ -84,22 +116,6 @@ userSchema.virtual('account', {
   foreignField: '_id',
   justOne: true,
 });
-
-userSchema.virtual('email')
-  .get(function () {
-    return this.account?.email || this._email || '';
-  })
-  .set(function (v) {
-    this._email = v;
-  });
-
-userSchema.virtual('role')
-  .get(function () {
-    return this.account?.roleId?.code || this.account?.roleId || this._role || 'renter';
-  })
-  .set(function (v) {
-    this._role = v;
-  });
 
 // Virtual Getters & Setters 2 chiều (Đảm bảo Mobile App & Web gọi kiểu cũ hay mới đều chạy)
 userSchema.virtual('isVerified')
