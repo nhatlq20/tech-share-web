@@ -1,69 +1,340 @@
 <div style="display: flex; flex-direction: column; gap: 24px;">
-  <!-- Header -->
+  <!-- 1. Header & Filters Toolbar -->
   <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
     <div>
       <h1 style="font-size: 24px; font-weight: 800; color: #0F172A; letter-spacing: -0.02em; margin: 0;">
         Báo cáo & Phân tích Tài chính Nâng cao
       </h1>
       <p style="font-size: 12px; color: #64748B; margin-top: 4px; margin-bottom: 0;">
-        Bóc tách chi tiết dòng tiền nền tảng, công nợ ký quỹ và chỉ số chuyển đổi vận hành
+        Bóc tách chi tiết dòng tiền nền tảng, công nợ ký quỹ an toàn và tỷ lệ chuyển đổi vòng đời đơn thuê
       </p>
     </div>
 
-    <div style="display: flex; align-items: center; gap: 10px;">
-      <a href="/api/admin/analytics/export" class="admin-btn admin-btn-outline" style="text-decoration: none; font-size: 12px; padding: 8px 14px; display: inline-flex; align-items: center; gap: 6px;">
+    <!-- Date Range & Export Toolbar -->
+    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+      <!-- Date Filter Tabs -->
+      <div class="admin-tab-group" id="analyticsPeriodTabs">
+        <button type="button" class="admin-tab-pill <%= period === '7d' ? 'active' : '' %>" data-period="7d">7 ngày</button>
+        <button type="button" class="admin-tab-pill <%= period === '30d' ? 'active' : '' %>" data-period="30d">30 ngày</button>
+        <button type="button" class="admin-tab-pill <%= period === '90d' ? 'active' : '' %>" data-period="90d">90 ngày</button>
+        <button type="button" class="admin-tab-pill <%= period === 'year' ? 'active' : '' %>" data-period="year">Năm nay</button>
+        <button type="button" class="admin-tab-pill <%= period === 'custom' ? 'active' : '' %>" data-period="custom" id="btnCustomRangeToggle">
+          <i data-lucide="calendar" style="width: 12px; height: 12px; display: inline-block; vertical-align: middle; margin-right: 4px;"></i>
+          <span>Tùy chỉnh</span>
+        </button>
+      </div>
+
+      <!-- Export CSV Button -->
+      <a
+        href="/api/admin/analytics/export?period=<%= period %>"
+        id="btnExportAnalyticsCsv"
+        class="admin-btn admin-btn-outline"
+        style="text-decoration: none; font-size: 12px; padding: 7px 14px; display: inline-flex; align-items: center; gap: 6px; border-radius: 9999px;"
+      >
         <i data-lucide="download" style="width: 14px; height: 14px;"></i>
         <span>Xuất báo cáo CSV</span>
       </a>
     </div>
   </div>
 
-  <!-- Financial KPI Cards -->
+  <!-- Custom Date Range Selector (Collapsible) -->
+  <div id="customDateRangeBox" style="display: <%= period === 'custom' ? 'flex' : 'none' %>; align-items: center; gap: 12px; flex-wrap: wrap; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 14px; padding: 12px 18px; box-shadow: var(--admin-shadow-soft);">
+    <span style="font-size: 12px; font-weight: 700; color: #475569;">Khoảng thời gian:</span>
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <label for="customStartDate" style="font-size: 12px; color: #64748B;">Từ:</label>
+      <input
+        type="date"
+        id="customStartDate"
+        value="<%= typeof startDate !== 'undefined' && startDate ? startDate.slice(0, 10) : '' %>"
+        style="padding: 6px 12px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 12px; outline: none;"
+      />
+    </div>
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <label for="customEndDate" style="font-size: 12px; color: #64748B;">Đến:</label>
+      <input
+        type="date"
+        id="customEndDate"
+        value="<%= typeof endDate !== 'undefined' && endDate ? endDate.slice(0, 10) : '' %>"
+        style="padding: 6px 12px; border-radius: 8px; border: 1px solid #CBD5E1; font-size: 12px; outline: none;"
+      />
+    </div>
+    <button type="button" id="btnApplyCustomDate" class="admin-btn admin-btn-primary" style="padding: 6px 14px; font-size: 12px;">
+      <span>Áp dụng</span>
+    </button>
+  </div>
+
+  <!-- 2. Financial KPI Cards (3 Cards) -->
   <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
-    <div class="admin-card" style="background: #FFFFFF; border-radius: 16px; padding: 22px; border: 1px solid #F1F5F9;">
-      <div style="font-size: 12.5px; color: #64748B; font-weight: 600;">Tổng giá trị giao dịch — Gross Booking Value (GBV)</div>
-      <div style="font-size: 26px; font-weight: 800; color: #0F172A; margin-top: 6px;">
-        <%= new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(analytics && analytics.grossBookingValue ? analytics.grossBookingValue : 48750000) %>
+    <!-- KPI 1: GBV -->
+    <div class="admin-card" style="background: #FFFFFF; border-radius: 18px; padding: 22px; border: 1px solid #F1F5F9; position: relative;">
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <span style="font-size: 12.5px; color: #64748B; font-weight: 600;">Tổng giá trị giao dịch — Gross Booking Value (GBV)</span>
+        <div style="width: 36px; height: 36px; border-radius: 10px; background: #E8F6F7; color: #286E74; display: flex; align-items: center; justify-content: center;">
+          <i data-lucide="trending-up" style="width: 18px; height: 18px;"></i>
+        </div>
       </div>
-      <div style="font-size: 11.5px; color: #16A34A; margin-top: 4px;">↑ +14.2% so với kỳ trước</div>
+      <div id="kpiGrossBookingValue" style="font-size: 26px; font-weight: 800; color: #0F172A; margin-top: 8px; line-height: 1.2;">
+        <%= new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(analytics && analytics.grossBookingValue ? analytics.grossBookingValue : 0) %>
+      </div>
+      <div id="kpiGbvGrowth" style="font-size: 12px; margin-top: 6px; font-weight: 600; color: <%= (analytics && analytics.growth && analytics.growth.gbvGrowthPercent >= 0) ? '#16A34A' : '#DC2626' %>;">
+        <% if (analytics && analytics.growth) { %>
+          <%= analytics.growth.gbvGrowthPercent >= 0 ? '↑ +' : '↓ ' %><%= analytics.growth.gbvGrowthPercent %>% so với kỳ trước
+        <% } else { %>
+          Số liệu thời gian thực
+        <% } %>
+      </div>
     </div>
 
-    <div class="admin-card" style="background: #FFFFFF; border-radius: 16px; padding: 22px; border: 1px solid #F1F5F9;">
-      <div style="font-size: 12.5px; color: #64748B; font-weight: 600;">Doanh thu phí nền tảng ròng (10%)</div>
-      <div style="font-size: 26px; font-weight: 800; color: #286E74; margin-top: 6px;">
-        <%= new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(analytics && analytics.platformFeeRevenue ? analytics.platformFeeRevenue : 4875000) %>
+    <!-- KPI 2: Platform Revenue (10%) -->
+    <div class="admin-card" style="background: #FFFFFF; border-radius: 18px; padding: 22px; border: 1px solid #F1F5F9; position: relative;">
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <span style="font-size: 12.5px; color: #64748B; font-weight: 600;">Doanh thu phí nền tảng ròng (10%)</span>
+        <div style="width: 36px; height: 36px; border-radius: 10px; background: #E8F6F7; color: #286E74; display: flex; align-items: center; justify-content: center;">
+          <i data-lucide="dollar-sign" style="width: 18px; height: 18px;"></i>
+        </div>
       </div>
-      <div style="font-size: 11.5px; color: #286E74; margin-top: 4px;">Dòng tiền thu thực tế sàn</div>
+      <div id="kpiPlatformRevenue" style="font-size: 26px; font-weight: 800; color: #286E74; margin-top: 8px; line-height: 1.2;">
+        <%= new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(analytics && analytics.platformFeeRevenue ? analytics.platformFeeRevenue : 0) %>
+      </div>
+      <div style="font-size: 12px; color: #286E74; margin-top: 6px; font-weight: 500;">
+        Dòng tiền thu thực tế sàn (không tính tiền cọc)
+      </div>
     </div>
 
-    <div class="admin-card" style="background: #E8F6F7; border-radius: 16px; padding: 22px; border: 1px solid #BCE5E8;">
-      <div style="font-size: 12.5px; color: #286E74; font-weight: 600;">Công nợ ký quỹ an toàn (Escrow)</div>
-      <div style="font-size: 26px; font-weight: 800; color: #286E74; margin-top: 6px;">
-        <%= new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(analytics && analytics.escrowLiabilities ? analytics.escrowLiabilities : 32500000) %>
+    <!-- KPI 3: Escrow Held -->
+    <div class="admin-card" style="background: #E8F6F7; border-radius: 18px; padding: 22px; border: 1px solid #BCE5E8; position: relative;">
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <span style="font-size: 12.5px; color: #286E74; font-weight: 700;">Công nợ ký quỹ an toàn (Escrow)</span>
+        <div style="width: 36px; height: 36px; border-radius: 10px; background: #FFFFFF; color: #286E74; display: flex; align-items: center; justify-content: center;">
+          <i data-lucide="shield-check" style="width: 18px; height: 18px;"></i>
+        </div>
       </div>
-      <div style="font-size: 11.5px; color: #286E74; margin-top: 4px;">Tiền cọc đang giữ của khách</div>
+      <div id="kpiEscrowLiabilities" style="font-size: 26px; font-weight: 800; color: #286E74; margin-top: 8px; line-height: 1.2;">
+        <%= new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(analytics && analytics.escrowLiabilities ? analytics.escrowLiabilities : 0) %>
+      </div>
+      <div style="font-size: 12px; color: #286E74; margin-top: 6px; font-weight: 600;">
+        Tiền cọc bảo chứng giữ an toàn qua đơn & ví
+      </div>
     </div>
   </div>
 
-  <!-- Operational Metrics Mini Cards -->
+  <!-- 3. Operational Mini KPI Cards (3 Cards) -->
   <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
-    <div style="background: #FFFFFF; border-radius: 14px; padding: 18px; border: 1px solid #E2E8F0;">
-      <div style="font-size: 12px; color: #64748B;">Tỷ lệ đơn hoàn thành</div>
-      <div style="font-size: 22px; font-weight: 800; color: #16A34A; margin-top: 4px;">
-        <%= analytics && analytics.completionRate ? analytics.completionRate : '94.2' %>%
+    <!-- Completion Rate -->
+    <div class="admin-card" style="background: #FFFFFF; border-radius: 14px; padding: 18px; border: 1px solid #E2E8F0;">
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <span style="font-size: 12px; color: #64748B; font-weight: 600;">Tỷ lệ đơn hoàn tất</span>
+        <i data-lucide="check-circle-2" style="width: 16px; height: 16px; color: #16A34A;"></i>
+      </div>
+      <div id="kpiCompletionRate" style="font-size: 22px; font-weight: 800; color: #16A34A; margin-top: 4px;">
+        <%= analytics && typeof analytics.completionRate !== 'undefined' ? analytics.completionRate : '0.0' %>%
+      </div>
+      <div id="kpiCompletionDesc" style="font-size: 11px; color: #64748B; margin-top: 4px;">
+        <%= analytics && analytics.completedBookings ? analytics.completedBookings : 0 %> / <%= analytics && analytics.totalBookings ? analytics.totalBookings : 0 %> đơn thành công
       </div>
     </div>
-    <div style="background: #FFFFFF; border-radius: 14px; padding: 18px; border: 1px solid #E2E8F0;">
-      <div style="font-size: 12px; color: #64748B;">Tỷ lệ hủy đơn</div>
-      <div style="font-size: 22px; font-weight: 800; color: #64748B; margin-top: 4px;">
-        <%= analytics && analytics.cancellationRate ? analytics.cancellationRate : '4.6' %>%
+
+    <!-- Cancellation Rate -->
+    <div class="admin-card" style="background: #FFFFFF; border-radius: 14px; padding: 18px; border: 1px solid #E2E8F0;">
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <span style="font-size: 12px; color: #64748B; font-weight: 600;">Tỷ lệ hủy đơn</span>
+        <i data-lucide="x-circle" style="width: 16px; height: 16px; color: #64748B;"></i>
+      </div>
+      <div id="kpiCancellationRate" style="font-size: 22px; font-weight: 800; color: #64748B; margin-top: 4px;">
+        <%= analytics && typeof analytics.cancellationRate !== 'undefined' ? analytics.cancellationRate : '0.0' %>%
+      </div>
+      <div id="kpiCancellationDesc" style="font-size: 11px; color: #64748B; margin-top: 4px;">
+        <%= analytics && analytics.cancelledBookings ? analytics.cancelledBookings : 0 %> / <%= analytics && analytics.totalBookings ? analytics.totalBookings : 0 %> đơn hủy / từ chối
       </div>
     </div>
-    <div style="background: #FFFFFF; border-radius: 14px; padding: 18px; border: 1px solid #E2E8F0;">
-      <div style="font-size: 12px; color: #64748B;">Tỷ lệ tranh chấp cọc</div>
-      <div style="font-size: 22px; font-weight: 800; color: #DC2626; margin-top: 4px;">
-        <%= analytics && analytics.disputeRate ? analytics.disputeRate : '1.2' %>%
+
+    <!-- Dispute Rate -->
+    <div class="admin-card" style="background: #FFFFFF; border-radius: 14px; padding: 18px; border: 1px solid #E2E8F0;">
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <span style="font-size: 12px; color: #64748B; font-weight: 600;">Tỷ lệ tranh chấp cọc</span>
+        <i data-lucide="alert-triangle" style="width: 16px; height: 16px; color: #DC2626;"></i>
       </div>
+      <div id="kpiDisputeRate" style="font-size: 22px; font-weight: 800; color: #DC2626; margin-top: 4px;">
+        <%= analytics && typeof analytics.disputeRate !== 'undefined' ? analytics.disputeRate : '0.0' %>%
+      </div>
+      <div id="kpiDisputeDesc" style="font-size: 11px; color: #64748B; margin-top: 4px;">
+        <%= analytics && analytics.disputedBookings ? analytics.disputedBookings : 0 %> / <%= analytics && analytics.totalBookings ? analytics.totalBookings : 0 %> đơn phát sinh khiếu nại
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Row 1: Revenue Trends (60%) & Status Distribution (40%) -->
+  <div style="display: grid; grid-template-columns: 3fr 2fr; gap: 20px;" class="analytics-charts-grid-row1">
+    <!-- Chart 1: Revenue & Transaction Trends -->
+    <div class="admin-card" style="border-radius: 18px; padding: 22px;">
+      <div class="admin-card-header" style="margin-bottom: 16px;">
+        <div>
+          <h3 class="admin-card-title" style="margin: 0; font-size: 16px; font-weight: 800; color: #0F172A;">
+            Xu hướng Doanh thu & Giao dịch
+          </h3>
+          <p class="admin-card-subtitle" style="margin: 4px 0 0; font-size: 12px; color: #64748B;">
+            Gross Booking Value, Tiền thuê thực nhận và Phí nền tảng 10%
+          </p>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background-color: #67BEC3;"></span>
+          <span style="font-size: 11.5px; color: #64748B; font-weight: 600;">GBV</span>
+          <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background-color: #286E74; margin-left: 6px;"></span>
+          <span style="font-size: 11.5px; color: #64748B; font-weight: 600;">Phí sàn 10%</span>
+        </div>
+      </div>
+      <div style="position: relative; height: 310px; width: 100%;">
+        <canvas id="revenueTrendsChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Chart 2: Booking Status Distribution (Donut) -->
+    <div class="admin-card" style="border-radius: 18px; padding: 22px;">
+      <div class="admin-card-header" style="margin-bottom: 16px;">
+        <div>
+          <h3 class="admin-card-title" style="margin: 0; font-size: 16px; font-weight: 800; color: #0F172A;">
+            Cơ cấu Trạng thái Đơn thuê
+          </h3>
+          <p class="admin-card-subtitle" style="margin: 4px 0 0; font-size: 12px; color: #64748B;">
+            Phân bổ tỷ trọng trạng thái trong kỳ phân tích
+          </p>
+        </div>
+      </div>
+      <div style="position: relative; height: 210px; width: 100%; display: flex; align-items: center; justify-content: center;">
+        <canvas id="bookingStatusChart"></canvas>
+      </div>
+      <!-- Status Legend Pill List -->
+      <div id="statusBreakdownList" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; justify-content: center;">
+        <% if (data && data.bookingStatusDistribution) { %>
+          <% data.bookingStatusDistribution.forEach(function(st) { %>
+            <div style="display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; padding: 4px 10px; border-radius: 8px; background: #F8FAFC; border: 1px solid #E2E8F0;">
+              <span style="width: 8px; height: 8px; border-radius: 50%; background-color: <%= st.color %>;"></span>
+              <span style="color: #475569; font-weight: 600;"><%= st.label %>:</span>
+              <strong style="color: #0F172A;"><%= st.count %></strong>
+              <span style="color: #94A3B8;">(<%= st.percent %>%)</span>
+            </div>
+          <% }); %>
+        <% } %>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. Row 2: Category Revenue (50%) & Escrow/Wallet Trends (50%) -->
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;" class="analytics-charts-grid-row2">
+    <!-- Chart 3: Revenue by Device Category -->
+    <div class="admin-card" style="border-radius: 18px; padding: 22px;">
+      <div class="admin-card-header" style="margin-bottom: 16px;">
+        <div>
+          <h3 class="admin-card-title" style="margin: 0; font-size: 16px; font-weight: 800; color: #0F172A;">
+            Doanh thu theo Danh mục Thiết bị
+          </h3>
+          <p class="admin-card-subtitle" style="margin: 4px 0 0; font-size: 12px; color: #64748B;">
+            Cơ cấu tiền thuê đóng góp theo từng phân loại phần cứng
+          </p>
+        </div>
+      </div>
+      <div style="position: relative; height: 290px; width: 100%;">
+        <canvas id="categoryRevenueChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Chart 4: Escrow & Wallet Trends -->
+    <div class="admin-card" style="border-radius: 18px; padding: 22px;">
+      <div class="admin-card-header" style="margin-bottom: 16px;">
+        <div>
+          <h3 class="admin-card-title" style="margin: 0; font-size: 16px; font-weight: 800; color: #0F172A;">
+            Biến động Ký quỹ & Dòng tiền Ví
+          </h3>
+          <p class="admin-card-subtitle" style="margin: 4px 0 0; font-size: 12px; color: #64748B;">
+            Tiền cọc khóa qua đơn, giải tỏa cọc và giải ngân tiền thuê
+          </p>
+        </div>
+      </div>
+      <div style="position: relative; height: 290px; width: 100%;">
+        <canvas id="walletEscrowChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. Row 3: Booking Conversion Funnel (100%) -->
+  <div class="admin-card" style="border-radius: 18px; padding: 24px;">
+    <div class="admin-card-header" style="margin-bottom: 20px;">
+      <div>
+        <h3 class="admin-card-title" style="margin: 0; font-size: 17px; font-weight: 800; color: #0F172A;">
+          Phễu Chuyển đổi Vòng đời Đơn thuê (Booking Lifecycle Funnel)
+        </h3>
+        <p class="admin-card-subtitle" style="margin: 4px 0 0; font-size: 12px; color: #64748B;">
+          Đo lường tỷ lệ chuyển đổi và tỷ lệ rơi rụng thực tế qua từng mốc vòng đời đơn thuê từ lịch sử timeline
+        </p>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 12px; font-weight: 700; color: #286E74; background: #E8F6F7; padding: 4px 10px; border-radius: 9999px;">
+          Số liệu đối soát từ MongoDB Timeline
+        </span>
+      </div>
+    </div>
+
+    <!-- Funnel Visualization Steps Container -->
+    <div id="bookingFunnelContainer" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;">
+      <% if (data && data.bookingFunnel) { %>
+        <% data.bookingFunnel.forEach(function(stage, idx) { %>
+          <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 14px; padding: 18px; position: relative;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <span style="font-size: 11.5px; font-weight: 700; color: #64748B; text-transform: uppercase;">
+                Bước <%= idx + 1 %>
+              </span>
+              <span style="font-size: 13px; font-weight: 800; color: #286E74;">
+                <%= stage.percent %>%
+              </span>
+            </div>
+            <div style="font-size: 14px; font-weight: 800; color: #0F172A; margin-top: 6px;">
+              <%= stage.label %>
+            </div>
+            <div style="font-size: 22px; font-weight: 800; color: #0F172A; margin-top: 8px;">
+              <%= stage.count %> <span style="font-size: 13px; font-weight: 500; color: #64748B;">đơn</span>
+            </div>
+
+            <!-- Progress Bar -->
+            <div style="width: 100%; height: 8px; border-radius: 9999px; background: #E2E8F0; overflow: hidden; margin-top: 12px;">
+              <div style="width: <%= stage.percent %>%; height: 100%; border-radius: 9999px; background: <%= idx === 3 ? '#16A34A' : '#67BEC3' %>;"></div>
+            </div>
+
+            <% if (idx > 0 && typeof stage.dropoffPercent !== 'undefined') { %>
+              <div style="font-size: 11px; color: <%= stage.dropoffPercent > 0 ? '#DC2626' : '#16A34A' %>; margin-top: 8px; font-weight: 600;">
+                <%= stage.dropoffPercent > 0 ? `↓ Rơi rụng: ${stage.dropoffPercent}%` : '✓ Duy trì 100%' %>
+              </div>
+            <% } else { %>
+              <div style="font-size: 11px; color: #64748B; margin-top: 8px;">
+                Điểm khởi tạo ban đầu
+              </div>
+            <% } %>
+          </div>
+        <% }); %>
+      <% } %>
     </div>
   </div>
 </div>
+
+<!-- Embedded Initial Server-Side Data for Zero-Delay Render -->
+<script id="analyticsInitialData" type="application/json">
+  <%- JSON.stringify(typeof data !== 'undefined' ? data : {}) %>
+</script>
+
+<style>
+  @media (max-width: 1024px) {
+    .analytics-charts-grid-row1 {
+      grid-template-columns: 1fr !important;
+    }
+    .analytics-charts-grid-row2 {
+      grid-template-columns: 1fr !important;
+    }
+    #bookingFunnelContainer {
+      grid-template-columns: repeat(2, 1fr) !important;
+    }
+  }
+  @media (max-width: 640px) {
+    #bookingFunnelContainer {
+      grid-template-columns: 1fr !important;
+    }
+  }
+</style>

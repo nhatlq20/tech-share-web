@@ -7,6 +7,7 @@ import { Role } from '../../models/Role.js';
 import { resolveRoleCode } from '../authController.js';
 import { getAdminAnalytics } from '../adminController.js';
 import { listOwnerEkycRequests } from '../adminOwnerEkycController.js';
+import { calculateAnalyticsData, resolveDateRange } from './adminAdvancedAnalyticsController.js';
 
 const CANDIDATE_JWT_SECRETS = [
   process.env.JWT_SECRET,
@@ -801,32 +802,22 @@ export const renderNotificationManagementPage = async (req, res) => {
 // 15. GET /admin/analytics
 export const renderAnalyticsPage = async (req, res) => {
   try {
-    const db = mongoose.connection.db;
-    let analytics = {
-      grossBookingValue: 48750000,
-      platformFeeRevenue: 4875000,
-      escrowLiabilities: 32500000,
-      completionRate: '94.2',
-      cancellationRate: '4.6',
-      disputeRate: '1.2',
-    };
-
-    if (db) {
-      const bookingsCol = db.collection('bookings');
-      const revenueAgg = await bookingsCol.aggregate([
-        { $match: { status: { $nin: ['cancelled', 'rejected'] } } },
-        { $group: { _id: null, total: { $sum: '$totalPrice' } } }
-      ]).toArray();
-      const gbv = revenueAgg[0]?.total || 48750000;
-      analytics.grossBookingValue = gbv;
-      analytics.platformFeeRevenue = Math.round(gbv * 0.1);
-    }
+    const period = req.query.period || '30d';
+    const dateRange = resolveDateRange(period, req.query.startDate, req.query.endDate);
+    const analyticsData = await calculateAnalyticsData({ ...dateRange, period });
 
     return res.render('admin/layouts/main', {
-      title: 'Phân tích Nâng cao — TechShare Admin',
+      title: 'Báo cáo & Phân tích Tài chính — TechShare Admin',
       activePage: 'analytics',
+      pageScript: '/js/admin/analytics.js',
       body: await new Promise((resolve, reject) => {
-        res.render('admin/analytics', { analytics }, (err, html) => {
+        res.render('admin/analytics', {
+          analytics: analyticsData.kpi,
+          data: analyticsData,
+          period,
+          startDate: dateRange.filterStart.toISOString(),
+          endDate: dateRange.filterEnd.toISOString(),
+        }, (err, html) => {
           if (err) reject(err);
           else resolve(html);
         });
