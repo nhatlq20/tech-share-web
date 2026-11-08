@@ -376,29 +376,29 @@ export const BookingReviewSection = ({ booking, onOpenReviewModal }) => {
   const review = booking.review || null;
 
   return (
-    <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-amber-200/80 mb-6 relative overflow-hidden">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-start gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 text-amber-500 flex items-center justify-center flex-shrink-0">
-            <Star className="w-6 h-6 fill-amber-400 text-amber-400" />
+    <div className="bg-white rounded-2xl p-4 shadow-sm border border-amber-200/80 mb-3.5 relative overflow-hidden">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-200 text-amber-500 flex items-center justify-center flex-shrink-0">
+            <Star className="w-5 h-5 fill-amber-400 text-amber-400" />
           </div>
           <div>
-            <div className="flex items-center gap-2.5 flex-wrap">
-              <h2 className="text-base sm:text-lg font-extrabold text-slate-900">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-sm font-extrabold text-slate-900">
                 {review ? 'Your Rental Review' : 'How was your rental experience?'}
               </h2>
               {review ? (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  Reviewed
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  <CheckCircle2 className="w-3 h-3" />
+                  Reviewed ({review.rating}.0 ★)
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
                   Completed Order
                 </span>
               )}
             </div>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-xs text-slate-500 mt-0.5">
               {review
                 ? `Submitted on ${formatDateTime(review.updatedAt || review.createdAt)}`
                 : 'Your order is completed! Rate this device to help other renters and the owner.'}
@@ -410,7 +410,7 @@ export const BookingReviewSection = ({ booking, onOpenReviewModal }) => {
           type="button"
           id="booking-detail-review-btn"
           onClick={() => onOpenReviewModal(booking)}
-          className={`self-start sm:self-auto inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-bold transition shadow-xs ${
+          className={`self-start sm:self-auto inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold transition shadow-2xs ${
             review
               ? 'bg-slate-100 text-slate-700 hover:bg-slate-200'
               : 'bg-amber-500 text-white hover:bg-amber-600'
@@ -423,7 +423,7 @@ export const BookingReviewSection = ({ booking, onOpenReviewModal }) => {
             </>
           ) : (
             <>
-              <Star className="w-4 h-4 fill-current" />
+              <Star className="w-3.5 h-3.5 fill-current" />
               <span>Write a Review</span>
             </>
           )}
@@ -431,30 +431,15 @@ export const BookingReviewSection = ({ booking, onOpenReviewModal }) => {
       </div>
 
       {review && (
-        <div className="mt-5 pt-5 border-t border-slate-100">
-          <div className="flex items-center gap-1.5 mb-2">
-            {[1, 2, 3, 4, 5].map((star) => (
-              <Star
-                key={star}
-                className={`w-4 h-4 ${
-                  star <= review.rating
-                    ? 'fill-amber-400 text-amber-400'
-                    : 'fill-slate-100 text-slate-300'
-                }`}
-              />
-            ))}
-            <span className="ml-1 text-xs font-bold text-slate-800">
-              {review.rating}.0 / 5.0 ({RATING_LABELS[review.rating] || 'Rated'})
-            </span>
-          </div>
-          <p className="text-sm text-slate-700 whitespace-pre-line leading-relaxed bg-slate-50 p-4 rounded-2xl border border-slate-100">
+        <div className="mt-3 pt-3 border-t border-slate-100">
+          <p className="text-xs text-slate-700 whitespace-pre-line leading-relaxed bg-slate-50 px-3.5 py-2.5 rounded-xl border border-slate-100">
             {review.comment}
           </p>
 
           {review.ownerReply?.comment && (
-            <div className="mt-3 ml-4 p-3.5 rounded-2xl bg-brand-50/60 border border-brand-100 text-xs">
-              <div className="font-bold text-brand-800 flex items-center gap-1.5 mb-1">
-                <MessageSquare className="w-3.5 h-3.5" />
+            <div className="mt-2 ml-3 px-3 py-2 rounded-xl bg-brand-50/60 border border-brand-100 text-xs">
+              <div className="font-bold text-brand-800 flex items-center gap-1.5 mb-0.5">
+                <MessageSquare className="w-3 h-3" />
                 <span>Owner Response</span>
               </div>
               <p className="text-slate-700">{review.ownerReply.comment}</p>

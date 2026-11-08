@@ -52,7 +52,6 @@ export const BookingCheckoutPage = () => {
   const [note, setNote] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('escrow');
 
-  // Sync profile data when user is loaded asynchronously
   useEffect(() => {
     if (user) {
       setRecipientName((prev) => prev || user.name || '');
@@ -64,7 +63,6 @@ export const BookingCheckoutPage = () => {
   const [agreedTerms, setAgreedTerms] = useState(true);
   const [pledgedCondition, setPledgedCondition] = useState(true);
 
-  // Submit & Modal state
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState(null);
   const [successBooking, setSuccessBooking] = useState(null);
@@ -84,7 +82,6 @@ export const BookingCheckoutPage = () => {
         setLoading(true);
         setFetchError(null);
 
-        // 1. Fetch Device details
         const deviceRes = await api.get(API_CONFIG.ENDPOINTS.DEVICE_BY_ID(currentDeviceId));
         const deviceData = deviceRes.data || deviceRes;
 
@@ -92,7 +89,6 @@ export const BookingCheckoutPage = () => {
           setDevice(deviceData);
         }
 
-        // 2. Fetch Availability & Blocked dates
         try {
           const availRes = await api.get(API_CONFIG.ENDPOINTS.DEVICE_AVAILABILITY(currentDeviceId));
           if (isMounted && availRes.success && availRes.data) {
@@ -144,7 +140,6 @@ export const BookingCheckoutPage = () => {
   const finalRentalFee = Math.max(0, rentalFee - longRentalDiscount);
   const totalAmount = finalRentalFee + depositValue;
 
-  // Handle Date Selection Change
   const handleDateChange = useCallback(({ startDate: start, endDate: end, totalDays: days, pickupTime: pTime, returnTime: rTime }) => {
     setStartDate(start);
     setEndDate(end);
@@ -162,7 +157,6 @@ export const BookingCheckoutPage = () => {
     STRINGS.booking.delivery.methods?.pickup?.noAddress ||
     'Owner address pending confirmation';
 
-  // Form Validation
   const canSubmit = useMemo(() => {
     const isAddressValid = deliveryMethod === 'pickup' ? true : address.trim().length > 0;
     return (
@@ -176,13 +170,11 @@ export const BookingCheckoutPage = () => {
     );
   }, [startDate, endDate, recipientName, phone, address, deliveryMethod, agreedTerms, pledgedCondition]);
 
-  // Handle Order Submit
   const handleSubmitBooking = async () => {
     setFormError(null);
 
-    // Renter bắt buộc phải xác thực eKYC mới được thuê sản phẩm
     if (user && !user.isVerified && !user.trust?.isVerified) {
-      setFormError('Bạn cần hoàn tất xác thực định danh (eKYC CCCD) trước khi đặt thuê thiết bị. Vui lòng vào Trang cá nhân để gửi đơn eKYC.');
+      setFormError('Please complete identity verification (eKYC) in your Profile before booking a device.');
       window.scrollTo({ top: 100, behavior: 'smooth' });
       return;
     }
@@ -222,7 +214,6 @@ export const BookingCheckoutPage = () => {
 
       const effectiveAddress = deliveryMethod === 'pickup' ? ownerPickupAddress : address.trim();
 
-      // Combine date string (YYYY-MM-DD) with chosen time (HH:mm)
       const buildIsoDateTime = (dateStr, timeStr, fallbackTime) => {
         if (!dateStr) return null;
         const time = timeStr || fallbackTime || '09:00';
@@ -280,7 +271,6 @@ export const BookingCheckoutPage = () => {
     }
   };
 
-  // Loading Screen
   if (loading) {
     return (
       <div className="min-h-[70vh] flex flex-col items-center justify-center gap-3">
@@ -292,7 +282,6 @@ export const BookingCheckoutPage = () => {
     );
   }
 
-  // Error Screen
   if (fetchError || !device) {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center p-6 text-center">
@@ -314,101 +303,91 @@ export const BookingCheckoutPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50/60 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-6xl mx-auto">
-        {/* Breadcrumb Navigation */}
-        <nav className="flex items-center gap-2 text-xs text-slate-500 mb-6">
-          <Link to={ROUTES.HOME} className="hover:text-brand-600 transition">
-            {STRINGS.booking.checkout.breadcrumbHome}
-          </Link>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-          <Link to={ROUTES.EXPLORE} className="hover:text-brand-600 transition">
-            {STRINGS.booking.checkout.breadcrumbExplore}
-          </Link>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-          <Link
-            to={ROUTES.DEVICE_DETAIL_PATH(currentDeviceId)}
-            className="hover:text-brand-600 truncate max-w-[180px] transition"
-          >
-            {device.title || device.name}
-          </Link>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-          <span className="text-brand-600 font-semibold">
-            {STRINGS.booking.checkout.breadcrumbCheckout}
-          </span>
-        </nav>
-
-        {/* Page Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3">
+    <div className="min-h-screen bg-slate-50/60 py-4 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Compact Top Bar: Breadcrumb + Title + Stepper in one row */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4 bg-white rounded-2xl px-4 py-3 shadow-2xs border border-slate-100">
+          <div className="flex items-center gap-3 min-w-0">
             <button
               type="button"
               onClick={() => navigate(-1)}
-              className="p-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:text-brand-600 hover:border-brand-200 transition"
+              className="p-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 hover:text-brand-600 hover:border-brand-200 transition flex-shrink-0"
               aria-label="Back"
             >
-              <ArrowLeft className="w-5 h-5" />
+              <ArrowLeft className="w-4 h-4" />
             </button>
-            <div>
-              <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+            <div className="min-w-0">
+              <nav className="flex items-center gap-1.5 text-[11px] text-slate-400">
+                <Link to={ROUTES.HOME} className="hover:text-brand-600 transition">
+                  {STRINGS.booking.checkout.breadcrumbHome}
+                </Link>
+                <ChevronRight className="w-3 h-3" />
+                <Link
+                  to={ROUTES.DEVICE_DETAIL_PATH(currentDeviceId)}
+                  className="hover:text-brand-600 truncate max-w-[160px] transition"
+                >
+                  {device.title || device.name}
+                </Link>
+                <ChevronRight className="w-3 h-3" />
+                <span className="text-brand-600 font-semibold">
+                  {STRINGS.booking.checkout.breadcrumbCheckout}
+                </span>
+              </nav>
+              <h1 className="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight truncate">
                 {STRINGS.booking.checkout.headerTitle}
               </h1>
-              <p className="text-xs sm:text-sm text-slate-500 mt-1">
-                {STRINGS.booking.checkout.headerSubtitle}
-              </p>
             </div>
           </div>
 
-          {/* Stepper progress indicator */}
-          <div className="grid grid-cols-3 gap-2 mt-6">
-            <div className="flex items-center gap-2 p-2.5 rounded-xl bg-brand-50 border border-brand-200 text-brand-800 text-xs font-bold">
-              <span className="w-5 h-5 rounded-full bg-brand-500 text-white flex items-center justify-center text-[10px]">
+          {/* Inline 3-Step Pills */}
+          <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand-50 border border-brand-200 text-brand-800 text-xs font-bold whitespace-nowrap">
+              <span className="w-4 h-4 rounded-full bg-brand-500 text-white flex items-center justify-center text-[10px]">
                 1
               </span>
-              <span className="truncate">{STRINGS.booking.checkout.steps.step1}</span>
+              <span>{STRINGS.booking.checkout.steps.step1}</span>
             </div>
-            <div className="flex items-center gap-2 p-2.5 rounded-xl bg-white border border-slate-200 text-slate-600 text-xs font-semibold">
-              <span className="w-5 h-5 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center text-[10px]">
+            <ChevronRight className="w-3.5 h-3.5 text-slate-300 flex-shrink-0" />
+            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-slate-600 text-xs font-semibold whitespace-nowrap">
+              <span className="w-4 h-4 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center text-[10px]">
                 2
               </span>
-              <span className="truncate">{STRINGS.booking.checkout.steps.step2}</span>
+              <span>{STRINGS.booking.checkout.steps.step2}</span>
             </div>
-            <div className="flex items-center gap-2 p-2.5 rounded-xl bg-white border border-slate-200 text-slate-400 text-xs font-medium">
-              <span className="w-5 h-5 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center text-[10px]">
+            <ChevronRight className="w-3.5 h-3.5 text-slate-300 flex-shrink-0" />
+            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-slate-400 text-xs font-medium whitespace-nowrap">
+              <span className="w-4 h-4 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center text-[10px]">
                 3
               </span>
-              <span className="truncate">{STRINGS.booking.checkout.steps.step3}</span>
+              <span>{STRINGS.booking.checkout.steps.step3}</span>
             </div>
           </div>
         </div>
 
-        {/* Main Content Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Left Column: Form Sections (7 cols) */}
-          <div className="lg:col-span-7 flex flex-col gap-6">
-            {/* Cảnh báo eKYC bắt buộc cho người thuê */}
+        {/* Main 2-Column Content Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+          {/* Left Column: Compact Form Sections (8 cols) */}
+          <div className="lg:col-span-8 flex flex-col gap-3.5">
+            {/* Compact eKYC Warning Banner if unverified */}
             {user && !user.isVerified && !user.trust?.isVerified && (
-              <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 flex items-start gap-3 shadow-xs">
-                <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-                <div className="flex-1">
-                  <h3 className="text-sm font-bold text-amber-900">
-                    Yêu cầu xác thực định danh (eKYC)
-                  </h3>
-                  <p className="text-xs text-amber-700 mt-1 leading-relaxed">
-                    Theo quy định của TechShare, người thuê cần hoàn tất xác thực định danh CCCD 2 mặt trước khi đặt thuê thiết bị.
-                  </p>
-                  <Link
-                    to={ROUTES.PROFILE}
-                    className="inline-flex items-center gap-1.5 mt-2.5 px-3.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs transition"
-                  >
-                    <ShieldCheck className="w-3.5 h-3.5" />
-                    <span>Đến trang cá nhân nộp hồ sơ eKYC</span>
-                  </Link>
+              <div className="px-4 py-2.5 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 flex flex-wrap items-center justify-between gap-2 shadow-2xs">
+                <div className="flex items-center gap-2 text-xs">
+                  <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                  <span>
+                    <strong>Identity verification (eKYC) required:</strong> Complete your ID verification before booking.
+                  </span>
                 </div>
+                <Link
+                  to={ROUTES.PROFILE}
+                  className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-amber-600 hover:bg-amber-700 text-white font-semibold text-[11px] transition"
+                >
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  <span>Verify eKYC</span>
+                </Link>
               </div>
             )}
 
-            {/* Section 1: Date Range Picker */}
+            {/* Section 1: Compact Side-by-Side Calendar & Time Picker */}
             <WebDatePicker
               startDate={startDate}
               endDate={endDate}
@@ -419,225 +398,157 @@ export const BookingCheckoutPage = () => {
               bookedRanges={bookedRanges}
             />
 
-            {/* Section 2: Handover & Delivery Details */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-              <div className="flex items-center gap-2 pb-4 border-b border-slate-100 mb-5">
-                <Truck className="w-5 h-5 text-brand-500" />
-                <div>
-                  <h2 className="text-base font-bold text-slate-800">
+            {/* Section 2: Compact Handover, Delivery & Contact Info */}
+            <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
+              <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-100 mb-3">
+                <div className="flex items-center gap-2">
+                  <Truck className="w-4 h-4 text-brand-500" />
+                  <h2 className="text-sm font-bold text-slate-800">
                     {STRINGS.booking.delivery.title}
                   </h2>
-                  <p className="text-xs text-slate-500">
-                    {STRINGS.booking.delivery.subtitle}
-                  </p>
                 </div>
-              </div>
 
-              {/* Delivery Method Selector (Self Pickup vs Doorstep Delivery) */}
-              <div className="mb-6">
-                <label className="block text-xs font-semibold text-slate-700 mb-2">
-                  {STRINGS.booking.delivery.methodLabel}
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {/* Option 1: Self Pickup */}
+                {/* Inline Delivery Method Toggle Pills */}
+                <div className="inline-flex p-1 rounded-xl bg-slate-100 border border-slate-200/70">
                   <button
                     type="button"
                     onClick={() => setDeliveryMethod('pickup')}
-                    className={`flex items-start gap-3 p-4 rounded-xl border text-left transition-all duration-200 ${
+                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition ${
                       deliveryMethod === 'pickup'
-                        ? 'border-brand-500 bg-brand-50/50 ring-2 ring-brand-500/20 shadow-sm'
-                        : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50/60'
+                        ? 'bg-white text-brand-700 shadow-2xs'
+                        : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
-                    <div
-                      className={`p-2.5 rounded-lg flex-shrink-0 ${
-                        deliveryMethod === 'pickup'
-                          ? 'bg-brand-500 text-white'
-                          : 'bg-slate-100 text-slate-500'
-                      }`}
-                    >
-                      <Store className="w-5 h-5" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-slate-900">
-                          {STRINGS.booking.delivery.methods?.pickup?.title || 'Self Pickup'}
-                        </span>
-                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">
-                          {STRINGS.booking.delivery.methods?.pickup?.badge || 'Free'}
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-slate-500 mt-1 leading-snug">
-                        {STRINGS.booking.delivery.methods?.pickup?.desc}
-                      </p>
-                    </div>
+                    <Store className="w-3.5 h-3.5" />
+                    <span>{STRINGS.booking.delivery.methods?.pickup?.title || 'Self Pickup'}</span>
+                    <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-emerald-50 text-emerald-700">
+                      Free
+                    </span>
                   </button>
-
-                  {/* Option 2: Doorstep Delivery */}
                   <button
                     type="button"
                     onClick={() => setDeliveryMethod('delivery')}
-                    className={`flex items-start gap-3 p-4 rounded-xl border text-left transition-all duration-200 ${
+                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition ${
                       deliveryMethod === 'delivery'
-                        ? 'border-brand-500 bg-brand-50/50 ring-2 ring-brand-500/20 shadow-sm'
-                        : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50/60'
+                        ? 'bg-white text-brand-700 shadow-2xs'
+                        : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
-                    <div
-                      className={`p-2.5 rounded-lg flex-shrink-0 ${
-                        deliveryMethod === 'delivery'
-                          ? 'bg-brand-500 text-white'
-                          : 'bg-slate-100 text-slate-500'
-                      }`}
-                    >
-                      <Truck className="w-5 h-5" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-slate-900">
-                          {STRINGS.booking.delivery.methods?.delivery?.title || 'Doorstep Delivery'}
-                        </span>
-                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-brand-50 text-brand-700 border border-brand-100">
-                          {STRINGS.booking.delivery.methods?.delivery?.badge || 'Convenient'}
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-slate-500 mt-1 leading-snug">
-                        {STRINGS.booking.delivery.methods?.delivery?.desc}
-                      </p>
-                    </div>
+                    <Truck className="w-3.5 h-3.5" />
+                    <span>{STRINGS.booking.delivery.methods?.delivery?.title || 'Doorstep Delivery'}</span>
                   </button>
                 </div>
               </div>
 
-              {/* Dynamic Address Presentation */}
-              <div className="mb-4">
-                {deliveryMethod === 'pickup' ? (
-                  /* Self Pickup: Display Owner's device pickup address */
-                  <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
-                    <div className="flex items-start gap-3">
-                      <div className="p-2 rounded-lg bg-white border border-slate-200 text-brand-600 flex-shrink-0 mt-0.5">
-                        <MapPin className="w-4 h-4" />
-                      </div>
-                      <div className="flex-1">
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block">
-                          {STRINGS.booking.delivery.methods?.pickup?.locationLabel || 'Owner Device Pickup Address'}
-                        </span>
-                        <p className="text-xs font-bold text-slate-900 mt-1">
-                          {ownerPickupAddress}
-                        </p>
-                        <p className="text-[11px] text-slate-500 mt-1.5 flex items-center gap-1">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
-                          <span>
-                            {STRINGS.booking.delivery.methods?.pickup?.locationNote ||
-                              'Please arrive at this address at the agreed time to inspect and receive the device.'}
-                          </span>
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  /* Doorstep Delivery: Take renter address from profile and allow editing */
-                  <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <label className="block text-xs font-semibold text-slate-700">
-                        {STRINGS.booking.delivery.methods?.delivery?.addressLabel || STRINGS.booking.delivery.addressLabel}
-                      </label>
-                      <span className="text-[11px] text-slate-400">
-                        {STRINGS.booking.delivery.methods?.delivery?.helperText}
-                      </span>
-                    </div>
-                    <div className="relative">
-                      <MapPin className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
-                      <input
-                        type="text"
-                        value={address}
-                        onChange={(e) => setAddress(e.target.value)}
-                        placeholder={
-                          STRINGS.booking.delivery.methods?.delivery?.addressPlaceholder ||
-                          STRINGS.booking.delivery.addressPlaceholder
-                        }
-                        className="w-full pl-10 pr-3.5 py-2.5 text-xs font-medium rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition"
-                        required
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                {/* Recipient Name */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+              {/* Compact Contact & Address Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+                {/* Recipient Name (4 cols) */}
+                <div className="sm:col-span-4">
+                  <label className="block text-[11px] font-semibold text-slate-600 mb-1">
                     {STRINGS.booking.delivery.recipientNameLabel}
                   </label>
                   <div className="relative">
-                    <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                    <User className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
                     <input
                       type="text"
                       value={recipientName}
                       onChange={(e) => setRecipientName(e.target.value)}
                       placeholder={STRINGS.booking.delivery.recipientNamePlaceholder}
-                      className="w-full pl-10 pr-3.5 py-2.5 text-xs font-medium rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition"
+                      className="w-full pl-8 pr-3 py-2 text-xs font-medium rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:border-brand-500 transition"
                       required
                     />
                   </div>
                 </div>
 
-                {/* Phone Number */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                {/* Phone Number (4 cols) */}
+                <div className="sm:col-span-4">
+                  <label className="block text-[11px] font-semibold text-slate-600 mb-1">
                     {STRINGS.booking.delivery.phoneLabel}
                   </label>
                   <div className="relative">
-                    <Phone className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                    <Phone className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
                     <input
                       type="tel"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       placeholder={STRINGS.booking.delivery.phonePlaceholder}
-                      className="w-full pl-10 pr-3.5 py-2.5 text-xs font-medium rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition"
+                      className="w-full pl-8 pr-3 py-2 text-xs font-medium rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:border-brand-500 transition"
                       required
                     />
                   </div>
                 </div>
 
-                {/* Note */}
-                <div className="md:col-span-2">
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                {/* Note (4 cols) */}
+                <div className="sm:col-span-4">
+                  <label className="block text-[11px] font-semibold text-slate-600 mb-1">
                     {STRINGS.booking.delivery.noteLabel}
                   </label>
                   <div className="relative">
-                    <FileText className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
-                    <textarea
-                      rows={2}
+                    <FileText className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+                    <input
+                      type="text"
                       value={note}
                       onChange={(e) => setNote(e.target.value)}
                       placeholder={STRINGS.booking.delivery.notePlaceholder}
-                      className="w-full pl-10 pr-3.5 py-2 text-xs font-medium rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition resize-none"
+                      className="w-full pl-8 pr-3 py-2 text-xs font-medium rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:border-brand-500 transition"
                     />
                   </div>
+                </div>
+
+                {/* Address / Pickup Location (Full 12 cols) */}
+                <div className="sm:col-span-12">
+                  {deliveryMethod === 'pickup' ? (
+                    <div className="px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <MapPin className="w-4 h-4 text-brand-600 flex-shrink-0" />
+                        <div className="min-w-0">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mr-2">
+                            {STRINGS.booking.delivery.methods?.pickup?.locationLabel || 'Pickup Address'}:
+                          </span>
+                          <span className="text-xs font-bold text-slate-800">{ownerPickupAddress}</span>
+                        </div>
+                      </div>
+                      <span className="hidden sm:inline-flex items-center gap-1 text-[11px] text-emerald-700 font-semibold whitespace-nowrap">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                        Inspect on pickup
+                      </span>
+                    </div>
+                  ) : (
+                    <div>
+                      <div className="relative">
+                        <MapPin className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+                        <input
+                          type="text"
+                          value={address}
+                          onChange={(e) => setAddress(e.target.value)}
+                          placeholder={
+                            STRINGS.booking.delivery.methods?.delivery?.addressPlaceholder ||
+                            STRINGS.booking.delivery.addressPlaceholder
+                          }
+                          className="w-full pl-8 pr-3 py-2 text-xs font-medium rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:border-brand-500 transition"
+                          required
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
 
-            {/* Section 3: Payment Method */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-              <div className="flex items-center gap-2 pb-4 border-b border-slate-100 mb-5">
-                <CreditCard className="w-5 h-5 text-brand-500" />
-                <div>
-                  <h2 className="text-base font-bold text-slate-800">
-                    {STRINGS.booking.payment.title}
-                  </h2>
-                  <p className="text-xs text-slate-500">
-                    {STRINGS.booking.payment.subtitle}
-                  </p>
-                </div>
+            {/* Section 3: Compact 3-Column Payment Method + Inline Terms */}
+            <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
+              <div className="flex items-center gap-2 pb-2.5 border-b border-slate-100 mb-3">
+                <CreditCard className="w-4 h-4 text-brand-500" />
+                <h2 className="text-sm font-bold text-slate-800">
+                  {STRINGS.booking.payment.title} &amp; {STRINGS.booking.agreement.title}
+                </h2>
               </div>
 
-              <div className="flex flex-col gap-3">
-                {/* Option 1: Escrow */}
+              {/* 3-Column Payment Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mb-3">
+                {/* Escrow */}
                 <label
-                  className={`flex items-start gap-3.5 p-4 rounded-xl border cursor-pointer transition ${
+                  className={`flex items-start gap-2.5 p-3 rounded-xl border cursor-pointer transition ${
                     paymentMethod === 'escrow'
                       ? 'border-brand-500 bg-brand-50/40 ring-1 ring-brand-500/30'
                       : 'border-slate-200 hover:bg-slate-50'
@@ -649,26 +560,26 @@ export const BookingCheckoutPage = () => {
                     value="escrow"
                     checked={paymentMethod === 'escrow'}
                     onChange={() => setPaymentMethod('escrow')}
-                    className="mt-1 accent-brand-500"
+                    className="mt-0.5 accent-brand-500"
                   />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-slate-800">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="text-xs font-bold text-slate-800 truncate">
                         {STRINGS.booking.payment.methods.escrow.title}
                       </span>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-brand-100 text-brand-700 font-semibold">
+                      <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-brand-100 text-brand-700 font-bold shrink-0">
                         {STRINGS.booking.payment.methods.escrow.badge}
                       </span>
                     </div>
-                    <p className="text-xs text-slate-500 mt-1">
+                    <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-2 leading-tight">
                       {STRINGS.booking.payment.methods.escrow.desc}
                     </p>
                   </div>
                 </label>
 
-                {/* Option 2: Bank Transfer (VietQR) */}
+                {/* Bank Transfer */}
                 <label
-                  className={`flex items-start gap-3.5 p-4 rounded-xl border cursor-pointer transition ${
+                  className={`flex items-start gap-2.5 p-3 rounded-xl border cursor-pointer transition ${
                     paymentMethod === 'bank_transfer'
                       ? 'border-brand-500 bg-brand-50/40 ring-1 ring-brand-500/30'
                       : 'border-slate-200 hover:bg-slate-50'
@@ -680,26 +591,26 @@ export const BookingCheckoutPage = () => {
                     value="bank_transfer"
                     checked={paymentMethod === 'bank_transfer'}
                     onChange={() => setPaymentMethod('bank_transfer')}
-                    className="mt-1 accent-brand-500"
+                    className="mt-0.5 accent-brand-500"
                   />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-slate-800">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="text-xs font-bold text-slate-800 truncate">
                         {STRINGS.booking.payment.methods.bankTransfer.title}
                       </span>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-semibold">
+                      <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-bold shrink-0">
                         {STRINGS.booking.payment.methods.bankTransfer.badge}
                       </span>
                     </div>
-                    <p className="text-xs text-slate-500 mt-1">
+                    <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-2 leading-tight">
                       {STRINGS.booking.payment.methods.bankTransfer.desc}
                     </p>
                   </div>
                 </label>
 
-                {/* Option 3: COD */}
+                {/* COD */}
                 <label
-                  className={`flex items-start gap-3.5 p-4 rounded-xl border cursor-pointer transition ${
+                  className={`flex items-start gap-2.5 p-3 rounded-xl border cursor-pointer transition ${
                     paymentMethod === 'cash_on_delivery'
                       ? 'border-brand-500 bg-brand-50/40 ring-1 ring-brand-500/30'
                       : 'border-slate-200 hover:bg-slate-50'
@@ -711,63 +622,51 @@ export const BookingCheckoutPage = () => {
                     value="cash_on_delivery"
                     checked={paymentMethod === 'cash_on_delivery'}
                     onChange={() => setPaymentMethod('cash_on_delivery')}
-                    className="mt-1 accent-brand-500"
+                    className="mt-0.5 accent-brand-500"
                   />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-slate-800">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="text-xs font-bold text-slate-800 truncate">
                         {STRINGS.booking.payment.methods.cod.title}
                       </span>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-semibold">
+                      <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600 font-bold shrink-0">
                         {STRINGS.booking.payment.methods.cod.badge}
                       </span>
                     </div>
-                    <p className="text-xs text-slate-500 mt-1">
+                    <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-2 leading-tight">
                       {STRINGS.booking.payment.methods.cod.desc}
                     </p>
                   </div>
                 </label>
               </div>
-            </div>
 
-            {/* Section 4: Terms & Agreement */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col gap-3">
-              <h2 className="text-sm font-bold text-slate-800 mb-1">
-                {STRINGS.booking.agreement.title}
-              </h2>
+              {/* Compact Inline Terms Checkboxes */}
+              <div className="pt-2.5 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <label className="flex items-start gap-2 text-[11px] text-slate-600 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={agreedTerms}
+                    onChange={(e) => setAgreedTerms(e.target.checked)}
+                    className="mt-0.5 rounded accent-brand-500"
+                  />
+                  <span className="leading-snug">{STRINGS.booking.agreement.termsText}</span>
+                </label>
 
-              <label className="flex items-start gap-2.5 text-xs text-slate-600 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={agreedTerms}
-                  onChange={(e) => setAgreedTerms(e.target.checked)}
-                  className="mt-0.5 rounded accent-brand-500"
-                />
-                <span>{STRINGS.booking.agreement.termsText}</span>
-              </label>
-
-              <label className="flex items-start gap-2.5 text-xs text-slate-600 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={pledgedCondition}
-                  onChange={(e) => setPledgedCondition(e.target.checked)}
-                  className="mt-0.5 rounded accent-brand-500"
-                />
-                <span>{STRINGS.booking.agreement.pledgeText}</span>
-              </label>
-            </div>
-
-            {/* Error Banner */}
-            {formError && (
-              <div className="p-4 rounded-xl bg-red-50 text-red-600 text-xs flex items-center gap-2.5 border border-red-100">
-                <AlertCircle className="w-5 h-5 flex-shrink-0" />
-                <span className="font-medium">{formError}</span>
+                <label className="flex items-start gap-2 text-[11px] text-slate-600 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={pledgedCondition}
+                    onChange={(e) => setPledgedCondition(e.target.checked)}
+                    className="mt-0.5 rounded accent-brand-500"
+                  />
+                  <span className="leading-snug">{STRINGS.booking.agreement.pledgeText}</span>
+                </label>
               </div>
-            )}
+            </div>
           </div>
 
-          {/* Right Column: Order Summary (5 cols) */}
-          <div className="lg:col-span-5 flex flex-col gap-6">
+          {/* Right Column: Compact Sticky Order Summary (4 cols) */}
+          <div className="lg:col-span-4 flex flex-col gap-4">
             <OrderSummaryCard
               device={device}
               totalDays={totalDays}

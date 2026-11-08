@@ -32,20 +32,20 @@ export const OrderSummaryCard = ({
   const rating = (device?.rating ?? device?.ratingAvg ?? 5.0).toFixed(1);
 
   return (
-    <aside className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col gap-5 sticky top-24">
+    <aside className="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-100 flex flex-col gap-3.5 sticky top-20">
       {/* Card Header Title */}
-      <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-        <h3 className="text-base font-bold text-slate-800">
+      <div className="flex items-center justify-between pb-2.5 border-b border-slate-100">
+        <h3 className="text-sm font-bold text-slate-800">
           {STRINGS.booking.summary.title}
         </h3>
-        <span className="text-xs px-2.5 py-1 rounded-full bg-brand-50 text-brand-700 font-semibold">
+        <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-brand-50 text-brand-700 font-semibold">
           TechShare Escrow
         </span>
       </div>
 
       {/* Device Snippet */}
-      <div className="flex items-center gap-3.5 pb-4 border-b border-slate-100">
-        <div className="w-16 h-16 rounded-xl bg-slate-50 border border-slate-100 overflow-hidden flex-shrink-0 flex items-center justify-center">
+      <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
+        <div className="w-14 h-14 rounded-xl bg-slate-50 border border-slate-100 overflow-hidden flex-shrink-0 flex items-center justify-center">
           {imageUrl ? (
             <img
               src={imageUrl}
@@ -59,15 +59,15 @@ export const OrderSummaryCard = ({
 
         <div className="flex-1 min-w-0">
           {brand && (
-            <span className="text-[11px] font-semibold text-brand-600 uppercase tracking-wide">
+            <span className="text-[10px] font-bold text-brand-600 uppercase tracking-wide block">
               {brand}
             </span>
           )}
-          <h4 className="text-sm font-bold text-slate-800 truncate" title={title}>
+          <h4 className="text-xs sm:text-sm font-bold text-slate-800 truncate" title={title}>
             {title}
           </h4>
-          <div className="flex items-center gap-1.5 mt-1 text-xs text-slate-500">
-            <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+          <div className="flex items-center gap-1.5 mt-0.5 text-xs text-slate-500">
+            <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
             <span className="font-semibold text-slate-700">{rating}</span>
             <span>•</span>
             <span className="text-slate-500">{formatPrice(dailyRate)} / day</span>
@@ -76,14 +76,12 @@ export const OrderSummaryCard = ({
       </div>
 
       {/* Pricing Breakdown */}
-      <div className="flex flex-col gap-3 text-xs">
-        {/* Daily Rate */}
+      <div className="flex flex-col gap-2 text-xs">
         <div className="flex items-center justify-between text-slate-600">
           <span>{STRINGS.booking.summary.dailyRateLabel}</span>
           <span className="font-semibold text-slate-800">{formatPrice(dailyRate)}</span>
         </div>
 
-        {/* Rental Duration */}
         <div className="flex items-center justify-between text-slate-600">
           <span>{STRINGS.booking.summary.durationLabel}</span>
           <span className="font-semibold text-slate-800">
@@ -91,15 +89,13 @@ export const OrderSummaryCard = ({
           </span>
         </div>
 
-        {/* Base Rental Fee */}
         <div className="flex items-center justify-between text-slate-600">
           <span>{STRINGS.booking.summary.baseRentalFee}</span>
           <span className="font-semibold text-slate-800">{formatPrice(rentalFee)}</span>
         </div>
 
-        {/* Long Rental Discount Tier */}
         {longRentalDiscount > 0 && (
-          <div className="flex items-center justify-between text-emerald-600 bg-emerald-50/60 p-2 rounded-lg">
+          <div className="flex items-center justify-between text-emerald-600 bg-emerald-50/60 px-2.5 py-1.5 rounded-lg">
             <div className="flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
               <span>
@@ -112,8 +108,6 @@ export const OrderSummaryCard = ({
           </div>
         )}
 
-
-        {/* Deposit Value */}
         <div className="flex items-center justify-between text-slate-600 pt-2 border-t border-slate-100">
           <div className="flex items-center gap-1">
             <span>{STRINGS.booking.summary.depositLabel}</span>
@@ -126,23 +120,19 @@ export const OrderSummaryCard = ({
           </div>
           <span className="font-semibold text-slate-800">{formatPrice(depositValue)}</span>
         </div>
-
-        <p className="text-[11px] text-slate-400 italic">
-          {STRINGS.booking.summary.depositTooltip}
-        </p>
       </div>
 
       {/* Total Amount */}
-      <div className="pt-4 border-t border-slate-100 flex items-baseline justify-between">
+      <div className="pt-2.5 border-t border-slate-100 flex items-baseline justify-between">
         <div>
-          <span className="text-xs text-slate-500 font-medium block">
+          <span className="text-xs text-slate-700 font-bold block">
             {STRINGS.booking.summary.totalAmountLabel}
           </span>
           <span className="text-[10px] text-slate-400">
-            (Includes rental fee + security deposit)
+            Rental fee + refundable security deposit
           </span>
         </div>
-        <div className="text-xl font-extrabold text-slate-900 tracking-tight">
+        <div className="text-lg sm:text-xl font-extrabold text-brand-800 tracking-tight">
           {formatPrice(totalAmount)}
         </div>
       </div>
@@ -152,7 +142,7 @@ export const OrderSummaryCard = ({
         type="button"
         onClick={onSubmit}
         disabled={isSubmitting}
-        className="w-full py-3.5 px-4 rounded-xl font-bold text-sm bg-brand-500 hover:bg-brand-600 text-white shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center justify-center gap-2"
+        className="w-full py-3 px-4 rounded-xl font-bold text-xs sm:text-sm bg-brand-500 hover:bg-brand-600 text-white shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center justify-center gap-2"
       >
         {isSubmitting ? (
           <>
@@ -169,25 +159,25 @@ export const OrderSummaryCard = ({
 
       {/* Direct Form / API Error Alert */}
       {errorMessage && (
-        <div className="p-3 rounded-xl bg-red-50 text-red-600 text-xs flex items-center gap-2 border border-red-100">
+        <div className="p-2.5 rounded-xl bg-red-50 text-red-600 text-xs flex items-center gap-2 border border-red-100">
           <AlertCircle className="w-4 h-4 flex-shrink-0" />
           <span className="font-semibold">{errorMessage}</span>
         </div>
       )}
 
-      {/* Escrow Guarantee Badges */}
-      <div className="pt-3 border-t border-slate-100 flex flex-col gap-2">
-        <div className="flex items-center gap-2 text-xs text-slate-500">
-          <ShieldCheck className="w-4 h-4 text-brand-500 flex-shrink-0" />
-          <span>{STRINGS.booking.summary.guarantees.item1}</span>
+      {/* Compact Escrow Guarantee Badges */}
+      <div className="pt-2.5 border-t border-slate-100 flex flex-col gap-1.5 text-[11px] text-slate-500">
+        <div className="flex items-center gap-1.5">
+          <ShieldCheck className="w-3.5 h-3.5 text-brand-500 flex-shrink-0" />
+          <span className="truncate">{STRINGS.booking.summary.guarantees.item1}</span>
         </div>
-        <div className="flex items-center gap-2 text-xs text-slate-500">
-          <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-          <span>{STRINGS.booking.summary.guarantees.item2}</span>
+        <div className="flex items-center gap-1.5">
+          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
+          <span className="truncate">{STRINGS.booking.summary.guarantees.item2}</span>
         </div>
-        <div className="flex items-center gap-2 text-xs text-slate-500">
-          <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-          <span>{STRINGS.booking.summary.guarantees.item3}</span>
+        <div className="flex items-center gap-1.5">
+          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
+          <span className="truncate">{STRINGS.booking.summary.guarantees.item3}</span>
         </div>
       </div>
     </aside>
