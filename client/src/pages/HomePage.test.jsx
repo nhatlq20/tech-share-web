@@ -7,6 +7,9 @@ import { useUserLocation, LOCATION_CACHE_KEY, LOCATION_FRESH_MS } from '../hooks
 jest.mock('../services/deviceService.js', () => ({ deviceService: {
   getRecommendedDevices: jest.fn(), getNearbyDevices: jest.fn(), getDevices: jest.fn(),
 } }));
+jest.mock('../context/AuthContext.jsx', () => ({
+  useAuth: () => ({ isAuthenticated: true, user: null }),
+}));
 jest.mock('../components/home/HeroSection', () => ({
   HeroSection: ({ searchInput, onSearchChange, onSearchSubmit, onClearSearch }) => (
     <div data-testid="mock-hero">

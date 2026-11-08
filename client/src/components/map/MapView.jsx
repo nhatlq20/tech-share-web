@@ -1,7 +1,6 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { formatPrice } from '../../utils/formatters';
 
 const FAVI_MAP_API_KEY = process.env.REACT_APP_FAVI_MAP_API_KEY || process.env.VITE_FAVI_MAP_API_KEY || '';
 
@@ -22,6 +21,59 @@ export const getDevicePosition = (device) => {
   const [longitude, latitude] = coordinates;
   if (!Number.isFinite(latitude) || Math.abs(latitude) > 90 || !Number.isFinite(longitude) || Math.abs(longitude) > 180) return null;
   return [longitude, latitude];
+};
+
+/**
+ * Groups devices by ownerId and rentalLocation coordinates.
+ * An owner with multiple devices at the same location produces 1 group.
+ * The same owner at different locations produces separate groups.
+ * Different owners at the same coordinates produce separate groups.
+ */
+export const groupDevicesByOwnerLocation = (devices = []) => {
+  const groupMap = new Map();
+
+  devices.forEach((device) => {
+    if (!device || typeof device !== 'object') return;
+    const pos = getDevicePosition(device);
+    if (!pos) return;
+    const [lng, lat] = pos;
+    const rawOwner = device.owner || (typeof device.ownerId === 'object' ? device.ownerId : null) || {};
+    const ownerId = String(rawOwner._id || (typeof device.ownerId === 'string' ? device.ownerId : '') || 'unknown');
+    // Grouping key: ownerId + coordinates (rounded to 5 decimals ~1.1m)
+    const groupKey = `${ownerId}:${lng.toFixed(5)},${lat.toFixed(5)}`;
+
+    if (!groupMap.has(groupKey)) {
+      groupMap.set(groupKey, {
+        key: groupKey,
+        ownerId,
+        owner: {
+          id: ownerId,
+          name: rawOwner.name || null,
+          avatar: rawOwner.avatar || null,
+          isVerified: Boolean(rawOwner.trust?.isVerified || rawOwner.isVerified),
+          rating: rawOwner.rating ?? (rawOwner.stats?.ratingAvg || 5.0),
+          totalReviews: rawOwner.totalReviews ?? (rawOwner.stats?.ratingCount || 0),
+          address: device.location?.addressText || rawOwner.address || 'Rental Location',
+        },
+        position: [lng, lat],
+        addressText: device.location?.addressText || rawOwner.address || 'Rental Location',
+        distanceMeters: Number.isFinite(device.distanceMeters) ? device.distanceMeters : Infinity,
+        devices: [],
+        availableCount: 0,
+      });
+    }
+
+    const group = groupMap.get(groupKey);
+    group.devices.push(device);
+    if (device.status === 'available') {
+      group.availableCount += 1;
+    }
+    if (Number.isFinite(device.distanceMeters) && device.distanceMeters < group.distanceMeters) {
+      group.distanceMeters = device.distanceMeters;
+    }
+  });
+
+  return Array.from(groupMap.values());
 };
 
 /**
@@ -46,13 +98,22 @@ export const loadFaviMapSdk = (apiKey) => {
   return Promise.reject(new Error('Favi Map unavailable, using Google Maps'));
 };
 
-export const MapView = ({ latitude, longitude, devices = [], selectedDeviceId, onMarkerClick }) => {
+export const MapView = ({
+  latitude,
+  longitude,
+  devices = [],
+  ownerGroups,
+  selectedOwnerKey,
+  selectedDeviceId,
+  onMarkerClick,
+}) => {
   const containerRef = useRef(null);
   const mapRef = useRef(null);
   const leafletMapRef = useRef(null);
   const tileLayerRef = useRef(null);
   const markersLayerRef = useRef(null);
   const isMountedRef = useRef(true);
+  const previousOwnerKeyRef = useRef(null);
 
   const [isMapReady, setIsMapReady] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -174,11 +235,17 @@ export const MapView = ({ latitude, longitude, devices = [], selectedDeviceId, o
           }
         },
         clearMarkers: () => {
+          if (leafletInstance) {
+            try {
+              leafletInstance.closePopup();
+            } catch (e) {}
+          }
           if (markersLayerRef.current) {
             markersLayerRef.current.clearLayers();
           }
         },
         addMarker: (coords, opts = {}) => {
+          if (!Array.isArray(coords) || coords.length < 2) return null;
           const [lng, lat] = coords;
           if (!Number.isFinite(lat) || !Number.isFinite(lng) || !markersLayerRef.current) return null;
 
@@ -186,10 +253,10 @@ export const MapView = ({ latitude, longitude, devices = [], selectedDeviceId, o
           const isSelected = opts.openPopup || opts.html?.includes('is-selected');
 
           const icon = L.divIcon({
-            className: isUser ? 'leaflet-user-marker-wrap' : 'leaflet-device-marker-wrap',
+            className: isUser ? 'leaflet-user-marker-wrap' : 'leaflet-owner-marker-wrap',
             html: opts.html || '',
-            iconSize: isUser ? [22, 22] : [28, 28],
-            iconAnchor: isUser ? [11, 11] : [14, 28],
+            iconSize: isUser ? [22, 22] : [36, 44],
+            iconAnchor: isUser ? [11, 11] : [18, 42],
           });
 
           const marker = L.marker([lat, lng], {
@@ -205,6 +272,9 @@ export const MapView = ({ latitude, longitude, devices = [], selectedDeviceId, o
               offset: [0, -22],
               className: 'nearby-leaflet-popup',
             });
+            if (opts.openPopup) {
+              marker.openPopup();
+            }
           }
 
           markersLayerRef.current.addLayer(marker);
@@ -217,6 +287,8 @@ export const MapView = ({ latitude, longitude, devices = [], selectedDeviceId, o
             },
             getPopup: () => marker.getPopup(),
             togglePopup: () => marker.togglePopup(),
+            openPopup: () => marker.openPopup(),
+            closePopup: () => marker.closePopup(),
             remove: () => markersLayerRef.current?.removeLayer(marker),
           };
 
@@ -259,7 +331,7 @@ export const MapView = ({ latitude, longitude, devices = [], selectedDeviceId, o
     }
   }, [latitude, longitude]);
 
-  // Update markers when device list, selected device, or user location changes
+  // Update markers when device list, owner groups, selected owner/device, or user location changes
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !isMapReady) return;
@@ -275,82 +347,156 @@ export const MapView = ({ latitude, longitude, devices = [], selectedDeviceId, o
       });
     }
 
-    // Add device markers
-    if (Array.isArray(devices) && typeof map.addMarker === 'function') {
-      devices.forEach((device) => {
-        const position = getDevicePosition(device);
-        if (!position) return;
+    // Determine owner groups to render
+    const groups = Array.isArray(ownerGroups) && ownerGroups.length > 0
+      ? ownerGroups
+      : groupDevicesByOwnerLocation(devices);
 
-        const id = String(device._id || device.id);
-        const isSelected = id === selectedDeviceId;
-        const title = device.title || device.name || 'Device';
-        const priceText = formatPrice(device.dailyRate ?? device.pricePerDay ?? 0);
-        const distText = Number.isFinite(device.distanceMeters)
-          ? `${(device.distanceMeters / 1000).toFixed(1)} km`
+    if (Array.isArray(groups) && typeof map.addMarker === 'function') {
+      const coordCountMap = new Map();
+
+      groups.forEach((group) => {
+        if (!group?.position) return;
+        const [lng, lat] = group.position;
+        if (!Number.isFinite(lng) || !Number.isFinite(lat)) return;
+
+        const isSelected =
+          group.key === selectedOwnerKey ||
+          (selectedDeviceId && group.devices.some((d) => String(d._id || d.id) === String(selectedDeviceId)));
+
+        const ownerName = group.owner?.name;
+        const markerTitle = ownerName
+          ? `${ownerName}${group.devices.length > 1 ? ` (${group.devices.length} devices)` : ''}`
+          : (group.devices[0]?.title || group.devices[0]?.name || 'Rental Owner');
+
+        const deviceCount = group.devices.length;
+        const isMultiple = deviceCount > 1;
+        const primaryDeviceId = String(group.devices[0]?._id || group.devices[0]?.id || '');
+        const avatarUrl = group.owner?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200';
+        const addressText = group.addressText || 'Rental Location';
+        const distanceText = Number.isFinite(group.distanceMeters)
+          ? `${(group.distanceMeters / 1000).toFixed(1)} km away`
           : '';
-        const imageUrl = Array.isArray(device.images) && device.images[0] ? device.images[0] : null;
 
-        const escapedTitle = escapeHtml(title);
-        const escapedPrice = escapeHtml(priceText);
-        const escapedDist = escapeHtml(distText);
-        const detailUrl = `/device/${encodeURIComponent(id)}`;
+        // Distinguish different owners sharing exact coordinates
+        const coordKey = `${lng.toFixed(5)},${lat.toFixed(5)}`;
+        const offsetIndex = coordCountMap.get(coordKey) || 0;
+        coordCountMap.set(coordKey, offsetIndex + 1);
+
+        let renderLng = lng;
+        let renderLat = lat;
+        if (offsetIndex > 0) {
+          const angle = (offsetIndex * 2 * Math.PI) / 4;
+          renderLng = lng + Math.cos(angle) * 0.00015;
+          renderLat = lat + Math.sin(angle) * 0.00015;
+        }
+
+        const escapedTitle = escapeHtml(markerTitle);
+        const escapedAvatar = escapeHtml(avatarUrl);
+        const escapedAddress = escapeHtml(addressText);
+        const escapedDist = escapeHtml(distanceText);
 
         const popupHtml = `
-          <div class="nearby-popup-content" style="min-width:160px;max-width:220px;font-family:inherit;font-size:13px;line-height:1.4;">
-            ${imageUrl ? `<img src="${escapeHtml(imageUrl)}" alt="${escapedTitle}" style="width:100%;height:80px;object-fit:cover;border-radius:6px;margin-bottom:6px;display:block;" />` : ''}
-            <strong style="display:block;font-size:14px;color:#193047;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapedTitle}</strong>
-            <div style="color:#168b95;font-weight:600;margin-bottom:2px;">${escapedPrice} / day</div>
-            ${escapedDist ? `<div style="color:#718096;font-size:12px;margin-bottom:8px;">${escapedDist} away</div>` : ''}
-            <a href="${detailUrl}" style="display:inline-block;padding:5px 12px;background:#168b95;color:#ffffff;border-radius:6px;text-decoration:none;font-size:12px;font-weight:600;">View Details</a>
+          <div class="nearby-owner-popup" style="min-width:180px;max-width:240px;font-family:inherit;font-size:13px;line-height:1.4;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+              <img src="${escapedAvatar}" alt="${escapedTitle}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;border:1.5px solid #0d9488;" />
+              <div style="overflow:hidden;">
+                <strong style="display:block;font-size:14px;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                  ${escapedTitle}
+                </strong>
+                <span style="display:inline-block;font-size:11px;color:#0d9488;font-weight:600;">
+                  ${group.availableCount} ${group.availableCount === 1 ? 'device' : 'devices'} available
+                </span>
+              </div>
+            </div>
+            <div style="color:#64748b;font-size:12px;margin-bottom:4px;display:flex;align-items:center;gap:4px;">
+              📍 <span>${escapedAddress}</span>
+            </div>
+            ${escapedDist ? `<div style="color:#64748b;font-size:11px;margin-bottom:8px;">${escapedDist}</div>` : ''}
+            <button type="button" class="nearby-popup-select-btn" data-group-key="${escapeHtml(group.key)}" style="width:100%;padding:6px 0;background:#0d9488;color:#ffffff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">
+              View Owner Devices
+            </button>
           </div>
         `.trim();
 
-        const marker = map.addMarker(position, {
-          title,
-          html: `<div class="nearby-device-marker${isSelected ? ' is-selected' : ''}" title="${escapedTitle}" aria-label="${escapedTitle}"><span></span></div>`,
+        const markerHtml = `
+          <div class="nearby-owner-marker-wrap${isSelected ? ' is-selected' : ''}" title="${escapedTitle}" aria-label="${escapedTitle}">
+            <div class="nearby-owner-marker${isSelected ? ' is-selected' : ''}">
+              <div class="nearby-owner-marker-inner">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+              </div>
+              ${isMultiple ? `<span class="nearby-owner-marker-badge">${deviceCount}</span>` : ''}
+            </div>
+          </div>
+        `.trim();
+
+        const marker = map.addMarker([renderLng, renderLat], {
+          title: markerTitle,
+          html: markerHtml,
           popup: popupHtml,
           openPopup: isSelected,
         });
 
         if (marker) {
+          const handleSelect = () => {
+            if (typeof marker.togglePopup === 'function' && !marker.getPopup()?.isOpen?.()) {
+              marker.togglePopup();
+            }
+            if (typeof onMarkerClick === 'function') {
+              onMarkerClick(group.key, primaryDeviceId);
+            }
+          };
+
           const el = typeof marker.getElement === 'function' ? marker.getElement() : null;
           if (el) {
             el.style.cursor = 'pointer';
-            el.addEventListener('click', () => {
-              if (typeof marker.togglePopup === 'function' && !marker.getPopup()?.isOpen?.()) {
-                marker.togglePopup();
-              }
-              if (typeof onMarkerClick === 'function') {
-                onMarkerClick(id);
-              }
-            });
+            el.addEventListener('click', handleSelect);
           }
           if (typeof marker.on === 'function') {
-            marker.on('click', () => {
-              if (typeof onMarkerClick === 'function') {
-                onMarkerClick(id);
-              }
-            });
+            marker.on('click', handleSelect);
           }
 
-          if (isSelected && typeof marker.getPopup === 'function') {
-            const popup = marker.getPopup();
-            if (popup) {
-              try {
-                if (typeof popup.addTo === 'function' && !popup.isOpen?.()) {
-                  popup.addTo(map.rawMap || map);
-                } else if (typeof marker.leafletMarker?.openPopup === 'function') {
-                  marker.leafletMarker.openPopup();
-                }
-              } catch (e) {
-                // ignore popup sync error
+          if (isSelected) {
+            try {
+              if (typeof marker.leafletMarker?.openPopup === 'function') {
+                marker.leafletMarker.openPopup();
+              } else if (typeof marker.openPopup === 'function') {
+                marker.openPopup();
               }
+            } catch (e) {
+              // ignore popup sync error
             }
           }
         }
       });
     }
-  }, [devices, selectedDeviceId, latitude, longitude, onMarkerClick, isMapReady]);
+  }, [devices, ownerGroups, selectedOwnerKey, selectedDeviceId, latitude, longitude, onMarkerClick, isMapReady]);
+
+  // Recenter when selected owner changes
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !selectedOwnerKey) return;
+    if (previousOwnerKeyRef.current === selectedOwnerKey) return;
+    previousOwnerKeyRef.current = selectedOwnerKey;
+
+    const groups = Array.isArray(ownerGroups) && ownerGroups.length > 0
+      ? ownerGroups
+      : groupDevicesByOwnerLocation(devices);
+    const selectedGroup = groups.find((g) => g.key === selectedOwnerKey);
+    if (selectedGroup && Array.isArray(selectedGroup.position) && selectedGroup.position.length >= 2) {
+      const [lng, lat] = selectedGroup.position;
+      if (Number.isFinite(lng) && Number.isFinite(lat)) {
+        if (typeof map.flyToLocation === 'function') {
+          map.flyToLocation([lng, lat], 14);
+        } else if (typeof map.flyTo === 'function') {
+          map.flyTo({ center: [lng, lat], zoom: 14 });
+        }
+      }
+    }
+  }, [selectedOwnerKey, ownerGroups, devices]);
 
   // Recenter button click
   const handleRecenter = () => {

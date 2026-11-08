@@ -11,7 +11,7 @@ beforeEach(() => {
   aggregateResult = [{ data: [{ _id: 'device-1', distanceMeters: 100 }], totals: [{ total: 31 }] }];
   mongoose.connection.db = {
     collection(name) {
-      assert.equal(name, 'devices');
+      assert.equal(name, 'users');
       return { aggregate(stages) {
         pipeline = stages;
         return { async toArray() { if (databaseError) throw databaseError; return aggregateResult; } };
@@ -38,13 +38,14 @@ test('recommended query uses geoNear, 100 km, eligible GeoJSON and stable neares
   assert.deepEqual(geo.near, { type: 'Point', coordinates: [105.8542, 21.0285] });
   assert.equal(geo.key, 'location'); assert.equal(geo.spherical, true);
   assert.equal(geo.maxDistance, 100000);
-  assert.equal(geo.query.status, 'available');
-  assert.deepEqual(geo.query.$or, [{ moderationStatus: 'approved' }, { moderationStatus: { $exists: false } }]);
-  assert.deepEqual(geo.query.isDeleted, { $ne: true });
   assert.equal(geo.query['location.type'], 'Point');
   assert.deepEqual(geo.query['location.coordinates'], { $size: 2 });
   assert.deepEqual(geo.query['location.coordinates.0'], { $type: 'number', $gte: -180, $lte: 180 });
   assert.deepEqual(geo.query['location.coordinates.1'], { $type: 'number', $gte: -90, $lte: 90 });
+  const deviceMatch = pipeline[1].$lookup.pipeline[0].$match;
+  assert.equal(deviceMatch.status, 'available');
+  assert.deepEqual(deviceMatch.$or, [{ moderationStatus: 'approved' }, { moderationStatus: { $exists: false } }]);
+  assert.deepEqual(deviceMatch.isDeleted, { $ne: true });
   assert.deepEqual(pipeline.find(stage => stage.$sort).$sort, { distanceMeters: 1, _recommendationRating: -1, createdAt: -1, _id: 1 });
   assert.deepEqual(pipeline.at(-1).$facet.data, [{ $skip: 0 }, { $limit: 24 }]);
   assert.deepEqual(result.body.pagination, { page: 1, limit: 24, total: 31, totalPages: 2, hasNextPage: true });
@@ -67,7 +68,7 @@ test('recommendations rank by the migrated stats rating with legacy fallback', a
 for (const category of ['tablet', 'gaming']) {
   test(`migrated database category ${category} is accepted`, async () => {
     assert.equal((await request({ category })).status, 200);
-    assert.equal(pipeline[0].$geoNear.query.category, category);
+    assert.equal(pipeline[1].$lookup.pipeline[0].$match.category, category);
   });
 }
 
@@ -91,10 +92,10 @@ test('database failure goes to Express error handling without fake results', asy
   const result = await request();
   assert.equal(result.error, databaseError); assert.equal(result.body, undefined);
 });
-test('camera category is included inside geoNear before pagination', async () => {
+test('camera category is included inside lookup match before pagination', async () => {
   const result = await request({ category: 'camera', page: '2' });
   assert.equal(result.status, 200);
-  assert.equal(pipeline[0].$geoNear.query.category, 'camera');
+  assert.equal(pipeline[1].$lookup.pipeline[0].$match.category, 'camera');
   assert.equal(pipeline[0].$geoNear.maxDistance, 100000);
   assert.deepEqual(pipeline.at(-1).$facet.data, [{ $skip: 24 }, { $limit: 24 }]);
   assert.deepEqual(pipeline.at(-1).$facet.totals, [{ $count: 'total' }]);
@@ -103,13 +104,13 @@ test('camera category is included inside geoNear before pagination', async () =>
 for (const category of ['', 'all', ' All ']) {
   test(`no category filter for ${JSON.stringify(category)}`, async () => {
     assert.equal((await request({ category })).status, 200);
-    assert.equal(pipeline[0].$geoNear.query.category, undefined);
+    assert.equal(pipeline[1].$lookup.pipeline[0].$match.category, undefined);
   });
 }
 
 test('category normalization handles whitespace and casing', async () => {
   await request({ category: ' Camera ' });
-  assert.equal(pipeline[0].$geoNear.query.category, 'camera');
+  assert.equal(pipeline[1].$lookup.pipeline[0].$match.category, 'camera');
 });
 
 for (const category of ['invalid-category', ['camera'], { $ne: null }]) {
@@ -122,9 +123,9 @@ for (const category of ['invalid-category', ['camera'], { $ne: null }]) {
 test('search with q filters by keyword across name, title, brand, description before pagination', async () => {
   const result = await request({ q: 'sony' });
   assert.equal(result.status, 200);
-  const geoQuery = pipeline[0].$geoNear.query;
-  assert.ok(Array.isArray(geoQuery.$and));
-  const searchOr = geoQuery.$and[0].$or;
+  const deviceMatch = pipeline[1].$lookup.pipeline[0].$match;
+  assert.ok(Array.isArray(deviceMatch.$and));
+  const searchOr = deviceMatch.$and[0].$or;
   assert.ok(searchOr.some(cond => cond.name instanceof RegExp && cond.name.test('Sony Alpha A7')));
   assert.ok(searchOr.some(cond => cond.brand instanceof RegExp && cond.brand.test('Sony')));
   assert.ok(searchOr.some(cond => cond.description instanceof RegExp && cond.description.test('Sony lens')));
@@ -132,19 +133,19 @@ test('search with q filters by keyword across name, title, brand, description be
   assert.deepEqual(pipeline.at(-1).$facet.data, [{ $skip: 0 }, { $limit: 12 }]);
 });
 
-test('search with q and category applies both filters simultaneously inside geoNear query', async () => {
+test('search with q and category applies both filters simultaneously inside lookup match', async () => {
   const result = await request({ q: 'sony', category: 'camera' });
   assert.equal(result.status, 200);
-  const geoQuery = pipeline[0].$geoNear.query;
-  assert.equal(geoQuery.category, 'camera');
-  assert.ok(Array.isArray(geoQuery.$and));
+  const deviceMatch = pipeline[1].$lookup.pipeline[0].$match;
+  assert.equal(deviceMatch.category, 'camera');
+  assert.ok(Array.isArray(deviceMatch.$and));
   assert.equal(pipeline[0].$geoNear.maxDistance, 100000);
 });
 
 test('search escapes special regex characters safely', async () => {
   const result = await request({ q: 'Sony (A7)+ [4K]' });
   assert.equal(result.status, 200);
-  const searchOr = pipeline[0].$geoNear.query.$and[0].$or;
+  const searchOr = pipeline[1].$lookup.pipeline[0].$match.$and[0].$or;
   const regex = searchOr[0].name;
   assert.ok(regex instanceof RegExp);
   assert.ok(regex.test('Sony (A7)+ [4K]'));
@@ -154,7 +155,7 @@ test('search escapes special regex characters safely', async () => {
 test('search trims whitespace from keyword', async () => {
   const result = await request({ q: '   macbook   ' });
   assert.equal(result.status, 200);
-  const searchOr = pipeline[0].$geoNear.query.$and[0].$or;
+  const searchOr = pipeline[1].$lookup.pipeline[0].$match.$and[0].$or;
   assert.ok(searchOr[0].name.test('MacBook Pro'));
 });
 
@@ -162,7 +163,7 @@ for (const emptyQ of ['', '   ']) {
   test(`empty search q ${JSON.stringify(emptyQ)} does not add keyword filter`, async () => {
     const result = await request({ q: emptyQ });
     assert.equal(result.status, 200);
-    assert.equal(pipeline[0].$geoNear.query.$and, undefined);
+    assert.equal(pipeline[1].$lookup.pipeline[0].$match.$and, undefined);
     assert.deepEqual(pipeline.at(-1).$facet.data, [{ $skip: 0 }, { $limit: 24 }]);
   });
 }

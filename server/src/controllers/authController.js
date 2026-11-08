@@ -7,6 +7,7 @@ import { Role } from '../models/Role.js';
 import { Otp } from '../models/Otp.js';
 import { sendOtpEmail, sendResetPasswordOtpEmail } from '../services/emailService.js';
 import { uploadToCloudinary, deleteFromCloudinary } from '../services/cloudinaryService.js';
+import { isValidCoordinates } from '../utils/locationHelper.js';
 
 /**
  * Helper tra cứu mã quyền (role code: 'admin', 'owner', 'renter') từ account.roleId trong collection roles
@@ -784,7 +785,7 @@ export const updateProfile = async (req, res) => {
       });
     }
 
-    const { name, phone, address } = req.body;
+    const { name, phone, address, location, latitude, longitude } = req.body;
 
     const updateFields = {};
     if (address !== undefined) {
@@ -795,6 +796,31 @@ export const updateProfile = async (req, res) => {
     }
     if (phone !== undefined) {
       updateFields.phone = (phone || '').trim();
+    }
+
+    // Support updating user location (Single Source of Truth)
+    if (location !== undefined || latitude !== undefined || longitude !== undefined) {
+      let lng, lat;
+      if (location && Array.isArray(location.coordinates) && location.coordinates.length === 2) {
+        lng = Number(location.coordinates[0]);
+        lat = Number(location.coordinates[1]);
+      } else if (latitude !== undefined && longitude !== undefined) {
+        lng = Number(longitude);
+        lat = Number(latitude);
+      }
+
+      if (lng !== undefined && lat !== undefined) {
+        if (!isValidCoordinates(lng, lat)) {
+          return res.status(400).json({
+            success: false,
+            message: 'Invalid coordinates. Longitude must be between -180 and 180, and latitude must be between -90 and 90.',
+          });
+        }
+        updateFields.location = {
+          type: 'Point',
+          coordinates: [lng, lat],
+        };
+      }
     }
 
     const updatedUser = await User.findByIdAndUpdate(
