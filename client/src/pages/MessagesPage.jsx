@@ -174,7 +174,6 @@ export const MessagesPage = () => {
           isLoading={loading}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
-          currentUserId={currentUserId}
         />
       </div>
 
