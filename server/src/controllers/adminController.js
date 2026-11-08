@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
 import notificationService from '../services/notificationService.js';
+import { BUSINESS_RULES } from '../constants/businessRules.js';
 
 /**
  * Helper to get MongoDB collections safely
@@ -116,49 +117,88 @@ export const getAdminAnalytics = async (req, res, next) => {
       ])
       .toArray();
 
-    const totalRevenue = revenueAgg[0]?.totalRevenue || 48750000;
+    const totalRevenue = revenueAgg[0]?.totalRevenue || 0;
 
-    // Doanh thu theo biểu đồ (7 ngày, tháng này, năm nay)
-    // Tạo data thực tế hoặc aggregate từ bookings
-    const recentBookings = await bookingsCol
+    // Doanh thu theo biểu đồ (7 ngày, tháng này, năm nay) từ dữ liệu thực tế
+    const allBookings = await bookingsCol
       .find({
         status: { $nin: ['cancelled', 'rejected'] },
       })
       .sort({ createdAt: -1 })
-      .limit(30)
+      .limit(100)
       .toArray();
 
     // Chart data 7 ngày gần nhất
-    const days = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
-    const chart7Days = days.map((day, idx) => ({
-      name: day,
-      revenue: Math.max(1200000 + (idx * 650000) % 3200000, 800000),
-      orders: 2 + (idx % 4),
-    }));
+    const now = new Date();
+    const dayNames = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+    const chart7Days = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i);
+      d.setHours(0, 0, 0, 0);
+      const nextD = new Date(d);
+      nextD.setDate(nextD.getDate() + 1);
 
-    // Chart data theo tháng (4 tuần)
-    const chartMonth = [
-      { name: 'Tuần 1', revenue: 8500000, orders: 12 },
-      { name: 'Tuần 2', revenue: 14200000, orders: 19 },
-      { name: 'Tuần 3', revenue: 11800000, orders: 15 },
-      { name: 'Tuần 4', revenue: 18900000, orders: 24 },
-    ];
+      const dayBookings = allBookings.filter((b) => {
+        const bDate = new Date(b.createdAt);
+        return bDate >= d && bDate < nextD;
+      });
+
+      const rev = dayBookings.reduce((sum, b) => {
+        return sum + Number(b.pricing?.totalAmount || b.pricing?.rentalFee || b.totalAmount || b.rentalFee || 0);
+      }, 0);
+
+      chart7Days.push({
+        name: dayNames[d.getDay()],
+        date: `${d.getDate()}/${d.getMonth() + 1}`,
+        revenue: rev,
+        orders: dayBookings.length,
+      });
+    }
+
+    // Chart data theo tháng (4 tuần gần nhất)
+    const chartMonth = [];
+    for (let w = 4; w >= 1; w--) {
+      const startW = new Date(now);
+      startW.setDate(startW.getDate() - w * 7);
+      const endW = new Date(now);
+      endW.setDate(endW.getDate() - (w - 1) * 7);
+
+      const weekBookings = allBookings.filter((b) => {
+        const bDate = new Date(b.createdAt);
+        return bDate >= startW && bDate < endW;
+      });
+
+      const rev = weekBookings.reduce((sum, b) => {
+        return sum + Number(b.pricing?.totalAmount || b.pricing?.rentalFee || b.totalAmount || b.rentalFee || 0);
+      }, 0);
+
+      chartMonth.push({
+        name: `Tuần ${5 - w}`,
+        revenue: rev,
+        orders: weekBookings.length,
+      });
+    }
 
     // Chart data theo năm (12 tháng)
-    const chartYear = [
-      { name: 'T1', revenue: 12000000, orders: 18 },
-      { name: 'T2', revenue: 15400000, orders: 22 },
-      { name: 'T3', revenue: 21000000, orders: 31 },
-      { name: 'T4', revenue: 18500000, orders: 26 },
-      { name: 'T5', revenue: 24200000, orders: 35 },
-      { name: 'T6', revenue: 29800000, orders: 42 },
-      { name: 'T7', revenue: 34500000, orders: 48 },
-      { name: 'T8', revenue: 31200000, orders: 44 },
-      { name: 'T9', revenue: 38900000, orders: 55 },
-      { name: 'T10', revenue: 42100000, orders: 60 },
-      { name: 'T11', revenue: 46800000, orders: 65 },
-      { name: 'T12', revenue: 52400000, orders: 72 },
-    ];
+    const chartYear = [];
+    const curYear = now.getFullYear();
+    for (let m = 0; m < 12; m++) {
+      const monthBookings = allBookings.filter((b) => {
+        const bDate = new Date(b.createdAt);
+        return bDate.getFullYear() === curYear && bDate.getMonth() === m;
+      });
+
+      const rev = monthBookings.reduce((sum, b) => {
+        return sum + Number(b.pricing?.totalAmount || b.pricing?.rentalFee || b.totalAmount || b.rentalFee || 0);
+      }, 0);
+
+      chartYear.push({
+        name: `T${m + 1}`,
+        revenue: rev,
+        orders: monthBookings.length,
+      });
+    }
 
     // Phân bổ danh mục thiết bị từ collection `devices`
     const categoryAgg = await devicesCol
@@ -174,19 +214,19 @@ export const getAdminAnalytics = async (req, res, next) => {
       .toArray();
 
     const categoryMap = {
-      smartphone: { name: 'Smartphone', color: '#67BEC3', fallbackCount: 14 },
-      tablet: { name: 'Tablet & iPad', color: '#A855F7', fallbackCount: 8 },
-      laptop: { name: 'Laptop & Workstation', color: '#38BDF8', fallbackCount: 10 },
-      camera: { name: 'Máy ảnh & Ống kính', color: '#818CF8', fallbackCount: 8 },
-      drone: { name: 'Flycam & Gimbal', color: '#F472B6', fallbackCount: 5 },
-      audio: { name: 'Tai nghe & Âm thanh', color: '#FBBF24', fallbackCount: 6 },
-      gaming: { name: 'Máy chơi game & VR', color: '#34D399', fallbackCount: 4 },
-      accessory: { name: 'Phụ kiện công nghệ', color: '#14B8A6', fallbackCount: 12 },
+      smartphone: { name: 'Smartphone', color: '#67BEC3' },
+      tablet: { name: 'Tablet & iPad', color: '#A855F7' },
+      laptop: { name: 'Laptop & Workstation', color: '#38BDF8' },
+      camera: { name: 'Máy ảnh & Ống kính', color: '#818CF8' },
+      drone: { name: 'Flycam & Gimbal', color: '#F472B6' },
+      audio: { name: 'Tai nghe & Âm thanh', color: '#FBBF24' },
+      gaming: { name: 'Máy chơi game & VR', color: '#34D399' },
+      accessory: { name: 'Phụ kiện công nghệ', color: '#14B8A6' },
     };
 
     const categoriesResult = Object.keys(categoryMap).map((key) => {
       const found = categoryAgg.find((c) => c._id === key || (c._id && c._id.toLowerCase() === key));
-      const count = found ? found.count : categoryMap[key].fallbackCount;
+      const count = found ? found.count : 0;
       return {
         id: key,
         name: categoryMap[key].name,
@@ -287,7 +327,7 @@ export const getAdminUsers = async (req, res, next) => {
       avatar: u.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${u._id}`,
       role: u.role || 'renter',
       isVerified: Boolean(u.isVerified),
-      trustScore: typeof u.trustScore === 'number' ? u.trustScore : 85,
+      trustScore: typeof u.trustScore === 'number' ? u.trustScore : BUSINESS_RULES.TRUST_SCORE.DEFAULT,
       walletBalance: typeof u.walletBalance === 'number' ? u.walletBalance : 0,
       walletEscrowBalance: typeof u.walletEscrowBalance === 'number' ? u.walletEscrowBalance : 0,
       isActive: u.isActive !== false && !u.isbanned,

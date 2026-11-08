@@ -9,11 +9,13 @@ try {
   // Ignore if custom DNS cannot be applied
 }
 
-// Fallback direct ReplicaSet URI for tech-share Atlas cluster if SRV resolution fails
-const FALLBACK_DIRECT_URI =
-  'mongodb://qnhat202005_db_user:qnhat202005@ac-uxhzl83-shard-00-00.0srn8rv.mongodb.net:27017,ac-uxhzl83-shard-00-01.0srn8rv.mongodb.net:27017,ac-uxhzl83-shard-00-02.0srn8rv.mongodb.net:27017/techshare?ssl=true&replicaSet=atlas-lmo7nn-shard-0&authSource=admin&retryWrites=true&w=majority';
+// Optional fallback direct ReplicaSet URI if SRV resolution fails (from environment)
+const FALLBACK_DIRECT_URI = process.env.MONGODB_FALLBACK_URI || process.env.MONGODB_DIRECT_URI || null;
 
-export const connectDB = async (retries = 5, delay = 2000) => {
+export const connectDB = async (
+  retries = Number(process.env.DB_MAX_RETRIES) || 1,
+  delay = Number(process.env.DB_RETRY_DELAY_MS) || 2000
+) => {
   const { uri, source } = getDatabaseConfig();
   let activeUri = uri;
 

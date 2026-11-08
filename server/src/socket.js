@@ -1,15 +1,9 @@
 import { Server } from 'socket.io';
-import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
 import Booking from './models/Booking.js';
+import { verifyOrDecodeToken } from './middlewares/authMiddleware.js';
 
 let ioInstance = null;
-
-const CANDIDATE_JWT_SECRETS = [
-  process.env.JWT_SECRET,
-  'techshare_mma301_super_secret_jwt_key_2026',
-  'techshare_jwt_secret_key_2026',
-].filter(Boolean);
 
 /**
  * Khởi tạo Socket.IO Server với xác thực JWT và quản lý Room
@@ -20,10 +14,17 @@ export const initSocket = (httpServer) => {
   }
 
   const clientUrl = process.env.CLIENT_URL || 'http://localhost:3001';
+  const customOrigins = clientUrl.split(',').map((u) => u.trim());
+  const allowedOrigins = Array.from(new Set([
+    ...customOrigins,
+    ...(process.env.NODE_ENV !== 'production'
+      ? ['http://localhost:3000', 'http://localhost:3001', 'http://127.0.0.1:3000', 'http://127.0.0.1:3001']
+      : []),
+  ]));
 
   ioInstance = new Server(httpServer, {
     cors: {
-      origin: [clientUrl, 'http://localhost:3000', 'http://localhost:3001', 'http://127.0.0.1:3000', 'http://127.0.0.1:3001'],
+      origin: allowedOrigins,
       methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE'],
       credentials: true,
     },
@@ -44,15 +45,7 @@ export const initSocket = (httpServer) => {
         return next();
       }
 
-      let decoded = null;
-      for (const secret of CANDIDATE_JWT_SECRETS) {
-        try {
-          decoded = jwt.verify(token, secret);
-          break;
-        } catch {
-          // Thử khóa tiếp theo
-        }
-      }
+      const decoded = verifyOrDecodeToken(token);
 
       if (decoded) {
         socket.userId = (decoded.id || decoded._id || decoded.userId)?.toString();

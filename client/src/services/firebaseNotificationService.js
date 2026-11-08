@@ -77,7 +77,7 @@ export const requestNotificationPermission = async () => {
  * Đồng bộ ngay lập tức khi backend ghi document vào collection 'notifications'
  */
 export const subscribeUserNotifications = (userId, callback, onError) => {
-  if (!userId) {
+  if (!userId || !db) {
     callback([]);
     return () => {};
   }

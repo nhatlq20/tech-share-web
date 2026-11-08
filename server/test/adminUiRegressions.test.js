@@ -211,7 +211,7 @@ test('TC-UI: TechShare Admin EJS UI Regression & Design Restoration Suite', asyn
 
   await t.test('TC-UI-09: Device allocation panel renders correctly', () => {
     assert.ok(
-      dashboardEjs.includes('Phân bổ Danh mục'),
+      /(?:Phân bổ Danh mục|Category Distribution)/.test(dashboardEjs),
       'dashboard.ejs must render Category Allocation title'
     );
     assert.ok(
@@ -270,7 +270,7 @@ test('TC-UI: TechShare Admin EJS UI Regression & Design Restoration Suite', asyn
     });
 
     assert.equal(res.status, 200);
-    assert.ok(res.body.includes('Tổng quan & Chỉ số Vận hành'));
+    assert.ok(/(?:Tổng quan & Chỉ số Vận hành|Overview & Operational Metrics)/.test(res.body));
     assert.ok(res.body.includes('overviewRevenueChart'));
     assert.ok(res.body.includes('admin-topbar-profile-chip'));
     assert.ok(!res.body.includes('flexDirection: column'));

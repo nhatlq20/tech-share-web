@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
+import { getJwtConfig } from '../config/env.js';
 import { Account } from '../models/Account.js';
 import { User } from '../models/User.js';
 import { Role } from '../models/Role.js';
@@ -39,8 +40,7 @@ export const resolveRoleCode = async (account, user = null) => {
  * Tạo JSON Web Token (JWT) cho tài khoản đã xác thực
  */
 const generateToken = (payload) => {
-  const secret = process.env.JWT_SECRET || 'techshare_jwt_secret_key_2026';
-  const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
+  const { secret, expiresIn } = getJwtConfig();
   return jwt.sign(payload, secret, { expiresIn });
 };
 
@@ -635,21 +635,24 @@ export const registerVerifyOtp = async (req, res) => {
       });
     }
 
-    // 3. Find roleId for role 'renter'
+    // 3. Find roleId for role 'renter' dynamically from roles collection
     let roleId = null;
     try {
-      const renterRole = await mongoose.connection.db
-        .collection('roles')
-        .findOne({ code: 'renter' });
+      const renterRole =
+        (await Role.findOne({ code: 'renter' }).lean()) ||
+        (await mongoose.connection.db?.collection('roles').findOne({ code: 'renter' }));
       if (renterRole) {
         roleId = renterRole._id;
+      } else {
+        const createdRole = await Role.create({
+          name: 'Người thuê',
+          code: 'renter',
+          description: 'Quyền người thuê thiết bị',
+        });
+        roleId = createdRole._id;
       }
     } catch (e) {
-      console.warn('Cannot find renter role in roles collection:', e.message);
-    }
-
-    if (!roleId) {
-      roleId = new mongoose.Types.ObjectId('64e0a12f9b1c2b001a888883');
+      console.warn('Cannot resolve renter role dynamically:', e.message);
     }
 
     // 4. Create ObjectIds for both collections
@@ -1030,13 +1033,14 @@ export const forgotPasswordVerifyOtp = async (req, res) => {
     }
 
     // Tạo resetToken an toàn có thời hạn 10 phút
+    const { secret: resetJwtSecret } = getJwtConfig();
     const resetToken = jwt.sign(
       {
         accountId: otpRecord.payload?.accountId,
         email: cleanEmail,
         purpose: 'reset_password',
       },
-      process.env.JWT_SECRET || 'techshare_mma301_super_secret_jwt_key_2026',
+      resetJwtSecret,
       { expiresIn: '10m' }
     );
 

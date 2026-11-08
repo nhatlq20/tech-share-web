@@ -92,9 +92,9 @@ export const uploadToCloudinaryDirect = (
     // cloud_name và upload_preset là PUBLIC values – an toàn khi để ở client
     // Giống như thấy trong URL: res.cloudinary.com/oigtlazh/image/upload/...
     cloudName =
-      process.env.REACT_APP_CLOUDINARY_CLOUD_NAME || 'oigtlazh',
+      process.env.REACT_APP_CLOUDINARY_CLOUD_NAME || '',
     uploadPreset =
-      process.env.REACT_APP_CLOUDINARY_UPLOAD_PRESET || 'techshare_avatar',
+      process.env.REACT_APP_CLOUDINARY_UPLOAD_PRESET || '',
     onProgress = null,
   } = {}
 ) => {

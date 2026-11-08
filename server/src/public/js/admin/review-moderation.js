@@ -14,18 +14,18 @@ document.addEventListener('DOMContentLoaded', function() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             status: nextStatus,
-            reason: nextStatus === 'hidden' ? 'Nội dung phản cảm hoặc không đúng thực tế.' : ''
+            reason: nextStatus === 'hidden' ? 'Content violates platform guidelines.' : ''
           }),
         });
         const data = await res.json();
         if (res.ok && data.success) {
-          if (window.showAdminToast) window.showAdminToast('Thành công', 'Đã cập nhật trạng thái đánh giá.', 'success');
+          if (window.showAdminToast) window.showAdminToast('Success', 'Review status updated successfully.', 'success');
           setTimeout(() => window.location.reload(), 500);
         } else {
-          if (window.showAdminToast) window.showAdminToast('Lỗi', data.message || 'Không thể kiểm duyệt đánh giá.', 'error');
+          if (window.showAdminToast) window.showAdminToast('Error', data.message || 'Failed to moderate review.', 'error');
         }
       } catch (err) {
-        if (window.showAdminToast) window.showAdminToast('Lỗi mạng', err.message, 'error');
+        if (window.showAdminToast) window.showAdminToast('Network Error', err.message, 'error');
       }
     });
   });

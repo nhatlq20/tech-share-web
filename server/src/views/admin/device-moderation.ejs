@@ -3,10 +3,10 @@
   <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
     <div>
       <h1 style="font-size: 24px; font-weight: 800; color: #0F172A; letter-spacing: -0.02em; margin: 0;">
-        Kiểm duyệt Thiết bị Niêm yết
+        Listed Device Moderation
       </h1>
       <p style="font-size: 12px; color: #64748B; margin-top: 4px; margin-bottom: 0;">
-        Phê duyệt chất lượng phần cứng và ngăn ngừa thiết bị vi phạm chính sách
+        Approve equipment hardware quality and prevent policy-violating listings
       </p>
     </div>
 
@@ -15,19 +15,19 @@
       <!-- Search Box -->
       <div class="admin-search-pill" style="width: 260px;">
         <i data-lucide="search" style="color: #67BEC3; width: 16px; height: 16px; flex-shrink: 0;"></i>
-        <input type="text" id="deviceSearchInput" placeholder="Tìm tên máy, hãng, chủ..." />
+        <input type="text" id="deviceSearchInput" placeholder="Search equipment, brand, owner..." />
       </div>
 
       <!-- Category Filter -->
       <select id="deviceCategoryFilter" style="padding: 8px 14px; border-radius: 9999px; border: 1px solid #E2E8F0; background-color: #FFFFFF; font-size: 13px; color: #334155; cursor: pointer; outline: none;">
-        <option value="all">Tất cả danh mục</option>
-        <option value="smartphone">Smartphone & Tablet</option>
-        <option value="laptop">Laptop & Workstation</option>
-        <option value="camera">Máy ảnh & Ống kính</option>
-        <option value="drone">Flycam & Gimbal</option>
-        <option value="audio">Tai nghe & Âm thanh</option>
-        <option value="gaming">Máy chơi game & VR</option>
-        <option value="accessory">Phụ kiện công nghệ</option>
+        <option value="all">All Categories</option>
+        <option value="smartphone">Smartphones & Tablets</option>
+        <option value="laptop">Laptops & Workstations</option>
+        <option value="camera">Cameras & Lenses</option>
+        <option value="drone">Drones & Gimbals</option>
+        <option value="audio">Headphones & Audio</option>
+        <option value="gaming">Gaming & VR</option>
+        <option value="accessory">Tech Accessories</option>
       </select>
     </div>
   </div>
@@ -35,16 +35,16 @@
   <!-- Status Tabs -->
   <div style="display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #E2E8F0; padding-bottom: 12px;">
     <button type="button" class="btn-device-status-tab active" data-status="all" style="padding: 8px 16px; font-size: 13px; font-weight: 700; border-radius: 12px; border: none; cursor: pointer; background: #E8F6F7; color: #286E74;">
-      Tất cả (<%= devices ? devices.length : 0 %>)
+      All (<%= devices ? devices.length : 0 %>)
     </button>
     <button type="button" class="btn-device-status-tab" data-status="pending" style="padding: 8px 16px; font-size: 13px; font-weight: 600; border-radius: 12px; border: none; cursor: pointer; background: transparent; color: #64748B;">
-      Chờ duyệt (<%= counts && counts.pending ? counts.pending : 0 %>)
+      Pending (<%= counts && counts.pending ? counts.pending : 0 %>)
     </button>
     <button type="button" class="btn-device-status-tab" data-status="approved" style="padding: 8px 16px; font-size: 13px; font-weight: 600; border-radius: 12px; border: none; cursor: pointer; background: transparent; color: #64748B;">
-      Đã duyệt (<%= counts && counts.approved ? counts.approved : 0 %>)
+      Approved (<%= counts && counts.approved ? counts.approved : 0 %>)
     </button>
     <button type="button" class="btn-device-status-tab" data-status="rejected" style="padding: 8px 16px; font-size: 13px; font-weight: 600; border-radius: 12px; border: none; cursor: pointer; background: transparent; color: #64748B;">
-      Bị từ chối (<%= counts && counts.rejected ? counts.rejected : 0 %>)
+      Rejected (<%= counts && counts.rejected ? counts.rejected : 0 %>)
     </button>
   </div>
 
@@ -54,18 +54,18 @@
       <table class="admin-table w-full text-left" style="width: 100%; min-width: 860px; border-collapse: collapse;">
         <thead>
           <tr>
-            <th style="min-width: 280px; width: 35%; padding-left: 20px;">Thiết bị & Thông số</th>
-            <th style="min-width: 180px; width: 22%;">Chủ sở hữu</th>
-            <th style="min-width: 140px; width: 16%;">Giá thuê / Cọc</th>
-            <th style="min-width: 120px; width: 13%;">Kiểm duyệt</th>
-            <th style="min-width: 140px; width: 14%; text-align: right; padding-right: 24px;">Hành động</th>
+            <th style="min-width: 280px; width: 35%; padding-left: 20px;">Device & Specs</th>
+            <th style="min-width: 180px; width: 22%;">Owner</th>
+            <th style="min-width: 140px; width: 16%;">Rental Rate / Deposit</th>
+            <th style="min-width: 120px; width: 13%;">Moderation</th>
+            <th style="min-width: 140px; width: 14%; text-align: right; padding-right: 24px;">Actions</th>
           </tr>
         </thead>
         <tbody id="devicesTableBody">
           <% if (!devices || devices.length === 0) { %>
             <tr>
               <td colspan="5" style="text-align: center; padding: 48px; color: #64748B;">
-                Không có thiết bị nào trong danh sách.
+                No devices found in list.
               </td>
             </tr>
           <% } else { %>
@@ -82,7 +82,7 @@
                 data-deposit="<%= d.depositAmount || d.depositValue || 0 %>"
                 data-condition="<%= d.condition || '99%' %>"
                 data-image="<%= (d.images && d.images[0]) || '/images/default-device-placeholder.svg' %>"
-                data-address="<%= d.address || 'Hà Nội' %>"
+                data-address="<%= d.address || 'Hanoi' %>"
                 data-reason="<%= d.moderationReason || d.rejectReason || '' %>"
               >
                 <!-- Cột 1: Thiết bị -->
@@ -95,19 +95,19 @@
                     />
                     <div>
                       <div style="font-weight: 700; color: #0F172A; font-size: 13.5px;" class="device-title">
-                        <%= d.name || d.title || 'Thiết bị công nghệ' %>
+                        <%= d.name || d.title || 'Technology Device' %>
                       </div>
                       <div style="font-size: 11.5px; color: #64748B; margin-top: 2px;">
-                        <span><%= d.brand || 'Khác' %></span> • <span style="text-transform: capitalize;"><%= d.category || 'Thiết bị' %></span> • <span style="color: #286E74; font-weight: 600;"><%= d.condition || '99%' %></span>
+                        <span><%= d.brand || 'Other' %></span> • <span style="text-transform: capitalize;"><%= d.category || 'Thiết bị' %></span> • <span style="color: #286E74; font-weight: 600;"><%= d.condition || '99%' %></span>
                       </div>
                     </div>
                   </div>
                 </td>
 
-                <!-- Cột 2: Chủ sở hữu -->
+                <!-- Cột 2: Owner -->
                 <td style="vertical-align: middle;">
                   <div style="font-weight: 600; font-size: 13px; color: #1E293B;">
-                    <%= d.owner && d.owner.name ? d.owner.name : 'Chủ thiết bị' %>
+                    <%= d.owner && d.owner.name ? d.owner.name : 'Device Owner' %>
                   </div>
                   <div style="font-size: 11.5px; color: #64748B; margin-top: 2px;">
                     <%= d.owner && d.owner.phone ? d.owner.phone : (d.owner && d.owner.email ? d.owner.email : '0901234567') %>
@@ -135,7 +135,7 @@
                   <% } %>
                 </td>
 
-                <!-- Cột 5: Hành động -->
+                <!-- Cột 5: Actions -->
                 <td style="vertical-align: middle; text-align: right; padding-right: 24px; white-space: nowrap;">
                   <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
                     <button type="button" class="admin-btn admin-btn-outline btn-moderate-device" style="padding: 6px 10px; font-size: 12px;">
@@ -183,7 +183,7 @@
     </div>
 
     <div style="display: flex; justify-content: flex-end; gap: 10px;">
-      <button type="button" id="btnRejectDeviceSubmit" class="admin-btn admin-btn-danger">Từ chối niêm yết</button>
+      <button type="button" id="btnRejectDeviceSubmit" class="admin-btn admin-btn-danger">Reject Listing</button>
       <button type="button" id="btnApproveDeviceSubmit" class="admin-btn admin-btn-success">Phê duyệt niêm yết</button>
     </div>
   </div>

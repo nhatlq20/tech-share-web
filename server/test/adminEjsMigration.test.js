@@ -163,7 +163,7 @@ test('ADMIN EJS MIGRATION: Security & Server-Rendered Views Test Suite', async (
       },
     });
     assert.equal(res.statusCode, 403);
-    assert.match(res.body, /Truy cập bị từ chối/);
+    assert.match(res.body, /(?:Truy cập bị từ chối|Access Denied)/);
   });
 
   await t.test('TC-EJS-AUTH-05: Non-admin token in Authorization header receives 403 Forbidden', async () => {
@@ -174,7 +174,7 @@ test('ADMIN EJS MIGRATION: Security & Server-Rendered Views Test Suite', async (
       },
     });
     assert.equal(res.statusCode, 403);
-    assert.match(res.body, /Truy cập bị từ chối/);
+    assert.match(res.body, /(?:Truy cập bị từ chối|Access Denied)/);
   });
 
   await t.test('TC-EJS-AUTH-06: GET /admin/logout clears auth cookie and redirects to login', async () => {
@@ -198,9 +198,9 @@ test('ADMIN EJS MIGRATION: Security & Server-Rendered Views Test Suite', async (
     assert.match(res.body, /admin-topbar/);
 
     // Verify User Management specific elements
-    assert.match(res.body, /Quản lý Người dùng & Tín nhiệm/);
-    assert.match(res.body, /Thành viên & Liên hệ/);
-    assert.match(res.body, /Điểm tín nhiệm/);
+    assert.match(res.body, /(?:Quản lý Người dùng & Tín nhiệm|User Management & Trust)/);
+    assert.match(res.body, /(?:Thành viên & Liên hệ|Member & Contact)/);
+    assert.match(res.body, /(?:Điểm tín nhiệm|Trust Score)/);
     assert.match(res.body, /userSearchInput/);
     assert.match(res.body, /roleFilterSelect/);
     assert.match(res.body, /statusFilterSelect/);
@@ -216,11 +216,11 @@ test('ADMIN EJS MIGRATION: Security & Server-Rendered Views Test Suite', async (
       },
     });
     assert.equal(res.statusCode, 200);
-    assert.match(res.body, /Tổng quan & Chỉ số Vận hành/);
-    assert.match(res.body, /Tổng thành viên/);
-    assert.match(res.body, /Thiết bị niêm yết/);
+    assert.match(res.body, /(?:Tổng quan & Chỉ số Vận hành|Overview & Operational Metrics)/);
+    assert.match(res.body, /(?:Tổng thành viên|Total Users)/);
+    assert.match(res.body, /(?:Thiết bị niêm yết|Listed Devices)/);
     assert.match(res.body, /overviewRevenueChart/);
-    assert.match(res.body, /Phân bổ Danh mục/);
+    assert.match(res.body, /(?:Phân bổ Danh mục|Category Distribution)/);
   });
 
   await t.test('TC-EJS-PAGE-03: Admin GET /admin/device-moderation renders device moderation page', async () => {
@@ -231,7 +231,7 @@ test('ADMIN EJS MIGRATION: Security & Server-Rendered Views Test Suite', async (
       },
     });
     assert.equal(res.statusCode, 200);
-    assert.match(res.body, /Kiểm duyệt Thiết bị Niêm yết/);
+    assert.match(res.body, /(?:Kiểm duyệt Thiết bị Niêm yết|Listed Device Moderation)/);
     assert.match(res.body, /deviceSearchInput/);
     assert.match(res.body, /deviceModerateModal/);
   });
@@ -244,7 +244,7 @@ test('ADMIN EJS MIGRATION: Security & Server-Rendered Views Test Suite', async (
       },
     });
     assert.equal(res.statusCode, 200);
-    assert.match(res.body, /Xác minh Danh tính Điện tử \(eKYC\)/);
+    assert.match(res.body, /(?:Xác minh Danh tính Điện tử \(eKYC\)|(eKYC)|Electronic Identity Verification)/);
     assert.match(res.body, /ekycModal/);
   });
 
@@ -256,7 +256,7 @@ test('ADMIN EJS MIGRATION: Security & Server-Rendered Views Test Suite', async (
       },
     });
     assert.equal(res.statusCode, 200);
-    assert.match(res.body, /Quản lý Đơn thuê Thiết bị/);
+    assert.match(res.body, /(?:Quản lý Đơn thuê Thiết bị|Equipment Rental Management)/);
     assert.match(res.body, /bookingSearchInput/);
   });
 
@@ -268,7 +268,7 @@ test('ADMIN EJS MIGRATION: Security & Server-Rendered Views Test Suite', async (
       },
     });
     assert.equal(res.statusCode, 200);
-    assert.match(res.body, /Giải quyết Khiếu nại & Tranh chấp Cọc/);
+    assert.match(res.body, /(?:Giải quyết Khiếu nại & Tranh chấp Cọc|Dispute Resolution & Deposit Escrow)/);
     assert.match(res.body, /resolveDisputeModal/);
   });
 
@@ -280,7 +280,7 @@ test('ADMIN EJS MIGRATION: Security & Server-Rendered Views Test Suite', async (
       },
     });
     assert.equal(res.statusCode, 200);
-    assert.match(res.body, /Giám sát Ví & Giao dịch Tài chính Escrow/);
+    assert.match(res.body, /(?:Giám sát Ví & Giao dịch Tài chính Escrow|Escrow Financial Transactions & Wallet Monitoring)/);
     assert.match(res.body, /Escrow Liabilities/);
   });
 
@@ -292,7 +292,7 @@ test('ADMIN EJS MIGRATION: Security & Server-Rendered Views Test Suite', async (
       },
     });
     assert.equal(res.statusCode, 200);
-    assert.match(res.body, /Quản lý Mã Giảm giá & Khuyến mãi \(Voucher\)/);
+    assert.match(res.body, /(?:Quản lý Mã Giảm giá & Khuyến mãi \(Voucher\)|(Voucher)|Voucher & Promotion Management)/);
     assert.match(res.body, /createVoucherModal/);
   });
 
@@ -304,7 +304,7 @@ test('ADMIN EJS MIGRATION: Security & Server-Rendered Views Test Suite', async (
       },
     });
     assert.equal(res.statusCode, 200);
-    assert.match(res.body, /Kiểm duyệt Đánh giá & Bảo vệ Uy tín/);
+    assert.match(res.body, /(?:Kiểm duyệt Đánh giá & Bảo vệ Uy tín|Review Moderation & Reputation Protection)/);
   });
 
   await t.test('TC-EJS-PAGE-10: Admin GET /admin/roles-permissions renders roles & RBAC page', async () => {
@@ -315,7 +315,7 @@ test('ADMIN EJS MIGRATION: Security & Server-Rendered Views Test Suite', async (
       },
     });
     assert.equal(res.statusCode, 200);
-    assert.match(res.body, /Phân quyền & Quản lý Vai trò \(Roles & RBAC\)/);
+    assert.match(res.body, /(?:Phân quyền & Quản lý Vai trò \(Roles & RBAC\)|(Roles & RBAC)|Roles & Permissions Management)/);
     assert.match(res.body, /reassignRoleModal/);
   });
 
@@ -327,7 +327,7 @@ test('ADMIN EJS MIGRATION: Security & Server-Rendered Views Test Suite', async (
       },
     });
     assert.equal(res.statusCode, 200);
-    assert.match(res.body, /Quản lý & Phát sóng Thông báo/);
+    assert.match(res.body, /(?:Quản lý & Phát sóng Thông báo|Notification Management & Broadcasting)/);
     assert.match(res.body, /broadcastModal/);
   });
 
@@ -339,7 +339,7 @@ test('ADMIN EJS MIGRATION: Security & Server-Rendered Views Test Suite', async (
       },
     });
     assert.equal(res.statusCode, 200);
-    assert.match(res.body, /Báo cáo & Phân tích Tài chính Nâng cao/);
+    assert.match(res.body, /(?:Báo cáo & Phân tích Tài chính Nâng cao|Advanced Financial Reports & Analytics)/);
     assert.match(res.body, /Gross Booking Value/);
   });
 
@@ -351,7 +351,7 @@ test('ADMIN EJS MIGRATION: Security & Server-Rendered Views Test Suite', async (
       },
     });
     assert.equal(res.statusCode, 200);
-    assert.match(res.body, /Cấu hình Tham số Nền tảng \(System Settings\)/);
+    assert.match(res.body, /(?:Cấu hình Tham số Nền tảng \(System Settings\)|(System Settings)|Platform Parameter Configuration)/);
     assert.match(res.body, /editSettingModal/);
   });
 
@@ -363,7 +363,7 @@ test('ADMIN EJS MIGRATION: Security & Server-Rendered Views Test Suite', async (
       },
     });
     assert.equal(res.statusCode, 200);
-    assert.match(res.body, /Nhật ký Kiểm toán Hệ thống \(Audit Logs\)/);
+    assert.match(res.body, /(?:Nhật ký Kiểm toán Hệ thống \(Audit Logs\)|(Audit Logs)|Centralized Audit Logs)/);
   });
 
   await t.test('TC-EJS-STATIC-01: GET /css/admin.css returns 200 with CSS content', async () => {
