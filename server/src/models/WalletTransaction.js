@@ -14,7 +14,18 @@ const walletTransactionSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ['topup', 'payment', 'deposit_hold', 'deposit_release', 'rental_income', 'withdrawal'],
+      enum: [
+        'topup',
+        'payment',
+        'deposit_hold',
+        'deposit_release',
+        'rental_income',
+        'withdrawal',
+        'deposit_lock',
+        'deposit_refund',
+        'rental_payout',
+        'withdraw',
+      ],
       required: true,
       index: true,
     },
@@ -34,7 +45,7 @@ const walletTransactionSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['pending', 'success', 'failed'],
+      enum: ['pending', 'success', 'completed', 'failed'],
       default: 'success',
       index: true,
     },
@@ -53,4 +64,3 @@ export const WalletTransaction =
   mongoose.models.WalletTransaction || mongoose.model('WalletTransaction', walletTransactionSchema, 'wallet_transactions');
 
 export default WalletTransaction;
-

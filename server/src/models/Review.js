@@ -65,6 +65,33 @@ const reviewSchema = new mongoose.Schema(
     images: [{
       type: String,
     }],
+
+    // Quản lý kiểm duyệt đánh giá (Admin Moderation)
+    isHidden: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    moderationStatus: {
+      type: String,
+      enum: ['approved', 'hidden', 'flagged'],
+      default: 'approved',
+      index: true,
+    },
+    moderationReason: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    moderatedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    moderatedAt: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,
@@ -107,7 +134,7 @@ reviewSchema.pre('validate', function (next) {
 // Compound Indexes
 reviewSchema.index({ bookingId: 1, reviewerId: 1, targetType: 1 }, { unique: true });
 reviewSchema.index({ deviceId: 1, createdAt: -1 });
+reviewSchema.index({ moderationStatus: 1, createdAt: -1 });
 
 export const Review = mongoose.models.Review || mongoose.model('Review', reviewSchema, 'reviews');
 export default Review;
-

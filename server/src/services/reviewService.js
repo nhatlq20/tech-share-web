@@ -21,20 +21,39 @@ export function validateReviewInput(body, replyOnly = false) {
 
 // Imported reviews can outlive their original booking after a database migration.
 // Keep them visible, but only verify them when the completed booking still matches.
-export const validDeviceReviewStages = deviceId => [
-  { $match: { deviceId: new mongoose.Types.ObjectId(deviceId), targetType: { $in: ['device', null] },
-    rating: { $in: [1, 2, 3, 4, 5] }, comment: { $type: 'string', $regex: '\\S' } } },
+// Exclude hidden or moderated-out reviews so device rating statistics stay accurate.
+export const validDeviceReviewStages = (deviceId) => [
+  {
+    $match: {
+      deviceId: new mongoose.Types.ObjectId(deviceId),
+      targetType: { $in: ['device', null] },
+      rating: { $in: [1, 2, 3, 4, 5] },
+      comment: { $type: 'string', $regex: '\\S' },
+      isHidden: { $ne: true },
+      moderationStatus: { $ne: 'hidden' },
+    },
+  },
   { $lookup: { from: 'bookings', localField: 'bookingId', foreignField: '_id', as: 'verifiedBooking' } },
-  { $set: { _verifiedRenter: { $let: {
-    vars: { booking: { $arrayElemAt: ['$verifiedBooking', 0] } },
-    in: { $and: [
-      { $eq: ['$$booking.status', 'completed'] },
-      { $or: [
-        { $eq: ['$deviceId', '$$booking.deviceId'] },
-        { $eq: ['$deviceId', '$$booking.device'] },
-      ] },
-    ] },
-  } } } },
+  {
+    $set: {
+      _verifiedRenter: {
+        $let: {
+          vars: { booking: { $arrayElemAt: ['$verifiedBooking', 0] } },
+          in: {
+            $and: [
+              { $eq: ['$$booking.status', 'completed'] },
+              {
+                $or: [
+                  { $eq: ['$deviceId', '$$booking.deviceId'] },
+                  { $eq: ['$deviceId', '$$booking.device'] },
+                ],
+              },
+            ],
+          },
+        },
+      },
+    },
+  },
 ];
 
 export const ratingSummaryStages = [
@@ -45,7 +64,7 @@ export function calculateRatingSummary(groups) {
   const distribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
   let ratingCount = 0;
   let ratingSum = 0;
-  for (const group of groups) {
+  for (const group of groups || []) {
     distribution[group._id] = group.count;
     ratingCount += group.count;
     ratingSum += group._id * group.count;
@@ -54,28 +73,40 @@ export function calculateRatingSummary(groups) {
 }
 
 export async function getRatingSummary(deviceId, session = null) {
-  const groups = await Review.aggregate([...validDeviceReviewStages(deviceId), ...ratingSummaryStages]).session(session);
+  const agg = Review.aggregate([...validDeviceReviewStages(deviceId), ...ratingSummaryStages]);
+  if (session) agg.session(session);
+  const groups = await agg;
   return calculateRatingSummary(groups);
 }
 
-export async function syncDeviceRating(deviceId, session) {
+export async function syncDeviceRating(deviceId, session = null) {
   const summary = await getRatingSummary(deviceId, session);
   const roundedAvg = Math.round(summary.ratingAvg * 10) / 10;
-  await Device.updateOne({ _id: deviceId }, { $set: {
-    'stats.ratingAvg': summary.ratingAvg,
-    'stats.ratingCount': summary.ratingCount,
-    ratingAvg: roundedAvg,
-    rating: roundedAvg,
-  } }, { session });
+  const updateOpts = session ? { session } : {};
+  await Device.updateOne(
+    { _id: deviceId },
+    {
+      $set: {
+        'stats.ratingAvg': summary.ratingAvg,
+        'stats.ratingCount': summary.ratingCount,
+        ratingAvg: roundedAvg,
+        rating: roundedAvg,
+      },
+    },
+    updateOpts
+  );
   return summary;
 }
 
 export async function mutateDeviceReviews(deviceId, mutation) {
   await Review.init();
-  return mongoose.connection.transaction(async session => {
+  return mongoose.connection.transaction(async (session) => {
     // Serialize review mutations for a device so concurrent summaries cannot overwrite each other.
-    const device = await Device.findOneAndUpdate({ _id: deviceId, isDeleted: { $ne: true } },
-      { $inc: { 'stats.reviewRevision': 1 } }, { new: true, session });
+    const device = await Device.findOneAndUpdate(
+      { _id: deviceId, isDeleted: { $ne: true } },
+      { $inc: { 'stats.reviewRevision': 1 } },
+      { new: true, session }
+    );
     if (!device) throw reviewError(404, 'Device not found.');
     const review = await mutation(session, device);
     const summary = await syncDeviceRating(deviceId, session);

@@ -1,0 +1,77 @@
+<div style="display: flex; flex-direction: column; gap: 20px;">
+  <!-- Header -->
+  <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+    <div>
+      <h1 style="font-size: 24px; font-weight: 800; color: #0F172A; letter-spacing: -0.02em; margin: 0;">
+        Nhật ký Kiểm toán Hệ thống (Audit Logs)
+      </h1>
+      <p style="font-size: 12px; color: #64748B; margin-top: 4px; margin-bottom: 0;">
+        Ghi vết bất biến toàn bộ hành vi quản trị, phân quyền, quyết toán tranh chấp và cấu hình
+      </p>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <a href="/api/admin/audit-logs/export" class="admin-btn admin-btn-outline" style="text-decoration: none; font-size: 12px; padding: 8px 14px; display: inline-flex; align-items: center; gap: 6px;">
+        <i data-lucide="download" style="width: 14px; height: 14px;"></i>
+        <span>Xuất file CSV</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Audit Table -->
+  <div class="admin-card" style="padding: 0; overflow: hidden;">
+    <div class="w-full overflow-x-auto hide-scrollbar admin-table-container">
+      <table class="admin-table w-full text-left" style="width: 100%; min-width: 860px; border-collapse: collapse;">
+        <thead>
+          <tr>
+            <th style="min-width: 200px; width: 25%; padding-left: 20px;">Quản trị viên thực hiện</th>
+            <th style="min-width: 160px; width: 20%;">Hành động & Phân hệ</th>
+            <th style="min-width: 200px; width: 25%;">Đối tượng tác động</th>
+            <th style="min-width: 140px; width: 15%;">Địa chỉ IP</th>
+            <th style="min-width: 140px; width: 15%; text-align: right; padding-right: 24px;">Thời gian</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (!logs || logs.length === 0) { %>
+            <tr>
+              <td colspan="5" style="text-align: center; padding: 48px; color: #64748B;">
+                Chưa có nhật ký kiểm toán nào được ghi nhận.
+              </td>
+            </tr>
+          <% } else { %>
+            <% logs.forEach(function(log) { %>
+              <tr class="audit-row" data-details="<%- JSON.stringify(log.details || {}).replace(/"/g, '&quot;') %>">
+                <td style="vertical-align: middle; padding-left: 20px;">
+                  <div style="font-weight: 700; font-size: 13.5px; color: #0F172A;">
+                    <%= log.adminEmail || 'admin@techshare.vn' %>
+                  </div>
+                </td>
+                <td style="vertical-align: middle;">
+                  <span class="admin-pill-badge" style="background-color: #E8F6F7; color: #286E74; font-family: monospace; font-size: 11px;">
+                    <%= log.action %>
+                  </span>
+                </td>
+                <td style="vertical-align: middle;">
+                  <div style="font-size: 13px; font-weight: 600; color: #1E293B; text-transform: uppercase;">
+                    <%= log.targetType || 'SYSTEM' %>
+                  </div>
+                  <% if (log.targetId) { %>
+                    <div style="font-size: 11px; color: #94A3B8; font-family: monospace;">
+                      ID: <%= String(log.targetId).slice(-6) %>
+                    </div>
+                  <% } %>
+                </td>
+                <td style="vertical-align: middle; font-size: 12px; color: #64748B; font-family: monospace;">
+                  <%= log.ipAddress || '127.0.0.1' %>
+                </td>
+                <td style="vertical-align: middle; text-align: right; padding-right: 24px; font-size: 12px; color: #64748B;">
+                  <%= new Date(log.createdAt || Date.now()).toLocaleString('vi-VN') %>
+                </td>
+              </tr>
+            <% }); %>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

@@ -217,10 +217,10 @@ export const LoginPage = () => {
         </div>
 
         <div className="login-admin-switch-container">
-          <Link to={ROUTES.ADMIN_LOGIN} className="login-admin-switch-btn">
+          <a href="/admin/login" className="login-admin-switch-btn">
             <ShieldCheck size={18} />
             <span>Admin Portal Sign In</span>
-          </Link>
+          </a>
         </div>
       </div>
     </div>

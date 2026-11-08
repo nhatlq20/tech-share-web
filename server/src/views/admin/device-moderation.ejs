@@ -1,0 +1,190 @@
+<div style="display: flex; flex-direction: column; gap: 20px;">
+  <!-- 1. Header & Filters -->
+  <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+    <div>
+      <h1 style="font-size: 24px; font-weight: 800; color: #0F172A; letter-spacing: -0.02em; margin: 0;">
+        Kiểm duyệt Thiết bị Niêm yết
+      </h1>
+      <p style="font-size: 12px; color: #64748B; margin-top: 4px; margin-bottom: 0;">
+        Phê duyệt chất lượng phần cứng và ngăn ngừa thiết bị vi phạm chính sách
+      </p>
+    </div>
+
+    <!-- Filter Toolbar -->
+    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+      <!-- Search Box -->
+      <div class="admin-search-pill" style="width: 260px;">
+        <i data-lucide="search" style="color: #67BEC3; width: 16px; height: 16px; flex-shrink: 0;"></i>
+        <input type="text" id="deviceSearchInput" placeholder="Tìm tên máy, hãng, chủ..." />
+      </div>
+
+      <!-- Category Filter -->
+      <select id="deviceCategoryFilter" style="padding: 8px 14px; border-radius: 9999px; border: 1px solid #E2E8F0; background-color: #FFFFFF; font-size: 13px; color: #334155; cursor: pointer; outline: none;">
+        <option value="all">Tất cả danh mục</option>
+        <option value="smartphone">Smartphone & Tablet</option>
+        <option value="laptop">Laptop & Workstation</option>
+        <option value="camera">Máy ảnh & Ống kính</option>
+        <option value="drone">Flycam & Gimbal</option>
+        <option value="audio">Tai nghe & Âm thanh</option>
+        <option value="gaming">Máy chơi game & VR</option>
+        <option value="accessory">Phụ kiện công nghệ</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Status Tabs -->
+  <div style="display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #E2E8F0; padding-bottom: 12px;">
+    <button type="button" class="btn-device-status-tab active" data-status="all" style="padding: 8px 16px; font-size: 13px; font-weight: 700; border-radius: 12px; border: none; cursor: pointer; background: #E8F6F7; color: #286E74;">
+      Tất cả (<%= devices ? devices.length : 0 %>)
+    </button>
+    <button type="button" class="btn-device-status-tab" data-status="pending" style="padding: 8px 16px; font-size: 13px; font-weight: 600; border-radius: 12px; border: none; cursor: pointer; background: transparent; color: #64748B;">
+      Chờ duyệt (<%= counts && counts.pending ? counts.pending : 0 %>)
+    </button>
+    <button type="button" class="btn-device-status-tab" data-status="approved" style="padding: 8px 16px; font-size: 13px; font-weight: 600; border-radius: 12px; border: none; cursor: pointer; background: transparent; color: #64748B;">
+      Đã duyệt (<%= counts && counts.approved ? counts.approved : 0 %>)
+    </button>
+    <button type="button" class="btn-device-status-tab" data-status="rejected" style="padding: 8px 16px; font-size: 13px; font-weight: 600; border-radius: 12px; border: none; cursor: pointer; background: transparent; color: #64748B;">
+      Bị từ chối (<%= counts && counts.rejected ? counts.rejected : 0 %>)
+    </button>
+  </div>
+
+  <!-- Device Table -->
+  <div class="admin-card" style="padding: 0; overflow: hidden;">
+    <div class="w-full overflow-x-auto hide-scrollbar admin-table-container">
+      <table class="admin-table w-full text-left" style="width: 100%; min-width: 860px; border-collapse: collapse;">
+        <thead>
+          <tr>
+            <th style="min-width: 280px; width: 35%; padding-left: 20px;">Thiết bị & Thông số</th>
+            <th style="min-width: 180px; width: 22%;">Chủ sở hữu</th>
+            <th style="min-width: 140px; width: 16%;">Giá thuê / Cọc</th>
+            <th style="min-width: 120px; width: 13%;">Kiểm duyệt</th>
+            <th style="min-width: 140px; width: 14%; text-align: right; padding-right: 24px;">Hành động</th>
+          </tr>
+        </thead>
+        <tbody id="devicesTableBody">
+          <% if (!devices || devices.length === 0) { %>
+            <tr>
+              <td colspan="5" style="text-align: center; padding: 48px; color: #64748B;">
+                Không có thiết bị nào trong danh sách.
+              </td>
+            </tr>
+          <% } else { %>
+            <% devices.forEach(function(d) { %>
+              <tr
+                class="device-row"
+                data-device-id="<%= d._id %>"
+                data-name="<%= (d.name || d.title || '').toLowerCase() %>"
+                data-brand="<%= (d.brand || '').toLowerCase() %>"
+                data-category="<%= (d.category || 'other').toLowerCase() %>"
+                data-status="<%= d.moderationStatus || 'pending' %>"
+                data-owner="<%= (d.owner && d.owner.name ? d.owner.name : '').toLowerCase() %>"
+                data-daily-rate="<%= d.pricePerDay || d.dailyRate || 0 %>"
+                data-deposit="<%= d.depositAmount || d.depositValue || 0 %>"
+                data-condition="<%= d.condition || '99%' %>"
+                data-image="<%= (d.images && d.images[0]) || '/images/default-device-placeholder.svg' %>"
+                data-address="<%= d.address || 'Hà Nội' %>"
+                data-reason="<%= d.moderationReason || d.rejectReason || '' %>"
+              >
+                <!-- Cột 1: Thiết bị -->
+                <td style="vertical-align: middle; padding-left: 20px;">
+                  <div style="display: flex; align-items: center; gap: 12px;">
+                    <img
+                      src="<%= (d.images && d.images[0]) || '/images/default-device-placeholder.svg' %>"
+                      alt="<%= d.name || d.title %>"
+                      style="width: 50px; height: 50px; min-width: 50px; border-radius: 10px; object-fit: cover; border: 1px solid #E2E8F0;"
+                    />
+                    <div>
+                      <div style="font-weight: 700; color: #0F172A; font-size: 13.5px;" class="device-title">
+                        <%= d.name || d.title || 'Thiết bị công nghệ' %>
+                      </div>
+                      <div style="font-size: 11.5px; color: #64748B; margin-top: 2px;">
+                        <span><%= d.brand || 'Khác' %></span> • <span style="text-transform: capitalize;"><%= d.category || 'Thiết bị' %></span> • <span style="color: #286E74; font-weight: 600;"><%= d.condition || '99%' %></span>
+                      </div>
+                    </div>
+                  </div>
+                </td>
+
+                <!-- Cột 2: Chủ sở hữu -->
+                <td style="vertical-align: middle;">
+                  <div style="font-weight: 600; font-size: 13px; color: #1E293B;">
+                    <%= d.owner && d.owner.name ? d.owner.name : 'Chủ thiết bị' %>
+                  </div>
+                  <div style="font-size: 11.5px; color: #64748B; margin-top: 2px;">
+                    <%= d.owner && d.owner.phone ? d.owner.phone : (d.owner && d.owner.email ? d.owner.email : '0901234567') %>
+                  </div>
+                </td>
+
+                <!-- Cột 3: Giá thuê & Cọc -->
+                <td style="vertical-align: middle;">
+                  <div style="font-weight: 700; font-size: 13px; color: #0F172A;">
+                    <%= new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(d.pricePerDay || d.dailyRate || 100000) %>/ngày
+                  </div>
+                  <div style="font-size: 11.5px; color: #64748B; margin-top: 2px;">
+                    Cọc: <%= new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(d.depositAmount || d.depositValue || 500000) %>
+                  </div>
+                </td>
+
+                <!-- Cột 4: Kiểm duyệt -->
+                <td style="vertical-align: middle;" class="device-status-badge-cell">
+                  <% if (d.moderationStatus === 'approved') { %>
+                    <span class="admin-pill-badge" style="background-color: #ECFDF5; color: #16A34A;">Đã duyệt</span>
+                  <% } else if (d.moderationStatus === 'rejected') { %>
+                    <span class="admin-pill-badge" style="background-color: #FEF2F2; color: #DC2626;">Bị từ chối</span>
+                  <% } else { %>
+                    <span class="admin-pill-badge" style="background-color: #FEF3C7; color: #D97706;">Chờ duyệt</span>
+                  <% } %>
+                </td>
+
+                <!-- Cột 5: Hành động -->
+                <td style="vertical-align: middle; text-align: right; padding-right: 24px; white-space: nowrap;">
+                  <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
+                    <button type="button" class="admin-btn admin-btn-outline btn-moderate-device" style="padding: 6px 10px; font-size: 12px;">
+                      <i data-lucide="eye" style="width: 13px; height: 13px;"></i>
+                      <span>Kiểm duyệt</span>
+                    </button>
+                    <button type="button" class="admin-btn admin-btn-danger btn-delete-device" style="padding: 6px 10px; font-size: 12px;">
+                      <i data-lucide="trash-2" style="width: 13px; height: 13px;"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            <% }); %>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Kiểm duyệt Thiết bị -->
+<div id="deviceModerateModal" class="admin-modal-overlay" style="display: none;">
+  <div class="admin-modal-card" style="max-width: 500px;" onclick="event.stopPropagation();">
+    <div class="admin-modal-header">
+      <h3 class="admin-modal-title">Xét duyệt Niêm yết Thiết bị</h3>
+      <button type="button" class="btn-close-modal" style="background: none; border: none; cursor: pointer; color: #94A3B8;">
+        <i data-lucide="x" style="width: 18px; height: 18px;"></i>
+      </button>
+    </div>
+
+    <div style="display: flex; gap: 14px; margin-top: 16px; margin-bottom: 20px;">
+      <img id="modalDeviceImg" src="" alt="" style="width: 72px; height: 72px; border-radius: 12px; object-fit: cover; border: 1px solid #E2E8F0;" />
+      <div>
+        <h4 id="modalDeviceTitle" style="margin: 0; font-size: 15px; font-weight: 800; color: #0F172A;"></h4>
+        <div id="modalDeviceSpecs" style="font-size: 12px; color: #64748B; margin-top: 4px;"></div>
+        <div id="modalDeviceRates" style="font-size: 12px; font-weight: 700; color: #286E74; margin-top: 4px;"></div>
+      </div>
+    </div>
+
+    <div style="margin-bottom: 16px;">
+      <label for="moderateRejectReason" style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px;">
+        Lý do từ chối (nếu không duyệt):
+      </label>
+      <textarea id="moderateRejectReason" rows="3" style="width: 100%; border: 1px solid #CBD5E1; border-radius: 10px; padding: 10px; font-size: 13px; outline: none;" placeholder="Nhập lý do từ chối để gửi thông báo cho chủ sở hữu..."></textarea>
+    </div>
+
+    <div style="display: flex; justify-content: flex-end; gap: 10px;">
+      <button type="button" id="btnRejectDeviceSubmit" class="admin-btn admin-btn-danger">Từ chối niêm yết</button>
+      <button type="button" id="btnApproveDeviceSubmit" class="admin-btn admin-btn-success">Phê duyệt niêm yết</button>
+    </div>
+  </div>
+</div>

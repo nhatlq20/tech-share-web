@@ -1,0 +1,197 @@
+<aside class="admin-sidebar" aria-label="Thanh điều hướng Quản trị TechShare">
+  <!-- 1. Header Sidebar -->
+  <div class="admin-sidebar-header">
+    <a href="/admin/dashboard" class="admin-logo-box">
+      <div class="admin-logo-icon">
+        <i data-lucide="sparkles" style="width: 20px; height: 20px;"></i>
+      </div>
+      <div class="admin-logo-text">
+        Tech<span>Share</span> <span style="font-size: 11px; font-weight: 600; color: #64748B;">ADMIN</span>
+      </div>
+    </a>
+  </div>
+
+  <!-- Divider -->
+  <div class="admin-sidebar-divider" role="separator"></div>
+
+  <!-- 2. Navigation Groups -->
+  <nav class="admin-nav-list" role="navigation">
+    <!-- Group: TỔNG QUAN -->
+    <div style="margin-bottom: 14px;">
+      <div class="admin-nav-section-title" style="padding: 4px 16px; font-size: 10px; color: #94A3B8; font-weight: 700; letter-spacing: 0.05em;">
+        TỔNG QUAN
+      </div>
+      <a href="/admin/dashboard" class="admin-nav-item <%= activePage === 'overview' ? 'active' : '' %>">
+        <div style="display: flex; align-items: center; gap: 11px; min-width: 0; flex: 1;">
+          <i data-lucide="layout-dashboard" style="width: 17px; height: 17px; flex-shrink: 0;"></i>
+          <span style="font-size: 12.5px; font-weight: <%= activePage === 'overview' ? '700' : '600' %>; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+            Tổng quan & KPI
+          </span>
+        </div>
+      </a>
+      <a href="/admin/analytics" class="admin-nav-item <%= activePage === 'analytics' ? 'active' : '' %>">
+        <div style="display: flex; align-items: center; gap: 11px; min-width: 0; flex: 1;">
+          <i data-lucide="bar-chart-3" style="width: 17px; height: 17px; flex-shrink: 0;"></i>
+          <span style="font-size: 12.5px; font-weight: <%= activePage === 'analytics' ? '700' : '600' %>; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+            Báo cáo & Phân tích
+          </span>
+        </div>
+      </a>
+    </div>
+
+    <!-- Group: QUẢN LÝ NỀN TẢNG -->
+    <div style="margin-bottom: 14px;">
+      <div class="admin-nav-section-title" style="padding: 4px 16px; font-size: 10px; color: #94A3B8; font-weight: 700; letter-spacing: 0.05em;">
+        QUẢN LÝ NỀN TẢNG
+      </div>
+      <a href="/admin/user-manager" class="admin-nav-item <%= activePage === 'users' ? 'active' : '' %>">
+        <div style="display: flex; align-items: center; gap: 11px; min-width: 0; flex: 1;">
+          <i data-lucide="users" style="width: 17px; height: 17px; flex-shrink: 0;"></i>
+          <span style="font-size: 12.5px; font-weight: <%= activePage === 'users' ? '700' : '600' %>; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+            Quản lý người dùng
+          </span>
+        </div>
+      </a>
+      <a href="/admin/device-moderation" class="admin-nav-item <%= activePage === 'devices' ? 'active' : '' %>">
+        <div style="display: flex; align-items: center; gap: 11px; min-width: 0; flex: 1;">
+          <i data-lucide="cpu" style="width: 17px; height: 17px; flex-shrink: 0;"></i>
+          <span style="font-size: 12.5px; font-weight: <%= activePage === 'devices' ? '700' : '600' %>; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+            Kiểm duyệt thiết bị
+          </span>
+        </div>
+        <% if (typeof pendingCounts !== 'undefined' && pendingCounts.devices > 0) { %>
+          <span class="admin-nav-badge" style="background-color: #F59E0B; color: #FFFFFF;" title="<%= pendingCounts.devices %> thiết bị chờ duyệt">
+            <%= pendingCounts.devices %>
+          </span>
+        <% } %>
+      </a>
+      <a href="/admin/booking-management" class="admin-nav-item <%= activePage === 'bookings' ? 'active' : '' %>">
+        <div style="display: flex; align-items: center; gap: 11px; min-width: 0; flex: 1;">
+          <i data-lucide="shopping-bag" style="width: 17px; height: 17px; flex-shrink: 0;"></i>
+          <span style="font-size: 12.5px; font-weight: <%= activePage === 'bookings' ? '700' : '600' %>; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+            Quản lý đơn thuê
+          </span>
+        </div>
+      </a>
+      <a href="/admin/review-moderation" class="admin-nav-item <%= activePage === 'reviews' ? 'active' : '' %>">
+        <div style="display: flex; align-items: center; gap: 11px; min-width: 0; flex: 1;">
+          <i data-lucide="star" style="width: 17px; height: 17px; flex-shrink: 0;"></i>
+          <span style="font-size: 12.5px; font-weight: <%= activePage === 'reviews' ? '700' : '600' %>; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+            Kiểm duyệt đánh giá
+          </span>
+        </div>
+      </a>
+    </div>
+
+    <!-- Group: TIN CẬY & BẢO MẬT -->
+    <div style="margin-bottom: 14px;">
+      <div class="admin-nav-section-title" style="padding: 4px 16px; font-size: 10px; color: #94A3B8; font-weight: 700; letter-spacing: 0.05em;">
+        TIN CẬY & BẢO MẬT
+      </div>
+      <a href="/admin/ekyc-verification" class="admin-nav-item <%= activePage === 'ekyc' ? 'active' : '' %>">
+        <div style="display: flex; align-items: center; gap: 11px; min-width: 0; flex: 1;">
+          <i data-lucide="shield-check" style="width: 17px; height: 17px; flex-shrink: 0;"></i>
+          <span style="font-size: 12.5px; font-weight: <%= activePage === 'ekyc' ? '700' : '600' %>; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+            Xác minh eKYC
+          </span>
+        </div>
+        <% if (typeof pendingCounts !== 'undefined' && pendingCounts.ekyc > 0) { %>
+          <span class="admin-nav-badge" title="<%= pendingCounts.ekyc %> yêu cầu chờ xác minh">
+            <%= pendingCounts.ekyc %>
+          </span>
+        <% } %>
+      </a>
+      <a href="/admin/owner-ekyc-verification" class="admin-nav-item <%= activePage === 'owner-ekyc' ? 'active' : '' %>">
+        <i data-lucide="crown" width="17" height="17" aria-hidden="true"></i>
+        <span>Xác minh Chủ thiết bị</span>
+      </a>
+      <a href="/admin/dispute-resolution" class="admin-nav-item <%= activePage === 'disputes' ? 'active' : '' %>">
+        <div style="display: flex; align-items: center; gap: 11px; min-width: 0; flex: 1;">
+          <i data-lucide="scale" style="width: 17px; height: 17px; flex-shrink: 0;"></i>
+          <span style="font-size: 12.5px; font-weight: <%= activePage === 'disputes' ? '700' : '600' %>; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+            Xử lý tranh chấp
+          </span>
+        </div>
+        <% if (typeof pendingCounts !== 'undefined' && pendingCounts.disputes > 0) { %>
+          <span class="admin-nav-badge" style="background-color: #EF4444; color: #FFFFFF;" title="<%= pendingCounts.disputes %> tranh chấp cần xử lý">
+            <%= pendingCounts.disputes %>
+          </span>
+        <% } %>
+      </a>
+      <a href="/admin/roles-permissions" class="admin-nav-item <%= activePage === 'roles' ? 'active' : '' %>">
+        <div style="display: flex; align-items: center; gap: 11px; min-width: 0; flex: 1;">
+          <i data-lucide="key-round" style="width: 17px; height: 17px; flex-shrink: 0;"></i>
+          <span style="font-size: 12.5px; font-weight: <%= activePage === 'roles' ? '700' : '600' %>; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+            Phân quyền vai trò
+          </span>
+        </div>
+      </a>
+    </div>
+
+    <!-- Group: TÀI CHÍNH -->
+    <div style="margin-bottom: 14px;">
+      <div class="admin-nav-section-title" style="padding: 4px 16px; font-size: 10px; color: #94A3B8; font-weight: 700; letter-spacing: 0.05em;">
+        TÀI CHÍNH
+      </div>
+      <a href="/admin/wallet" class="admin-nav-item <%= activePage === 'wallet' ? 'active' : '' %>">
+        <div style="display: flex; align-items: center; gap: 11px; min-width: 0; flex: 1;">
+          <i data-lucide="wallet" style="width: 17px; height: 17px; flex-shrink: 0;"></i>
+          <span style="font-size: 12.5px; font-weight: <%= activePage === 'wallet' ? '700' : '600' %>; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+            Ví & Giao dịch
+          </span>
+        </div>
+      </a>
+      <a href="/admin/voucher-management" class="admin-nav-item <%= activePage === 'vouchers' ? 'active' : '' %>">
+        <div style="display: flex; align-items: center; gap: 11px; min-width: 0; flex: 1;">
+          <i data-lucide="tag" style="width: 17px; height: 17px; flex-shrink: 0;"></i>
+          <span style="font-size: 12.5px; font-weight: <%= activePage === 'vouchers' ? '700' : '600' %>; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+            Quản lý Voucher
+          </span>
+        </div>
+      </a>
+    </div>
+
+    <!-- Group: HỆ THỐNG -->
+    <div style="margin-bottom: 14px;">
+      <div class="admin-nav-section-title" style="padding: 4px 16px; font-size: 10px; color: #94A3B8; font-weight: 700; letter-spacing: 0.05em;">
+        HỆ THỐNG
+      </div>
+      <a href="/admin/notification-management" class="admin-nav-item <%= activePage === 'notifications' ? 'active' : '' %>">
+        <div style="display: flex; align-items: center; gap: 11px; min-width: 0; flex: 1;">
+          <i data-lucide="bell" style="width: 17px; height: 17px; flex-shrink: 0;"></i>
+          <span style="font-size: 12.5px; font-weight: <%= activePage === 'notifications' ? '700' : '600' %>; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+            Quản lý thông báo
+          </span>
+        </div>
+      </a>
+      <a href="/admin/settings" class="admin-nav-item <%= activePage === 'settings' ? 'active' : '' %>">
+        <div style="display: flex; align-items: center; gap: 11px; min-width: 0; flex: 1;">
+          <i data-lucide="settings" style="width: 17px; height: 17px; flex-shrink: 0;"></i>
+          <span style="font-size: 12.5px; font-weight: <%= activePage === 'settings' ? '700' : '600' %>; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+            Cấu hình hệ thống
+          </span>
+        </div>
+      </a>
+      <a href="/admin/audit-logs" class="admin-nav-item <%= activePage === 'audit-logs' ? 'active' : '' %>">
+        <div style="display: flex; align-items: center; gap: 11px; min-width: 0; flex: 1;">
+          <i data-lucide="file-text" style="width: 17px; height: 17px; flex-shrink: 0;"></i>
+          <span style="font-size: 12.5px; font-weight: <%= activePage === 'audit-logs' ? '700' : '600' %>; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+            Nhật ký kiểm toán
+          </span>
+        </div>
+      </a>
+    </div>
+  </nav>
+
+  <!-- 3. Footer Sidebar -->
+  <div class="admin-sidebar-footer">
+    <a href="/" class="admin-footer-btn client-switch" style="text-decoration: none;">
+      <i data-lucide="external-link" style="width: 15px; height: 15px;"></i>
+      <span>Về trang người dùng</span>
+    </a>
+    <a href="/admin/logout" class="admin-footer-btn logout" style="text-decoration: none;">
+      <i data-lucide="log-out" style="width: 15px; height: 15px;"></i>
+      <span>Đăng xuất</span>
+    </a>
+  </div>
+</aside>

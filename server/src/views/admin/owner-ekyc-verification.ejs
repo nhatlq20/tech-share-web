@@ -1,0 +1,85 @@
+<section class="admin-card" aria-labelledby="owner-ekyc-title">
+  <header class="admin-card-header">
+    <h1 class="admin-card-title" id="owner-ekyc-title">Xác minh Chủ thiết bị</h1>
+    <form method="get">
+      <label for="owner-ekyc-status">Trạng thái</label>
+      <select id="owner-ekyc-status" name="status">
+        <% Object.entries(statuses).forEach(([value, label]) => { %>
+          <option value="<%= value %>" <%= value === status ? 'selected' : '' %>><%= label %></option>
+        <% }); %>
+      </select>
+      <button class="admin-btn admin-btn-outline" type="submit">Lọc</button>
+    </form>
+  </header>
+  <% if (requests.length === 0) { %>
+    <p>Không có hồ sơ phù hợp.</p>
+  <% } else { %>
+    <div class="admin-table-container">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th scope="col">Người gửi</th>
+            <th scope="col">Ngày gửi</th>
+            <th scope="col">Trạng thái</th>
+            <th scope="col">Hồ sơ</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% requests.forEach((request) => { %>
+            <tr>
+              <td><strong><%= request.fullName %></strong><br /><%= request.email %></td>
+              <td><%= request.createdAt ? new Date(request.createdAt).toLocaleDateString('vi-VN') : '—' %></td>
+              <td><%= statuses[request.status] || request.status %></td>
+              <td>
+                <details>
+                  <summary>Xem hồ sơ của <%= request.fullName %></summary>
+                  <p>CCCD <%= request.idCardNumber || '—' %></p>
+                  <p><%= request.address %></p>
+                  <ul>
+                    <% [
+                      ['Mặt trước CCCD', request.idCardFrontUrl],
+                      ['Mặt sau CCCD', request.idCardBackUrl],
+                      ['Chân dung cầm CCCD', request.idCardHoldingUrl],
+                    ].forEach(([label, url]) => { %>
+                      <li>
+                        <% if (/^https?:\/\//i.test(url)) { %>
+                          <a href="<%= url %>" target="_blank" rel="noreferrer"><%= label %> (mở ảnh trong tab mới)</a>
+                        <% } else if (/^data:image\/(png|jpeg|webp);base64,/i.test(url)) { %>
+                          <img src="<%= url %>" alt="<%= label %>" loading="lazy" width="160" />
+                        <% } else { %>
+                          <%= label %> · Không có ảnh
+                        <% } %>
+                      </li>
+                    <% }); %>
+                  </ul>
+                  <% if (request.rejectReason) { %>
+                    <p>Lý do từ chối · <%= request.rejectReason %></p>
+                  <% } %>
+                  <% if (request.status === 'pending') { %>
+                    <form method="post" data-owner-ekyc-review="<%= request._id %>">
+                      <label for="reason-<%= request._id %>">Lý do từ chối</label>
+                      <textarea id="reason-<%= request._id %>" name="reason" required></textarea>
+                      <div>
+                        <button class="admin-btn admin-btn-success" type="submit" value="approve" formnovalidate>Duyệt</button>
+                        <button class="admin-btn admin-btn-danger" type="submit" value="reject">Từ chối</button>
+                      </div>
+                      <p role="status" aria-live="polite"></p>
+                    </form>
+                  <% } %>
+                </details>
+              </td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+  <nav aria-label="Trang hồ sơ eKYC">
+    <% if (page > 1) { %>
+      <a href="?status=<%= status %>&amp;page=<%= page - 1 %>">Trang trước</a>
+    <% } %>
+    <% if (hasNextPage) { %>
+      <a href="?status=<%= status %>&amp;page=<%= page + 1 %>">Trang sau</a>
+    <% } %>
+  </nav>
+</section>

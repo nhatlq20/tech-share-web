@@ -13,4 +13,5 @@ export { EkycRequest } from './EkycRequest.js';
 export { OwnerEkycRequest, OwnerRequest } from './OwnerEkycRequest.js';
 export { AiCache } from './AiCache.js';
 export { Otp } from './Otp.js';
-
+export { AdminAuditLog } from './AdminAuditLog.js';
+export { SystemSetting } from './SystemSetting.js';

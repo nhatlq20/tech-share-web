@@ -1,0 +1,14 @@
+<div id="adminToastContainer" class="admin-toast-container" aria-live="polite"></div>
+
+<template id="adminToastTemplate">
+  <div class="admin-toast">
+    <div class="admin-toast-icon"></div>
+    <div class="admin-toast-content">
+      <div class="admin-toast-title"></div>
+      <div class="admin-toast-message"></div>
+    </div>
+    <button type="button" class="admin-toast-close" onclick="this.closest('.admin-toast').remove();">
+      <i data-lucide="x" style="width: 14px; height: 14px;"></i>
+    </button>
+  </div>
+</template>

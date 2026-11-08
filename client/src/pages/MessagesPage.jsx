@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { MessageSquare, ShieldCheck, Sparkles } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
-import { useChat } from '../context/ChatContext.jsx';
 import { ROUTES } from '../routes/routes.js';
 import { connectSocket } from '../services/socketService.js';
 import { getConversations } from '../services/chatService.js';
@@ -14,7 +13,6 @@ export const MessagesPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
-  const { refreshUnreadCount } = useChat();
   const currentUserId = (user?._id || user?.id)?.toString();
 
   const isOwnerContext = location.pathname.startsWith('/owner');
@@ -27,10 +25,18 @@ export const MessagesPage = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
+  // activeBookingIdRef để socket listener và handler luôn truy cập bookingId mới nhất mà không gây re-subscribe effect
+  const activeBookingIdRef = useRef(bookingId);
+  activeBookingIdRef.current = bookingId;
+
   // 1. Tải danh sách hội thoại
-  const loadConversations = useCallback(async () => {
+  // Chỉ bật skeleton loading khi tải lần đầu tiên (isInitial === true)
+  // Các lần cập nhật nền (realtime, socket) tuyệt đối không bật skeleton loading gây giật lag / nhấp nháy
+  const loadConversations = useCallback(async (isInitial = false) => {
     try {
-      setLoading(true);
+      if (isInitial) {
+        setLoading(true);
+      }
       const res = await getConversations();
       const list = Array.isArray(res?.data)
         ? res.data
@@ -43,15 +49,19 @@ export const MessagesPage = () => {
     } catch (err) {
       console.error('Failed to load conversations:', err);
     } finally {
-      setLoading(false);
+      if (isInitial) {
+        setLoading(false);
+      }
     }
   }, []);
 
   useEffect(() => {
-    loadConversations();
+    loadConversations(true);
   }, [loadConversations]);
 
   // 2. Kết nối Socket & lắng nghe cập nhật realtime cho danh sách hội thoại
+  // Chỉ phụ thuộc vào currentUserId và loadConversations -> KHÔNG phụ thuộc bookingId
+  // Giúp listener socket ổn định, không bị huỷ & đăng ký lại liên tục khi chuyển đổi cuộc trò chuyện
   useEffect(() => {
     const socket = connectSocket();
     if (!socket) return;
@@ -66,13 +76,13 @@ export const MessagesPage = () => {
           (c) => c.bookingId === bId || c.bookings?.some((b) => String(b.bookingId) === String(bId))
         );
         if (index === -1) {
-          // Nếu chưa có trong danh sách (booking mới có tin), tải lại danh sách
-          loadConversations();
+          // Nếu chưa có trong danh sách (booking mới có tin), tải lại danh sách trong nền
+          loadConversations(false);
           return prev;
         }
 
         const existing = prev[index];
-        const isCurrentlyViewing = bookingId === bId;
+        const isCurrentlyViewing = activeBookingIdRef.current === bId;
         const senderIdStr = (msg.senderId?._id || msg.senderId)?.toString();
         const isFromPartner = senderIdStr !== currentUserId;
 
@@ -104,21 +114,26 @@ export const MessagesPage = () => {
     };
 
     const handleConversationsUpdated = () => {
-      loadConversations();
+      loadConversations(false);
     };
 
     socket.on('new_message', handleNewMessage);
+    socket.on('receive_message', handleNewMessage);
     socket.on('conversations_updated', handleConversationsUpdated);
 
     return () => {
       socket.off('new_message', handleNewMessage);
+      socket.off('receive_message', handleNewMessage);
       socket.off('conversations_updated', handleConversationsUpdated);
     };
-  }, [bookingId, currentUserId, loadConversations]);
+  }, [currentUserId, loadConversations]);
 
   // Khi chọn một hội thoại
   const handleSelectConversation = (bId) => {
-    // Đặt unreadCount của hội thoại đó về 0 trên giao diện
+    // Nếu bấm lại vào chính cuộc trò chuyện đang mở, bỏ qua
+    if (bId === activeBookingIdRef.current) return;
+
+    // Đặt unreadCount của hội thoại đó về 0 ngay trên giao diện để có phản hồi tức thì
     setConversations((prev) =>
       prev.map((c) =>
         c.bookingId === bId || c.bookings?.some((b) => String(b.bookingId) === String(bId))
@@ -127,9 +142,6 @@ export const MessagesPage = () => {
       )
     );
     navigate(getMessagesPath(bId));
-    if (refreshUnreadCount) {
-      setTimeout(refreshUnreadCount, 400);
-    }
   };
 
   // Tìm thông tin hội thoại đang active
@@ -170,7 +182,6 @@ export const MessagesPage = () => {
       >
         {bookingId ? (
           <ChatDetailView
-            key={bookingId}
             bookingId={bookingId}
             conversation={activeConversation}
             currentUserId={currentUserId}
@@ -221,4 +232,3 @@ export const MessagesPage = () => {
 };
 
 export default MessagesPage;
-

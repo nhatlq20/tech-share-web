@@ -1,0 +1,36 @@
+<%- include('./head') %>
+
+<div class="admin-hub-wrapper">
+  <!-- Fixed Left Sidebar -->
+  <%- include('../partials/sidebar') %>
+
+  <!-- Main Content Area -->
+  <main class="admin-main-wrap" role="main">
+    <!-- Topbar Header -->
+    <%- include('../partials/header') %>
+
+    <!-- Dynamic Content Body -->
+    <section class="admin-content-body">
+      <%- body %>
+    </section>
+  </main>
+</div>
+
+<!-- Toast Notifications -->
+<%- include('../partials/toast') %>
+
+<!-- Scripts -->
+<script src="/js/admin/common.js"></script>
+<% if (typeof pageScript !== 'undefined' && pageScript) { %>
+  <script src="<%= pageScript %>"></script>
+<% } %>
+<script>
+  // Initialize Lucide icons on DOM ready
+  document.addEventListener('DOMContentLoaded', function() {
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+      window.lucide.createIcons();
+    }
+  });
+</script>
+</body>
+</html>
