@@ -10,6 +10,7 @@ export { WalletTransaction } from './WalletTransaction.js';
 export { Voucher } from './Voucher.js';
 export { Dispute } from './Dispute.js';
 export { EkycRequest } from './EkycRequest.js';
+export { OwnerEkycRequest, OwnerRequest } from './OwnerEkycRequest.js';
 export { AiCache } from './AiCache.js';
 export { Otp } from './Otp.js';
 

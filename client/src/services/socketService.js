@@ -4,11 +4,7 @@ import { STORAGE_KEYS } from '../constants/config.js';
 let socket = null;
 
 const getSocketServerUrl = () => {
-  let apiUrl = process.env.REACT_APP_API_URL;
-  if (apiUrl) {
-    if (apiUrl.includes(':5000')) {
-      apiUrl = apiUrl.replace(':5000', ':8000');
-    }
+  if (process.env.REACT_APP_API_URL) {
     // If REACT_APP_API_URL is 'http://localhost:8000/api', extract 'http://localhost:8000'
     try {
       const url = new URL(apiUrl);

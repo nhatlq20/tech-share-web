@@ -6,6 +6,7 @@ import { AdminOverviewTab } from './AdminOverviewTab';
 import { AdminUsersTab } from './AdminUsersTab';
 import { AdminDevicesTab } from './AdminDevicesTab';
 import { AdminEkycTab } from './AdminEkycTab';
+import { AdminOwnerEkycTab } from './AdminOwnerEkycTab';
 import { NotificationDropdown } from '../notifications/NotificationDropdown';
 import { STRINGS } from '../../constants/strings';
 import { ROUTES } from '../../routes/routes';
@@ -74,6 +75,7 @@ export const AdminDashboardScreen = () => {
     if (pathname === ROUTES.ADMIN_USER_MANAGER || pathname === ROUTES.ADMIN_USERS) return 'users';
     if (pathname === ROUTES.ADMIN_DEVICE_MANAGER || pathname === ROUTES.ADMIN_DEVICES) return 'devices';
     if (pathname === ROUTES.ADMIN_EKYC_VERIFICATION || pathname === ROUTES.ADMIN_EKYC) return 'ekyc';
+    if (pathname === ROUTES.ADMIN_OWNER_EKYC_VERIFICATION || pathname === ROUTES.ADMIN_OWNER_EKYC) return 'owner-ekyc';
     if (pathname === ROUTES.ADMIN_SETTINGS) return 'settings';
     return 'overview';
   }, []);
@@ -97,6 +99,7 @@ export const AdminDashboardScreen = () => {
       if (tabId === 'users') navigate(ROUTES.ADMIN_USER_MANAGER);
       else if (tabId === 'devices') navigate(ROUTES.ADMIN_DEVICE_MANAGER);
       else if (tabId === 'ekyc') navigate(ROUTES.ADMIN_EKYC_VERIFICATION);
+      else if (tabId === 'owner-ekyc') navigate(ROUTES.ADMIN_OWNER_EKYC_VERIFICATION);
       else if (tabId === 'settings') navigate(ROUTES.ADMIN_SETTINGS);
       else navigate(ROUTES.ADMIN_DASHBOARD);
     }
@@ -110,6 +113,7 @@ export const AdminDashboardScreen = () => {
   const [devices, setDevices] = useState([]);
   const [deviceCounts, setDeviceCounts] = useState({ all: 0, pending: 0, approved: 0, rejected: 0 });
   const [ekycRequests, setEkycRequests] = useState([]);
+  const [pendingOwnerEkycCount, setPendingOwnerEkycCount] = useState(0);
 
   // Fetch all admin data from backend API
   const fetchAllData = useCallback(async () => {
@@ -264,6 +268,18 @@ export const AdminDashboardScreen = () => {
         }
       } catch (e) {
         console.warn('eKYC fetch fallback:', e);
+      }
+
+      // 3b. Fetch Owner eKYC pending count
+      try {
+        const resOwner = await fetch(`${API_BASE}/admin/owner-ekyc?status=pending`, { headers });
+        if (resOwner.ok) {
+          const jsonOwner = await resOwner.json();
+          const items = Array.isArray(jsonOwner.data) ? jsonOwner.data : [];
+          setPendingOwnerEkycCount(items.length);
+        }
+      } catch (e) {
+        console.warn('Owner eKYC count fetch fallback:', e);
       }
 
       // 4. Fetch / Extract live Users from MongoDB Atlas
@@ -515,49 +531,34 @@ export const AdminDashboardScreen = () => {
       ? kpi.pendingDevices
       : devices.filter(d => d.moderationStatus === 'pending').length;
   return <div className="admin-hub-wrapper">
-    {/* A. Fixed Left Sidebar */}
-    <AdminSidebarContent
-      currentTab={currentTab}
-      currentPath={location.pathname}
-      onSelectTab={handleSelectTab}
-      pendingEkycCount={pendingEkycCount}
-      pendingDevicesCount={pendingDevicesCount}
-      onLogout={logout}
-      admin={adminProfile || user}
-      user={user}
-      onSwitchToClient={() => {
-        window.location.href = '/';
-      }}
-    />
+      {/* A. Fixed Left Sidebar */}
+      <AdminSidebarContent
+        currentTab={currentTab}
+        currentPath={location.pathname}
+        onSelectTab={handleSelectTab}
+        pendingEkycCount={pendingEkycCount}
+        pendingOwnerEkycCount={pendingOwnerEkycCount}
+        pendingDevicesCount={pendingDevicesCount}
+        onLogout={logout}
+        admin={adminProfile || user}
+        user={user}
+        onSwitchToClient={() => {
+          window.location.href = '/';
+        }}
+      />
 
-    {/* B. Main Content Area */}
-    <main className="admin-main-wrap" role="main">
-      {/* Topbar */}
-      <header className="admin-topbar">
-        {/* Pill Search Bar */}
-        <div className="admin-search-pill">
-          <Search size={16} style={{ color: '#67BEC3', flexShrink: 0 }} />
-          <input
-            type="text"
-            placeholder={STRINGS.admin.dashboard.searchPlaceholder}
-            value={globalSearch}
-            onChange={(e) => setGlobalSearch(e.target.value)}
-          />
-        </div>
-
-        {/* Topbar Right Actions */}
-        <div className="admin-topbar-actions">
-          {/* Refresh Button */}
-          <button
-            type="button"
-            onClick={fetchAllData}
-            disabled={isLoading}
-            className="admin-action-btn"
-            title={STRINGS.admin.overview.refreshTooltip}
-          >
-            <RefreshCw
-              size={16}
-              style={{ animation: isLoading ? 'spin 1s linear infinite' : 'none' }}
+      {/* B. Main Content Area */}
+      <main className="admin-main-wrap" role="main">
+        {/* Topbar */}
+        <header className="admin-topbar">
+          {/* Pill Search Bar */}
+          <div className="admin-search-pill">
+            <Search size={16} style={{ color: '#67BEC3', flexShrink: 0 }} />
+            <input
+              type="text"
+              placeholder={STRINGS.admin.dashboard.searchPlaceholder}
+              value={globalSearch}
+              onChange={(e) => setGlobalSearch(e.target.value)}
             />
           </button>
 
@@ -605,28 +606,29 @@ export const AdminDashboardScreen = () => {
               </span>
             </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      {/* Dynamic View Container */}
-      <section className="admin-content-body">
-        {currentTab === 'overview' && <AdminOverviewTab kpi={kpi} chartData={charts} categoryStats={categories} onRefresh={fetchAllData} isLoading={isLoading} />}
+        {/* Dynamic View Container */}
+        <section className="admin-content-body">
+          {currentTab === 'overview' && <AdminOverviewTab kpi={kpi} chartData={charts} categoryStats={categories} onRefresh={fetchAllData} isLoading={isLoading} />}
 
-        {currentTab === 'users' && <AdminUsersTab users={users} onToggleStatus={handleToggleUserStatus} isLoading={isLoading} />}
+          {currentTab === 'users' && <AdminUsersTab users={users} onToggleStatus={handleToggleUserStatus} isLoading={isLoading} />}
 
-        {currentTab === 'devices' && (
-          <AdminDevicesTab
-            devices={devices}
-            counts={deviceCounts}
-            onRemoveDevice={handleRemoveDevice}
-            onModerateDevice={handleModerateDevice}
-            isLoading={isLoading}
-          />
-        )}
+          {currentTab === 'devices' && (
+            <AdminDevicesTab
+              devices={devices}
+              counts={deviceCounts}
+              onRemoveDevice={handleRemoveDevice}
+              onModerateDevice={handleModerateDevice}
+              isLoading={isLoading}
+            />
+          )}
 
-        {currentTab === 'ekyc' && <AdminEkycTab requests={ekycRequests} onApprove={handleApproveEkyc} onReject={handleRejectEkyc} isLoading={isLoading} />}
-      </section>
-    </main>
-  </div>;
+          {currentTab === 'ekyc' && <AdminEkycTab requests={ekycRequests} onApprove={handleApproveEkyc} onReject={handleRejectEkyc} isLoading={isLoading} />}
+
+          {currentTab === 'owner-ekyc' && <AdminOwnerEkycTab />}
+        </section>
+      </main>
+    </div>;
 };
 export default AdminDashboardScreen;

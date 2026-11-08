@@ -20,11 +20,14 @@ import {
   X,
   Save,
   Clock,
+  Crown,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { api } from '../services/api.js';
 import { uploadAvatar } from '../services/uploadService.js';
 import { EkycSubmitModal } from '../components/ekyc/EkycSubmitModal.jsx';
+import { OwnerEkycSubmitModal } from '../components/ekyc/OwnerEkycSubmitModal.jsx';
+import { getMyOwnerEkycStatus } from '../services/ownerEkycService.js';
 import { ROUTES } from '../routes/routes.js';
 import './ProfilePage.css';
 
@@ -50,9 +53,13 @@ export const ProfilePage = () => {
   const [uploadProgress, setUploadProgress] = useState(0); // 0–100
   const [feedbackMsg, setFeedbackMsg] = useState(null);
 
-  // Trạng thái eKYC & Modal eKYC
+  // Trạng thái eKYC Renter & Modal eKYC
   const [isEkycModalOpen, setIsEkycModalOpen] = useState(false);
   const [ekycRequestData, setEkycRequestData] = useState(null);
+
+  // Trạng thái eKYC Nâng Cấp Owner & Modal Owner eKYC
+  const [isOwnerEkycModalOpen, setIsOwnerEkycModalOpen] = useState(false);
+  const [ownerEkycData, setOwnerEkycData] = useState(null);
 
   // Trạng thái Modal Edit Profile (Cập nhật địa chỉ & thông tin cá nhân)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -67,6 +74,14 @@ export const ProfilePage = () => {
       .then((res) => {
         if (res?.success && res?.data) {
           setEkycRequestData(res.data.request || null);
+        }
+      })
+      .catch(() => {});
+
+    getMyOwnerEkycStatus()
+      .then((res) => {
+        if (res?.success && res?.data) {
+          setOwnerEkycData(res.data);
         }
       })
       .catch(() => {});
@@ -403,6 +418,31 @@ export const ProfilePage = () => {
                   </span>
                 </button>
 
+                {/* Nút nâng cấp lên Owner khi người thuê đã hoàn tất eKYC thuê */}
+                {isAccountVerified && profile.role !== 'owner' && profile.role !== 'admin' && (
+                  <button
+                    type="button"
+                    onClick={() => setIsOwnerEkycModalOpen(true)}
+                    className="profile-btn-action"
+                    style={{
+                      background: 'linear-gradient(135deg, #67bec3 0%, #286e74 100%)',
+                      color: '#ffffff',
+                      border: 'none',
+                      boxShadow: '0 4px 12px rgba(103, 190, 195, 0.3)',
+                    }}
+                    title="Upgrade to Device Owner to list and rent out equipment"
+                  >
+                    <Crown size={15} />
+                    <span>
+                      {ownerEkycData?.request?.status === 'pending'
+                        ? 'Owner Pending'
+                        : ownerEkycData?.request?.status === 'rejected'
+                        ? 'Resubmit Owner eKYC'
+                        : 'Upgrade to Owner'}
+                    </span>
+                  </button>
+                )}
+
                 <button
                   type="button"
                   onClick={openEditModal}
@@ -470,6 +510,35 @@ export const ProfilePage = () => {
                     Chưa eKYC (Bấm xác thực)
                   </button>
                 )}
+
+                {/* Badge trạng thái Owner eKYC */}
+                {profile.role === 'owner' ? (
+                  <span className="profile-badge-tag" style={{ background: '#e8f6f7', color: '#286e74', border: '1px solid #b2e2e4' }}>
+                    <Crown size={14} />
+                    Owner Verified
+                  </span>
+                ) : ownerEkycData?.request?.status === 'pending' ? (
+                  <span
+                    className="profile-badge-tag"
+                    style={{ background: '#eff6ff', color: '#1d4ed8', cursor: 'pointer', border: '1px solid #bfdbfe' }}
+                    onClick={() => setIsOwnerEkycModalOpen(true)}
+                    title="Bấm để xem chi tiết hồ sơ nâng cấp Owner đang chờ duyệt"
+                  >
+                    <Clock size={14} />
+                    Đang chờ duyệt Owner
+                  </span>
+                ) : ownerEkycData?.request?.status === 'rejected' ? (
+                  <button
+                    type="button"
+                    onClick={() => setIsOwnerEkycModalOpen(true)}
+                    className="profile-badge-tag"
+                    style={{ background: '#fff1f2', color: '#be123c', border: '1px solid #fecdd3', cursor: 'pointer' }}
+                    title="Hồ sơ nâng cấp Owner bị từ chối - Bấm để nộp lại"
+                  >
+                    <AlertCircle size={14} />
+                    Owner eKYC bị từ chối (Nộp lại)
+                  </button>
+                ) : null}
               </div>
 
               <div className="profile-user-meta-sub">
@@ -544,6 +613,88 @@ export const ProfilePage = () => {
             </div>
           </div>
         </div>
+
+        {/* Card Nâng cấp lên Chủ thiết bị (Owner) nếu người thuê đã hoàn tất eKYC thuê */}
+        {isAccountVerified && profile.role !== 'owner' && profile.role !== 'admin' && (
+          <div
+            style={{
+              background: 'linear-gradient(135deg, #e8f6f7 0%, #f0fdfa 100%)',
+              border: '1px solid #b2e2e4',
+              borderRadius: '1rem',
+              padding: '1.25rem 1.5rem',
+              marginBottom: '1.5rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '1rem',
+              flexWrap: 'wrap',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <div
+                style={{
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: '12px',
+                  background: 'linear-gradient(135deg, #67bec3 0%, #286e74 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#ffffff',
+                  boxShadow: '0 4px 12px rgba(103, 190, 195, 0.25)',
+                  flexShrink: 0,
+                }}
+              >
+                <Crown size={24} />
+              </div>
+              <div>
+                <h3
+                  style={{
+                    fontSize: '1.05rem',
+                    fontWeight: 700,
+                    color: '#1f565b',
+                    margin: '0 0 0.25rem 0',
+                  }}
+                >
+                  Become a Device Owner on TechShare
+                </h3>
+                <p style={{ fontSize: '0.875rem', color: '#286e74', margin: 0 }}>
+                  {ownerEkycData?.request?.status === 'pending'
+                    ? 'Your Owner verification request is currently under review by administrators.'
+                    : ownerEkycData?.request?.status === 'rejected'
+                    ? `Your Owner verification was rejected (${ownerEkycData.request.rejectReason}). Click to resubmit.`
+                    : 'You have completed Renter verification! Submit a selfie holding your ID card to start listing devices and earning rental income.'}
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsOwnerEkycModalOpen(true)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '0.65rem 1.25rem',
+                borderRadius: '0.625rem',
+                background: 'linear-gradient(135deg, #67bec3 0%, #286e74 100%)',
+                color: '#ffffff',
+                fontWeight: 700,
+                fontSize: '0.875rem',
+                border: 'none',
+                cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(103, 190, 195, 0.3)',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              <Crown size={16} />
+              {ownerEkycData?.request?.status === 'pending'
+                ? 'View Pending Request'
+                : ownerEkycData?.request?.status === 'rejected'
+                ? 'Resubmit Owner eKYC'
+                : 'Verify to Become Owner'}
+            </button>
+          </div>
+        )}
 
         {/* 2 Cột chi tiết: Hồ sơ cá nhân & Tài khoản */}
         <div className="profile-details-grid">
@@ -797,7 +948,7 @@ export const ProfilePage = () => {
           </div>
         )}
 
-        {/* Modal Nộp Hồ Sơ eKYC Xác Thực Danh Tính */}
+        {/* Modal Nộp Hồ Sơ eKYC Xác Thực Danh Tính Renter */}
         <EkycSubmitModal
           isOpen={isEkycModalOpen}
           onClose={() => setIsEkycModalOpen(false)}
@@ -809,6 +960,26 @@ export const ProfilePage = () => {
             setFeedbackMsg({
               type: 'success',
               text: 'Gửi hồ sơ eKYC thành công! Quản trị viên sẽ sớm xét duyệt hồ sơ của bạn.',
+            });
+            setTimeout(() => setFeedbackMsg(null), 4000);
+          }}
+        />
+
+        {/* Modal Nộp Hồ Sơ eKYC Nâng Cấp Owner (3 ảnh: CCCD 2 mặt + chân dung cầm CCCD) */}
+        <OwnerEkycSubmitModal
+          isOpen={isOwnerEkycModalOpen}
+          onClose={() => setIsOwnerEkycModalOpen(false)}
+          user={profile}
+          account={account}
+          onOpenEditAddress={openEditModal}
+          onSuccess={(newReq) => {
+            setOwnerEkycData((prev) => ({
+              ...prev,
+              request: newReq,
+            }));
+            setFeedbackMsg({
+              type: 'success',
+              text: 'Owner verification submitted successfully! Administrators will review your request shortly.',
             });
             setTimeout(() => setFeedbackMsg(null), 4000);
           }}

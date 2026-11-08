@@ -14,7 +14,7 @@ const getBaseApiUrl = () => {
 };
 
 export const API_CONFIG = {
-  BASE_URL: getBaseApiUrl(),
+  BASE_URL: process.env.REACT_APP_API_URL || "http://localhost:8000/api",
   TIMEOUT_MS: 15000,
   ENDPOINTS: {
     ADMIN_KPI: "/admin/kpi",
