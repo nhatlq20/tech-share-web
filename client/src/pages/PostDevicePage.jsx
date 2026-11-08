@@ -11,6 +11,7 @@ import BasicDeviceForm from "../components/device/BasicDeviceForm";
 import RentalInfoForm from "../components/device/RentalInfoForm";
 import SpecsBuilderForm from "../components/device/SpecsBuilderForm";
 import api from "../services/api.js";
+import { generateDeviceDescription } from "../services/aiDeviceService.js";
 import { compressImage } from "../services/uploadService.js";
 import "./PostDevicePage.css";
 
@@ -51,6 +52,9 @@ const PostDevicePage = ({ onBack, onDeviceCreated }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadMessage, setUploadMessage] = useState("");
   const [submissionModal, setSubmissionModal] = useState(null);
+  const [isGeneratingDescription, setIsGeneratingDescription] = useState(false);
+  const [descriptionGenerationError, setDescriptionGenerationError] =
+    useState("");
 
   const handleChange = (name, value) => {
     setFormData((previousData) => ({
@@ -62,7 +66,57 @@ const PostDevicePage = ({ onBack, onDeviceCreated }) => {
       [name]: "",
       ...(name === "latitude" || name === "longitude" ? { location: "" } : {}),
     }));
+    if (
+      [
+        "name",
+        "brand",
+        "category",
+        "yearOfManufacture",
+        "condition",
+        "pricePerDay",
+      ].includes(name)
+    ) {
+      setDescriptionGenerationError("");
+    }
     setSubmissionModal(null);
+  };
+
+  const handleGenerateDescription = async () => {
+    if (isGeneratingDescription) return;
+
+    setIsGeneratingDescription(true);
+    setDescriptionGenerationError("");
+    try {
+      const description = await generateDeviceDescription({
+        name: formData.name.trim(),
+        brand: formData.brand.trim(),
+        category: formData.category,
+        yearOfManufacture: formData.yearOfManufacture,
+        condition: formData.condition,
+        pricePerDay: formData.pricePerDay
+          ? Number(formData.pricePerDay)
+          : undefined,
+        specs: formData.specs.reduce((result, specification) => {
+          const name = specification.key.trim();
+          if (name && specification.value.trim()) {
+            result[name] = specification.value.trim();
+          }
+          return result;
+        }, {}),
+      });
+
+      setFormData((previousData) => ({ ...previousData, description }));
+      setErrors((previousErrors) => ({
+        ...previousErrors,
+        description: "",
+      }));
+    } catch (error) {
+      setDescriptionGenerationError(
+        error.message || "Không thể tạo mô tả lúc này. Vui lòng thử lại.",
+      );
+    } finally {
+      setIsGeneratingDescription(false);
+    }
   };
 
   const handleAddImages = (selectedImages) => {
@@ -116,8 +170,6 @@ const PostDevicePage = ({ onBack, onDeviceCreated }) => {
       if (!formData.category) nextErrors.category = "Vui lòng chọn danh mục.";
       if (!formData.brand.trim())
         nextErrors.brand = "Vui lòng nhập thương hiệu.";
-      if (!formData.description.trim())
-        nextErrors.description = "Vui lòng nhập mô tả thiết bị.";
       if (formData.images.length < 2) {
         nextErrors.images = "Vui lòng thêm ít nhất 2 ảnh thiết bị.";
       }
@@ -423,6 +475,19 @@ const PostDevicePage = ({ onBack, onDeviceCreated }) => {
                 onChange={handleChange}
                 onAddImages={handleAddImages}
                 onRemoveImage={handleRemoveImage}
+                onGenerateDescription={handleGenerateDescription}
+                canGenerateDescription={
+                  Boolean(formData.name.trim()) &&
+                  Boolean(formData.category) &&
+                  Boolean(formData.brand.trim()) &&
+                  Number.isInteger(Number(formData.yearOfManufacture)) &&
+                  Number(formData.yearOfManufacture) >= 1990 &&
+                  Number(formData.yearOfManufacture) <=
+                    new Date().getFullYear() &&
+                  Boolean(formData.condition)
+                }
+                isGeneratingDescription={isGeneratingDescription}
+                descriptionGenerationError={descriptionGenerationError}
               />
             )}
             {currentStep === 2 && (
