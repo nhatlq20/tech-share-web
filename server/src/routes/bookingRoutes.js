@@ -27,6 +27,7 @@ router.get('/my-bookings', protect, getMyBookings);
 router.get('/owner', getOwnerBookings);
 router.post('/validate-pricing', validatePricing);
 router.get('/availability/:id', getDeviceAvailability);
+router.get('/busy-dates/:id', getDeviceAvailability);
 
 // Owner actions on bookings
 router.patch('/:id/approve', approveBooking);
@@ -48,5 +49,6 @@ router.patch('/:id/extension/reject', protect, rejectBookingExtension);
 router.post('/', optionalProtect, createBooking);
 router.get('/:id', protect, getBookingById);
 router.patch('/:id/cancel', protect, cancelBooking);
+router.put('/:id/cancel', protect, cancelBooking);
 
 export default router;

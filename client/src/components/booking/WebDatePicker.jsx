@@ -8,14 +8,16 @@ import {
   RotateCcw,
   AlertCircle,
   Sparkles,
+  LogIn,
+  LogOut,
+  Zap,
 } from 'lucide-react';
 import { STRINGS } from '../../constants/strings.js';
-import { MAGIC_NUMBERS } from '../../constants/config.js';
 import './WebDatePicker.css';
 
-/**
- * Helper to format date to 'YYYY-MM-DD'
- */
+const QUICK_DURATION_PRESETS = [1, 2, 3, 5, 7];
+const QUICK_TIMES = ['08:00', '10:00', '13:30', '17:30', '20:00'];
+
 const formatDateKey = (date) => {
   if (!date) return '';
   const d = new Date(date);
@@ -25,28 +27,32 @@ const formatDateKey = (date) => {
   return `${year}-${month}-${day}`;
 };
 
-/**
- * Format date to display string DD/MM/YYYY
- */
 const formatDisplayDate = (dateStr) => {
   if (!dateStr) return '';
   const [y, m, d] = dateStr.split('-');
   return `${d}/${m}/${y}`;
 };
 
+const getDayOfWeek = (dateStr) => {
+  if (!dateStr) return '';
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const dateObj = new Date(y, m - 1, d);
+  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  return days[dateObj.getDay()];
+};
+
 /**
- * WebDatePicker - Compact Interactive Date & Time Range Picker for TechShare
- * Side-by-side Calendar + Time Selector layout to maximize information density.
+ * WebDatePicker - Desktop Web side-by-side Calendar & Schedule Selector
+ * Synchronized with App's Rental Period data (Step 1 Pickup, Step 2 Return, Quick Presets [1,2,3,5,7], Time Suggestions)
  */
 export const WebDatePicker = ({
   startDate,
   endDate,
-  pickupTime = '09:00',
-  returnTime = '18:00',
+  pickupTime = '08:00',
+  returnTime = '08:00',
+  rentalDurationInfo = { days: 0, hours: 0, totalHours: 0, billingDays: 0 },
   onChange,
   disabledDates = [],
-  bookedRanges = [],
-  isLoading = false,
 }) => {
   const today = useMemo(() => {
     const t = new Date();
@@ -75,7 +81,7 @@ export const WebDatePicker = ({
     const daysCount = new Date(year, month + 1, 0).getDate();
     const firstDayIndex = new Date(year, month, 1).getDay();
     const offset = firstDayIndex === 0 ? 6 : firstDayIndex - 1;
-    const title = currentMonthDate.toLocaleString('en-US', { month: 'short', year: 'numeric' });
+    const title = currentMonthDate.toLocaleString('en-US', { month: 'long', year: 'numeric' });
 
     return {
       daysInMonth: daysCount,
@@ -130,7 +136,7 @@ export const WebDatePicker = ({
     setErrorMessage(null);
 
     if (isDateDisabled(dateKey)) {
-      setErrorMessage(STRINGS.booking.datePicker.conflictAlert);
+      setErrorMessage(STRINGS.BOOKING_CREATE.CONFLICT_MSG);
       return;
     }
 
@@ -140,7 +146,6 @@ export const WebDatePicker = ({
         endDate: null,
         pickupTime,
         returnTime,
-        totalDays: MAGIC_NUMBERS.BOOKING.MIN_RENTAL_DAYS,
       });
       return;
     }
@@ -152,29 +157,20 @@ export const WebDatePicker = ({
           endDate: null,
           pickupTime,
           returnTime,
-          totalDays: MAGIC_NUMBERS.BOOKING.MIN_RENTAL_DAYS,
         });
         return;
       }
 
       if (rangeHasBlockedDates(startKey, dateKey)) {
-        setErrorMessage(STRINGS.booking.datePicker.conflictAlert);
+        setErrorMessage(STRINGS.BOOKING_CREATE.CONFLICT_MSG);
         return;
       }
-
-      const [y1, m1, d1] = startKey.split('-').map(Number);
-      const [y2, m2, d2] = dateKey.split('-').map(Number);
-      const diffDays = Math.max(
-        1,
-        Math.round((new Date(y2, m2 - 1, d2) - new Date(y1, m1 - 1, d1)) / (1000 * 60 * 60 * 24))
-      );
 
       onChange({
         startDate: startKey,
         endDate: dateKey,
         pickupTime,
         returnTime,
-        totalDays: diffDays,
       });
     }
   };
@@ -184,47 +180,49 @@ export const WebDatePicker = ({
     onChange({
       startDate: null,
       endDate: null,
-      pickupTime: '09:00',
-      returnTime: '18:00',
-      totalDays: 0,
+      pickupTime: '08:00',
+      returnTime: '08:00',
     });
   };
 
-  const handleQuickSelect = (daysCount) => {
+  const handleQuickSelect = (daysToAdd) => {
     setErrorMessage(null);
-    let foundStartKey = null;
-    let foundEndKey = null;
 
-    for (let offset = 0; offset < 30; offset++) {
-      const testStart = new Date(today);
-      testStart.setDate(testStart.getDate() + offset);
-      const testStartKey = formatDateKey(testStart);
-
-      if (!isDateDisabled(testStartKey)) {
-        const testEnd = new Date(testStart);
-        testEnd.setDate(testEnd.getDate() + (daysCount - 1));
-        const testEndKey = formatDateKey(testEnd);
-
-        if (!rangeHasBlockedDates(testStartKey, testEndKey)) {
-          foundStartKey = testStartKey;
-          foundEndKey = testEndKey;
+    let baseStartKey = startKey;
+    if (!baseStartKey) {
+      for (let offset = 0; offset < 30; offset += 1) {
+        const candidate = new Date(today);
+        candidate.setDate(candidate.getDate() + offset);
+        const key = formatDateKey(candidate);
+        if (!isDateDisabled(key)) {
+          baseStartKey = key;
           break;
         }
       }
     }
 
-    if (foundStartKey && foundEndKey) {
-      setCurrentMonthDate(new Date(foundStartKey));
-      onChange({
-        startDate: foundStartKey,
-        endDate: foundEndKey,
-        pickupTime,
-        returnTime,
-        totalDays: daysCount,
-      });
-    } else {
-      setErrorMessage(STRINGS.booking.datePicker.conflictAlert);
+    if (!baseStartKey) {
+      setErrorMessage(STRINGS.BOOKING_CREATE.CONFLICT_MSG);
+      return;
     }
+
+    const [y, m, d] = baseStartKey.split('-').map(Number);
+    const targetEnd = new Date(y, m - 1, d);
+    targetEnd.setDate(targetEnd.getDate() + daysToAdd);
+    const targetEndKey = formatDateKey(targetEnd);
+
+    if (rangeHasBlockedDates(baseStartKey, targetEndKey)) {
+      setErrorMessage(STRINGS.BOOKING_CREATE.CONFLICT_MSG);
+      return;
+    }
+
+    setCurrentMonthDate(new Date(y, m - 1, 1));
+    onChange({
+      startDate: baseStartKey,
+      endDate: targetEndKey,
+      pickupTime,
+      returnTime: pickupTime,
+    });
   };
 
   const handlePickupTimeChange = (newTime) => {
@@ -232,8 +230,7 @@ export const WebDatePicker = ({
       startDate: startKey || null,
       endDate: endKey || null,
       pickupTime: newTime,
-      returnTime: returnTime || '18:00',
-      totalDays: totalSelectedDays || 1,
+      returnTime: returnTime || '08:00',
     });
   };
 
@@ -241,9 +238,8 @@ export const WebDatePicker = ({
     onChange({
       startDate: startKey || null,
       endDate: endKey || null,
-      pickupTime: pickupTime || '09:00',
+      pickupTime: pickupTime || '08:00',
       returnTime: newTime,
-      totalDays: totalSelectedDays || 1,
     });
   };
 
@@ -279,60 +275,57 @@ export const WebDatePicker = ({
     return 'ts-calendar-cell hover:bg-brand-50 hover:text-brand-600 rounded-lg text-slate-700 cursor-pointer';
   };
 
-  const totalSelectedDays = useMemo(() => {
-    if (!startKey) return 0;
-    if (!endKey) return 1;
-    const [y1, m1, d1] = startKey.split('-').map(Number);
-    const [y2, m2, d2] = endKey.split('-').map(Number);
-    return Math.max(
-      1,
-      Math.round((new Date(y2, m2 - 1, d2) - new Date(y1, m1 - 1, d1)) / (1000 * 60 * 60 * 24))
-    );
-  }, [startKey, endKey]);
-
   return (
-    <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
-      {/* Top Bar: Title + Quick Select Pills + Clear */}
-      <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-100">
-        <div className="flex items-center gap-2">
-          <CalendarIcon className="w-4 h-4 text-brand-500 flex-shrink-0" />
-          <h2 className="text-sm font-bold text-slate-800">
-            {STRINGS.booking.datePicker.title}
-          </h2>
+    <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-100">
+      {/* Header Row: Title + Subtitle + Duration Badge + Quick Presets */}
+      <div className="flex flex-wrap items-center justify-between gap-3 pb-3.5 border-b border-slate-100">
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-xl bg-brand-50 flex items-center justify-center text-brand-500 shrink-0">
+            <CalendarIcon className="w-4 h-4" />
+          </div>
+          <div>
+            <h2 className="text-sm font-extrabold text-slate-900">
+              {STRINGS.BOOKING_CREATE.RENTAL_TIME_TITLE}
+            </h2>
+            <p className="text-[11px] text-slate-500">
+              {STRINGS.BOOKING_CREATE.RENTAL_TIME_SUBTITLE}
+            </p>
+          </div>
         </div>
 
         <div className="flex items-center flex-wrap gap-1.5">
-          <span className="text-[11px] text-slate-400 font-medium flex items-center gap-1 mr-0.5">
+          <span className="text-[11px] text-slate-400 font-semibold flex items-center gap-1 mr-1">
             <Sparkles className="w-3 h-3 text-brand-500" />
-            Quick:
+            {STRINGS.BOOKING_CREATE.QUICK_SELECT_LABEL}
           </span>
-          <button
-            type="button"
-            onClick={() => handleQuickSelect(1)}
-            className="px-2.5 py-0.5 text-[11px] rounded-full bg-slate-100 text-slate-600 hover:bg-brand-100 hover:text-brand-600 font-semibold transition"
-          >
-            {STRINGS.booking.datePicker.quick1Day}
-          </button>
-          <button
-            type="button"
-            onClick={() => handleQuickSelect(3)}
-            className="px-2.5 py-0.5 text-[11px] rounded-full bg-slate-100 text-slate-600 hover:bg-brand-100 hover:text-brand-600 font-semibold transition"
-          >
-            {STRINGS.booking.datePicker.quickWeekend}
-          </button>
-          <button
-            type="button"
-            onClick={() => handleQuickSelect(7)}
-            className="px-2.5 py-0.5 text-[11px] rounded-full bg-slate-100 text-slate-600 hover:bg-brand-100 hover:text-brand-600 font-semibold transition"
-          >
-            {STRINGS.booking.datePicker.quick1Week}
-          </button>
+          {QUICK_DURATION_PRESETS.map((d) => {
+            const isActive =
+              rentalDurationInfo.days === d &&
+              rentalDurationInfo.hours === 0 &&
+              Boolean(startKey && endKey);
+            return (
+              <button
+                key={d}
+                type="button"
+                onClick={() => handleQuickSelect(d)}
+                className={`px-2.5 py-1 text-[11px] rounded-full border transition ${
+                  isActive
+                    ? 'bg-brand-50 border-brand-500 text-brand-600 font-bold'
+                    : 'bg-slate-100 border-slate-200 text-slate-600 hover:bg-brand-50 hover:border-brand-300 hover:text-brand-600 font-semibold'
+                }`}
+              >
+                {d === 7
+                  ? STRINGS.BOOKING_CREATE.QUICK_SELECT_WEEK
+                  : STRINGS.BOOKING_CREATE.QUICK_SELECT_DAYS(d)}
+              </button>
+            );
+          })}
 
           {startKey && (
             <button
               type="button"
               onClick={handleClear}
-              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold text-red-600 bg-red-50 hover:bg-red-100 transition"
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold text-red-600 bg-red-50 hover:bg-red-100 transition"
             >
               <RotateCcw className="w-3 h-3" />
               {STRINGS.booking.datePicker.clearDates}
@@ -341,16 +334,16 @@ export const WebDatePicker = ({
         </div>
       </div>
 
-      {/* Main Side-by-Side Layout: Left = Calendar, Right = Time & Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 pt-3 items-start">
-        {/* Left: Compact Calendar (7 cols) */}
+      {/* Main Web Side-by-Side Grid: Left = Calendar (7 cols), Right = Step 1 Pickup & Step 2 Return + Time (5 cols) */}
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-5 pt-4 items-start">
+        {/* Left: Interactive Calendar (7 cols) */}
         <div className="md:col-span-7">
           {/* Month Navigation */}
-          <div className="flex items-center justify-between pb-1.5">
+          <div className="flex items-center justify-between pb-2">
             <button
               type="button"
               onClick={handlePrevMonth}
-              className="p-1 rounded-lg hover:bg-slate-100 text-slate-600 transition"
+              className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 transition"
               aria-label={STRINGS.booking.datePicker.monthPrev}
             >
               <ChevronLeft className="w-4 h-4" />
@@ -361,7 +354,7 @@ export const WebDatePicker = ({
             <button
               type="button"
               onClick={handleNextMonth}
-              className="p-1 rounded-lg hover:bg-slate-100 text-slate-600 transition"
+              className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 transition"
               aria-label={STRINGS.booking.datePicker.monthNext}
             >
               <ChevronRight className="w-4 h-4" />
@@ -408,7 +401,7 @@ export const WebDatePicker = ({
                   }}
                   onMouseLeave={() => setHoverDate(null)}
                   className={getCellClasses(dateKey)}
-                  title={isBlocked ? STRINGS.booking.datePicker.legendBlocked : dateKey}
+                  title={isBlocked ? STRINGS.BOOKING_CREATE.LEGEND_BUSY : dateKey}
                 >
                   <span>{dayNumber}</span>
                   {isBlocked && (
@@ -422,83 +415,87 @@ export const WebDatePicker = ({
             })}
           </div>
 
-          {/* Mini Legend */}
-          <div className="flex items-center gap-3 mt-2 pt-2 border-t border-slate-100 text-[10px] text-slate-500">
-            <div className="flex items-center gap-1">
-              <span className="w-2.5 h-2.5 rounded-xs bg-white border border-slate-200" />
+          {/* Legend matching App */}
+          <div className="flex items-center gap-4 mt-2.5 pt-2.5 border-t border-slate-100 text-[11px] text-slate-500">
+            <div className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-brand-500" />
+              <span>{STRINGS.BOOKING_CREATE.LEGEND_SELECTED}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
+              <span>{STRINGS.BOOKING_CREATE.LEGEND_BUSY}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-xs bg-white border border-slate-300" />
               <span>{STRINGS.booking.datePicker.legendAvailable}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="w-2.5 h-2.5 rounded-xs bg-brand-500" />
-              <span>{STRINGS.booking.datePicker.legendSelected}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="w-2.5 h-2.5 rounded-xs bg-slate-100 border border-slate-200" />
-              <span>{STRINGS.booking.datePicker.legendBlocked}</span>
             </div>
           </div>
         </div>
 
-        {/* Right: Pickup / Return Time + Selected Summary (5 cols) */}
+        {/* Right: App-synchronized Step 1 Pickup & Step 2 Return + Time Suggestions (5 cols) */}
         <div className="md:col-span-5 flex flex-col gap-2.5 md:border-l md:border-slate-100 md:pl-4">
-          {/* Selected Dates Summary Box */}
-          <div className="p-2.5 rounded-xl bg-brand-50/60 border border-brand-100 text-xs">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-brand-700">
-                Selected Period
+          {/* Step 1: Pickup Card */}
+          <div
+            className={`rounded-xl border p-3 transition-all ${
+              startKey
+                ? 'border-brand-500 bg-brand-50/40'
+                : 'border-slate-200 bg-slate-50'
+            }`}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <span className="inline-flex items-center gap-1.5 bg-emerald-50 px-2 py-0.5 rounded-full text-[10px] font-extrabold text-emerald-600 tracking-wide">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                {STRINGS.BOOKING_CREATE.STEP_1_BADGE}
               </span>
-              {startKey && (
-                <span className="px-2 py-0.5 rounded-full bg-brand-500 text-white text-[10px] font-bold">
-                  {totalSelectedDays} {STRINGS.booking.datePicker.totalDaysSuffix}
-                </span>
-              )}
-            </div>
-            {startKey ? (
-              <div className="text-slate-800 font-semibold text-xs leading-snug">
-                <div>
-                  Pickup: <strong className="text-brand-800">{formatDisplayDate(startKey)}</strong> ({pickupTime})
-                </div>
-                <div className="mt-0.5">
-                  Return:{' '}
-                  {endKey ? (
-                    <>
-                      <strong className="text-brand-800">{formatDisplayDate(endKey)}</strong> ({returnTime})
-                    </>
-                  ) : (
-                    <span className="text-slate-400 italic font-normal">
-                      {STRINGS.booking.datePicker.selectEndDate}
-                    </span>
-                  )}
-                </div>
+              <div className="flex items-center gap-1">
+                <Clock className="w-3 h-3 text-brand-500" />
+                <input
+                  type="time"
+                  value={pickupTime}
+                  onChange={(e) => handlePickupTimeChange(e.target.value)}
+                  className="px-1.5 py-0.5 text-xs font-bold text-slate-800 rounded-md border border-slate-200 bg-white focus:outline-hidden focus:border-brand-500 cursor-pointer"
+                />
               </div>
-            ) : (
-              <p className="text-slate-400 italic text-[11px]">
-                {STRINGS.booking.datePicker.notSelected}
-              </p>
-            )}
-          </div>
-
-          {/* Pickup Time */}
-          <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80">
-            <div className="flex items-center justify-between gap-2 mb-1.5">
-              <label className="text-[11px] font-bold text-slate-700 flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-brand-500" />
-                <span>{STRINGS.booking.datePicker.pickupTimeLabel || 'Pickup Time'}</span>
-              </label>
-              <input
-                type="time"
-                value={pickupTime || '09:00'}
-                onChange={(e) => handlePickupTimeChange(e.target.value)}
-                className="px-2 py-1 text-xs font-bold text-slate-800 rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-brand-500 cursor-pointer"
-              />
             </div>
+
+            <div className="flex items-center gap-2.5 mb-2">
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+                  startKey ? 'bg-emerald-500 text-white' : 'bg-emerald-50 text-emerald-500'
+                }`}
+              >
+                <LogIn className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                {startKey ? (
+                  <>
+                    <p className="text-xs font-extrabold text-slate-900">
+                      {formatDisplayDate(startKey)} ({getDayOfWeek(startKey)})
+                    </p>
+                    <p className="text-[11px] font-semibold text-brand-600">
+                      {STRINGS.BOOKING_CREATE.AT_TIME(pickupTime)}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-xs font-bold text-slate-600">
+                      {STRINGS.BOOKING_CREATE.NO_START_DATE}
+                    </p>
+                    <p className="text-[10px] text-slate-400">
+                      {STRINGS.BOOKING_CREATE.NO_START_HINT}
+                    </p>
+                  </>
+                )}
+              </div>
+            </div>
+
             <div className="flex items-center gap-1 flex-wrap">
-              {['08:00', '09:00', '10:00', '14:00'].map((t) => (
+              {QUICK_TIMES.map((t) => (
                 <button
                   key={`p-${t}`}
                   type="button"
                   onClick={() => handlePickupTimeChange(t)}
-                  className={`px-2 py-0.5 rounded text-[10px] font-medium transition ${
+                  className={`px-2 py-0.5 rounded-full text-[10px] font-semibold transition ${
                     pickupTime === t
                       ? 'bg-brand-500 text-white font-bold'
                       : 'bg-white text-slate-600 hover:bg-slate-200/80 border border-slate-200'
@@ -510,27 +507,85 @@ export const WebDatePicker = ({
             </div>
           </div>
 
-          {/* Return Time */}
-          <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80">
-            <div className="flex items-center justify-between gap-2 mb-1.5">
-              <label className="text-[11px] font-bold text-slate-700 flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-amber-500" />
-                <span>{STRINGS.booking.datePicker.returnTimeLabel || 'Return Time'}</span>
-              </label>
-              <input
-                type="time"
-                value={returnTime || '18:00'}
-                onChange={(e) => handleReturnTimeChange(e.target.value)}
-                className="px-2 py-1 text-xs font-bold text-slate-800 rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-brand-500 cursor-pointer"
-              />
+          {/* Duration Connector Pill */}
+          {startKey && endKey && rentalDurationInfo.billingDays > 0 && (
+            <div className="flex items-center justify-center">
+              <div className="inline-flex items-center gap-1 bg-brand-500 text-white px-3 py-0.5 rounded-full text-[11px] font-bold shadow-2xs">
+                <Zap className="w-3 h-3" />
+                <span>
+                  {STRINGS.BOOKING_CREATE.TOTAL_DURATION_CONNECTOR(
+                    rentalDurationInfo.billingDays,
+                    rentalDurationInfo.totalHours
+                  )}
+                </span>
+              </div>
             </div>
+          )}
+
+          {/* Step 2: Return Card */}
+          <div
+            className={`rounded-xl border p-3 transition-all ${
+              endKey
+                ? 'border-brand-500 bg-brand-50/40'
+                : 'border-slate-200 bg-slate-50'
+            }`}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <span className="inline-flex items-center gap-1.5 bg-amber-50 px-2 py-0.5 rounded-full text-[10px] font-extrabold text-amber-600 tracking-wide">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                {STRINGS.BOOKING_CREATE.STEP_2_BADGE}
+              </span>
+              <div className="flex items-center gap-1">
+                <Clock className="w-3 h-3 text-brand-500" />
+                <input
+                  type="time"
+                  value={returnTime}
+                  onChange={(e) => handleReturnTimeChange(e.target.value)}
+                  className="px-1.5 py-0.5 text-xs font-bold text-slate-800 rounded-md border border-slate-200 bg-white focus:outline-hidden focus:border-brand-500 cursor-pointer"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2.5 mb-2">
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+                  endKey ? 'bg-amber-500 text-white' : 'bg-amber-50 text-amber-500'
+                }`}
+              >
+                <LogOut className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                {endKey ? (
+                  <>
+                    <p className="text-xs font-extrabold text-slate-900">
+                      {formatDisplayDate(endKey)} ({getDayOfWeek(endKey)})
+                    </p>
+                    <p className="text-[11px] font-semibold text-brand-600">
+                      {STRINGS.BOOKING_CREATE.RETURN_AT_TIME(returnTime)}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-xs font-bold text-slate-600">
+                      {STRINGS.BOOKING_CREATE.NO_END_DATE}
+                    </p>
+                    <p className="text-[10px] text-slate-400">
+                      {startKey
+                        ? STRINGS.BOOKING_CREATE.NO_END_HINT_READY
+                        : STRINGS.BOOKING_CREATE.NO_END_HINT_WAIT}
+                    </p>
+                  </>
+                )}
+              </div>
+            </div>
+
             <div className="flex items-center gap-1 flex-wrap">
-              {['12:00', '17:00', '18:00', '20:00'].map((t) => (
+              {QUICK_TIMES.map((t) => (
                 <button
                   key={`r-${t}`}
                   type="button"
                   onClick={() => handleReturnTimeChange(t)}
-                  className={`px-2 py-0.5 rounded text-[10px] font-medium transition ${
+                  className={`px-2 py-0.5 rounded-full text-[10px] font-semibold transition ${
                     returnTime === t
                       ? 'bg-brand-500 text-white font-bold'
                       : 'bg-white text-slate-600 hover:bg-slate-200/80 border border-slate-200'
@@ -543,8 +598,8 @@ export const WebDatePicker = ({
           </div>
 
           {errorMessage && (
-            <div className="p-2 rounded-xl bg-red-50 text-red-600 text-[11px] flex items-center gap-1.5 border border-red-100">
-              <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+            <div className="p-2.5 rounded-xl bg-red-50 text-red-600 text-[11px] flex items-center gap-1.5 border border-red-100">
+              <AlertCircle className="w-3.5 h-3.5 shrink-0" />
               <span>{errorMessage}</span>
             </div>
           )}

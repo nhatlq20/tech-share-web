@@ -12,3 +12,8 @@ export const reviewService = {
   deleteReview: (deviceId, reviewId) => api.delete(`${reviewPath(deviceId)}/${reviewId}`),
   replyToReview: (deviceId, reviewId, comment) => api.put(`${reviewPath(deviceId)}/${reviewId}/reply`, { comment }),
 };
+
+export const createReview = ({ deviceId, bookingId, rating, comment }) =>
+  reviewService.createReview(deviceId, { bookingId, rating, comment });
+
+export default reviewService;

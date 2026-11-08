@@ -1,270 +1,406 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { CalendarDays, ChevronRight, Package, QrCode, Camera, CheckCircle2, Star } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import {
+  ArrowRight,
+  Package,
+  Clock,
+  CheckCircle2,
+  CalendarPlus,
+  Star,
+  RotateCcw,
+  Receipt,
+} from 'lucide-react';
 import { STRINGS } from '../../constants/strings.js';
 import { ROUTES } from '../../routes/routes.js';
-import { formatPrice, formatDate } from '../../utils/formatters.js';
 import { BookingStatusBadge } from './BookingStatusBadge.jsx';
-import { CountdownBadge } from './CountdownBadge.jsx';
+import { CountdownBadge, RentalCountdownTimer } from './CountdownBadge.jsx';
 
-const T = STRINGS.booking.myBookings;
+const formatPriceVnd = (amount) =>
+  `${Math.round(Number(amount) || 0).toLocaleString('en-US')} ${STRINGS.COMMON.VND}`;
 
-/**
- * Extract display-ready fields from a booking document (handles device/deviceId aliases).
- */
-const toRowModel = (booking) => {
-  const device = booking.device || booking.deviceId || {};
-  const bookingKey = booking.bookingCode || booking._id;
-
-  let totalDays = booking.totalDays;
-  if (booking.startDate && booking.endDate) {
-    const s = new Date(booking.startDate).getTime();
-    const e = new Date(booking.endDate).getTime();
-    const diff = e - s;
-    if (diff > 0) {
-      totalDays = Math.max(1, Math.round(diff / (1000 * 60 * 60 * 24)));
-    }
+const getDurationLabel = (startDate, endDate, totalDays) => {
+  const diffMs = new Date(endDate).getTime() - new Date(startDate).getTime();
+  if (diffMs > 0) {
+    const totalHours = Math.max(1, Math.round(diffMs / (1000 * 60 * 60)));
+    const d = Math.floor(totalHours / 24);
+    const h = totalHours % 24;
+    if (d > 0 && h > 0) return STRINGS.BOOKING_ITEM_CARD.DAYS_HOURS(d, h);
+    if (d > 0) return STRINGS.BOOKING_ITEM_CARD.DAYS_ONLY(d);
+    return STRINGS.BOOKING_ITEM_CARD.HOURS_ONLY(h);
   }
-
-  const beforePhotos =
-    booking.handover?.beforePhotos ||
-    booking.handoverPhotos?.beforeRental ||
-    [];
-
-  return {
-    bookingKey,
-    detailPath: ROUTES.BOOKING_DETAIL_PATH(bookingKey),
-    title: device.title || device.name || T.untitledDevice,
-    brand: device.brand || '',
-    image: Array.isArray(device.images) && device.images.length > 0 ? device.images[0] : '',
-    bookingCode: booking.bookingCode || '',
-    startDate: formatDate(booking.startDate),
-    endDate: formatDate(booking.endDate),
-    rawStartDate: booking.startDate,
-    rawEndDate: booking.endDate,
-    totalDays: totalDays || 1,
-    createdAt: formatDate(booking.createdAt),
-    totalAmount: formatPrice(booking.totalAmount),
-    status: booking.status,
-    beforePhotosCount: Array.isArray(beforePhotos) ? beforePhotos.length : 0,
-    review: booking.review || null,
-  };
+  return STRINGS.BOOKING_ITEM_CARD.DAYS_ONLY(totalDays || 1);
 };
 
-const DeviceThumb = ({ image, title }) => (
-  <div className="w-14 h-14 rounded-xl bg-slate-100 overflow-hidden flex-shrink-0 flex items-center justify-center">
-    {image ? (
-      <img src={image} alt={title} className="w-full h-full object-cover" loading="lazy" />
-    ) : (
-      <Package className="w-6 h-6 text-slate-400" aria-hidden="true" />
-    )}
-  </div>
-);
-
 /**
- * Desktop table row for the My Bookings hub.
+ * Shared Action Buttons matching App's BookingItemCard actions + Web Details button
  */
-export const BookingTableRow = ({ booking, onOpenHandover, onOpenReview }) => {
-  const row = toRowModel(booking);
+const BookingRowActions = ({
+  booking,
+  onViewDetail,
+  onCancel,
+  onExtend,
+  onRate,
+  onRebook,
+}) => {
+  const isReviewed = Boolean(booking?.isReviewed || booking?.review);
 
   return (
-    <tr className="group hover:bg-brand-50/60 transition-colors">
-      <td className="px-5 py-4">
-        <div className="flex items-center gap-3.5 min-w-0 max-w-[320px]">
-          <DeviceThumb image={row.image} title={row.title} />
-          <div className="min-w-0 flex-1">
-            <Link
-              to={row.detailPath}
-              className="block text-sm font-bold text-slate-800 truncate hover:text-brand-600 transition-colors"
-              title={row.title}
-            >
-              {row.title}
-            </Link>
-            <div className="flex items-center gap-2 mt-1 text-xs text-slate-500">
-              {row.brand && <span className="truncate max-w-[90px]">{row.brand}</span>}
-              {row.brand && <span className="w-1 h-1 rounded-full bg-slate-300 flex-shrink-0" aria-hidden="true" />}
-              <span className="font-mono text-slate-600 truncate">
-                {T.bookingCodePrefix}: {row.bookingCode}
+    <div
+      className="flex items-center justify-end gap-2 flex-wrap"
+      onClick={(e) => e.stopPropagation()}
+    >
+      {booking.status === 'pending' && onCancel && (
+        <button
+          type="button"
+          onClick={onCancel}
+          className="px-3 py-1.5 rounded-xl border border-red-500 text-red-500 hover:bg-red-50 text-xs font-bold transition-colors"
+        >
+          {STRINGS.BOOKING_ITEM_CARD.CANCEL_BTN}
+        </button>
+      )}
+
+      {booking.status === 'active' && onExtend && (
+        <button
+          type="button"
+          disabled={booking.extensionRequest?.status === 'pending'}
+          onClick={onExtend}
+          className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border text-xs font-bold transition-colors ${
+            booking.extensionRequest?.status === 'pending'
+              ? 'border-slate-300 bg-slate-100 text-slate-400 cursor-not-allowed'
+              : 'border-brand-500 bg-brand-50 text-brand-600 hover:bg-brand-100'
+          }`}
+        >
+          <CalendarPlus className="w-3.5 h-3.5" />
+          <span>
+            {booking.extensionRequest?.status === 'pending'
+              ? STRINGS.BOOKING_ITEM_CARD.EXTEND_PENDING_BTN
+              : STRINGS.BOOKING_ITEM_CARD.EXTEND_BTN}
+          </span>
+        </button>
+      )}
+
+      {booking.status === 'completed' && (
+        <>
+          {isReviewed ? (
+            <>
+              <span className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-600 text-xs font-bold">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>{STRINGS.BOOKING_ITEM_CARD.RATED_BTN}</span>
+              </span>
+
+              {onRebook && (
+                <button
+                  type="button"
+                  onClick={onRebook}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-brand-50 border border-brand-500 text-brand-600 hover:bg-brand-100 text-xs font-bold transition-colors"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>{STRINGS.BOOKING_ITEM_CARD.REBOOK_BTN}</span>
+                </button>
+              )}
+            </>
+          ) : (
+            onRate && (
+              <button
+                type="button"
+                onClick={onRate}
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition-colors shadow-2xs"
+              >
+                <Star className="w-3.5 h-3.5 fill-white" />
+                <span>{STRINGS.BOOKING_ITEM_CARD.RATE_BTN}</span>
+              </button>
+            )
+          )}
+        </>
+      )}
+
+      <button
+        type="button"
+        onClick={onViewDetail}
+        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-brand-500 text-slate-700 hover:text-white text-xs font-bold transition-colors"
+      >
+        <span>{STRINGS.booking.myBookings.viewDetailBtn}</span>
+        <ArrowRight className="w-3.5 h-3.5" />
+      </button>
+    </div>
+  );
+};
+
+/**
+ * BookingTableRow – Desktop Web Table Row with App-synchronized information & actions
+ */
+export const BookingTableRow = ({
+  booking,
+  onCancel,
+  onExtend,
+  onRate,
+  onRebook,
+}) => {
+  const navigate = useNavigate();
+
+  const device =
+    (typeof booking?.deviceId === 'object' && booking.deviceId) ||
+    (typeof booking?.device === 'object' && booking.device) ||
+    {};
+
+  const title =
+    device.name || device.title || STRINGS.BOOKING_ITEM_CARD.UNKNOWN_DEVICE;
+  const thumbnail =
+    Array.isArray(device.images) && device.images.length > 0
+      ? device.images[0]
+      : null;
+
+  const detailId = booking.bookingCode || booking._id;
+  const durationText = getDurationLabel(
+    booking.startDate,
+    booking.endDate,
+    booking.totalDays
+  );
+
+  const handleGoDetail = () => {
+    navigate(ROUTES.BOOKING_DETAIL_PATH(detailId));
+  };
+
+  return (
+    <tr
+      onClick={handleGoDetail}
+      className="group border-b border-slate-100 last:border-b-0 hover:bg-brand-50/30 transition cursor-pointer"
+    >
+      {/* 1. Device + Booking Code */}
+      <td className="py-4 pl-6 pr-4">
+        <div className="flex items-center gap-3.5">
+          <div className="w-16 h-16 rounded-xl bg-slate-100 overflow-hidden shrink-0 flex items-center justify-center border border-slate-200/70">
+            {thumbnail ? (
+              <img src={thumbnail} alt={title} className="w-full h-full object-cover" />
+            ) : (
+              <Package className="w-6 h-6 text-slate-400" />
+            )}
+          </div>
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-brand-600 mb-0.5">
+              <Receipt className="w-3.5 h-3.5 text-brand-500" />
+              <span>
+                #{booking.bookingCode || String(booking._id).slice(-6).toUpperCase()}
               </span>
             </div>
+            <p className="font-bold text-slate-900 group-hover:text-brand-600 transition truncate max-w-xs">
+              {title}
+            </p>
+            {device.brand && (
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                {device.brand}
+                {device.category ? ` • ${device.category}` : ''}
+              </p>
+            )}
           </div>
         </div>
       </td>
-      <td className="px-4 py-4 whitespace-nowrap">
-        <div className="flex items-center gap-2 text-sm text-slate-700">
-          <CalendarDays className="w-4 h-4 text-slate-400 flex-shrink-0" aria-hidden="true" />
-          <span>{row.startDate}</span>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-300 flex-shrink-0" aria-hidden="true" />
-          <span>{row.endDate}</span>
-        </div>
-        <p className="text-xs text-slate-500 mt-1">{T.daysSuffix(row.totalDays)}</p>
-      </td>
-      <td className="px-4 py-4 whitespace-nowrap">
-        <span className="text-sm font-bold text-brand-800">{row.totalAmount}</span>
-        <p className="text-xs text-slate-400 mt-1">
-          {T.createdAtPrefix} {row.createdAt}
-        </p>
-      </td>
-      <td className="px-4 py-4 whitespace-nowrap">
-        <BookingStatusBadge status={row.status} />
-        {row.status === 'approved' && row.beforePhotosCount > 0 && (
-          <div className="mt-1.5">
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-              {row.beforePhotosCount} {row.beforePhotosCount === 1 ? 'photo' : 'photos'} uploaded
+
+      {/* 2. Rental Period + Active Countdown + Extension Tag (App info) */}
+      <td className="py-4 px-4 text-sm text-slate-700">
+        <div className="space-y-1">
+          <p className="text-xs text-slate-500">
+            {STRINGS.BOOKING_ITEM_CARD.FROM_PREFIX}
+            <span className="font-semibold text-slate-900">
+              {new Date(booking.startDate).toLocaleDateString('en-US')}
             </span>
-          </div>
-        )}
-        {row.status === 'active' && row.rawEndDate && (
-          <div className="mt-1.5">
-            <CountdownBadge startDate={row.rawStartDate} targetDate={row.rawEndDate} size="sm" />
-          </div>
-        )}
-        {row.status === 'completed' && row.review && (
-          <div className="mt-1.5">
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
-              <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-              {row.review.rating}.0 Reviewed
-            </span>
-          </div>
-        )}
-      </td>
-      <td className="px-5 py-4 text-right whitespace-nowrap">
-        <div className="inline-flex items-center justify-end gap-2">
-          {row.status === 'approved' && typeof onOpenHandover === 'function' && (
-            <button
-              type="button"
-              id={`booking-handover-btn-${row.bookingKey}`}
-              onClick={() => onOpenHandover(booking)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold text-white bg-teal-600 hover:bg-teal-700 shadow-2xs transition-colors whitespace-nowrap flex-shrink-0"
-              title="View Handover QR Code & Upload Before-Rental Photos"
-            >
-              <QrCode className="w-3.5 h-3.5" aria-hidden="true" />
-              <Camera className="w-3.5 h-3.5" aria-hidden="true" />
-              <span>QR &amp; Handover</span>
-            </button>
+          </p>
+          <p className="text-xs text-slate-500">
+            {STRINGS.BOOKING_ITEM_CARD.TO_PREFIX}
+            <span className="font-semibold text-slate-900">
+              {new Date(booking.endDate).toLocaleDateString('en-US')}
+            </span>{' '}
+            <span className="text-brand-600 font-semibold">({durationText})</span>
+          </p>
+
+          {booking.status === 'active' && booking.endDate && (
+            <div className="pt-1">
+              <CountdownBadge endDate={booking.endDate} compact />
+            </div>
           )}
 
-          {row.status === 'completed' && typeof onOpenReview === 'function' && (
-            <button
-              type="button"
-              id={`booking-review-btn-${row.bookingKey}`}
-              onClick={() => onOpenReview(booking)}
-              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold shadow-2xs transition-colors whitespace-nowrap flex-shrink-0 ${
-                row.review
-                  ? 'bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100'
-                  : 'bg-amber-500 text-white hover:bg-amber-600'
-              }`}
-              title={row.review ? 'View or edit your review' : 'Rate & review this completed rental'}
-            >
-              <Star className={`w-3.5 h-3.5 ${row.review ? 'fill-amber-400 text-amber-400' : 'fill-current'}`} aria-hidden="true" />
-              <span>{row.review ? 'Edit Review' : 'Write Review'}</span>
-            </button>
+          {booking.extensionRequest?.status === 'pending' && (
+            <div className="inline-flex items-center gap-1 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md text-[11px] font-semibold text-amber-700 mt-1">
+              <Clock className="w-3 h-3 text-amber-500 shrink-0" />
+              <span>
+                {STRINGS.BOOKING_ITEM_CARD.EXT_PENDING(
+                  booking.extensionRequest.requestedDays,
+                  (booking.extensionRequest.additionalFee || 0).toLocaleString('en-US')
+                )}
+              </span>
+            </div>
           )}
 
-          <Link
-            to={row.detailPath}
-            id={`booking-detail-link-${row.bookingKey}`}
-            className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full text-xs font-semibold text-brand-700 bg-brand-100 hover:bg-brand-500 hover:text-white transition-colors whitespace-nowrap flex-shrink-0"
-          >
-            {T.viewDetailBtn}
-            <ChevronRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
-          </Link>
+          {booking.extensionRequest?.status === 'approved' && (
+            <div className="inline-flex items-center gap-1 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md text-[11px] font-semibold text-emerald-700 mt-1">
+              <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0" />
+              <span>
+                {STRINGS.BOOKING_ITEM_CARD.EXT_APPROVED(
+                  booking.extensionRequest.requestedDays
+                )}
+              </span>
+            </div>
+          )}
         </div>
+      </td>
+
+      {/* 3. Total Payment */}
+      <td className="py-4 px-4">
+        <span className="font-extrabold text-brand-500 text-sm">
+          {formatPriceVnd(booking.totalAmount)}
+        </span>
+      </td>
+
+      {/* 4. Status Badge */}
+      <td className="py-4 px-4">
+        <BookingStatusBadge status={booking.status} size="sm" />
+      </td>
+
+      {/* 5. Actions (Cancel / Extend / Review / Rent Again + Details) */}
+      <td className="py-4 pl-4 pr-6 text-right">
+        <BookingRowActions
+          booking={booking}
+          onViewDetail={handleGoDetail}
+          onCancel={onCancel}
+          onExtend={onExtend}
+          onRate={onRate}
+          onRebook={onRebook}
+        />
       </td>
     </tr>
   );
 };
 
 /**
- * Mobile card variant (same data as the table row) for small screens.
+ * BookingMobileCard – Responsive Card for mobile/tablet viewports
  */
-export const BookingMobileCard = ({ booking, onOpenHandover, onOpenReview }) => {
-  const row = toRowModel(booking);
+export const BookingMobileCard = ({
+  booking,
+  onCancel,
+  onExtend,
+  onRate,
+  onRebook,
+}) => {
+  const navigate = useNavigate();
+
+  const device =
+    (typeof booking?.deviceId === 'object' && booking.deviceId) ||
+    (typeof booking?.device === 'object' && booking.device) ||
+    {};
+
+  const title =
+    device.name || device.title || STRINGS.BOOKING_ITEM_CARD.UNKNOWN_DEVICE;
+  const thumbnail =
+    Array.isArray(device.images) && device.images.length > 0
+      ? device.images[0]
+      : null;
+
+  const detailId = booking.bookingCode || booking._id;
+  const durationText = getDurationLabel(
+    booking.startDate,
+    booking.endDate,
+    booking.totalDays
+  );
+
+  const handleGoDetail = () => {
+    navigate(ROUTES.BOOKING_DETAIL_PATH(detailId));
+  };
 
   return (
-    <div className="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow">
-      <Link to={row.detailPath} className="block">
-        <div className="flex items-start gap-4">
-          <DeviceThumb image={row.image} title={row.title} />
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-2">
-              <h3 className="text-sm font-bold text-slate-800 truncate">{row.title}</h3>
-              <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                <BookingStatusBadge status={row.status} size="sm" />
-                {row.status === 'active' && row.rawEndDate && (
-                  <CountdownBadge startDate={row.rawStartDate} targetDate={row.rawEndDate} size="sm" />
-                )}
-              </div>
-            </div>
-            <p className="text-xs font-mono text-slate-500 mt-1">
-              {T.bookingCodePrefix}: {row.bookingCode}
-            </p>
-            <div className="flex items-center gap-2 mt-2 text-xs text-slate-600">
-              <CalendarDays className="w-3.5 h-3.5 text-slate-400" aria-hidden="true" />
-              <span>
-                {row.startDate} → {row.endDate}
-              </span>
-              <span className="text-slate-400">· {T.daysSuffix(row.totalDays)}</span>
-            </div>
-            <div className="flex items-center justify-between mt-3">
-              <span className="text-sm font-bold text-brand-800">{row.totalAmount}</span>
-              <span className="inline-flex items-center gap-1 text-xs font-semibold text-brand-600">
-                {T.viewDetailBtn}
-                <ChevronRight className="w-3.5 h-3.5" aria-hidden="true" />
-              </span>
-            </div>
-          </div>
-        </div>
-      </Link>
-
-      {row.status === 'approved' && typeof onOpenHandover === 'function' && (
-        <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-          <span className="text-[11px] font-medium text-slate-500">
-            {row.beforePhotosCount > 0
-              ? `${row.beforePhotosCount} photo(s) uploaded`
-              : 'Approved – Ready for device handover'}
+    <div
+      onClick={handleGoDetail}
+      className="bg-white rounded-2xl p-4 shadow-xs border border-slate-100 hover:border-brand-200 transition cursor-pointer"
+    >
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-1.5">
+          <Receipt className="w-4 h-4 text-brand-500" />
+          <span className="text-xs font-bold text-slate-900">
+            #{booking.bookingCode || String(booking._id).slice(-6).toUpperCase()}
           </span>
-          <button
-            type="button"
-            onClick={() => onOpenHandover(booking)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold text-white bg-teal-600 hover:bg-teal-700 transition shadow-2xs"
-          >
-            <QrCode className="w-3.5 h-3.5" />
-            <Camera className="w-3.5 h-3.5" />
-            <span>QR &amp; Handover</span>
-          </button>
         </div>
+        <BookingStatusBadge status={booking.status} size="sm" />
+      </div>
+
+      <div className="flex items-center gap-3.5">
+        <div className="w-16 h-16 rounded-xl bg-slate-100 overflow-hidden shrink-0 flex items-center justify-center border border-slate-200/70">
+          {thumbnail ? (
+            <img src={thumbnail} alt={title} className="w-full h-full object-cover" />
+          ) : (
+            <Package className="w-6 h-6 text-slate-400" />
+          )}
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <p className="font-bold text-slate-900 truncate mb-1">{title}</p>
+          <p className="text-xs text-slate-500">
+            {STRINGS.BOOKING_ITEM_CARD.FROM_PREFIX}
+            <span className="font-semibold text-slate-900">
+              {new Date(booking.startDate).toLocaleDateString('en-US')}
+            </span>
+          </p>
+          <p className="text-xs text-slate-500">
+            {STRINGS.BOOKING_ITEM_CARD.TO_PREFIX}
+            <span className="font-semibold text-slate-900">
+              {new Date(booking.endDate).toLocaleDateString('en-US')}
+            </span>{' '}
+            ({durationText})
+          </p>
+        </div>
+      </div>
+
+      {booking.status === 'active' && (
+        <RentalCountdownTimer
+          startDate={booking.startDate}
+          endDate={booking.endDate}
+          status={booking.status}
+        />
       )}
 
-      {row.status === 'completed' && typeof onOpenReview === 'function' && (
-        <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-          <span className="text-[11px] font-medium text-slate-500 flex items-center gap-1">
-            {row.review ? (
-              <>
-                <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                <span className="font-bold text-amber-800">{row.review.rating}.0 Reviewed</span>
-              </>
-            ) : (
-              'Order completed – Rate your rental experience'
+      {booking.extensionRequest?.status === 'pending' && (
+        <div className="flex items-center gap-1.5 bg-amber-50 px-2.5 py-1.5 rounded-lg mt-2.5">
+          <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+          <span className="text-xs font-semibold text-amber-600">
+            {STRINGS.BOOKING_ITEM_CARD.EXT_PENDING(
+              booking.extensionRequest.requestedDays,
+              (booking.extensionRequest.additionalFee || 0).toLocaleString('en-US')
             )}
           </span>
-          <button
-            type="button"
-            onClick={() => onOpenReview(booking)}
-            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition shadow-2xs ${
-              row.review
-                ? 'bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100'
-                : 'bg-amber-500 text-white hover:bg-amber-600'
-            }`}
-          >
-            <Star className={`w-3.5 h-3.5 ${row.review ? 'fill-amber-400 text-amber-400' : 'fill-current'}`} />
-            <span>{row.review ? 'Edit Review' : 'Write Review'}</span>
-          </button>
         </div>
       )}
+
+      {booking.extensionRequest?.status === 'approved' && (
+        <div className="flex items-center gap-1.5 bg-emerald-50 px-2.5 py-1.5 rounded-lg mt-2.5">
+          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+          <span className="text-xs font-semibold text-emerald-600">
+            {STRINGS.BOOKING_ITEM_CARD.EXT_APPROVED(
+              booking.extensionRequest.requestedDays
+            )}
+          </span>
+        </div>
+      )}
+
+      <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between gap-2 flex-wrap">
+        <div>
+          <span className="text-xs text-slate-500 mr-1.5">
+            {STRINGS.BOOKING_ITEM_CARD.TOTAL_LABEL}
+          </span>
+          <span className="font-extrabold text-brand-500 text-sm">
+            {formatPriceVnd(booking.totalAmount)}
+          </span>
+        </div>
+
+        <BookingRowActions
+          booking={booking}
+          onViewDetail={handleGoDetail}
+          onCancel={onCancel}
+          onExtend={onExtend}
+          onRate={onRate}
+          onRebook={onRebook}
+        />
+      </div>
     </div>
   );
 };
 
+export const BookingItemCard = BookingTableRow;
 export default BookingTableRow;

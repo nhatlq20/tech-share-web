@@ -1,374 +1,512 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import React, { useEffect, useState, useCallback } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ChevronRight,
   ChevronLeft,
-  AlertCircle,
+  Package,
   RefreshCw,
-  Inbox,
-  Compass,
+  AlertCircle,
+  Sparkles,
+  CheckCircle2,
+  X,
 } from 'lucide-react';
 import { STRINGS } from '../../constants/strings.js';
-import { MAGIC_NUMBERS, MY_BOOKING_TABS, BOOKING_STATUS } from '../../constants/config.js';
+import { MAGIC_NUMBERS, MY_BOOKING_TABS } from '../../constants/config.js';
 import { ROUTES } from '../../routes/routes.js';
-import { useAuth } from '../../context/AuthContext.jsx';
-import { fetchMyBookings } from '../../services/bookingService.js';
-import { BookingTableRow, BookingMobileCard } from '../../components/booking/BookingTableRow.jsx';
-import { getBookingStatusStyle } from '../../components/booking/BookingStatusBadge.jsx';
-import { RenterHandoverModal } from '../../components/booking/RenterHandoverSection.jsx';
+import {
+  fetchMyBookings,
+  cancelBooking,
+  requestBookingExtension,
+} from '../../services/bookingService.js';
+import {
+  BookingTableRow,
+  BookingMobileCard,
+} from '../../components/booking/BookingTableRow.jsx';
+import { CancelBookingModal } from '../../components/booking/CancelBookingModal.jsx';
+import { ExtensionModal } from '../../components/booking/ExtensionModal.jsx';
 import { BookingReviewModal } from '../../components/booking/BookingReviewModal.jsx';
 
 const T = STRINGS.booking.myBookings;
-const DEFAULT_TAB = BOOKING_STATUS.PENDING;
-const FIRST_PAGE = MAGIC_NUMBERS.PAGINATION.DEFAULT_PAGE;
-const SKELETON_ROWS = Array.from({ length: MAGIC_NUMBERS.BOOKING.TABLE_SKELETON_ROWS }, (_, index) => index);
 
-const parseTab = (value) => (MY_BOOKING_TABS.includes(value) ? value : DEFAULT_TAB);
-const parsePage = (value) => {
-  const page = parseInt(value, 10);
-  return Number.isInteger(page) && page >= FIRST_PAGE ? page : FIRST_PAGE;
-};
+const resolveTab = (raw) =>
+  MY_BOOKING_TABS.includes(raw) ? raw : MY_BOOKING_TABS[0];
 
-const TableSkeleton = () => (
-  <div className="divide-y divide-slate-100" aria-busy="true" aria-label={STRINGS.common.loading}>
-    {SKELETON_ROWS.map((row) => (
-      <div key={row} className="flex items-center gap-4 px-6 py-4 animate-pulse">
-        <div className="w-14 h-14 rounded-xl bg-slate-100" />
-        <div className="flex-1 flex flex-col gap-2">
-          <div className="h-3 w-1/3 rounded-full bg-slate-100" />
-          <div className="h-3 w-1/5 rounded-full bg-slate-100" />
-        </div>
-        <div className="hidden md:block h-3 w-24 rounded-full bg-slate-100" />
-        <div className="hidden md:block h-6 w-20 rounded-full bg-slate-100" />
-      </div>
-    ))}
-  </div>
-);
-
+/**
+ * MyBookingsPage – Web Desktop Table & Tabs layout with App-synchronized data & actions
+ */
 export const MyBookingsPage = () => {
-  const { user } = useAuth();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const rawStatusParam = searchParams.get('status');
-  const activeTab = parseTab(rawStatusParam);
-  const page = parsePage(searchParams.get('page'));
-  const currentUserId = user?._id || user?.id || user?.userId;
+  const activeTab = resolveTab(searchParams.get('status'));
+  const currentPage = Math.max(
+    1,
+    parseInt(searchParams.get('page') || '1', 10) || 1
+  );
 
   const [bookings, setBookings] = useState([]);
   const [counts, setCounts] = useState({});
-  const [pagination, setPagination] = useState({ page: FIRST_PAGE, totalPages: 1, total: 0 });
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: MAGIC_NUMBERS.BOOKING.MY_BOOKINGS_PAGE_SIZE,
+    total: 0,
+    totalPages: 1,
+  });
   const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState(null);
-  const [reloadKey, setReloadKey] = useState(0);
-  const [handoverModalBooking, setHandoverModalBooking] = useState(null);
-  const [reviewModalBooking, setReviewModalBooking] = useState(null);
+  const [toast, setToast] = useState(null);
 
-  // Per-tab/page cache so switching back to a visited tab renders instantly while revalidating
-  const cacheRef = useRef(new Map());
-  const autoSwitchedRef = useRef(false);
+  // App-synchronized Action Modals
+  const [cancellingBooking, setCancellingBooking] = useState(null);
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [cancelError, setCancelError] = useState('');
+
+  const [extendingBooking, setExtendingBooking] = useState(null);
+  const [isExtending, setIsExtending] = useState(false);
+  const [extendError, setExtendError] = useState('');
+
+  const [reviewingBooking, setReviewingBooking] = useState(null);
+
+  const showToast = (type, title, message) => {
+    setToast({ type, title, message });
+    setTimeout(() => {
+      setToast((prev) => (prev?.message === message ? null : prev));
+    }, 3500);
+  };
+
+  const loadBookings = useCallback(
+    async (signal) => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const result = await fetchMyBookings({
+          status: activeTab,
+          page: currentPage,
+          limit: MAGIC_NUMBERS.BOOKING.MY_BOOKINGS_PAGE_SIZE,
+          signal,
+        });
+        setBookings(result.data);
+        setCounts(result.counts);
+        setPagination(result.pagination);
+      } catch (err) {
+        if (err?.name === 'CanceledError' || err?.name === 'AbortError') return;
+        setError(err?.message || T.errorTitle);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [activeTab, currentPage]
+  );
 
   useEffect(() => {
     const controller = new AbortController();
-    const cacheKey = `${currentUserId || 'anon'}:${activeTab}:${page}`;
-    const cached = cacheRef.current.get(cacheKey);
-
-    if (cached) {
-      setBookings(cached.data);
-      setPagination(cached.pagination);
-      setIsLoading(false);
-      setIsRefreshing(true);
-    } else {
-      setIsLoading(true);
-    }
-    setError(null);
-
-    fetchMyBookings({
-      status: activeTab,
-      page,
-      renterId: currentUserId,
-      signal: controller.signal,
-    })
-      .then((result) => {
-        if (controller.signal.aborted) return;
-        cacheRef.current.set(cacheKey, { data: result.data, pagination: result.pagination });
-        setBookings(result.data);
-        setPagination(result.pagination);
-        setCounts(result.counts);
-
-        // Nếu vào trang lần đầu không chỉ định ?status= và tab mặc định (pending) trống
-        // nhưng các tab khác có đơn, tự động chuyển sang tab đầu tiên có dữ liệu
-        if (
-          !rawStatusParam &&
-          !autoSwitchedRef.current &&
-          result.data.length === 0 &&
-          result.counts
-        ) {
-          const firstNonEmptyTab = MY_BOOKING_TABS.find((tab) => (result.counts[tab] || 0) > 0);
-          if (firstNonEmptyTab && firstNonEmptyTab !== activeTab) {
-            autoSwitchedRef.current = true;
-            setSearchParams({ status: firstNonEmptyTab }, { replace: true });
-          }
-        }
-      })
-      .catch((err) => {
-        if (err?.name === 'AbortError' || controller.signal.aborted) return;
-        if (!cached) setBookings([]);
-        setError(err?.message || T.errorTitle);
-      })
-      .finally(() => {
-        if (controller.signal.aborted) return;
-        setIsLoading(false);
-        setIsRefreshing(false);
-      });
-
+    loadBookings(controller.signal);
     return () => controller.abort();
-  }, [activeTab, page, reloadKey, currentUserId, rawStatusParam, setSearchParams]);
+  }, [loadBookings]);
 
-  const handleTabChange = useCallback(
-    (tab) => {
-      autoSwitchedRef.current = true;
-      if (tab === activeTab) return;
-      setSearchParams({ status: tab });
-    },
-    [activeTab, setSearchParams]
-  );
+  const handleSelectTab = (tab) => {
+    const next = new URLSearchParams(searchParams);
+    if (tab === 'all') {
+      next.delete('status');
+    } else {
+      next.set('status', tab);
+    }
+    next.delete('page');
+    setSearchParams(next, { replace: true });
+  };
 
-  const handlePageChange = useCallback(
-    (nextPage) => {
-      setSearchParams({ status: activeTab, page: String(nextPage) });
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    },
-    [activeTab, setSearchParams]
-  );
+  const handlePageChange = (nextPage) => {
+    const next = new URLSearchParams(searchParams);
+    next.set('status', activeTab);
+    next.set('page', String(nextPage));
+    setSearchParams(next, { replace: true });
+  };
 
-  const handleRetry = useCallback(() => {
-    cacheRef.current.clear();
-    setReloadKey((key) => key + 1);
-  }, []);
+  const handleConfirmCancel = async (reason) => {
+    if (!cancellingBooking) return;
+    setIsCancelling(true);
+    setCancelError('');
+    try {
+      await cancelBooking(cancellingBooking._id, reason);
+      setCancellingBooking(null);
+      showToast(
+        'success',
+        STRINGS.MY_BOOKINGS.ALERT_SUCCESS,
+        STRINGS.MY_BOOKINGS.ALERT_CANCELLED_MSG
+      );
+      loadBookings();
+    } catch (err) {
+      setCancelError(err?.message || STRINGS.MY_BOOKINGS.ALERT_CANCEL_FAILED);
+    } finally {
+      setIsCancelling(false);
+    }
+  };
 
-  const handleBookingUpdated = useCallback((updatedBooking) => {
-    if (!updatedBooking) return;
-    cacheRef.current.clear();
-    setBookings((prev) =>
-      prev.map((item) =>
-        String(item._id) === String(updatedBooking._id) ? { ...item, ...updatedBooking } : item
-      )
-    );
-    setHandoverModalBooking((prev) =>
-      prev && String(prev._id) === String(updatedBooking._id) ? { ...prev, ...updatedBooking } : prev
-    );
-    setReviewModalBooking((prev) =>
-      prev && String(prev._id) === String(updatedBooking._id) ? { ...prev, ...updatedBooking } : prev
-    );
-  }, []);
+  const handleRequestExtend = async ({ days, additionalDays, note }) => {
+    if (!extendingBooking) return;
+    setIsExtending(true);
+    setExtendError('');
+    try {
+      await requestBookingExtension(extendingBooking._id, {
+        days: additionalDays ?? days,
+        additionalDays: additionalDays ?? days,
+        note,
+      });
+      setExtendingBooking(null);
+      showToast(
+        'success',
+        STRINGS.MY_BOOKINGS.ALERT_EXTEND_SUCCESS_TITLE,
+        STRINGS.MY_BOOKINGS.ALERT_EXTEND_SUCCESS_MSG
+      );
+      loadBookings();
+    } catch (err) {
+      setExtendError(err?.message || STRINGS.MY_BOOKINGS.ALERT_EXTEND_FAILED);
+    } finally {
+      setIsExtending(false);
+    }
+  };
 
-  const totalPages = pagination.totalPages || 1;
-  const showEmpty = !isLoading && !error && bookings.length === 0;
-  const showList = !isLoading && bookings.length > 0;
+  const skeletonRows = Array.from({
+    length: MAGIC_NUMBERS.BOOKING.TABLE_SKELETON_ROWS,
+  });
 
   return (
     <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        {/* Breadcrumb */}
-        <nav className="flex items-center gap-2 text-xs text-slate-500 mb-6" aria-label="Breadcrumb">
-          <Link to={ROUTES.HOME} className="hover:text-brand-600 transition-colors">
+        {/* Web Breadcrumb */}
+        <nav
+          className="flex items-center gap-2 text-xs text-slate-500 mb-6"
+          aria-label="Breadcrumb"
+        >
+          <Link to={ROUTES.HOME} className="hover:text-brand-600 transition">
             {STRINGS.booking.checkout.breadcrumbHome}
           </Link>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-400" aria-hidden="true" />
+          <ChevronRight className="w-3.5 h-3.5" />
           <span className="text-brand-600 font-semibold">{T.breadcrumb}</span>
         </nav>
 
-        {/* Header */}
-        <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
+        {/* Web Page Header */}
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">{T.headerTitle}</h1>
-            <p className="text-sm text-slate-500 mt-1">{T.headerSubtitle}</p>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-800 tracking-tight flex items-center gap-3">
+              <span className="w-10 h-10 rounded-xl bg-brand-100 text-brand-600 flex items-center justify-center">
+                <Package className="w-5 h-5" />
+              </span>
+              {T.headerTitle}
+            </h1>
+            <p className="text-slate-500 mt-1 text-sm sm:text-base">
+              {T.headerSubtitle}
+            </p>
           </div>
+
           <button
             type="button"
-            id="my-bookings-refresh-btn"
-            onClick={handleRetry}
-            disabled={isLoading || isRefreshing}
-            className="self-start sm:self-auto inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white text-slate-600 text-xs font-semibold shadow-sm hover:text-brand-600 transition-colors disabled:opacity-60"
+            onClick={() => loadBookings()}
+            disabled={isLoading}
+            className="self-start sm:self-auto inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-slate-200 text-xs font-semibold text-slate-700 hover:border-brand-500 hover:text-brand-600 transition disabled:opacity-50"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} aria-hidden="true" />
-            {isRefreshing ? STRINGS.common.refreshing : STRINGS.common.refresh}
+            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+            <span>{STRINGS.common.refresh}</span>
           </button>
-        </header>
+        </div>
 
-        {/* Status Tabs */}
+        {/* Toast Feedback */}
+        {toast && (
+          <div className="mb-5">
+            <div
+              className={`flex items-center justify-between gap-3 rounded-2xl px-4 py-3 border shadow-xs ${
+                toast.type === 'error'
+                  ? 'bg-red-50 border-red-200 text-red-700'
+                  : 'bg-emerald-50 border-emerald-200 text-emerald-700'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                {toast.type === 'error' ? (
+                  <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
+                ) : (
+                  <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
+                )}
+                <div>
+                  <p className="text-xs font-extrabold">{toast.title}</p>
+                  <p className="text-xs">{toast.message}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setToast(null)}
+                className="p-1 rounded-lg hover:bg-black/5"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Web Status Tabs Bar (All 6 tabs synchronized with App: All, Pending, Approved, Active, Completed, Cancelled) */}
         <div
           role="tablist"
           aria-label={T.tabsAriaLabel}
-          className="flex gap-2 p-1.5 bg-white rounded-full shadow-sm overflow-x-auto scrollbar-hide mb-6"
+          className="bg-white rounded-2xl p-1.5 shadow-sm border border-slate-100 mb-6 flex overflow-x-auto gap-1"
         >
           {MY_BOOKING_TABS.map((tab) => {
             const isActive = tab === activeTab;
-            const count = counts[tab] ?? 0;
-            const style = getBookingStatusStyle(tab);
+            const badgeCount = counts?.[tab] ?? 0;
+
             return (
               <button
                 key={tab}
                 type="button"
                 role="tab"
-                id={`my-bookings-tab-${tab}`}
                 aria-selected={isActive}
-                aria-controls="my-bookings-panel"
-                onClick={() => handleTabChange(tab)}
-                className={`flex-1 min-w-max inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full text-sm font-semibold transition-all duration-200 ${
+                onClick={() => handleSelectTab(tab)}
+                className={`flex-1 min-w-[120px] inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition whitespace-nowrap ${
                   isActive
-                    ? 'bg-brand-100 text-brand-700 shadow-sm'
-                    : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+                    ? 'bg-brand-500 text-white shadow-sm'
+                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                 }`}
               >
-                <span className={`w-2 h-2 rounded-full ${style.dot}`} aria-hidden="true" />
-                {T.tabs[tab]}
+                <span>{T.tabs[tab] || tab}</span>
                 <span
-                  className={`min-w-6 px-2 py-0.5 rounded-full text-xs font-bold transition-colors ${
-                    isActive ? 'bg-brand-500 text-white' : 'bg-slate-100 text-slate-500'
+                  className={`inline-flex items-center justify-center min-w-[1.5rem] h-5 px-1.5 rounded-full text-[11px] font-extrabold ${
+                    isActive
+                      ? 'bg-white/20 text-white'
+                      : badgeCount > 0
+                      ? 'bg-brand-100 text-brand-800'
+                      : 'bg-slate-100 text-slate-500'
                   }`}
                 >
-                  {count}
+                  {badgeCount}
                 </span>
               </button>
             );
           })}
         </div>
 
-        {/* Panel */}
-        <section
-          id="my-bookings-panel"
-          role="tabpanel"
-          aria-labelledby={`my-bookings-tab-${activeTab}`}
-          className={`transition-opacity duration-200 ${isRefreshing ? 'opacity-70' : 'opacity-100'}`}
-        >
-          {isLoading && (
-            <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-              <TableSkeleton />
+        {/* Content Area: Loading / Error / Empty / Web Table + Mobile Cards */}
+        {isLoading ? (
+          <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+            <div className="divide-y divide-slate-100">
+              {skeletonRows.map((_, idx) => (
+                <div
+                  key={idx}
+                  className="p-6 flex items-center justify-between gap-4 animate-pulse"
+                >
+                  <div className="flex items-center gap-4 flex-1">
+                    <div className="w-16 h-16 rounded-xl bg-slate-200" />
+                    <div className="space-y-2 flex-1 max-w-xs">
+                      <div className="h-3 w-20 bg-slate-200 rounded" />
+                      <div className="h-4 w-48 bg-slate-200 rounded" />
+                      <div className="h-3 w-32 bg-slate-100 rounded" />
+                    </div>
+                  </div>
+                  <div className="hidden md:block h-4 w-36 bg-slate-200 rounded" />
+                  <div className="hidden md:block h-4 w-24 bg-slate-200 rounded" />
+                  <div className="h-6 w-20 bg-slate-200 rounded-full" />
+                  <div className="h-9 w-28 bg-slate-200 rounded-full" />
+                </div>
+              ))}
             </div>
-          )}
-
-          {!isLoading && error && (
-            <div className="bg-white rounded-2xl shadow-sm p-10 flex flex-col items-center text-center">
-              <div className="w-14 h-14 rounded-full bg-red-50 text-red-500 flex items-center justify-center mb-4">
-                <AlertCircle className="w-7 h-7" aria-hidden="true" />
-              </div>
-              <h2 className="text-base font-bold text-slate-800">{T.errorTitle}</h2>
-              <p className="text-sm text-slate-500 mt-1 max-w-md">{error}</p>
-              <button
-                type="button"
-                id="my-bookings-retry-btn"
-                onClick={handleRetry}
-                className="mt-5 inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-brand-500 text-white text-sm font-semibold hover:bg-brand-600 shadow-sm transition-colors"
-              >
-                <RefreshCw className="w-4 h-4" aria-hidden="true" />
-                {T.retryBtn}
-              </button>
+          </div>
+        ) : error ? (
+          <div className="bg-white rounded-3xl p-10 shadow-sm border border-red-100 text-center">
+            <div className="w-14 h-14 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center mx-auto mb-4">
+              <AlertCircle className="w-7 h-7" />
             </div>
-          )}
-
-          {showEmpty && (
-            <div className="bg-white rounded-2xl shadow-sm p-12 flex flex-col items-center text-center">
-              <div className="w-16 h-16 rounded-full bg-brand-50 text-brand-500 flex items-center justify-center mb-4">
-                <Inbox className="w-8 h-8" aria-hidden="true" />
-              </div>
-              <h2 className="text-base font-bold text-slate-800">{T.emptyTitle}</h2>
-              <p className="text-sm text-slate-500 mt-1 max-w-md">{T.empty[activeTab]}</p>
-              <Link
-                to={ROUTES.EXPLORE}
-                id="my-bookings-explore-btn"
-                className="mt-5 inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-brand-500 text-white text-sm font-semibold hover:bg-brand-600 shadow-sm transition-colors"
-              >
-                <Compass className="w-4 h-4" aria-hidden="true" />
-                {T.exploreBtn}
-              </Link>
+            <h2 className="text-lg font-bold text-slate-800">{T.errorTitle}</h2>
+            <p className="text-sm text-slate-500 mt-1 max-w-md mx-auto">{error}</p>
+            <button
+              type="button"
+              onClick={() => loadBookings()}
+              className="mt-5 inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-brand-500 hover:bg-brand-600 text-white text-xs font-bold transition shadow-sm"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span>{T.retryBtn}</span>
+            </button>
+          </div>
+        ) : bookings.length === 0 ? (
+          <div className="bg-white rounded-3xl p-12 shadow-sm border border-slate-100 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-brand-50 text-brand-500 flex items-center justify-center mx-auto mb-4">
+              <Sparkles className="w-8 h-8" />
             </div>
-          )}
-
-          {showList && (
-            <>
-              {/* Desktop table */}
-              <div className="hidden md:block bg-white rounded-2xl shadow-sm border border-slate-100 overflow-x-auto">
-                <table className="w-full text-left min-w-[780px]">
-                  <thead className="bg-slate-50 text-xs font-semibold text-slate-500">
-                    <tr>
-                      <th scope="col" className="px-5 py-3.5">{T.columns.device}</th>
-                      <th scope="col" className="px-4 py-3.5 whitespace-nowrap">{T.columns.period}</th>
-                      <th scope="col" className="px-4 py-3.5 whitespace-nowrap">{T.columns.total}</th>
-                      <th scope="col" className="px-4 py-3.5 whitespace-nowrap">{T.columns.status}</th>
-                      <th scope="col" className="px-5 py-3.5 text-right whitespace-nowrap">{T.columns.actions}</th>
+            <h2 className="text-lg font-bold text-slate-800">{T.emptyTitle}</h2>
+            <p className="text-sm text-slate-500 mt-1 max-w-md mx-auto">
+              {T.empty[activeTab] || STRINGS.MY_BOOKINGS.EMPTY_TITLE}
+            </p>
+            <Link
+              to={ROUTES.EXPLORE}
+              className="mt-6 inline-flex items-center gap-2 px-6 py-3 rounded-full bg-brand-500 hover:bg-brand-600 text-white text-xs sm:text-sm font-bold transition shadow-sm"
+            >
+              <span>{T.exploreBtn}</span>
+              <ChevronRight className="w-4 h-4" />
+            </Link>
+          </div>
+        ) : (
+          <>
+            {/* Desktop Table (md and up) */}
+            <div className="hidden md:block bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-100 bg-slate-50/70 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                      <th className="py-3.5 pl-6 pr-4">{T.columns.device}</th>
+                      <th className="py-3.5 px-4">{T.columns.period}</th>
+                      <th className="py-3.5 px-4">{T.columns.total}</th>
+                      <th className="py-3.5 px-4">{T.columns.status}</th>
+                      <th className="py-3.5 pl-4 pr-6 text-right">{T.columns.actions}</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {bookings.map((booking) => (
-                      <BookingTableRow
-                        key={booking._id}
-                        booking={booking}
-                        onOpenHandover={(b) => setHandoverModalBooking(b)}
-                        onOpenReview={(b) => setReviewModalBooking(b)}
-                      />
-                    ))}
+                  <tbody>
+                    {bookings.map((b) => {
+                      const deviceObj =
+                        (typeof b.deviceId === 'object' && b.deviceId) ||
+                        (typeof b.device === 'object' && b.device) ||
+                        {};
+                      const targetDeviceId =
+                        deviceObj._id ||
+                        deviceObj.id ||
+                        (typeof b.deviceId === 'string' ? b.deviceId : '') ||
+                        (typeof b.device === 'string' ? b.device : '');
+
+                      return (
+                        <BookingTableRow
+                          key={b._id || b.bookingCode}
+                          booking={b}
+                          onCancel={() => {
+                            setCancelError('');
+                            setCancellingBooking(b);
+                          }}
+                          onExtend={() => {
+                            setExtendError('');
+                            setExtendingBooking(b);
+                          }}
+                          onRate={() => setReviewingBooking(b)}
+                          onRebook={() => {
+                            if (targetDeviceId) {
+                              navigate(ROUTES.BOOKING_CHECKOUT_PATH(targetDeviceId), {
+                                state: { device: deviceObj?._id ? deviceObj : undefined },
+                              });
+                            }
+                          }}
+                        />
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
-
-              {/* Mobile cards */}
-              <div className="md:hidden flex flex-col gap-3">
-                {bookings.map((booking) => (
-                  <BookingMobileCard
-                    key={booking._id}
-                    booking={booking}
-                    onOpenHandover={(b) => setHandoverModalBooking(b)}
-                    onOpenReview={(b) => setReviewModalBooking(b)}
-                  />
-                ))}
-              </div>
-            </>
-          )}
-
-          {/* Pagination */}
-          {showList && totalPages > 1 && (
-            <div className="flex items-center justify-between mt-6">
-              <button
-                type="button"
-                id="my-bookings-prev-page"
-                onClick={() => handlePageChange(page - 1)}
-                disabled={page <= FIRST_PAGE}
-                className="inline-flex items-center gap-1 px-4 py-2 rounded-full bg-white text-sm font-semibold text-slate-600 shadow-sm hover:text-brand-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                <ChevronLeft className="w-4 h-4" aria-hidden="true" />
-                {T.pagination.prev}
-              </button>
-              <span className="text-xs font-medium text-slate-500">{T.pagination.pageOf(page, totalPages)}</span>
-              <button
-                type="button"
-                id="my-bookings-next-page"
-                onClick={() => handlePageChange(page + 1)}
-                disabled={page >= totalPages}
-                className="inline-flex items-center gap-1 px-4 py-2 rounded-full bg-white text-sm font-semibold text-slate-600 shadow-sm hover:text-brand-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                {T.pagination.next}
-                <ChevronRight className="w-4 h-4" aria-hidden="true" />
-              </button>
             </div>
-          )}
-        </section>
+
+            {/* Mobile Card List (below md) */}
+            <div className="md:hidden space-y-3">
+              {bookings.map((b) => {
+                const deviceObj =
+                  (typeof b.deviceId === 'object' && b.deviceId) ||
+                  (typeof b.device === 'object' && b.device) ||
+                  {};
+                const targetDeviceId =
+                  deviceObj._id ||
+                  deviceObj.id ||
+                  (typeof b.deviceId === 'string' ? b.deviceId : '') ||
+                  (typeof b.device === 'string' ? b.device : '');
+
+                return (
+                  <BookingMobileCard
+                    key={b._id || b.bookingCode}
+                    booking={b}
+                    onCancel={() => {
+                      setCancelError('');
+                      setCancellingBooking(b);
+                    }}
+                    onExtend={() => {
+                      setExtendError('');
+                      setExtendingBooking(b);
+                    }}
+                    onRate={() => setReviewingBooking(b)}
+                    onRebook={() => {
+                      if (targetDeviceId) {
+                        navigate(ROUTES.BOOKING_CHECKOUT_PATH(targetDeviceId), {
+                          state: { device: deviceObj?._id ? deviceObj : undefined },
+                        });
+                      }
+                    }}
+                  />
+                );
+              })}
+            </div>
+
+            {/* Pagination Footer */}
+            {pagination.totalPages > 1 && (
+              <div className="mt-6 flex items-center justify-between bg-white rounded-2xl px-5 py-3.5 border border-slate-100 shadow-xs text-xs text-slate-600">
+                <span className="font-semibold">
+                  {T.pagination.pageOf(pagination.page, pagination.totalPages)}
+                </span>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handlePageChange(pagination.page - 1)}
+                    disabled={pagination.page <= 1}
+                    className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-xl border border-slate-200 font-semibold text-slate-700 hover:border-brand-500 hover:text-brand-600 disabled:opacity-40 disabled:pointer-events-none transition"
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                    <span>{T.pagination.prev}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handlePageChange(pagination.page + 1)}
+                    disabled={pagination.page >= pagination.totalPages}
+                    className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-xl border border-slate-200 font-semibold text-slate-700 hover:border-brand-500 hover:text-brand-600 disabled:opacity-40 disabled:pointer-events-none transition"
+                  >
+                    <span>{T.pagination.next}</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
       </div>
 
-      {/* Quick Modal for Handover QR & Before-Rental Photo Upload on Approved Bookings */}
-      <RenterHandoverModal
-        isOpen={Boolean(handoverModalBooking)}
-        booking={handoverModalBooking}
-        onClose={() => setHandoverModalBooking(null)}
-        onBookingUpdated={handleBookingUpdated}
+      {/* Cancel Booking Modal */}
+      <CancelBookingModal
+        visible={Boolean(cancellingBooking)}
+        bookingCode={cancellingBooking?.bookingCode}
+        isSubmitting={isCancelling}
+        errorMessage={cancelError}
+        onClose={() => {
+          if (!isCancelling) setCancellingBooking(null);
+        }}
+        onConfirm={handleConfirmCancel}
       />
 
-      {/* Quick Modal for Rating & Reviewing Completed Bookings */}
+      {/* Extension Request Modal */}
+      <ExtensionModal
+        visible={Boolean(extendingBooking)}
+        booking={extendingBooking}
+        isSubmitting={isExtending}
+        error={extendError}
+        onClose={() => {
+          if (!isExtending) setExtendingBooking(null);
+        }}
+        onSubmit={handleRequestExtend}
+      />
+
+      {/* Review Modal */}
       <BookingReviewModal
-        isOpen={Boolean(reviewModalBooking)}
-        booking={reviewModalBooking}
-        onClose={() => setReviewModalBooking(null)}
-        onReviewSaved={handleBookingUpdated}
+        visible={Boolean(reviewingBooking)}
+        booking={reviewingBooking}
+        onClose={() => setReviewingBooking(null)}
+        onSuccess={(createdReview) => {
+          if (reviewingBooking?._id) {
+            setBookings((prev) =>
+              prev.map((b) =>
+                b._id === reviewingBooking._id
+                  ? { ...b, isReviewed: true, review: createdReview }
+                  : b
+              )
+            );
+          }
+          setReviewingBooking(null);
+          loadBookings();
+        }}
       />
     </div>
   );

@@ -27,7 +27,7 @@ import { fetchBookingById, cancelBooking } from '../../services/bookingService.j
 import { BookingStatusBadge } from '../../components/booking/BookingStatusBadge.jsx';
 import { OrderTimelineStepper } from '../../components/booking/OrderTimelineStepper.jsx';
 import { CancelBookingModal } from '../../components/booking/CancelBookingModal.jsx';
-import { CountdownBadge } from '../../components/booking/CountdownBadge.jsx';
+import { CountdownBadge, RentalCountdownTimer } from '../../components/booking/CountdownBadge.jsx';
 import { ExtensionModal } from '../../components/booking/ExtensionModal.jsx';
 import { RenterHandoverSection } from '../../components/booking/RenterHandoverSection.jsx';
 import { BookingReviewModal, BookingReviewSection } from '../../components/booking/BookingReviewModal.jsx';
@@ -574,6 +574,14 @@ export const BookingDetailPage = () => {
                     </span>
                   </div>
                 </div>
+
+                {booking.status === 'active' && (
+                  <RentalCountdownTimer
+                    startDate={booking.startDate}
+                    endDate={booking.endDate}
+                    status={booking.status}
+                  />
+                )}
 
                 {booking.status === 'active' && (
                   booking.extensionRequest?.status === 'pending' ? (
