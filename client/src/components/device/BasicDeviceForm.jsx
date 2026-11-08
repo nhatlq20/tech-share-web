@@ -2,14 +2,14 @@ import React, { useEffect, useState } from "react";
 import { ImagePlus, LoaderCircle, Sparkles, Trash2 } from "lucide-react";
 
 const categories = [
-  { value: "smartphone", label: "Điện thoại" },
+  { value: "smartphone", label: "Smartphone" },
   { value: "laptop", label: "Laptop" },
-  { value: "camera", label: "Máy ảnh" },
-  { value: "drone", label: "Flycam" },
-  { value: "audio", label: "Thiết bị âm thanh" },
-  { value: "accessory", label: "Phụ kiện" },
-  { value: "tablet", label: "Máy tính bảng" },
-  { value: "other", label: "Khác" },
+  { value: "camera", label: "Camera" },
+  { value: "drone", label: "Drone" },
+  { value: "audio", label: "Audio Equipment" },
+  { value: "accessory", label: "Accessories" },
+  { value: "tablet", label: "Tablet" },
+  { value: "other", label: "Other" },
 ];
 
 const BasicDeviceForm = ({
@@ -47,14 +47,14 @@ const BasicDeviceForm = ({
     <div className="post-device-fields">
       <label className="post-device-field post-device-field-wide">
         <span>
-          Tiêu đề bài đăng <b>*</b>
+          Listing Title <b>*</b>
         </span>
 
         <input
           className={errors.title ? "has-error" : ""}
           value={values.title}
           onChange={(event) => onChange("title", event.target.value)}
-          placeholder="Ví dụ: Cho thuê MacBook Pro M3 giá tốt tại Cần Thơ"
+          placeholder="e.g. MacBook Pro M3 available for rent in Can Tho"
           aria-invalid={Boolean(errors.title)}
         />
 
@@ -64,13 +64,13 @@ const BasicDeviceForm = ({
       </label>
       <label className="post-device-field post-device-field-wide">
         <span>
-          Tên thiết bị <b>*</b>
+          Device Name <b>*</b>
         </span>
         <input
           className={errors.name ? "has-error" : ""}
           value={values.name}
           onChange={(event) => onChange("name", event.target.value)}
-          placeholder="Ví dụ: MacBook Pro 14 inch M3"
+          placeholder="e.g. MacBook Pro 14-inch M3"
           aria-invalid={Boolean(errors.name)}
         />
         {errors.name && (
@@ -80,7 +80,7 @@ const BasicDeviceForm = ({
 
       <label className="post-device-field">
         <span>
-          Danh mục <b>*</b>
+          Category <b>*</b>
         </span>
         <select
           className={errors.category ? "has-error" : ""}
@@ -88,7 +88,7 @@ const BasicDeviceForm = ({
           onChange={(event) => onChange("category", event.target.value)}
           aria-invalid={Boolean(errors.category)}
         >
-          <option value="">Chọn danh mục</option>
+          <option value="">Select a category</option>
           {categories.map((category) => (
             <option key={category.value} value={category.value}>
               {category.label}
@@ -102,13 +102,13 @@ const BasicDeviceForm = ({
 
       <label className="post-device-field">
         <span>
-          Thương hiệu <b>*</b>
+          Brand <b>*</b>
         </span>
         <input
           className={errors.brand ? "has-error" : ""}
           value={values.brand}
           onChange={(event) => onChange("brand", event.target.value)}
-          placeholder="Ví dụ: Apple"
+          placeholder="e.g. Apple"
           aria-invalid={Boolean(errors.brand)}
         />
         {errors.brand && (
@@ -118,7 +118,7 @@ const BasicDeviceForm = ({
 
       <label className="post-device-field">
         <span>
-          Năm sản xuất <b>*</b>
+          Year of Manufacture <b>*</b>
         </span>
         <input
           type="number"
@@ -139,7 +139,7 @@ const BasicDeviceForm = ({
 
       <label className="post-device-field">
         <span>
-          Tình trạng thiết bị <b>*</b>
+          Device Condition <b>*</b>
         </span>
         <select
           className={errors.condition ? "has-error" : ""}
@@ -147,11 +147,11 @@ const BasicDeviceForm = ({
           onChange={(event) => onChange("condition", event.target.value)}
           aria-invalid={Boolean(errors.condition)}
         >
-          <option value="">Chọn tình trạng</option>
-          <option value="new">Mới</option>
-          <option value="like_new">Như mới</option>
-          <option value="good">Tốt</option>
-          <option value="fair">Đã qua sử dụng</option>
+          <option value="">Select a condition</option>
+          <option value="new">New</option>
+          <option value="like_new">Like New</option>
+          <option value="good">Good</option>
+          <option value="fair">Fair</option>
         </select>
         {errors.condition && (
           <small className="post-device-error">{errors.condition}</small>
@@ -161,7 +161,7 @@ const BasicDeviceForm = ({
       <div className="post-device-field post-device-field-wide">
         <div className="post-device-description-heading">
           <label htmlFor="post-device-description">
-            Mô tả <b>*</b>
+            Description <b>*</b>
           </label>
           <button
             type="button"
@@ -174,7 +174,7 @@ const BasicDeviceForm = ({
             ) : (
               <Sparkles size={16} />
             )}
-            {isGeneratingDescription ? "Đang tạo mô tả..." : "Tạo mô tả bằng AI"}
+            {isGeneratingDescription ? "Generating Description..." : "Generate with AI"}
           </button>
         </div>
         <textarea
@@ -183,7 +183,7 @@ const BasicDeviceForm = ({
           rows={5}
           value={values.description}
           onChange={(event) => onChange("description", event.target.value)}
-          placeholder="Mô tả tình trạng, phụ kiện đi kèm và những lưu ý khi sử dụng..."
+          placeholder="Describe the device condition, included accessories, and any usage notes..."
           aria-invalid={Boolean(errors.description)}
         />
         {errors.description && (
@@ -196,8 +196,7 @@ const BasicDeviceForm = ({
         )}
         {!canGenerateDescription && (
           <small className="post-device-hint">
-            Nhập tên thiết bị, danh mục, thương hiệu, năm sản xuất và tình trạng
-            để sử dụng AI.
+            Enter the device name, category, brand, year of manufacture, and condition to use AI.
           </small>
         )}
       </div>
@@ -206,12 +205,12 @@ const BasicDeviceForm = ({
         <div className="post-device-image-heading">
           <div>
             <span>
-              Ảnh thiết bị <b>*</b>
+              Device Photos <b>*</b>
             </span>
-            <small>Chọn từ 2 đến 3 ảnh, định dạng JPG, PNG hoặc WEBP.</small>
+            <small>Add 2 to 3 photos in JPG, PNG, or WEBP format.</small>
           </div>
           <span className="post-device-image-count">
-            {values.images.length}/3 ảnh
+            {values.images.length}/3 photos
           </span>
         </div>
 
@@ -222,12 +221,12 @@ const BasicDeviceForm = ({
                 className="post-device-image-preview"
                 key={`${preview.file.name}-${index}`}
               >
-                <img src={preview.url} alt={`Ảnh thiết bị ${index + 1}`} />
+                <img src={preview.url} alt={`Device photo ${index + 1}`} />
                 <button
                   type="button"
                   onClick={() => onRemoveImage(index)}
-                  aria-label={`Xóa ảnh ${index + 1}`}
-                  title="Xóa ảnh"
+                  aria-label={`Remove photo ${index + 1}`}
+                  title="Remove photo"
                 >
                   <Trash2 size={15} />
                 </button>
@@ -246,7 +245,7 @@ const BasicDeviceForm = ({
             />
             <ImagePlus size={19} />
             <span>
-              {values.images.length ? "Chọn thêm ảnh" : "Chọn ảnh thiết bị"}
+              {values.images.length ? "Add More Photos" : "Choose Device Photos"}
             </span>
           </label>
         )}

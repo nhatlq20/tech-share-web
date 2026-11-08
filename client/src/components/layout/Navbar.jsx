@@ -69,7 +69,7 @@ export const Navbar = () => {
             </a>
           )}
           {/* Nút dành riêng cho Owner */}
-          {user?.role === 'owner' && (
+          {(user?.role === 'owner' || user?.role === 'both') && (
             <Link to={ROUTES.OWNER} className="navbar-link navbar-link-owner">
               Owner Portal
             </Link>
@@ -143,6 +143,8 @@ export const Navbar = () => {
                       ? 'Quản trị viên'
                       : user?.role === 'owner'
                       ? 'Chủ thiết bị'
+                      : user?.role === 'both'
+                      ? 'Chủ thiết bị & Người thuê'
                       : 'Người thuê'}
                   </span>
                 </div>

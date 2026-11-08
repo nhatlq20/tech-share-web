@@ -308,7 +308,7 @@ export const OwnerDashboardScreen = () => {
             <Search size={16} style={{ color: "#67BEC3", flexShrink: 0 }} />
             <input
               type="text"
-              placeholder={STRINGS.owner?.devices?.searchPlaceholder || "Search by equipment name, category, brand..."}
+              placeholder={STRINGS.owner.devices.searchPlaceholder}
               value={globalSearch}
               onChange={(e) => setGlobalSearch(e.target.value)}
             />
