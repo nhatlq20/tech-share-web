@@ -11,11 +11,13 @@ export const BookingReviewModal = ({
   isOpen,
   visible,
   booking,
+  mode = 'renter_to_owner',
   onClose,
   onSuccess,
   onReviewSaved,
 }) => {
   const open = Boolean(isOpen ?? visible);
+  const isOwnerReviewingRenter = mode === 'owner_to_renter';
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
   const [selectedTags, setSelectedTags] = useState([]);
@@ -47,9 +49,26 @@ export const BookingReviewModal = ({
     (typeof booking.device === 'string' ? booking.device : '');
 
   const deviceName =
-    device.name || device.title || STRINGS.REVIEW_MODAL.DEFAULT_DEVICE_NAME;
+    booking.deviceName || device.name || device.title || STRINGS.REVIEW_MODAL.DEFAULT_DEVICE_NAME;
   const deviceImage =
-    device.images?.[0] || 'https://placehold.co/100x100/e2e8f0/64748b?text=Device';
+    booking.deviceImage ||
+    device.images?.[0] ||
+    'https://placehold.co/100x100/e2e8f0/64748b?text=Device';
+
+  const renter =
+    (typeof booking.renter === 'object' && booking.renter) ||
+    (typeof booking.renterId === 'object' && booking.renterId) ||
+    {};
+  const renterName =
+    renter.name || booking.renterName || STRINGS.REVIEW_MODAL.DEFAULT_RENTER_NAME;
+  const renterAvatar =
+    renter.avatar ||
+    renter.avatarUrl ||
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(renterName)}&background=0F766E&color=ffffff`;
+
+  const availableTags = isOwnerReviewingRenter
+    ? STRINGS.REVIEW_MODAL.RENTER_TAGS
+    : STRINGS.REVIEW_MODAL.TAGS;
 
   const toggleTag = (tag) => {
     setSelectedTags((prev) =>
@@ -77,19 +96,33 @@ export const BookingReviewModal = ({
     setErrorMsg('');
     try {
       const response = await reviewService.createReview(deviceId, {
-        bookingId: booking._id,
+        bookingId: booking._id || booking.id,
         rating,
         comment: finalComment,
+        ...(isOwnerReviewingRenter ? { targetType: 'renter' } : {}),
       });
       const createdReview = response?.review || response?.data || {
         rating,
         comment: finalComment,
+        targetType: isOwnerReviewingRenter ? 'renter' : 'device',
         createdAt: new Date().toISOString(),
       };
       setShowSuccess(true);
       setTimeout(() => {
         onSuccess?.(createdReview);
-        onReviewSaved?.({ ...booking, isReviewed: true, review: createdReview });
+        if (isOwnerReviewingRenter) {
+          onReviewSaved?.({
+            ...booking,
+            isRenterReviewed: true,
+            renterReview: createdReview,
+          });
+        } else {
+          onReviewSaved?.({
+            ...booking,
+            isReviewed: true,
+            review: createdReview,
+          });
+        }
         onClose?.();
       }, 900);
     } catch (err) {
@@ -109,7 +142,9 @@ export const BookingReviewModal = ({
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-extrabold text-slate-900">
-            {STRINGS.REVIEW_MODAL.HEADER_TITLE}
+            {isOwnerReviewingRenter
+              ? STRINGS.REVIEW_MODAL.RENTER_HEADER_TITLE
+              : STRINGS.REVIEW_MODAL.HEADER_TITLE}
           </h3>
           <button
             type="button"
@@ -121,17 +156,22 @@ export const BookingReviewModal = ({
           </button>
         </div>
 
-        {/* Device Row */}
-        <div className="flex items-center bg-slate-50 p-3 rounded-xl mb-5">
+        {/* Target Info Row (Renter or Device) */}
+        <div className="flex items-center bg-slate-50 p-3 rounded-xl mb-5 border border-slate-100">
           <img
-            src={deviceImage}
-            alt={deviceName}
-            className="w-12 h-12 rounded-lg object-cover bg-slate-200 shrink-0"
+            src={isOwnerReviewingRenter ? renterAvatar : deviceImage}
+            alt={isOwnerReviewingRenter ? renterName : deviceName}
+            className={`w-12 h-12 object-cover bg-slate-200 shrink-0 ${
+              isOwnerReviewingRenter ? 'rounded-full border border-slate-200' : 'rounded-lg'
+            }`}
           />
           <div className="ml-3 flex-1 min-w-0">
-            <p className="text-sm font-bold text-slate-900 truncate">{deviceName}</p>
-            <p className="text-xs text-slate-500 mt-0.5">
-              #{booking.bookingCode || String(booking._id).slice(-6).toUpperCase()}
+            <p className="text-sm font-bold text-slate-900 truncate">
+              {isOwnerReviewingRenter ? renterName : deviceName}
+            </p>
+            <p className="text-xs text-slate-500 mt-0.5 truncate">
+              {isOwnerReviewingRenter ? `${deviceName} • ` : ''}#
+              {booking.bookingCode || String(booking._id || booking.id).slice(-6).toUpperCase()}
             </p>
           </div>
         </div>
@@ -144,13 +184,19 @@ export const BookingReviewModal = ({
             <h4 className="text-lg font-extrabold text-slate-900 mb-1">
               {STRINGS.REVIEW_MODAL.SUCCESS_TITLE}
             </h4>
-            <p className="text-sm text-slate-500">{STRINGS.REVIEW_MODAL.SUCCESS_MSG}</p>
+            <p className="text-sm text-slate-500">
+              {isOwnerReviewingRenter
+                ? STRINGS.REVIEW_MODAL.RENTER_SUCCESS_MSG
+                : STRINGS.REVIEW_MODAL.SUCCESS_MSG}
+            </p>
           </div>
         ) : (
           <>
             {/* Star Selector */}
             <p className="text-sm font-semibold text-slate-900 text-center mb-3">
-              {STRINGS.REVIEW_MODAL.RATING_TITLE}
+              {isOwnerReviewingRenter
+                ? STRINGS.REVIEW_MODAL.RENTER_RATING_TITLE
+                : STRINGS.REVIEW_MODAL.RATING_TITLE}
             </p>
             <div className="flex items-center justify-center gap-2.5 mb-2">
               {[1, 2, 3, 4, 5].map((star) => {
@@ -182,7 +228,7 @@ export const BookingReviewModal = ({
               {STRINGS.REVIEW_MODAL.QUICK_TAGS_LABEL}
             </p>
             <div className="flex flex-wrap gap-2 mb-4">
-              {STRINGS.REVIEW_MODAL.TAGS.map((tag) => {
+              {availableTags.map((tag) => {
                 const active = selectedTags.includes(tag);
                 return (
                   <button
@@ -212,7 +258,11 @@ export const BookingReviewModal = ({
                 setComment(e.target.value);
                 if (errorMsg) setErrorMsg('');
               }}
-              placeholder={STRINGS.REVIEW_MODAL.COMMENT_PLACEHOLDER}
+              placeholder={
+                isOwnerReviewingRenter
+                  ? STRINGS.REVIEW_MODAL.RENTER_COMMENT_PLACEHOLDER
+                  : STRINGS.REVIEW_MODAL.COMMENT_PLACEHOLDER
+              }
               className="w-full border border-slate-200 rounded-xl p-3 text-sm text-slate-900 bg-slate-50 placeholder:text-slate-400 focus:bg-white focus:border-brand-500 focus:outline-hidden resize-none mb-4"
             />
 
@@ -242,11 +292,18 @@ export const BookingReviewModal = ({
   );
 };
 
-export const BookingReviewSection = ({ booking, onOpenReviewModal }) => {
+export const BookingReviewSection = ({
+  booking,
+  mode = 'renter_to_owner',
+  onOpenReviewModal,
+}) => {
   if (!booking || booking.status !== 'completed') return null;
 
-  const isReviewed = Boolean(booking.isReviewed || booking.review);
-  const reviewData = booking.review;
+  const isOwnerReviewingRenter = mode === 'owner_to_renter';
+  const isReviewed = isOwnerReviewingRenter
+    ? Boolean(booking.isRenterReviewed || booking.renterReview)
+    : Boolean(booking.isReviewed || booking.review);
+  const reviewData = isOwnerReviewingRenter ? booking.renterReview : booking.review;
 
   return (
     <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-100 shadow-xs">
@@ -268,12 +325,18 @@ export const BookingReviewSection = ({ booking, onOpenReviewModal }) => {
           <div>
             <h3 className="text-sm font-bold text-slate-900">
               {isReviewed
-                ? STRINGS.BOOKING_ITEM_CARD.RATED_BTN
+                ? isOwnerReviewingRenter
+                  ? STRINGS.REVIEW_MODAL.RENTER_REVIEWED_BADGE
+                  : STRINGS.BOOKING_ITEM_CARD.RATED_BTN
+                : isOwnerReviewingRenter
+                ? STRINGS.REVIEW_MODAL.RENTER_HEADER_TITLE
                 : STRINGS.REVIEW_MODAL.HEADER_TITLE}
             </h3>
             <p className="text-xs text-slate-500">
               {isReviewed && reviewData?.comment
                 ? reviewData.comment
+                : isOwnerReviewingRenter
+                ? STRINGS.REVIEW_MODAL.RENTER_RATING_TITLE
                 : STRINGS.REVIEW_MODAL.RATING_TITLE}
             </p>
           </div>
@@ -299,7 +362,11 @@ export const BookingReviewSection = ({ booking, onOpenReviewModal }) => {
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition-colors shadow-2xs"
           >
             <Star className="w-4 h-4 fill-white" />
-            <span>{STRINGS.BOOKING_ITEM_CARD.RATE_BTN}</span>
+            <span>
+              {isOwnerReviewingRenter
+                ? STRINGS.REVIEW_MODAL.REVIEW_RENTER_BTN
+                : STRINGS.BOOKING_ITEM_CARD.RATE_BTN}
+            </span>
           </button>
         )}
       </div>

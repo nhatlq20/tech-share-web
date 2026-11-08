@@ -3,10 +3,46 @@ import Review from '../models/Review.js';
 import Device from '../models/Device.js';
 import Booking from '../models/Booking.js';
 import User from '../models/User.js';
+import { createAndSendNotification } from '../services/notificationService.js';
 import {
   reviewError, validateReviewInput, validDeviceReviewStages, ratingSummaryStages,
   calculateRatingSummary, getRatingSummary, mutateDeviceReviews,
 } from '../services/reviewService.js';
+
+async function calculateAndUpdateRenterReputation(renterId) {
+  try {
+    if (!renterId || !mongoose.isObjectIdOrHexString(String(renterId))) return;
+    const renterObjId = new mongoose.Types.ObjectId(String(renterId));
+    const stats = await Review.aggregate([
+      { $match: { renterId: renterObjId, targetType: 'renter' } },
+      {
+        $group: {
+          _id: '$renterId',
+          avgRating: { $avg: '$rating' },
+          totalReviews: { $sum: 1 },
+        },
+      },
+    ]);
+
+    if (stats.length > 0) {
+      const roundedAvg = Number(stats[0].avgRating.toFixed(1));
+      const totalCount = stats[0].totalReviews;
+      const trustScore = Math.min(100, Math.max(50, Math.round(roundedAvg * 20)));
+      await User.findByIdAndUpdate(renterObjId, {
+        $set: {
+          'reputation.ratingAvg': roundedAvg,
+          'reputation.ratingCount': totalCount,
+          rating: roundedAvg,
+          totalReviews: totalCount,
+          'trust.score': trustScore,
+          trustScore,
+        },
+      });
+    }
+  } catch (err) {
+    console.warn('Error updating renter reputation:', err.message);
+  }
+}
 
 const matchesAnyId = (target, objIds) => {
   if (!target || !Array.isArray(objIds)) return false;
@@ -192,6 +228,73 @@ export const createReview = handleReviewErrors(async (req, res) => {
   const input = validateReviewInput(req.body);
   if (!mongoose.isObjectIdOrHexString(req.body.bookingId)) throw reviewError(400, 'A valid booking is required.');
   const { primaryUserId, userObjIds, allValues } = await resolveReviewUserContext(req);
+  const targetType = req.body.targetType === 'renter' ? 'renter' : 'device';
+
+  // Owner reviewing Renter when booking is completed
+  if (targetType === 'renter') {
+    const device = await findDevice(req.params.id);
+    const booking = await Booking.findOne({
+      _id: req.body.bookingId,
+      status: 'completed',
+    });
+
+    if (!booking) {
+      throw reviewError(400, 'Only completed bookings can be reviewed.');
+    }
+
+    const deviceOwner = device.ownerId || device.owner;
+    const bookingOwner = booking.ownerId || booking.owner || deviceOwner;
+    const isOwner =
+      matchesAnyId(bookingOwner, userObjIds) ||
+      matchesAnyId(deviceOwner, userObjIds) ||
+      allValues.includes(String(bookingOwner?._id || bookingOwner)) ||
+      allValues.includes(String(deviceOwner?._id || deviceOwner));
+
+    if (!isOwner) {
+      throw reviewError(403, 'Only the device owner of a completed booking can review the renter.');
+    }
+
+    const existingRenterReview = await Review.findOne({
+      bookingId: booking._id,
+      targetType: 'renter',
+    });
+    if (existingRenterReview) {
+      throw reviewError(409, 'You have already reviewed the renter for this booking.');
+    }
+
+    const effectiveRenterId = booking.renterId?._id || booking.renterId || booking.renter;
+    const effectiveOwnerId = primaryUserId || bookingOwner || deviceOwner;
+
+    const review = await Review.create({
+      ...input,
+      deviceId: device._id,
+      bookingId: booking._id,
+      reviewerId: effectiveOwnerId,
+      renterId: effectiveRenterId,
+      ownerId: effectiveOwnerId,
+      targetType: 'renter',
+    });
+
+    await Booking.updateOne(
+      { _id: booking._id },
+      { $set: { isRenterReviewed: true, renterReviewId: review._id } }
+    );
+
+    await calculateAndUpdateRenterReputation(effectiveRenterId);
+
+    if (effectiveRenterId) {
+      createAndSendNotification({
+        userId: String(effectiveRenterId),
+        title: `New ${input.rating}⭐ Renter Review!`,
+        body: `The owner left a ${input.rating}-star review for your rental of "${device.name || device.title || 'device'}" (#${booking.bookingCode}): "${input.comment.substring(0, 60)}"`,
+        type: 'order',
+        relatedId: String(booking._id),
+        url: `/my-bookings/${booking._id}`,
+      }).catch(() => {});
+    }
+
+    return res.status(201).json({ success: true, review });
+  }
 
   const result = await mutateDeviceReviews(req.params.id, async (session, device) => {
     const deviceOwner = device.ownerId || device.owner;

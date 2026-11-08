@@ -231,7 +231,17 @@ export const BookingDetailPage = () => {
     STRINGS.BOOKING_CREATE.PICKUP_DEFAULT_NOTE;
 
   const canCancel = booking.canCancel ?? (booking.status === 'pending');
-  const isReviewed = Boolean(booking.isReviewed || booking.review);
+  const currentUserId = String(user?._id || user?.id || '');
+  const bookingOwnerId = String(
+    owner?._id ||
+      owner?.id ||
+      (typeof booking.ownerId === 'string' ? booking.ownerId : '') ||
+      ''
+  );
+  const isOwnerView = Boolean(currentUserId && bookingOwnerId && currentUserId === bookingOwnerId);
+  const isReviewed = isOwnerView
+    ? Boolean(booking.isRenterReviewed || booking.renterReview)
+    : Boolean(booking.isReviewed || booking.review);
 
   const pickupInfo = formatScheduleDateTime(booking.startDate);
   const returnInfo = formatScheduleDateTime(booking.endDate);
@@ -312,9 +322,13 @@ export const BookingDetailPage = () => {
                     <>
                       <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-600 text-xs font-bold">
                         <CheckCircle2 className="w-3.5 h-3.5" />
-                        <span>{STRINGS.BOOKING_ITEM_CARD.RATED_BTN}</span>
+                        <span>
+                          {isOwnerView
+                            ? STRINGS.REVIEW_MODAL.RENTER_REVIEWED_BADGE
+                            : STRINGS.BOOKING_ITEM_CARD.RATED_BTN}
+                        </span>
                       </span>
-                      {targetDeviceId && (
+                      {!isOwnerView && targetDeviceId && (
                         <button
                           type="button"
                           onClick={() =>
@@ -337,7 +351,11 @@ export const BookingDetailPage = () => {
                       className="px-3.5 py-1.5 rounded-full bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs transition shadow-2xs flex items-center gap-1.5"
                     >
                       <Star className="w-3.5 h-3.5 fill-current" />
-                      <span>{STRINGS.BOOKING_ITEM_CARD.RATE_BTN}</span>
+                      <span>
+                        {isOwnerView
+                          ? STRINGS.REVIEW_MODAL.REVIEW_RENTER_BTN
+                          : STRINGS.BOOKING_ITEM_CARD.RATE_BTN}
+                      </span>
                     </button>
                   )}
                 </>
@@ -460,6 +478,7 @@ export const BookingDetailPage = () => {
         {/* Rental Review & Rating Section when Completed */}
         <BookingReviewSection
           booking={booking}
+          mode={isOwnerView ? 'owner_to_renter' : 'renter_to_owner'}
           onOpenReviewModal={() => setIsReviewModalOpen(true)}
         />
 
@@ -794,6 +813,7 @@ export const BookingDetailPage = () => {
       <BookingReviewModal
         isOpen={isReviewModalOpen}
         booking={booking}
+        mode={isOwnerView ? 'owner_to_renter' : 'renter_to_owner'}
         onClose={() => setIsReviewModalOpen(false)}
         onReviewSaved={(updatedBooking) => {
           if (updatedBooking) setBooking(updatedBooking);

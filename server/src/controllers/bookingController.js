@@ -295,18 +295,22 @@ const attachReviewsToBookings = async (bookingsList) => {
     .filter((id) => id && mongoose.isValidObjectId(id));
 
   const reviewMap = new Map();
+  const renterReviewMap = new Map();
   if (bookingIds.length > 0) {
     try {
       const reviews = await Review.find({
         bookingId: { $in: bookingIds },
-        targetType: { $in: ['device', null] },
       })
         .sort({ createdAt: -1 })
         .lean();
 
       reviews.forEach((rev) => {
         const key = String(rev.bookingId);
-        if (!reviewMap.has(key)) {
+        if (rev.targetType === 'renter') {
+          if (!renterReviewMap.has(key)) {
+            renterReviewMap.set(key, rev);
+          }
+        } else if (!reviewMap.has(key)) {
           reviewMap.set(key, rev);
         }
       });
@@ -316,12 +320,18 @@ const attachReviewsToBookings = async (bookingsList) => {
   }
 
   return bookingsList.map((b) => {
-    const review = reviewMap.get(String(b._id)) || null;
+    const key = String(b._id);
+    const review = reviewMap.get(key) || null;
+    const renterReview = renterReviewMap.get(key) || null;
     const isReviewed = Boolean(review) || Boolean(b.isReviewed);
+    const isRenterReviewed = Boolean(renterReview) || Boolean(b.isRenterReviewed);
     return {
       ...b,
       review,
       isReviewed,
+      renterReview,
+      isRenterReviewed,
+      renterReviewId: renterReview?._id || b.renterReviewId || null,
       canReview: b.status === 'completed' && !review,
     };
   });
