@@ -77,10 +77,13 @@ export const login = async (req, res) => {
       });
     }
 
-    if (!account.isActive) {
+    if (account.isbanned || !account.isActive) {
+      const banReason = account.banReason || 'Vi phạm điều khoản sử dụng và quy định nền tảng TechShare.';
       return res.status(403).json({
         success: false,
-        message: 'Your account is inactive or suspended. Please contact support.',
+        isbanned: true,
+        banReason,
+        message: `Tài khoản của bạn đã bị khóa. Lí do: ${banReason}`,
       });
     }
 

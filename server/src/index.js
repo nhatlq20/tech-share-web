@@ -22,6 +22,7 @@ import ekycRoutes from './routes/ekycRoutes.js';
 import adminEkycRoutes from './routes/adminEkycRoutes.js';
 import ownerEkycRoutes from './routes/ownerEkycRoutes.js';
 import adminOwnerEkycRoutes from './routes/adminOwnerEkycRoutes.js';
+import adminBanRoutes from './routes/adminBanRoutes.js';
 import aiCompareRoutes from "../src/routes/aiRoutes.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -65,6 +66,7 @@ app.use('/api/ekyc', ekycRoutes);
 app.use('/api/owner-ekyc', ownerEkycRoutes);
 app.use('/api/admin', adminEkycRoutes);
 app.use('/api/admin', adminOwnerEkycRoutes);
+app.use('/api/admin', adminBanRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/owner', ownerRoutes);
 app.use('/api/notifications', notificationRoutes);
