@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Star, ImageOff, MapPin, Heart } from 'lucide-react';
+import { Star, ImageOff, MapPin, Heart, Cpu } from 'lucide-react';
 import { ROUTES } from '../../routes/routes.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { formatPrice } from '../../utils/formatters.js';
@@ -49,6 +49,31 @@ export const formatConditionLabel = (condition) => {
   if (!condition || typeof condition !== 'string') return '';
   const key = condition.trim().toLowerCase();
   return CONDITION_LABEL_MAP[key] || condition.trim();
+};
+
+/**
+ * Formats device specifications into a compact readable string
+ */
+export const formatKeySpecs = (specs) => {
+  if (!specs) return '';
+  if (Array.isArray(specs)) {
+    return specs
+      .map((item) => (typeof item === 'string' ? item : item?.value || item?.label || ''))
+      .filter(Boolean)
+      .slice(0, 2)
+      .join(' · ');
+  }
+  if (typeof specs === 'object') {
+    const entries = Object.entries(specs).filter(
+      ([key, val]) => val && key !== '_id' && typeof val !== 'object'
+    );
+    if (entries.length === 0) return '';
+    return entries
+      .slice(0, 2)
+      .map(([, val]) => String(val).trim())
+      .join(' · ');
+  }
+  return '';
 };
 
 /**
@@ -178,9 +203,16 @@ export const DeviceCard = ({ device, onFavoriteChange, userCoordinates = null })
   // Rating calculation
   const rawRating = device.stats?.ratingAvg ?? device.rating ?? device.ratingAvg;
   const hasValidRating = typeof rawRating === 'number' && !Number.isNaN(rawRating) && rawRating > 0;
-  const ratingDisplay = hasValidRating ? rawRating.toFixed(1) : null;
+  const ratingDisplay = hasValidRating
+    ? rawRating.toFixed(1)
+    : device.rating != null && !Number.isNaN(Number(device.rating))
+    ? Number(device.rating).toFixed(1)
+    : '5.0';
   const rawReviewCount = device.stats?.ratingCount ?? device.reviewCount ?? device.ratingCount;
   const reviewCount = typeof rawReviewCount === 'number' ? rawReviewCount : 0;
+
+  // Technical specs
+  const technicalSpecText = formatKeySpecs(device.specs || device.specifications);
 
   // Image URL
   const imageUrl = Array.isArray(device.images) && device.images.length > 0 ? device.images[0] : null;
@@ -258,8 +290,10 @@ export const DeviceCard = ({ device, onFavoriteChange, userCoordinates = null })
 
         <div className="device-card-content">
           <div className="device-card-meta-row">
-            {brand && <span className="device-card-brand">{brand}</span>}
-            {categoryLabel && <span className="device-card-category">{categoryLabel}</span>}
+            <div className="device-card-meta-tags">
+              {brand && <span className="device-card-brand">{brand}</span>}
+              {categoryLabel && <span className="device-card-category">{categoryLabel}</span>}
+            </div>
             <span className={`device-card-status status-${rawStatus.toLowerCase()}`}>
               {statusLabel}
             </span>
@@ -268,6 +302,24 @@ export const DeviceCard = ({ device, onFavoriteChange, userCoordinates = null })
           <h3 className="device-card-title" title={title}>
             {title}
           </h3>
+
+          {/* Review Row */}
+          <div className="device-card-review-row" aria-label={`Rating: ${ratingDisplay}`}>
+            <div className="device-card-rating-wrap" aria-label={`Rating: ${ratingDisplay}`}>
+              <Star size={13} className="rating-star-icon" fill="currentColor" />
+              <span className="device-card-rating-val">{ratingDisplay}</span>
+              <span className="device-card-reviews-count">({reviewCount})</span>
+            </div>
+          </div>
+
+          {/* Technical Specs Row */}
+          {technicalSpecText ? (
+            <div className="device-card-specs-row" title={`Technical: ${technicalSpecText}`}>
+              <Cpu size={12} className="device-card-specs-icon" aria-hidden="true" />
+              <span className="device-card-specs-label">Technical:</span>{' '}
+              <span className="device-card-specs-text">{technicalSpecText}</span>
+            </div>
+          ) : null}
 
           {ownerName && (
             <div className="device-card-owner-row" title={`Owner: ${ownerName}`}>
@@ -313,16 +365,6 @@ export const DeviceCard = ({ device, onFavoriteChange, userCoordinates = null })
             <div className="device-card-price-wrap">
               <span className="device-card-price">{formattedPrice}</span>
             </div>
-
-            {ratingDisplay ? (
-              <div className="device-card-rating-wrap" aria-label={`Rating: ${ratingDisplay}`}>
-                <Star size={13} className="rating-star-icon" fill="currentColor" />
-                <span className="device-card-rating-val">{ratingDisplay}</span>
-                {reviewCount > 0 && (
-                  <span className="device-card-reviews-count">({reviewCount})</span>
-                )}
-              </div>
-            ) : null}
           </div>
           <button
             type="button"
