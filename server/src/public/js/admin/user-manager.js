@@ -68,11 +68,25 @@ document.addEventListener('DOMContentLoaded', function() {
       const avatar = row.getAttribute('data-avatar') || '';
       const trustScore = Number(row.getAttribute('data-trust-score')) || 100;
       const isVerified = row.getAttribute('data-is-verified') === 'true';
+      const isBanned = row.getAttribute('data-is-banned') === 'true' || row.getAttribute('data-status') === 'locked';
+      const banReason = row.getAttribute('data-ban-reason') || '';
 
       document.getElementById('detailModalName').textContent = name;
       document.getElementById('detailModalContact').textContent = `${email} • ${phone}`;
       document.getElementById('detailModalAvatar').src = avatar;
       document.getElementById('detailModalTrustScore').textContent = `${trustScore}/100`;
+
+      // Hiển thị khung thông tin khóa nếu tài khoản đang bị khóa
+      const banBox = document.getElementById('detailModalBanBox');
+      const banReasonEl = document.getElementById('detailModalBanReason');
+      if (banBox && banReasonEl) {
+        if (isBanned) {
+          banBox.style.display = 'block';
+          banReasonEl.textContent = banReason || 'Vi phạm chính sách nền tảng TechShare';
+        } else {
+          banBox.style.display = 'none';
+        }
+      }
 
       const pBar = document.getElementById('detailModalProgressBar');
       pBar.style.width = `${trustScore}%`;
@@ -105,19 +119,30 @@ document.addEventListener('DOMContentLoaded', function() {
       const descEl = document.getElementById('lockModalDesc');
       const submitBtn = document.getElementById('confirmLockSubmitBtn');
       const iconEl = document.getElementById('lockModalIcon');
+      const reasonField = document.getElementById('banReasonField');
+      const reasonInput = document.getElementById('banReasonInput');
+      const reasonError = document.getElementById('banReasonError');
+
+      if (reasonError) reasonError.style.display = 'none';
 
       if (isActive) {
         titleEl.textContent = 'Confirm Lock Account';
         iconEl.style.color = '#DC2626';
-        descEl.innerHTML = `Are you sure you want to <strong>lock the account</strong> of <strong>${escapeHtml(userName)}</strong> (${escapeHtml(userEmail)})? This user will not be able to log in or rent devices on TechShare.`;
+        descEl.innerHTML = `Bạn có chắc chắn muốn <strong>khóa tài khoản</strong> của <strong>${escapeHtml(userName)}</strong> (${escapeHtml(userEmail)})? Người dùng này sẽ lập tức bị đăng xuất nếu đang online và không thể tiếp tục đăng nhập.`;
         submitBtn.className = 'admin-btn admin-btn-danger';
-        submitBtn.textContent = 'Confirm Lock';
+        submitBtn.textContent = 'Đồng ý Khóa';
+        if (reasonField) reasonField.style.display = 'block';
+        if (reasonInput) {
+          reasonInput.value = '';
+          setTimeout(() => reasonInput.focus(), 100);
+        }
       } else {
         titleEl.textContent = 'Confirm Unlock Account';
         iconEl.style.color = '#16A34A';
         descEl.innerHTML = `Are you sure you want to <strong>unlock the account</strong> of <strong>${escapeHtml(userName)}</strong> (${escapeHtml(userEmail)})?`;
         submitBtn.className = 'admin-btn admin-btn-success';
-        submitBtn.textContent = 'Confirm Unlock';
+        submitBtn.textContent = 'Đồng ý Mở khóa';
+        if (reasonField) reasonField.style.display = 'none';
       }
 
       document.getElementById('lockConfirmModal').style.display = 'flex';
@@ -134,17 +159,34 @@ document.addEventListener('DOMContentLoaded', function() {
       const userId = targetRowForLock.getAttribute('data-user-id');
       const currentStatus = targetRowForLock.getAttribute('data-status');
       const willBeActive = currentStatus !== 'active';
+      const reasonInput = document.getElementById('banReasonInput');
+      const reasonError = document.getElementById('banReasonError');
+      const enteredReason = (reasonInput ? reasonInput.value : '').trim();
+
+      // Khi khóa tài khoản: bắt buộc nhập lý do
+      if (!willBeActive) {
+        if (!enteredReason) {
+          if (reasonError) reasonError.style.display = 'block';
+          if (reasonInput) reasonInput.focus();
+          return;
+        }
+      }
+      if (reasonError) reasonError.style.display = 'none';
 
       confirmLockBtn.disabled = true;
       confirmLockBtn.textContent = 'Processing...';
 
       try {
-        const response = await fetch(`/api/admin/users/${userId}/status`, {
+        const response = await fetch(`/api/admin/users/${userId}/ban`, {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ isActive: willBeActive }),
+          body: JSON.stringify({
+            isActive: willBeActive,
+            isbanned: !willBeActive,
+            reason: willBeActive ? '' : enteredReason,
+          }),
         });
 
         const data = await response.json();
@@ -152,13 +194,18 @@ document.addEventListener('DOMContentLoaded', function() {
         if (response.ok && data.success) {
           // Update row in DOM
           const nextStatus = willBeActive ? 'active' : 'locked';
+          const finalReason = willBeActive ? '' : (data.data?.banReason || enteredReason);
+
           targetRowForLock.setAttribute('data-status', nextStatus);
+          targetRowForLock.setAttribute('data-is-banned', willBeActive ? 'false' : 'true');
+          targetRowForLock.setAttribute('data-ban-reason', finalReason);
 
           const statusCell = targetRowForLock.querySelector('.user-status-cell');
           if (statusCell) {
             statusCell.innerHTML = willBeActive
-              ? '<span class="admin-pill-badge active"><span style="width: 6px; height: 6px; border-radius: 50%; background-color: #22C55E; flex-shrink: 0;"></span> Active</span>'
-              : '<span class="admin-pill-badge locked"><span style="width: 6px; height: 6px; border-radius: 50%; background-color: #EF4444; flex-shrink: 0;"></span> Locked</span>';
+              ? '<span class="admin-pill-badge active"><span style="width: 6px; height: 6px; border-radius: 50%; background-color: #22C55E; flex-shrink: 0;"></span> Hoạt động</span>'
+              : `<span class="admin-pill-badge locked" title="Lý do: ${escapeHtml(finalReason)}"><span style="width: 6px; height: 6px; border-radius: 50%; background-color: #EF4444; flex-shrink: 0;"></span> Đã khóa</span>` +
+                (finalReason ? `<div class="user-ban-reason-text" style="font-size: 11.5px; color: #DC2626; font-weight: 500; margin-top: 4px; max-width: 170px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(finalReason)}">Lý do: ${escapeHtml(finalReason)}</div>` : '');
           }
 
           const actionBtn = targetRowForLock.querySelector('.btn-toggle-status');
@@ -173,12 +220,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
           if (window.showAdminToast) {
             window.showAdminToast(
-              'Operation Successful',
-              `Account successfully ${willBeActive ? 'unlocked' : 'locked'}.`,
+              'Thao tác thành công',
+              `Đã ${willBeActive ? 'mở khóa' : 'khóa'} tài khoản thành công.${!willBeActive ? ' Người dùng đang online sẽ bị ngắt kết nối và đăng xuất.' : ''}`,
               'success'
             );
           }
           if (window.lucide) window.lucide.createIcons();
+          document.getElementById('lockConfirmModal').style.display = 'none';
         } else {
           if (window.showAdminToast) {
             window.showAdminToast('Update Error', data.message || 'Failed to update account status.', 'error');
@@ -191,7 +239,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       } finally {
         confirmLockBtn.disabled = false;
-        document.getElementById('lockConfirmModal').style.display = 'none';
       }
     });
   }

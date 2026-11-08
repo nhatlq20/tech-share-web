@@ -6,6 +6,7 @@ import { AuthProvider } from './context/AuthContext.jsx';
 import { ChatProvider } from './context/ChatContext.jsx';
 import { NotificationProvider } from './components/notifications/NotificationProvider.jsx';
 import { InAppNotificationBanner } from './components/chat/InAppNotificationBanner.jsx';
+import { AccountBanWatcher } from './components/auth/AccountBanWatcher.jsx';
 import { AppRoutes } from './routes/AppRoutes.jsx';
 
 export default function App() {
@@ -13,6 +14,7 @@ export default function App() {
     <Provider store={store}>
       <BrowserRouter>
         <AuthProvider>
+          <AccountBanWatcher />
           <ChatProvider>
             <NotificationProvider>
               <InAppNotificationBanner />

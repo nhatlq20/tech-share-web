@@ -66,6 +66,8 @@ const userSchema = new mongoose.Schema(
     rating: { type: Number, default: 5.0, min: 1.0, max: 5.0 },
     totalReviews: { type: Number, default: 0 },
     isActive: { type: Boolean, default: true },
+    isbanned: { type: Boolean, default: false },
+    banReason: { type: String, default: '' },
   },
   {
     timestamps: true,

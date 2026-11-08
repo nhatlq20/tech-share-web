@@ -61,11 +61,12 @@ export const handleLogin = async (req, res) => {
       });
     }
 
-    if (account.isActive === false) {
+    if (account.isActive === false || account.isbanned === true) {
+      const banReason = account.banReason ? ` Lí do: ${account.banReason}` : '';
       return res.render('admin/login', {
         title: 'Admin Sign In — TechShare Admin Portal',
         redirect: redirect || '/admin/dashboard',
-        error: 'Your account has been locked or suspended.',
+        error: `Tài khoản của bạn đã bị khóa.${banReason}`,
       });
     }
 
@@ -323,6 +324,9 @@ export const renderUserManagerPage = async (req, res) => {
       users = await Promise.all(rawUsers.map(async (u) => {
         let role = u.role || 'renter';
         let email = u.email || 'user@techshare.vn';
+        let isbanned = Boolean(u.isbanned || u.isActive === false);
+        let banReason = u.banReason || '';
+        let isActive = u.isActive !== false;
 
         if (u.accountId) {
           try {
@@ -332,6 +336,15 @@ export const renderUserManagerPage = async (req, res) => {
               if (acc.roleId) {
                 const roleDoc = await rolesCol.findOne({ _id: new mongoose.Types.ObjectId(String(acc.roleId)) });
                 if (roleDoc?.code) role = roleDoc.code;
+              }
+              if (acc.isbanned !== undefined) {
+                isbanned = Boolean(acc.isbanned);
+              }
+              if (acc.banReason) {
+                banReason = acc.banReason;
+              }
+              if (acc.isActive !== undefined) {
+                isActive = acc.isActive !== false && !isbanned;
               }
             }
           } catch {}
@@ -346,7 +359,9 @@ export const renderUserManagerPage = async (req, res) => {
           role: role,
           isVerified: Boolean(u.isVerified),
           trustScore: typeof u.trustScore === 'number' ? u.trustScore : 88,
-          isActive: u.isActive !== false,
+          isActive: !isbanned && isActive,
+          isbanned,
+          banReason,
           createdAt: u.createdAt || new Date(),
         };
       }));

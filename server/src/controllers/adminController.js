@@ -320,7 +320,9 @@ export const getAdminUsers = async (req, res, next) => {
       role: u.role || 'renter',
       isVerified: Boolean(u.isVerified),
       trustScore: typeof u.trustScore === 'number' ? u.trustScore : BUSINESS_RULES.TRUST_SCORE.DEFAULT,
-      isActive: u.isActive !== false,
+      isActive: u.isActive !== false && !u.isbanned,
+      isbanned: Boolean(u.isbanned || u.isActive === false),
+      banReason: u.banReason || '',
       createdAt: u.createdAt || new Date(),
     }));
 
@@ -334,51 +336,14 @@ export const getAdminUsers = async (req, res, next) => {
   }
 };
 
+import { toggleUserBanStatus } from './admin/adminBanController.js';
+
 /**
  * 3. PATCH /api/admin/users/:id/status
- * Khóa hoặc Mở khóa tài khoản người dùng
+ * Khóa hoặc Mở khóa tài khoản người dùng (ủy quyền cho adminBanController)
  */
 export const toggleUserStatus = async (req, res, next) => {
-  try {
-    const { usersCol } = getCollections();
-    const { id } = req.params;
-    const { isActive } = req.body;
-
-    let objectId;
-    try {
-      objectId = new mongoose.Types.ObjectId(id);
-    } catch {
-      return res.status(400).json({ success: false, message: 'ID người dùng không hợp lệ' });
-    }
-
-    const user = await usersCol.findOne({ _id: objectId });
-    if (!user) {
-      return res.status(404).json({ success: false, message: 'Không tìm thấy người dùng' });
-    }
-
-    const newStatus = typeof isActive === 'boolean' ? isActive : !user.isActive;
-
-    await usersCol.updateOne(
-      { _id: objectId },
-      {
-        $set: {
-          isActive: newStatus,
-          updatedAt: new Date(),
-        },
-      }
-    );
-
-    return res.json({
-      success: true,
-      message: newStatus ? 'Đã kích hoạt tài khoản' : 'Đã khóa tài khoản người dùng',
-      data: {
-        userId: id,
-        isActive: newStatus,
-      },
-    });
-  } catch (error) {
-    next(error);
-  }
+  return toggleUserBanStatus(req, res, next);
 };
 
 /**

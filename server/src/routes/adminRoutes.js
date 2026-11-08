@@ -4,12 +4,12 @@ import { requireAdmin } from '../middlewares/roleMiddleware.js';
 import {
   getAdminAnalytics,
   getAdminUsers,
-  toggleUserStatus,
   getAdminDevices,
   getAdminDeviceDetails,
   moderateDevice,
   removeDevice,
 } from '../controllers/adminController.js';
+import { toggleUserBanStatus } from '../controllers/admin/adminBanController.js';
 import {
   getAdminEkycList,
   approveAdminEkyc,
@@ -51,7 +51,8 @@ router.get('/overview', getAdminAnalytics);
 
 // ── USER MANAGEMENT & TRUST SCORE ─────────────────────────────────
 router.get('/users', getAdminUsers);
-router.patch('/users/:id/status', toggleUserStatus);
+router.patch('/users/:id/status', toggleUserBanStatus);
+router.patch('/users/:id/ban', toggleUserBanStatus);
 
 // ── DEVICE MODERATION ─────────────────────────────────────────────
 router.get('/devices', getAdminDevices);

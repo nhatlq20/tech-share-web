@@ -53,6 +53,29 @@ export const protect = async (req, res, next) => {
   }
 
   req.user = decoded;
+
+  // Kiểm tra tài khoản có bị khóa không (isbanned: true)
+  try {
+    const accId = decoded.accountId;
+    if (accId && mongoose.connection.readyState === 1 && mongoose.connection.db) {
+      const acc = await mongoose.connection.db.collection('accounts').findOne(
+        { _id: new mongoose.Types.ObjectId(String(accId)) },
+        { projection: { isbanned: 1, banReason: 1, isActive: 1 } }
+      );
+      if (acc && (acc.isbanned || acc.isActive === false)) {
+        const banReason = acc.banReason || 'Vi phạm điều khoản dịch vụ và chính sách của TechShare.';
+        return res.status(403).json({
+          success: false,
+          isbanned: true,
+          banReason,
+          message: `Tài khoản của bạn đã bị khóa. Lí do: ${banReason}`,
+        });
+      }
+    }
+  } catch (banErr) {
+    // Bỏ qua lỗi kết nối tạm thời để không block luồng xử lý
+  }
+
   return next();
 };
 
