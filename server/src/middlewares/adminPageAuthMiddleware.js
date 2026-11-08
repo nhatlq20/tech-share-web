@@ -47,6 +47,7 @@ export const protectAdminPage = async (req, res, next) => {
     };
 
     let pendingEkycCount = 0;
+    let pendingOwnerEkycCount = 0;
     let pendingDevicesCount = 0;
     let pendingDisputesCount = 0;
 
@@ -91,6 +92,7 @@ export const protectAdminPage = async (req, res, next) => {
       // Fetch pending badge counts
       try {
         pendingEkycCount = await db.collection('ekycrequests').countDocuments({ status: 'pending' });
+        pendingOwnerEkycCount = await db.collection('owner_request').countDocuments({ status: 'pending' });
         pendingDevicesCount = await db.collection('devices').countDocuments({ moderationStatus: 'pending', isDeleted: { $ne: true } });
         pendingDisputesCount = await db.collection('disputes').countDocuments({ status: { $in: ['pending', 'in_review'] } });
       } catch {}
@@ -99,6 +101,7 @@ export const protectAdminPage = async (req, res, next) => {
     res.locals.admin = adminProfile;
     res.locals.pendingCounts = {
       ekyc: pendingEkycCount,
+      ownerEkyc: pendingOwnerEkycCount,
       devices: pendingDevicesCount,
       disputes: pendingDisputesCount,
     };
@@ -110,7 +113,7 @@ export const protectAdminPage = async (req, res, next) => {
       avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop',
       role: 'admin',
     };
-    res.locals.pendingCounts = { ekyc: 0, devices: 0, disputes: 0 };
+    res.locals.pendingCounts = { ekyc: 0, ownerEkyc: 0, devices: 0, disputes: 0 };
   }
 
   return next();
