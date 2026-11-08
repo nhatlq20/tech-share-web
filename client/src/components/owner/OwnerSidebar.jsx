@@ -98,7 +98,11 @@ export const OwnerSidebar = ({
         {/* Profile Card */}
         <div className="owner-profile-badge-wrap">
           <img
-            src={owner?.avatarUrl || owner?.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400"}
+            src={
+              owner?.avatar ||
+              owner?.avatarUrl ||
+              (owner?.name ? `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(owner.name)}` : "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400")
+            }
             alt={t.avatarAlt}
             className="owner-profile-avatar"
             style={{ objectFit: 'cover' }}

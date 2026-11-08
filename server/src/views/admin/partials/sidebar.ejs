@@ -88,11 +88,11 @@
       <div class="admin-nav-section-title" style="padding: 4px 16px; font-size: 10px; color: #94A3B8; font-weight: 700; letter-spacing: 0.05em;">
         TRUST & SECURITY
       </div>
-      <a href="/admin/ekyc-verification" class="admin-nav-item <%= activePage === 'ekyc' ? 'active' : '' %>">
+      <a href="/admin/ekyc-verification" class="admin-nav-item <%= activePage === 'ekyc' || activePage === 'renter-ekyc' ? 'active' : '' %>">
         <div style="display: flex; align-items: center; gap: 11px; min-width: 0; flex: 1;">
           <i data-lucide="shield-check" style="width: 17px; height: 17px; flex-shrink: 0;"></i>
-          <span style="font-size: 12.5px; font-weight: <%= activePage === 'ekyc' ? '700' : '600' %>; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-            eKYC Verification
+          <span style="font-size: 12.5px; font-weight: <%= activePage === 'ekyc' || activePage === 'renter-ekyc' ? '700' : '600' %>; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+            Renter eKYC
           </span>
         </div>
         <% if (typeof pendingCounts !== 'undefined' && pendingCounts.ekyc > 0) { %>
@@ -101,10 +101,10 @@
           </span>
         <% } %>
       </a>
-      <a href="/admin/owner-ekyc-verification" class="admin-nav-item <%= activePage === 'owner-ekyc' ? 'active' : '' %>">
+      <a href="/admin/owner-verification" class="admin-nav-item <%= activePage === 'owner-ekyc' || activePage === 'owner-verification' ? 'active' : '' %>">
         <div style="display: flex; align-items: center; gap: 11px; min-width: 0; flex: 1;">
           <i data-lucide="crown" style="width: 17px; height: 17px; flex-shrink: 0;" aria-hidden="true"></i>
-          <span style="font-size: 12.5px; font-weight: <%= activePage === 'owner-ekyc' ? '700' : '600' %>; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+          <span style="font-size: 12.5px; font-weight: <%= activePage === 'owner-ekyc' || activePage === 'owner-verification' ? '700' : '600' %>; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
             Owner Verification
           </span>
         </div>

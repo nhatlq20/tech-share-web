@@ -915,41 +915,45 @@ export const ProfilePage = () => {
         )}
 
         {/* Modal Submit eKYC Renter Verification */}
-        <EkycSubmitModal
-          isOpen={isEkycModalOpen}
-          onClose={() => setIsEkycModalOpen(false)}
-          user={profile}
-          account={account}
-          onOpenEditAddress={openEditModal}
-          onSuccess={(newReq) => {
-            setEkycRequestData(newReq);
-            setFeedbackMsg({
-              type: 'success',
-              text: 'eKYC application submitted successfully! Administrators will review your request shortly.',
-            });
-            setTimeout(() => setFeedbackMsg(null), 4000);
-          }}
-        />
+        {isEkycModalOpen && (
+          <EkycSubmitModal
+            isOpen={isEkycModalOpen}
+            onClose={() => setIsEkycModalOpen(false)}
+            user={profile}
+            account={account}
+            onOpenEditAddress={openEditModal}
+            onSuccess={(newReq) => {
+              setEkycRequestData(newReq);
+              setFeedbackMsg({
+                type: 'success',
+                text: 'eKYC application submitted successfully! Administrators will review your request shortly.',
+              });
+              setTimeout(() => setFeedbackMsg(null), 4000);
+            }}
+          />
+        )}
 
         {/* Modal Submit eKYC Owner Upgrade */}
-        <OwnerEkycSubmitModal
-          isOpen={isOwnerEkycModalOpen}
-          onClose={() => setIsOwnerEkycModalOpen(false)}
-          user={profile}
-          account={account}
-          onOpenEditAddress={openEditModal}
-          onSuccess={(newReq) => {
-            setOwnerEkycData((prev) => ({
-              ...prev,
-              request: newReq,
-            }));
-            setFeedbackMsg({
-              type: 'success',
-              text: 'Owner verification submitted successfully! Administrators will review your request shortly.',
-            });
-            setTimeout(() => setFeedbackMsg(null), 4000);
-          }}
-        />
+        {isOwnerEkycModalOpen && (
+          <OwnerEkycSubmitModal
+            isOpen={isOwnerEkycModalOpen}
+            onClose={() => setIsOwnerEkycModalOpen(false)}
+            user={profile}
+            account={account}
+            onOpenEditAddress={openEditModal}
+            onSuccess={(newReq) => {
+              setOwnerEkycData((prev) => ({
+                ...prev,
+                request: newReq,
+              }));
+              setFeedbackMsg({
+                type: 'success',
+                text: 'Owner verification submitted successfully! Administrators will review your request shortly.',
+              });
+              setTimeout(() => setFeedbackMsg(null), 4000);
+            }}
+          />
+        )}
       </div>
     </div>
   );

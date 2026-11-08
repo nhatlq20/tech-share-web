@@ -92,9 +92,10 @@
 .home-page-root .device-card-title { margin: 0 0 2px; font-size: 13px; line-height: 1.3; }
 .home-page-root .device-card-owner-row { margin: 0; font-size: 11px; }
 .home-page-root .device-card-location-row { display: none; }
-.home-page-root .device-card-distance { display: flex; font-size: 11px; margin: 0 0 4px 0; }
-.home-page-root .device-card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: auto; padding-top: 6px; }
-.home-page-root .device-card-price { font-size: 13px; font-weight: 700; }
+.home-page-root .device-card-distance { display: none; }
+.home-page-root .device-card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: auto; padding-top: 6px; width: 100%; }
+.home-page-root .device-card-price-wrap { display: flex; align-items: baseline; justify-content: flex-start; margin: 0; margin-right: auto; text-align: left; }
+.home-page-root .device-card-price { font-size: 13px; font-weight: 700; text-align: left; }
 .home-page-root .device-card-rent-cta { margin-top: 6px; padding: 6px 10px; font-size: 11px; }
 
 /* City Selector on Home */
