@@ -87,16 +87,26 @@
 @media (max-width: 650px) { .home-category-section, .home-devices-section { padding-inline: 16px; } .home-location-tools { flex-wrap: wrap; gap: 10px; } .home-browse-link { font-size: 10px; } .home-page-root .device-card-image-wrap { height: 135px; } .home-devices-title { font-size: 21px; } }
 
 /* Keep the compact comparison rows local to Home. */
-.home-page-root .device-card-image-wrap { height: 125px; }
-.home-page-root .device-card-content { display: flex; flex-direction: column; gap: 4px; }
-.home-page-root .device-card-title { margin: 0 0 2px; font-size: 13px; line-height: 1.3; }
-.home-page-root .device-card-owner-row { margin: 0; font-size: 11px; }
+.home-page-root .device-card-image-wrap { height: 130px; }
+.home-page-root .device-card-content { display: flex; flex-direction: column; gap: 5px; padding: 11px 11px 13px; flex: 1; }
+.home-page-root .device-card-meta-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 2px; flex-wrap: nowrap; }
+.home-page-root .device-card-meta-tags { display: flex; align-items: center; gap: 4px; min-width: 0; overflow: hidden; }
+.home-page-root .device-card-brand { font-size: 9px; padding: 2px 5px; border-radius: 4px; white-space: nowrap; flex-shrink: 0; }
+.home-page-root .device-card-category { font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.home-page-root .device-card-status { font-size: 9.5px; padding: 2px 6px; white-space: nowrap; flex-shrink: 0; margin-left: auto; }
+.home-page-root .device-card-title { margin: 0; font-size: 13px; line-height: 1.35; font-weight: 700; min-height: 35px; max-height: 35px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; }
+.home-page-root .device-card-owner-row { display: none; }
 .home-page-root .device-card-location-row { display: none; }
 .home-page-root .device-card-distance { display: none; }
-.home-page-root .device-card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: auto; padding-top: 6px; width: 100%; }
+.home-page-root .device-card-review-row { display: flex; align-items: center; gap: 4px; margin: 2px 0 0; }
+.home-page-root .device-card-specs-row { display: flex; align-items: center; gap: 4px; font-size: 10.5px; margin: 2px 0 0; min-width: 0; background: #f8fafc; padding: 4px 6px; border-radius: 6px; border: 1px solid #f1f5f9; }
+.home-page-root .device-card-specs-icon { color: #0d9488; flex-shrink: 0; }
+.home-page-root .device-card-specs-label { font-weight: 700; color: #475569; font-size: 10px; flex-shrink: 0; }
+.home-page-root .device-card-specs-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 10px; color: #334155; min-width: 0; }
+.home-page-root .device-card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: auto; padding-top: 8px; border-top: 1px solid #f1f5f9; width: 100%; }
 .home-page-root .device-card-price-wrap { display: flex; align-items: baseline; justify-content: flex-start; margin: 0; margin-right: auto; text-align: left; }
-.home-page-root .device-card-price { font-size: 13px; font-weight: 700; text-align: left; }
-.home-page-root .device-card-rent-cta { margin-top: 6px; padding: 6px 10px; font-size: 11px; }
+.home-page-root .device-card-price { font-size: 13.5px; font-weight: 700; color: #0f172a; text-align: left; }
+.home-page-root .device-card-rent-cta { margin-top: 6px; padding: 7px 10px; font-size: 11px; }
 
 /* City Selector on Home */
 .home-city-selector-wrap {
