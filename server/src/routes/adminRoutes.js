@@ -22,46 +22,13 @@ import {
   exportAdminBookings,
 } from '../controllers/admin/adminBookingController.js';
 import {
-  getAdminDisputes,
-  getAdminDisputeDetails,
-  reviewAdminDispute,
-  resolveAdminDispute,
-  dismissAdminDispute,
-} from '../controllers/admin/adminDisputeController.js';
-import {
-  getAdminWalletOverview,
-  getAdminWalletTransactions,
-  getAdminWalletTransactionDetails,
-  getAdminUserWalletProfile,
-  exportAdminWalletTransactions,
-} from '../controllers/admin/adminWalletController.js';
-import {
-  getAdminAuditLogs,
-  exportAdminAuditLogs,
-  getAdminAuditStats,
-} from '../controllers/admin/adminAuditController.js';
-import {
-  getAdminVouchers,
-  getAdminVoucherDetails,
-  createAdminVoucher,
-  updateAdminVoucher,
-  toggleAdminVoucherStatus,
-} from '../controllers/admin/adminVoucherController.js';
-import {
   getAdminReviews,
   getAdminReviewDetails,
   moderateAdminReview,
 } from '../controllers/admin/adminReviewController.js';
 import {
-  getAdminRoles,
-  getAdminRoleDetails,
-  getAdminRoleAccounts,
-  updateAdminAccountRole,
-} from '../controllers/admin/adminRoleController.js';
-import {
   getAdminNotifications,
   sendAdminNotification,
-  getAdminNotificationHistory,
 } from '../controllers/admin/adminNotificationController.js';
 import {
   getAdminAdvancedAnalytics,
@@ -106,40 +73,12 @@ router.get('/bookings/:id/timeline', getAdminBookingTimeline);
 router.get('/bookings/:id', getAdminBookingDetails);
 router.get('/bookings', getAdminBookings);
 
-// ── PHASE 1: MODULE 2 — DISPUTE RESOLUTION ────────────────────────
-router.get('/disputes/:id', getAdminDisputeDetails);
-router.patch('/disputes/:id/review', reviewAdminDispute);
-router.patch('/disputes/:id/resolve', resolveAdminDispute);
-router.patch('/disputes/:id/dismiss', dismissAdminDispute);
-router.get('/disputes', getAdminDisputes);
-
-// ── PHASE 1: MODULE 3 — WALLET & TRANSACTION MANAGEMENT ───────────
-router.get('/wallet/overview', getAdminWalletOverview);
-router.get('/wallet/export', exportAdminWalletTransactions);
-router.get('/wallet/users/:userId', getAdminUserWalletProfile);
-router.get('/wallet/transactions/:id', getAdminWalletTransactionDetails);
-router.get('/wallet/transactions', getAdminWalletTransactions);
-
-// ── PHASE 2: MODULE 4 — VOUCHER MANAGEMENT ────────────────────────
-router.get('/vouchers/:id', getAdminVoucherDetails);
-router.patch('/vouchers/:id/status', toggleAdminVoucherStatus);
-router.patch('/vouchers/:id', updateAdminVoucher);
-router.post('/vouchers', createAdminVoucher);
-router.get('/vouchers', getAdminVouchers);
-
 // ── PHASE 2: MODULE 5 — REVIEW MODERATION ─────────────────────────
 router.get('/reviews/:id', getAdminReviewDetails);
 router.patch('/reviews/:id/moderation', moderateAdminReview);
 router.get('/reviews', getAdminReviews);
 
-// ── PHASE 2: MODULE 6 — ROLES & PERMISSIONS ───────────────────────
-router.get('/roles/:id/accounts', getAdminRoleAccounts);
-router.get('/roles/:id', getAdminRoleDetails);
-router.get('/roles', getAdminRoles);
-router.patch('/accounts/:id/role', updateAdminAccountRole);
-
 // ── PHASE 3: MODULE 7 — NOTIFICATION MANAGEMENT ───────────────────
-router.get('/notifications/history', getAdminNotificationHistory);
 router.post('/notifications/send', sendAdminNotification);
 router.get('/notifications', getAdminNotifications);
 
@@ -152,10 +91,5 @@ router.get('/settings/:key', getAdminSettingByKey);
 router.patch('/settings/:key', updateAdminSetting);
 router.put('/settings/:key', updateAdminSetting);
 router.get('/settings', getAdminSettings);
-
-// ── PHASE 3: MODULE 10 — AUDIT LOGS ───────────────────────────────
-router.get('/audit-logs/export', exportAdminAuditLogs);
-router.get('/audit-logs/stats', getAdminAuditStats);
-router.get('/audit-logs', getAdminAuditLogs);
 
 export default router;

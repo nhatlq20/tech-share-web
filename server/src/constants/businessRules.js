@@ -30,7 +30,7 @@ export const BUSINESS_RULES = {
     MAX_LIMIT: 50,
   },
 
-  // Ngưỡng điểm tín nhiệm Escrow
+  // Ngưỡng điểm tín nhiệm
   TRUST_SCORE: {
     MAX: 100,
     EXCELLENT_THRESHOLD: 85,

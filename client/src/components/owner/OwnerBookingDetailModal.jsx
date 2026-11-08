@@ -111,7 +111,7 @@ export const OwnerBookingDetailModal = ({
     { title: 'Phê duyệt', desc: 'Chủ máy xác nhận' },
     { title: 'Bàn giao máy', desc: 'Quét mã QR' },
     { title: 'Đang sử dụng', desc: 'Trong kỳ thuê' },
-    { title: 'Hoàn tất', desc: 'Nhận máy & Hoàn cọc' },
+    { title: 'Hoàn tất', desc: 'Nhận lại thiết bị' },
   ];
 
   const dailyRate = booking.dailyRate || (booking.totalRentalPrice && booking.totalDays ? Math.round(booking.totalRentalPrice / booking.totalDays) : 0);
@@ -334,14 +334,6 @@ export const OwnerBookingDetailModal = ({
                   )}
                 </div>
               </div>
-
-              {/* 3. Escrow Security Guarantee */}
-              <div className="p-3.5 rounded-2xl bg-teal-50/60 border border-teal-100 flex items-start gap-3">
-                <ShieldCheck className="text-teal-700 shrink-0 mt-0.5" size={18} />
-                <div className="text-xs text-teal-900 leading-relaxed">
-                  <span className="font-bold">Đảm bảo an toàn qua TechShare Escrow:</span> Toàn bộ tiền cọc và tiền thuê được hệ thống tạm giữ an toàn, bảo vệ thiết bị của Chủ máy cho tới khi đối soát hoàn tất.
-                </div>
-              </div>
             </div>
 
             {/* RIGHT COLUMN: Renter Profile & Financial Breakdown */}
@@ -460,8 +452,7 @@ export const OwnerBookingDetailModal = ({
 
                   <div className="pt-2 mt-2 border-t border-slate-200/80 flex justify-between items-center">
                     <div>
-                      <span className="font-bold text-slate-900 block text-xs">Doanh thu thực nhận</span>
-                      <span className="text-[10px] text-slate-400">Chuyển vào ví khi hoàn tất</span>
+                      <span className="font-bold text-slate-900 block text-xs">Tiền thuê sau giảm giá</span>
                     </div>
                     <span className="text-base font-extrabold text-emerald-600">
                       {formatVND(booking.totalRentalPrice || subtotal)}
@@ -471,19 +462,9 @@ export const OwnerBookingDetailModal = ({
                   <div className="pt-2 mt-2 border-t border-dashed border-slate-200 flex justify-between items-center text-slate-600">
                     <div>
                       <span className="text-xs">Tiền đặt cọc thiết bị</span>
-                      <span className="text-[10px] text-slate-400 block">Ký quỹ TechShare Escrow</span>
                     </div>
                     <span className="font-bold text-slate-800">
                       {formatVND(booking.depositAmount)}
-                    </span>
-                  </div>
-
-                  <div className="mt-3 p-2.5 rounded-xl bg-white border border-slate-100 flex items-center justify-between text-[11px]">
-                    <span className="text-slate-500">Trạng thái thanh toán</span>
-                    <span className="font-semibold text-teal-800 bg-teal-50 px-2 py-0.5 rounded-full border border-teal-100">
-                      {booking.paymentStatus === 'escrow_hold' || booking.status !== 'pending'
-                        ? 'Đã ký quỹ Escrow an toàn'
-                        : 'Chờ thanh toán'}
                     </span>
                   </div>
                 </div>

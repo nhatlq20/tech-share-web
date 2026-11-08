@@ -729,9 +729,6 @@ export const BookingDetailPage = () => {
                     <CreditCard className="w-4 h-4 text-brand-500" />
                     {STRINGS.PRICE_BREAKDOWN.TITLE}
                   </h2>
-                  <span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[10px] font-bold capitalize">
-                    {T.paymentStatuses[booking.paymentStatus] || booking.paymentStatus}
-                  </span>
                 </div>
 
                 <div className="flex flex-col gap-2 text-xs text-slate-600">
@@ -747,28 +744,12 @@ export const BookingDetailPage = () => {
 
                   {booking.discountAmount > 0 && (
                     <div className="flex justify-between text-emerald-600">
-                      <span>
-                        {STRINGS.PRICE_BREAKDOWN.LONG_TERM_DISCOUNT(
-                          booking.discountPercent || 10
-                        )}
-                      </span>
+                      <span>{T.fields.discount}:</span>
                       <span className="font-bold">
                         -{formatPriceVnd(booking.discountAmount)}
                       </span>
                     </div>
                   )}
-
-                  {booking.voucherDiscount > 0 && (
-                    <div className="flex justify-between text-emerald-600">
-                      <span>
-                        {T.fields.voucher} ({booking.voucherCode || 'Promo'}):
-                      </span>
-                      <span className="font-bold">
-                        -{formatPriceVnd(booking.voucherDiscount)}
-                      </span>
-                    </div>
-                  )}
-
                   <div className="flex justify-between pt-1.5 border-t border-slate-100">
                     <span>{STRINGS.PRICE_BREAKDOWN.DEPOSIT_FEE}</span>
                     <span className="font-semibold text-slate-900">

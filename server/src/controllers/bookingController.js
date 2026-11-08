@@ -4,7 +4,6 @@ import Booking from '../models/Booking.js';
 import User from '../models/User.js';
 import Account from '../models/Account.js';
 import Review from '../models/Review.js';
-import Voucher from '../models/Voucher.js';
 import { BUSINESS_RULES } from '../constants/businessRules.js';
 import { createAndSendNotification } from '../services/notificationService.js';
 import { getIO } from '../socket.js';
@@ -175,11 +174,9 @@ const normalizeBookingAliases = (booking) => {
 
   const rentalFee = booking.rentalFee ?? pricing.rentalFee ?? 0;
   const discountPercent = booking.discountPercent ?? pricing.discountPercent ?? 0;
-  const voucherCode = booking.voucherCode ?? pricing.voucherCode ?? '';
-  const voucherDiscount = booking.voucherDiscount ?? pricing.voucherDiscount ?? 0;
-  const discountAmount =
-    booking.discountAmount ??
-    (rentalFee * (discountPercent / 100) + voucherDiscount);
+  // Older bookings may only store the discount components.
+  const discountAmount = booking.discountAmount ??
+    (rentalFee * (discountPercent / 100) + (booking.voucherDiscount ?? pricing.voucherDiscount ?? 0));
 
   const depositFee =
     booking.depositFee ??
@@ -269,8 +266,6 @@ const normalizeBookingAliases = (booking) => {
     rentalFee,
     discountPercent,
     discountAmount,
-    voucherCode,
-    voucherDiscount,
     depositFee,
     depositValue: depositFee,
     depositAmount: depositFee,
@@ -528,9 +523,7 @@ export const createBooking = async (req, res, next) => {
       deliveryAddress,
       renterId,
       renterInfo,
-      voucherCode,
       note,
-      paymentMethod = 'escrow',
     } = req.body;
 
     // Validate deviceId
@@ -677,49 +670,7 @@ export const createBooking = async (req, res, next) => {
       longRentalDiscount = Math.round(rentalFee * TIER_1.DISCOUNT_RATE);
     }
 
-    let appliedVoucherCode = '';
-    let appliedVoucherDiscount = 0;
-
-    if (voucherCode && typeof voucherCode === 'string' && voucherCode.trim()) {
-      const cleanCode = voucherCode.trim().toUpperCase();
-      const now = new Date();
-      // Atomic increment preventing race condition if multiple concurrent bookings redeem the last available voucher
-      const voucherDoc = await Voucher.findOneAndUpdate(
-        {
-          code: cleanCode,
-          isActive: true,
-          expiryDate: { $gte: now },
-          $expr: { $lt: ['$usedCount', '$usageLimit'] },
-        },
-        { $inc: { usedCount: 1 } },
-        { new: true }
-      );
-
-      if (!voucherDoc) {
-        return res.status(400).json({
-          success: false,
-          message: 'Mã giảm giá không tồn tại, đã hết hạn hoặc đã hết lượt sử dụng.',
-        });
-      }
-
-      if (totalDays < (voucherDoc.minDays || 1)) {
-        await Voucher.updateOne({ _id: voucherDoc._id }, { $inc: { usedCount: -1 } });
-        return res.status(400).json({
-          success: false,
-          message: `Mã giảm giá chỉ áp dụng cho đơn thuê từ ${voucherDoc.minDays} ngày trở lên.`,
-        });
-      }
-
-      appliedVoucherCode = voucherDoc.code;
-      if (voucherDoc.type === 'percent') {
-        const calculated = Math.round(rentalFee * (voucherDoc.value / 100));
-        appliedVoucherDiscount = voucherDoc.maxDiscount > 0 ? Math.min(calculated, voucherDoc.maxDiscount) : calculated;
-      } else {
-        appliedVoucherDiscount = Math.min(rentalFee, voucherDoc.value);
-      }
-    }
-
-    const discountAmount = longRentalDiscount + appliedVoucherDiscount;
+    const discountAmount = longRentalDiscount;
     const depositFee = device.depositValue ?? device.depositAmount ?? 0;
     const finalRentalFee = Math.max(0, rentalFee - discountAmount);
     const totalAmount = finalRentalFee + depositFee;
@@ -776,8 +727,6 @@ export const createBooking = async (req, res, next) => {
       rentalFee,
       discountPercent,
       discountAmount,
-      voucherCode: appliedVoucherCode,
-      voucherDiscount: appliedVoucherDiscount,
       depositFee,
       depositValue: depositFee,
       totalAmount,
@@ -787,7 +736,6 @@ export const createBooking = async (req, res, next) => {
       status: 'pending',
       paymentStatus: 'unpaid',
       statusReason: '',
-      paymentMethod,
       rejectReason: '',
       cancelReason: '',
       pricing: {
@@ -795,8 +743,6 @@ export const createBooking = async (req, res, next) => {
         rentalFee,
         discountPercent,
         depositFee,
-        voucherCode: '',
-        voucherDiscount: 0,
         totalAmount,
       },
       delivery: {
@@ -823,16 +769,6 @@ export const createBooking = async (req, res, next) => {
         requestedDays: 0,
         additionalFee: 0,
         status: 'none',
-      },
-      disputeStatus: 'none',
-      disputeNote: '',
-      dispute: {
-        isDisputed: false,
-        reason: '',
-        requestedAmount: 0,
-        proofPhotos: [],
-        resolutionStatus: 'none',
-        adminNote: '',
       },
       reminder6hSent: false,
       reminder2hSent: false,
@@ -1175,11 +1111,11 @@ export const cancelBooking = async (req, res, next) => {
 
 /**
  * 5. POST /api/bookings/validate-pricing
- * Calculate rental pricing and validate promotional voucher
+ * Calculate rental pricing
  */
 export const validatePricing = async (req, res, next) => {
   try {
-    const { deviceId, startDate, endDate, voucherCode } = req.body;
+    const { deviceId, startDate, endDate } = req.body;
 
     if (!deviceId || !mongoose.isValidObjectId(deviceId)) {
       return res.status(400).json({ success: false, message: 'Invalid device ID.' });
@@ -1212,39 +1148,7 @@ export const validatePricing = async (req, res, next) => {
       longRentalDiscount = Math.round(rentalFee * TIER_1.DISCOUNT_RATE);
     }
 
-    let voucherDiscount = 0;
-    let voucherValid = false;
-    let voucherMessage = '';
-
-    if (voucherCode && typeof voucherCode === 'string' && voucherCode.trim()) {
-      const cleanCode = voucherCode.trim().toUpperCase();
-      const now = new Date();
-      const v = await Voucher.findOne({ code: cleanCode, isActive: true });
-      if (!v) {
-        voucherValid = false;
-        voucherMessage = 'Mã giảm giá không tồn tại hoặc đã bị vô hiệu hóa.';
-      } else if (v.expiryDate && new Date(v.expiryDate) < now) {
-        voucherValid = false;
-        voucherMessage = 'Mã giảm giá đã hết hạn sử dụng.';
-      } else if (v.usageLimit && v.usedCount >= v.usageLimit) {
-        voucherValid = false;
-        voucherMessage = 'Mã giảm giá đã hết lượt sử dụng.';
-      } else if (totalDays < (v.minDays || 1)) {
-        voucherValid = false;
-        voucherMessage = `Mã giảm giá chỉ áp dụng cho đơn thuê từ ${v.minDays} ngày trở lên.`;
-      } else {
-        voucherValid = true;
-        voucherMessage = 'Áp dụng mã giảm giá thành công.';
-        if (v.type === 'percent') {
-          const calculated = Math.round(rentalFee * (v.value / 100));
-          voucherDiscount = v.maxDiscount > 0 ? Math.min(calculated, v.maxDiscount) : calculated;
-        } else {
-          voucherDiscount = Math.min(rentalFee, v.value);
-        }
-      }
-    }
-
-    const discountAmount = longRentalDiscount + voucherDiscount;
+    const discountAmount = longRentalDiscount;
     const depositFee = device.depositValue ?? device.depositAmount ?? 0;
     const finalRentalFee = Math.max(0, rentalFee - discountAmount);
     const totalAmount = finalRentalFee + depositFee;
@@ -1259,9 +1163,6 @@ export const validatePricing = async (req, res, next) => {
         discountPercent,
         longRentalDiscount,
         longRentalDiscountPercent: discountPercent,
-        voucherDiscount,
-        voucherValid,
-        voucherMessage,
         discountAmount,
         depositFee,
         depositValue: depositFee,

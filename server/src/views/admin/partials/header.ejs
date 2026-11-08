@@ -33,9 +33,9 @@
         onclick="toggleNotificationDropdown();"
       >
         <i data-lucide="bell" style="width: 16px; height: 16px;"></i>
-        <% if (typeof pendingCounts !== 'undefined' && (pendingCounts.ekyc + pendingCounts.devices + pendingCounts.disputes) > 0) { %>
+        <% if (typeof pendingCounts !== 'undefined' && (pendingCounts.ekyc + pendingCounts.devices) > 0) { %>
           <span class="admin-notif-badge">
-            <%= (pendingCounts.ekyc + pendingCounts.devices + pendingCounts.disputes) %>
+            <%= (pendingCounts.ekyc + pendingCounts.devices) %>
           </span>
         <% } %>
       </button>
@@ -69,18 +69,7 @@
               </div>
             </a>
           <% } %>
-          <% if (typeof pendingCounts !== 'undefined' && pendingCounts.disputes > 0) { %>
-            <a href="/admin/dispute-resolution" class="admin-notif-item">
-              <div class="admin-notif-icon" style="background-color: #FEE2E2; color: #DC2626;">
-                <i data-lucide="scale" style="width: 16px; height: 16px;"></i>
-              </div>
-              <div class="admin-notif-text">
-                <div style="font-weight: 600; font-size: 12.5px; color: #0F172A;">Active Disputes</div>
-                <div style="font-size: 11.5px; color: #64748B;"><%= pendingCounts.disputes %> disputes requiring escrow resolution.</div>
-              </div>
-            </a>
-          <% } %>
-          <% if (typeof pendingCounts === 'undefined' || (pendingCounts.ekyc + pendingCounts.devices + pendingCounts.disputes) === 0) { %>
+          <% if (typeof pendingCounts === 'undefined' || (pendingCounts.ekyc + pendingCounts.devices) === 0) { %>
             <div style="padding: 24px; text-align: center; color: #94A3B8; font-size: 12.5px;">
               No pending tasks. System operating normally.
             </div>

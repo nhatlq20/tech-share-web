@@ -5,7 +5,6 @@ import {
   Send,
   TrendingUp,
   DollarSign,
-  ShieldCheck,
   FileText,
   RotateCw,
 } from 'lucide-react';
@@ -22,11 +21,6 @@ const PROMPT_SUGGESTIONS = [
     prompt: 'Viết giúp tôi tiêu đề và phần mô tả bài đăng cho thuê flycam DJI Mini 4 Pro đầy đủ pin và phụ kiện.',
   },
   {
-    icon: ShieldCheck,
-    title: 'Quy trình giải quyết cọc Escrow',
-    prompt: 'Nếu khách thuê làm trầy xước ống kính khi trả máy, quy trình khấu trừ cọc trên TechShare diễn ra như thế nào?',
-  },
-  {
     icon: TrendingUp,
     title: 'Dự báo thiết bị hot tháng này',
     prompt: 'Những dòng thiết bị nào đang có nhu cầu thuê cao nhất trong dịp lễ và mùa du lịch sắp tới?',
@@ -39,7 +33,6 @@ const PRESET_ANSWERS = {
 Tôi có thể giúp bạn:
 - 💡 **Định giá thiết bị thông minh**: Đề xuất mức giá thuê ngày và tỷ lệ cọc hợp lý dựa trên dữ liệu thị trường.
 - 📝 **Tối ưu nội dung đăng bài**: Viết tiêu đề, thông số kỹ thuật và quy định bàn giao hấp dẫn.
-- 🛡️ **Bảo vệ quyền lợi cọc Escrow**: Hướng dẫn quy trình chụp ảnh hiện trạng và giải quyết bồi thường.
 - 📈 **Gia tăng doanh thu**: Phân tích danh mục thiết bị có nhu cầu thuê cao nhất.
 
 Bạn muốn tôi hỗ trợ nội dung nào hôm nay?`,
@@ -51,7 +44,7 @@ Bạn muốn tôi hỗ trợ nội dung nào hôm nay?`,
    - Thuê cuối tuần (T7, CN): **520.000 đ / ngày**
    - Giảm giá dài ngày: Giảm **15%** cho gói thuê từ 3 ngày, giảm **25%** cho gói thuê 1 tuần.
 
-2. **Tiền đặt cọc đề xuất (Escrow)**:
+2. **Tiền đặt cọc đề xuất**:
    - Khách có CCCD gắn chip & tài khoản đã xác minh: **3.500.000 đ** (kết hợp giữ giấy tờ tùy thân hoặc hợp đồng điện tử).
    - Khách mới chưa xác minh: **8.000.000 đ – 12.000.000 đ**.
 
@@ -73,20 +66,6 @@ Bạn muốn tôi hỗ trợ nội dung nào hôm nay?`,
 **Điều kiện nhận máy:**
 - Kiểm tra trực tiếp khả năng bay và tình trạng gimbal khi bàn giao.
 - Hỗ trợ hướng dẫn bay cơ bản cho người mới bắt đầu!`,
-
-  escrow: `### 🛡️ Quy trình khấu trừ cọc khi thiết bị có tổn hại:
-
-1. **Bước 1: Chụp ảnh đối chứng khi hoàn tất giao nhận**
-   - Khi giao máy: chụp ảnh độ nét cao tình trạng thấu kính, thân máy và serial number.
-   - Khi nhận lại: nếu phát hiện vết xước mới, chụp lại vị trí tổn hại ngay trước mặt khách.
-
-2. **Bước 2: Yêu cầu giữ cọc (Dispute Escrow)**
-   - Trong vòng **24 giờ** sau khi nhận máy, vào mục Đơn hàng ➔ Bấm **"Yêu cầu bồi thường hư tổn"**.
-   - Tải lên ảnh đối chứng trước/sau và đính kèm báo giá sửa chữa từ trung tâm bảo hành chính hãng.
-
-3. **Bước 3: TechShare can thiệp xử lý**
-   - Hệ thống giữ nguyên số tiền cọc trong tài khoản ký quỹ Escrow.
-   - Ban quản lý TechShare đối soát trong 48h và giải ngân số tiền bồi thường trực tiếp vào **Ví của bạn**.`,
 
   trend: `### 📈 Xu hướng thiết bị có nhu cầu thuê cao nhất:
 
@@ -131,8 +110,6 @@ export const OwnerAIAssistantTab = () => {
         reply = PRESET_ANSWERS.price;
       } else if (lower.includes('mô tả') || lower.includes('bài đăng') || lower.includes('flycam') || lower.includes('dji')) {
         reply = PRESET_ANSWERS.post;
-      } else if (lower.includes('cọc') || lower.includes('hư') || lower.includes('trầy') || lower.includes('escrow') || lower.includes('bồi thường')) {
-        reply = PRESET_ANSWERS.escrow;
       } else if (lower.includes('hot') || lower.includes('nhu cầu') || lower.includes('dự báo') || lower.includes('xu hướng')) {
         reply = PRESET_ANSWERS.trend;
       } else {
@@ -263,7 +240,7 @@ export const OwnerAIAssistantTab = () => {
             onKeyDown={(e) => {
               if (e.key === 'Enter') handleSendPrompt();
             }}
-            placeholder="Hỏi AI Assistant về cách định giá, viết mô tả bài đăng hoặc chính sách cọc Escrow..."
+            placeholder="Hỏi AI Assistant về cách định giá, viết mô tả bài đăng hoặc xu hướng thuê thiết bị..."
             className="flex-1 px-4 py-2.5 text-xs sm:text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 transition text-slate-800 placeholder-slate-400"
           />
           <button

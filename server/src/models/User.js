@@ -2,9 +2,7 @@ import mongoose from 'mongoose';
 
 /**
  * 3. Bảng users (Tier 1 - Hồ sơ Đa nền tảng Web & Mobile)
- * Đã tối ưu: Gom nhóm trust (tín nhiệm), wallet (ví ký quỹ) và notificationTokens
- * Tương thích App & Web: Có sẵn Getter & Setter 2 chiều cho isVerified, trustScore,
- * badges, walletBalance, walletEscrowBalance, expoPushToken, v.v.
+ * Nhóm thông tin tín nhiệm và cấu hình thông báo cho web và ứng dụng di động.
  */
 const userSchema = new mongoose.Schema(
   {
@@ -46,12 +44,6 @@ const userSchema = new mongoose.Schema(
       isVerified: { type: Boolean, default: false },
       score: { type: Number, default: 100, min: 0, max: 200 },
       badges: [{ type: String }],
-    },
-
-    // 2. Nhóm Ví Ký quỹ Nội bộ (Issue #39)
-    wallet: {
-      balance: { type: Number, default: 0, min: 0 },
-      escrowBalance: { type: Number, default: 0, min: 0 },
     },
 
     // 3. Nhóm Thiết bị & Push Notification (Hỗ trợ cả Mobile Expo & Web FCM)
@@ -119,14 +111,6 @@ userSchema.virtual('trustScore')
 userSchema.virtual('badges')
   .get(function () { return this.trust?.badges ?? []; })
   .set(function (v) { this.set('trust.badges', v); });
-
-userSchema.virtual('walletBalance')
-  .get(function () { return this.wallet?.balance ?? 0; })
-  .set(function (v) { this.set('wallet.balance', v); });
-
-userSchema.virtual('walletEscrowBalance')
-  .get(function () { return this.wallet?.escrowBalance ?? 0; })
-  .set(function (v) { this.set('wallet.escrowBalance', v); });
 
 userSchema.virtual('expoPushToken')
   .get(function () { return this.pushConfig?.expoPushToken ?? ''; })

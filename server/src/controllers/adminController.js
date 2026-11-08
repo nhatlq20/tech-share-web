@@ -85,13 +85,6 @@ export const getAdminAnalytics = async (req, res, next) => {
 
     const pendingEkyc = await ekycCol.countDocuments({ status: 'pending' });
 
-    let pendingDisputes = 0;
-    try {
-      pendingDisputes = await mongoose.connection.db.collection('disputes').countDocuments({
-        status: { $in: ['pending', 'in_review'] },
-      });
-    } catch {}
-
     // Tính tổng doanh thu từ Bookings
     const revenueAgg = await bookingsCol
       .aggregate([
@@ -267,7 +260,6 @@ export const getAdminAnalytics = async (req, res, next) => {
           pendingDevices,
           activeBookings,
           pendingEkyc,
-          pendingDisputes,
           totalRevenue,
           revenueFormatted: new Intl.NumberFormat('vi-VN', {
             style: 'currency',
@@ -328,8 +320,6 @@ export const getAdminUsers = async (req, res, next) => {
       role: u.role || 'renter',
       isVerified: Boolean(u.isVerified),
       trustScore: typeof u.trustScore === 'number' ? u.trustScore : BUSINESS_RULES.TRUST_SCORE.DEFAULT,
-      walletBalance: typeof u.walletBalance === 'number' ? u.walletBalance : 0,
-      walletEscrowBalance: typeof u.walletEscrowBalance === 'number' ? u.walletEscrowBalance : 0,
       isActive: u.isActive !== false,
       createdAt: u.createdAt || new Date(),
     }));
