@@ -229,10 +229,10 @@ export const getMyOwnerEkycStatus = async (req, res, next) => {
         request: latestOwnerRequest || null,
         renterEkyc: latestRenterEkyc
           ? {
-            idCardFrontUrl: latestRenterEkyc.idCardFrontUrl,
-            idCardBackUrl: latestRenterEkyc.idCardBackUrl,
-            idCardNumber: latestRenterEkyc.idCardNumber,
-          }
+              idCardFrontUrl: latestRenterEkyc.idCardFrontUrl,
+              idCardBackUrl: latestRenterEkyc.idCardBackUrl,
+              idCardNumber: latestRenterEkyc.idCardNumber,
+            }
           : null,
       },
     });
