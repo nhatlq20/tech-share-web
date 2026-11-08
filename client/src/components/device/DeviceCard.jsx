@@ -9,6 +9,7 @@ import {
   toggleWishlist,
   WISHLIST_UPDATED_EVENT,
 } from '../../services/wishlistService.js';
+import { resolveCityName } from '../../constants/cities.js';
 import './DeviceCard.css';
 
 const CATEGORY_LABEL_MAP = {
@@ -51,13 +52,32 @@ export const formatConditionLabel = (condition) => {
 };
 
 /**
+ * Calculates distance in meters between two lat/lng points using Haversine formula
+ */
+export const calculateDistanceMeters = (lat1, lon1, lat2, lon2) => {
+  if (!Number.isFinite(lat1) || !Number.isFinite(lon1) || !Number.isFinite(lat2) || !Number.isFinite(lon2)) {
+    return null;
+  }
+  const R = 6371e3; // Earth radius in meters
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+};
+
+/**
  * Reusable Device Card component for TechShare Web
  *
  * @param {Object} props
  * @param {import('../../types/device.js').Device} props.device
  * @param {Function} [props.onFavoriteChange] Optional callback when favorite state is toggled
+ * @param {{ lat: number, lng: number }} [props.userCoordinates] Optional user coordinates
  */
-export const DeviceCard = ({ device, onFavoriteChange }) => {
+export const DeviceCard = ({ device, onFavoriteChange, userCoordinates = null }) => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const deviceId = String(device?._id || device?.id || '');
@@ -96,6 +116,59 @@ export const DeviceCard = ({ device, onFavoriteChange }) => {
   const brand = (device.brand || '').trim();
   const categoryLabel = formatCategoryLabel(device.category);
   const conditionLabel = formatConditionLabel(device.condition);
+
+  // Status calculation
+  const rawStatus = (device.status || 'available').toString().trim();
+  const statusLabel =
+    rawStatus.toLowerCase() === 'available'
+      ? 'Available'
+      : rawStatus.charAt(0).toUpperCase() + rawStatus.slice(1).toLowerCase();
+
+  // Owner information
+  const rawOwner = device.owner || (typeof device.ownerId === 'object' ? device.ownerId : null);
+  const ownerName = (rawOwner?.name || device.ownerName || '').trim();
+  const ownerAvatar = rawOwner?.avatar || rawOwner?.avatarUrl || device.ownerAvatar || null;
+
+  // Owner location / city
+  const rawOwnerAddress =
+    rawOwner?.address ||
+    device.location?.addressText ||
+    device.address ||
+    '';
+  const ownerCity = resolveCityName(rawOwnerAddress);
+
+  // Owner coordinates (Single Source of Truth: user's location)
+  const ownerCoords =
+    rawOwner?.location?.coordinates ||
+    device.location?.coordinates ||
+    device.ownerLocation?.coordinates;
+  const hasValidOwnerCoords =
+    Array.isArray(ownerCoords) &&
+    ownerCoords.length === 2 &&
+    Number.isFinite(ownerCoords[0]) &&
+    Number.isFinite(ownerCoords[1]);
+
+  // Distance calculation
+  let distanceMeters = null;
+  if (Number.isFinite(device.distanceMeters)) {
+    distanceMeters = device.distanceMeters;
+  } else if (
+    userCoordinates &&
+    Number.isFinite(userCoordinates.lat) &&
+    Number.isFinite(userCoordinates.lng) &&
+    hasValidOwnerCoords
+  ) {
+    distanceMeters = calculateDistanceMeters(
+      userCoordinates.lat,
+      userCoordinates.lng,
+      ownerCoords[1], // latitude
+      ownerCoords[0]  // longitude
+    );
+  }
+
+  const formattedDistance = Number.isFinite(distanceMeters)
+    ? `${(distanceMeters / 1000).toFixed(1)} km away`
+    : null;
 
   // Price calculation
   const rawPrice = device.dailyRate ?? device.pricePerDay;
@@ -187,13 +260,53 @@ export const DeviceCard = ({ device, onFavoriteChange }) => {
           <div className="device-card-meta-row">
             {brand && <span className="device-card-brand">{brand}</span>}
             {categoryLabel && <span className="device-card-category">{categoryLabel}</span>}
+            <span className={`device-card-status status-${rawStatus.toLowerCase()}`}>
+              {statusLabel}
+            </span>
           </div>
 
           <h3 className="device-card-title" title={title}>
             {title}
           </h3>
-          {Number.isFinite(device.distanceMeters) && (
-            <div className="device-card-distance"><MapPin size={12} /> {(device.distanceMeters / 1000).toFixed(1)} km away</div>
+
+          {ownerName && (
+            <div className="device-card-owner-row" title={`Owner: ${ownerName}`}>
+              {ownerAvatar ? (
+                <img
+                  src={ownerAvatar}
+                  alt={ownerName}
+                  className="device-card-owner-avatar"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    const fallback = e.currentTarget.parentElement?.querySelector(
+                      '.device-card-owner-avatar-fallback'
+                    );
+                    if (fallback) fallback.style.display = 'flex';
+                  }}
+                />
+              ) : null}
+              <div
+                className="device-card-owner-avatar-fallback"
+                style={{ display: ownerAvatar ? 'none' : 'flex' }}
+              >
+                {ownerName.charAt(0).toUpperCase()}
+              </div>
+              <span className="device-card-owner-name">Owner: {ownerName}</span>
+            </div>
+          )}
+
+          {ownerCity ? (
+            <div className="device-card-location-row" title={`Location: ${rawOwnerAddress || ownerCity}`}>
+              <span className="device-card-location-label">Location:</span>{' '}
+              <span className="device-card-location-city">{ownerCity}</span>
+            </div>
+          ) : null}
+
+          {formattedDistance && (
+            <div className="device-card-distance">
+              <MapPin size={12} aria-hidden="true" />
+              <span>{formattedDistance}</span>
+            </div>
           )}
 
           <div className="device-card-footer">

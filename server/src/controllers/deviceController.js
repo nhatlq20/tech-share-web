@@ -30,6 +30,50 @@ const NEARBY_MAX_DISTANCE_METERS = 10000;
 const MAX_LATITUDE = 90;
 const MAX_LONGITUDE = 180;
 
+export const VIETNAM_CITIES = {
+  can_tho: {
+    key: "can_tho",
+    name: "Cần Thơ",
+    aliases: ["can tho", "can_tho", "cần thơ", "cantho", "tp. cần thơ", "tp cần thơ"],
+    coordinates: [105.7469, 10.0452], // [lng, lat]
+  },
+  ha_noi: {
+    key: "ha_noi",
+    name: "Hà Nội",
+    aliases: ["ha noi", "ha_noi", "hanoi", "hà nội", "tp. hà nội", "tp hà nội"],
+    coordinates: [105.8542, 21.0285],
+  },
+  ho_chi_minh: {
+    key: "ho_chi_minh",
+    name: "TP. Hồ Chí Minh",
+    aliases: ["ho chi minh", "ho_chi_minh", "hcm", "tp hcm", "tp. hcm", "tp. hồ chí minh", "saigon", "sài gòn", "tphcm"],
+    coordinates: [106.7009, 10.7769],
+  },
+  da_nang: {
+    key: "da_nang",
+    name: "Đà Nẵng",
+    aliases: ["da nang", "da_nang", "danang", "đà nẵng", "tp. đà nẵng", "tp đà nẵng"],
+    coordinates: [108.2022, 16.0544],
+  },
+  hai_phong: {
+    key: "hai_phong",
+    name: "Hải Phòng",
+    aliases: ["hai phong", "hai_phong", "haiphong", "hải phòng", "tp. hải phòng", "tp hải phòng"],
+    coordinates: [106.6881, 20.8449],
+  },
+};
+
+export const resolveCityCoordinates = (cityInput) => {
+  if (!cityInput || typeof cityInput !== "string") return null;
+  const normalized = cityInput.trim().toLowerCase();
+  for (const city of Object.values(VIETNAM_CITIES)) {
+    if (city.key === normalized || city.aliases.includes(normalized)) {
+      return city;
+    }
+  }
+  return null;
+};
+
 const isNumericQueryValue = (value) =>
   typeof value === "string" && value.trim() !== "" && Number.isFinite(Number(value));
 
@@ -52,14 +96,44 @@ export const getRecommendedDevices = async (req, res, next) => {
     const {
       lat,
       lng,
+      latitude,
+      longitude,
+      city,
       category,
       q,
       keyword,
       page = RECOMMENDATION_DEFAULT_PAGE,
       limit,
     } = req.query;
-    const userLat = Number(lat);
-    const userLng = Number(lng);
+
+    const hasLat = lat !== undefined || latitude !== undefined;
+    const hasLng = lng !== undefined || longitude !== undefined;
+    const rawLat = lat ?? latitude;
+    const rawLng = lng ?? longitude;
+    const resolvedCity = resolveCityCoordinates(city);
+
+    let userLat = NaN;
+    let userLng = NaN;
+
+    if (hasLat || hasLng) {
+      if (!isNumericQueryValue(rawLat) || !isNumericQueryValue(rawLng)) {
+        return res.status(400).json({
+          success: false,
+          message: "Valid lat, lng, page and limit are required.",
+        });
+      }
+      userLat = Number(rawLat);
+      userLng = Number(rawLng);
+    } else if (resolvedCity) {
+      userLat = resolvedCity.coordinates[1];
+      userLng = resolvedCity.coordinates[0];
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: "Valid lat, lng, page and limit are required.",
+      });
+    }
+
     const pageNum = Number(page);
 
     // Validate optional search keyword
@@ -82,10 +156,16 @@ export const getRecommendedDevices = async (req, res, next) => {
     const requestedLimit = limit !== undefined ? Number(limit) : defaultLimit;
     const limitNum = Math.min(requestedLimit, cleanKeyword ? 12 : RECOMMENDATION_PAGE_SIZE);
     const skip = (pageNum - RECOMMENDATION_DEFAULT_PAGE) * limitNum;
-    const validCoordinates = isNumericQueryValue(lat) && isNumericQueryValue(lng) &&
-      Math.abs(userLat) <= MAX_LATITUDE && Math.abs(userLng) <= MAX_LONGITUDE;
-    const validPagination = Number.isSafeInteger(pageNum) && pageNum >= RECOMMENDATION_DEFAULT_PAGE &&
-      Number.isSafeInteger(requestedLimit) && requestedLimit >= 1 &&
+    const validCoordinates =
+      Number.isFinite(userLat) &&
+      Number.isFinite(userLng) &&
+      Math.abs(userLat) <= MAX_LATITUDE &&
+      Math.abs(userLng) <= MAX_LONGITUDE;
+    const validPagination =
+      Number.isSafeInteger(pageNum) &&
+      pageNum >= RECOMMENDATION_DEFAULT_PAGE &&
+      Number.isSafeInteger(requestedLimit) &&
+      requestedLimit >= 1 &&
       Number.isSafeInteger(skip);
 
     if (!validCoordinates || !validPagination) {
@@ -212,10 +292,22 @@ export const getRecommendedDevices = async (req, res, next) => {
       ])
       .toArray();
     const total = result.totals[0]?.total || 0;
+
+    if (process.env.NODE_ENV !== "test") {
+      console.log(`[RECOMMENDATIONS] Search city: ${resolvedCity?.name || 'By Coordinates'}`);
+      console.log(`[RECOMMENDATIONS] Search center [lng, lat]: [${userLng}, ${userLat}] (Radius: 100km)`);
+      console.log(`[RECOMMENDATIONS] Devices returned: ${result.data.length}, total eligible: ${total}`);
+      if (result.data.length > 0) {
+        console.log(`[RECOMMENDATIONS] Sample device: ${result.data[0]?.name} | Owner: ${result.data[0]?.owner?.name} (${(result.data[0]?.distanceMeters / 1000).toFixed(1)} km)`);
+      }
+    }
+
     return res.status(200).json({
       success: true,
       count: result.data.length,
       data: result.data,
+      searchCity: resolvedCity?.name || null,
+      searchCenter: [userLng, userLat],
       pagination: {
         page: pageNum,
         limit: limitNum,

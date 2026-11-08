@@ -2,6 +2,19 @@ import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
+// Safeguard Leaflet DivOverlay & Popup against missing _latlng during flyTo animations and resets
+if (typeof L !== 'undefined' && L.DivOverlay && L.DivOverlay.prototype._updatePosition) {
+  const origUpdatePosition = L.DivOverlay.prototype._updatePosition;
+  L.DivOverlay.prototype._updatePosition = function () {
+    if (!this._map || !this._latlng) return;
+    try {
+      return origUpdatePosition.apply(this, arguments);
+    } catch (e) {
+      // guard against race condition during animation / layer clear
+    }
+  };
+}
+
 const FAVI_MAP_API_KEY = process.env.REACT_APP_FAVI_MAP_API_KEY || process.env.VITE_FAVI_MAP_API_KEY || '';
 
 export const GOOGLE_MAPS_TILE_CONFIG = {
@@ -238,6 +251,9 @@ export const MapView = ({
           if (leafletInstance) {
             try {
               leafletInstance.closePopup();
+              if (leafletInstance._popup) {
+                leafletInstance.removeLayer(leafletInstance._popup);
+              }
             } catch (e) {}
           }
           if (markersLayerRef.current) {
@@ -265,19 +281,23 @@ export const MapView = ({
             zIndexOffset: isUser ? 1000 : (isSelected ? 900 : 100),
           });
 
+          // Add to marker layer first so marker._map is established
+          markersLayerRef.current.addLayer(marker);
+
           if (opts.popup) {
             marker.bindPopup(opts.popup, {
               maxWidth: 240,
               minWidth: 180,
               offset: [0, -22],
               className: 'nearby-leaflet-popup',
+              autoPan: false,
             });
             if (opts.openPopup) {
-              marker.openPopup();
+              try {
+                marker.openPopup();
+              } catch (e) {}
             }
           }
-
-          markersLayerRef.current.addLayer(marker);
 
           const markerHandle = {
             leafletMarker: marker,
@@ -442,9 +462,6 @@ export const MapView = ({
 
         if (marker) {
           const handleSelect = () => {
-            if (typeof marker.togglePopup === 'function' && !marker.getPopup()?.isOpen?.()) {
-              marker.togglePopup();
-            }
             if (typeof onMarkerClick === 'function') {
               onMarkerClick(group.key, primaryDeviceId);
             }
