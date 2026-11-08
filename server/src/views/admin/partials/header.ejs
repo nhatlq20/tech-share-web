@@ -29,51 +29,33 @@
         type="button"
         id="adminNotifBtn"
         class="admin-action-btn"
-        title="System notifications"
+        title="Admin notifications"
+        style="position: relative;"
+        aria-label="Admin notifications"
+        aria-controls="adminNotifDropdown"
+        aria-expanded="false"
         onclick="toggleNotificationDropdown();"
       >
         <i data-lucide="bell" style="width: 16px; height: 16px;"></i>
-        <% if (typeof pendingCounts !== 'undefined' && (pendingCounts.ekyc + pendingCounts.devices) > 0) { %>
-          <span class="admin-notif-badge">
-            <%= (pendingCounts.ekyc + pendingCounts.devices) %>
-          </span>
-        <% } %>
+        <span class="admin-notif-badge" data-admin-unread-badge hidden></span>
       </button>
 
       <!-- Dropdown -->
       <div id="adminNotifDropdown" class="admin-notif-dropdown" style="display: none;">
         <div class="admin-notif-dropdown-header">
           <span style="font-weight: 700; font-size: 13.5px; color: #0F172A;">Admin Notifications</span>
-          <span style="font-size: 11px; color: #64748B;">Today</span>
+          <span id="adminNotifUnreadText" style="font-size: 11px; color: #64748B;"></span>
         </div>
         <div class="admin-notif-dropdown-list">
-          <% if (typeof pendingCounts !== 'undefined' && pendingCounts.ekyc > 0) { %>
-            <a href="/admin/ekyc-verification" class="admin-notif-item">
-              <div class="admin-notif-icon" style="background-color: #E8F6F7; color: #286E74;">
-                <i data-lucide="shield-check" style="width: 16px; height: 16px;"></i>
-              </div>
-              <div class="admin-notif-text">
-                <div style="font-weight: 600; font-size: 12.5px; color: #0F172A;">New eKYC Verification</div>
-                <div style="font-size: 11.5px; color: #64748B;"><%= pendingCounts.ekyc %> eKYC profiles awaiting review.</div>
-              </div>
-            </a>
-          <% } %>
-          <% if (typeof pendingCounts !== 'undefined' && pendingCounts.devices > 0) { %>
-            <a href="/admin/device-moderation" class="admin-notif-item">
-              <div class="admin-notif-icon" style="background-color: #FEF3C7; color: #D97706;">
-                <i data-lucide="cpu" style="width: 16px; height: 16px;"></i>
-              </div>
-              <div class="admin-notif-text">
-                <div style="font-weight: 600; font-size: 12.5px; color: #0F172A;">Devices Pending Approval</div>
-                <div style="font-size: 11.5px; color: #64748B;"><%= pendingCounts.devices %> devices awaiting listing review.</div>
-              </div>
-            </a>
-          <% } %>
-          <% if (typeof pendingCounts === 'undefined' || (pendingCounts.ekyc + pendingCounts.devices) === 0) { %>
-            <div style="padding: 24px; text-align: center; color: #94A3B8; font-size: 12.5px;">
-              No pending tasks. System operating normally.
+          <a href="/admin/notification-management" class="admin-notif-item">
+            <div class="admin-notif-icon" style="background-color: #E8F6F7; color: #286E74;">
+              <i data-lucide="inbox" aria-hidden="true"></i>
             </div>
-          <% } %>
+            <div class="admin-notif-text">
+              <strong>Open Notification Center</strong>
+              <div style="font-size: 11.5px; color: #64748B;">Review new platform activity.</div>
+            </div>
+          </a>
         </div>
       </div>
     </div>

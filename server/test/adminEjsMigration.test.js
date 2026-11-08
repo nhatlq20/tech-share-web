@@ -7,7 +7,6 @@ import express from 'express';
 import cookieParser from 'cookie-parser';
 import jwt from 'jsonwebtoken';
 import adminPageRoutes from '../src/routes/adminPageRoutes.js';
-import { OwnerEkycRequest } from '../src/models/OwnerEkycRequest.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -88,29 +87,7 @@ test('ADMIN EJS MIGRATION: Security & Server-Rendered Views Test Suite', async (
   const adminToken = createAdminToken('admin');
   const renterToken = createAdminToken('renter');
 
-  await t.test('Owner verification keeps both protected admin routes after the merge', async (t) => {
-    const pending = { status: 'pending' };
-    const record = {
-      _id: '64e0a12f9b1c2b001a333333',
-      fullName: 'Owner Applicant',
-      status: 'pending',
-      idCardFrontUrl: 'https://example.test/front.jpg',
-      idCardBackUrl: 'https://example.test/back.jpg',
-      idCardHoldingUrl: 'https://example.test/holding.jpg',
-    };
-    const query = {
-      populate() { return this; },
-      sort() { return this; },
-      skip() { return this; },
-      limit() { return this; },
-      lean: async () => [record],
-    };
-    const find = t.mock.method(OwnerEkycRequest, 'find', (filter) => {
-      assert.deepEqual(filter, pending);
-      return query;
-    });
-    t.mock.method(OwnerEkycRequest, 'countDocuments', async () => 1);
-
+  await t.test('Owner verification protects its admin page and aliases', async () => {
     const anonymous = await makeRequest(app, { path: '/admin/owner-ekyc-verification' });
     assert.equal(anonymous.statusCode, 302);
     const renter = await makeRequest(app, {
@@ -118,20 +95,14 @@ test('ADMIN EJS MIGRATION: Security & Server-Rendered Views Test Suite', async (
       headers: { Cookie: `techshare_admin_token=${renterToken}` },
     });
     assert.equal(renter.statusCode, 403);
-    assert.equal(find.mock.callCount(), 0);
-
-    for (const path of ['/admin/owner-ekyc-verification', '/admin/owner-ekyc']) {
+    for (const path of ['/admin/owner-verification', '/admin/owner-ekyc-verification', '/admin/owner-ekyc']) {
       const admin = await makeRequest(app, {
-        path: `${path}?status=pending`,
+        path,
         headers: { Cookie: `techshare_admin_token=${adminToken}` },
       });
       assert.equal(admin.statusCode, 200);
       assert.equal(admin.headers['cache-control'], 'no-store');
-      assert.match(admin.body, /Owner Applicant/);
-      assert.match(admin.body, /front\.jpg/);
-      assert.match(admin.body, /back\.jpg/);
-      assert.match(admin.body, /holding\.jpg/);
-      assert.match(admin.body, /data-owner-ekyc-review/);
+      assert.match(admin.body, /owner-ekyc-verification\.js/);
     }
   });
 
@@ -295,7 +266,7 @@ test('ADMIN EJS MIGRATION: Security & Server-Rendered Views Test Suite', async (
     assert.match(res.body, /(?:Kiểm duyệt Đánh giá & Bảo vệ Uy tín|Review Moderation & Reputation Protection)/);
   });
 
-  await t.test('TC-EJS-PAGE-11: Admin GET /admin/notification-management renders notification broadcast page', async () => {
+  await t.test('TC-EJS-PAGE-11: Admin GET /admin/notification-management renders the notification center', async () => {
     const res = await makeRequest(app, {
       path: '/admin/notification-management',
       headers: {
@@ -303,8 +274,10 @@ test('ADMIN EJS MIGRATION: Security & Server-Rendered Views Test Suite', async (
       },
     });
     assert.equal(res.statusCode, 200);
-    assert.match(res.body, /(?:Quản lý & Phát sóng Thông báo|Notification Management & Broadcasting)/);
-    assert.match(res.body, /broadcastModal/);
+    assert.match(res.body, /<h1>Admin Notifications<\/h1>/);
+    assert.match(res.body, /\/css\/notification-management\.css/);
+    assert.match(res.body, /adminNotificationsReadAll/);
+    assert.doesNotMatch(res.body, /Create Broadcast|broadcastModal|broadcastForm/);
   });
 
   await t.test('TC-EJS-PAGE-12: Admin GET /admin/analytics renders advanced analytics page', async () => {

@@ -109,6 +109,7 @@ export const requireAdmin = async (req, res, next) => {
 
       if (userDoc) req.user.userDoc = userDoc;
       if (accountDoc) req.user.accountDoc = accountDoc;
+      req.verifiedAdmin = currentRole === 'admin' && !accountDoc?.isbanned && !userDoc?.isbanned;
     }
 
     return next();

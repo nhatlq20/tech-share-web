@@ -1,110 +1,80 @@
-<div style="display: flex; flex-direction: column; gap: 20px;">
-  <!-- Header -->
-  <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+<%
+  const filters = [
+    ['all', 'All Categories'],
+    ['ekyc', 'eKYC'],
+    ['owner-verification', 'Owner Verification'],
+    ['devices', 'Devices'],
+    ['reviews', 'Reviews'],
+    ['rentals', 'Rentals'],
+  ];
+  const metrics = [
+    ['total', 'inbox', 'Total Notifications', 'Recorded platform events'],
+    ['unread', 'mail', 'Unread Notifications', 'Unread for your account'],
+    ['pending', 'clipboard-list', 'Pending Actions', 'Open verification and moderation requests'],
+  ];
+%>
+<div id="adminNotificationCenter" class="notification-workspace">
+  <header class="notify-heading">
     <div>
-      <h1 style="font-size: 24px; font-weight: 800; color: #0F172A; letter-spacing: -0.02em; margin: 0;">
-        Notification Management & Broadcasting
-      </h1>
-      <p style="font-size: 12px; color: #64748B; margin-top: 4px; margin-bottom: 0;">
-        Send push notifications platform-wide, by audience segment, or directly to specific users
-      </p>
+      <p class="notify-kicker"><i data-lucide="bell" aria-hidden="true"></i> Notification Center</p>
+      <h1>Admin Notifications</h1>
+      <p>Stay updated on platform activities that require your attention.</p>
     </div>
-
-    <button type="button" id="btnOpenSendNotifModal" class="admin-btn admin-btn-primary" style="font-size: 13px; padding: 8px 16px; display: inline-flex; align-items: center; gap: 6px;">
-      <i data-lucide="send" style="width: 15px; height: 15px;"></i>
-      <span>Broadcast Notification</span>
+    <button id="adminNotificationsReadAll" type="button" class="admin-btn admin-btn-outline" disabled>
+      <i data-lucide="check-check" aria-hidden="true"></i> Mark All as Read
     </button>
-  </div>
+  </header>
 
-  <!-- Notifications Table -->
-  <div class="admin-card" style="padding: 0; overflow: hidden;">
-    <div class="w-full overflow-x-auto hide-scrollbar admin-table-container">
-      <table class="admin-table w-full text-left" style="width: 100%; min-width: 860px; border-collapse: collapse;">
-        <thead>
-          <tr>
-            <th style="min-width: 220px; width: 25%; padding-left: 20px;">Notification Title</th>
-            <th style="min-width: 280px; width: 35%;">Message Content</th>
-            <th style="min-width: 140px; width: 16%;">Recipient Audience</th>
-            <th style="min-width: 120px; width: 12%;">Category Type</th>
-            <th style="min-width: 120px; width: 12%; text-align: right; padding-right: 24px;">Sent Time</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% if (!notifications || notifications.length === 0) { %>
-            <tr>
-              <td colspan="5" style="text-align: center; padding: 48px; color: #64748B;">
-                No broadcast notifications have been sent yet.
-              </td>
-            </tr>
-          <% } else { %>
-            <% notifications.forEach(function(n) { %>
-              <tr>
-                <td style="vertical-align: middle; padding-left: 20px;">
-                  <div style="font-weight: 700; font-size: 13.5px; color: #0F172A;">
-                    <%= n.title || 'TechShare Notification' %>
-                  </div>
-                </td>
-                <td style="vertical-align: middle;">
-                  <div style="font-size: 12.5px; color: #475569; max-width: 360px; white-space: normal;">
-                    <%= n.message || n.content || '' %>
-                  </div>
-                </td>
-                <td style="vertical-align: middle;">
-                  <span class="admin-pill-badge" style="background-color: #E8F6F7; color: #286E74;">
-                    <%= n.targetRole === 'all' ? 'Toàn bộ thành viên' : (n.targetRole ? `Nhóm ${n.targetRole}` : 'Người dùng cụ thể') %>
-                  </span>
-                </td>
-                <td style="vertical-align: middle;">
-                  <span style="font-size: 12px; color: #64748B; text-transform: uppercase; font-weight: 600;">
-                    <%= n.type || 'system' %>
-                  </span>
-                </td>
-                <td style="vertical-align: middle; text-align: right; padding-right: 24px; font-size: 12px; color: #64748B;">
-                  <%= new Date(n.createdAt || Date.now()).toLocaleDateString('vi-VN') %>
-                </td>
-              </tr>
-            <% }); %>
-          <% } %>
-        </tbody>
-      </table>
+  <section class="notify-summary" aria-label="Notification summary">
+    <% for (const [key, icon, label, note] of metrics) { %>
+      <article class="admin-card notify-metric">
+        <span class="notify-metric-icon"><i data-lucide="<%= icon %>" aria-hidden="true"></i></span>
+        <div>
+          <h2><%= label %></h2>
+          <strong data-notify-metric="<%= key %>">—</strong>
+          <p><%= note %></p>
+        </div>
+      </article>
+    <% } %>
+  </section>
+
+  <section class="admin-card notify-inbox" aria-labelledby="adminInboxTitle">
+    <div class="notify-toolbar">
+      <div class="notify-inbox-heading">
+        <div><h2 id="adminInboxTitle">Activity Inbox</h2><p>Platform events, newest first.</p></div>
+        <span class="notify-results" id="adminNotificationResults" aria-live="polite"></span>
+      </div>
+      <div class="notify-toolbar-controls">
+        <div class="notify-switch" role="group" aria-label="Read state">
+          <button type="button" data-notify-state="all" aria-pressed="true">All Notifications</button>
+          <button type="button" data-notify-state="unread" aria-pressed="false">Unread</button>
+        </div>
+        <form id="adminNotificationSearch" class="notify-search" role="search">
+          <label for="adminNotificationQuery" class="notify-sr-only">Search notifications</label>
+          <div class="notify-search-input">
+            <i data-lucide="search" aria-hidden="true"></i>
+            <input id="adminNotificationQuery" name="search" type="search" maxlength="120" placeholder="Search notifications…" />
+          </div>
+          <button type="submit" class="admin-btn admin-btn-outline">Search</button>
+        </form>
+      </div>
+      <div class="notify-categories" role="group" aria-label="Filter by category">
+        <% for (const [key, label] of filters) { %>
+          <button type="button" data-notify-category="<%= key %>" aria-pressed="<%= key === 'all' %>"><%= label %></button>
+        <% } %>
+      </div>
     </div>
-  </div>
-</div>
-
-<!-- Modal Phát sóng Thông báo -->
-<div id="broadcastModal" class="admin-modal-overlay" style="display: none;">
-  <div class="admin-modal-card" style="max-width: 480px;" onclick="event.stopPropagation();">
-    <div class="admin-modal-header">
-      <h3 class="admin-modal-title">Broadcast New Notification</h3>
-      <button type="button" class="btn-close-modal" style="background: none; border: none; cursor: pointer; color: #94A3B8;">
-        <i data-lucide="x" style="width: 18px; height: 18px;"></i>
-      </button>
+    <div id="adminNotificationListRegion" aria-busy="true">
+      <div id="adminNotificationState" class="notify-state" role="status">Loading notifications…</div>
+      <ul id="adminNotificationList" class="notify-list" aria-label="Notification records" hidden></ul>
     </div>
-
-    <form id="broadcastForm" style="margin-top: 16px;">
-      <div style="margin-bottom: 12px;">
-        <label style="display: block; font-size: 12.5px; font-weight: 600; color: #334155; margin-bottom: 4px;">Recipient Audience:</label>
-        <select id="notifTargetRole" style="width: 100%; border: 1px solid #CBD5E1; border-radius: 8px; padding: 8px; font-size: 13px;">
-          <option value="all">All Platform Users</option>
-          <option value="renter">Renters</option>
-          <option value="owner">Device Owners</option>
-        </select>
+    <nav class="notify-pagination" aria-label="Notification pagination">
+      <p id="adminNotificationPage" aria-live="polite"></p>
+      <div>
+        <button type="button" class="admin-btn admin-btn-outline" id="adminNotificationPrevious" disabled><i data-lucide="chevron-left" aria-hidden="true"></i> Previous</button>
+        <button type="button" class="admin-btn admin-btn-outline" id="adminNotificationNext" disabled>Next <i data-lucide="chevron-right" aria-hidden="true"></i></button>
       </div>
-
-      <div style="margin-bottom: 12px;">
-        <label style="display: block; font-size: 12.5px; font-weight: 600; color: #334155; margin-bottom: 4px;">Notification Title:</label>
-        <input type="text" id="notifTitle" required style="width: 100%; border: 1px solid #CBD5E1; border-radius: 8px; padding: 8px 12px; font-size: 13px;" placeholder="e.g. Rental policy update..." />
-      </div>
-
-      <div style="margin-bottom: 20px;">
-        <label style="display: block; font-size: 12.5px; font-weight: 600; color: #334155; margin-bottom: 4px;">Message Content:</label>
-        <textarea id="notifMessage" required rows="4" style="width: 100%; border: 1px solid #CBD5E1; border-radius: 8px; padding: 10px; font-size: 13px; outline: none;" placeholder="Enter full notification content for members..."></textarea>
-      </div>
-
-      <div style="display: flex; justify-content: flex-end; gap: 10px;">
-        <button type="button" class="admin-btn admin-btn-outline btn-close-modal">Cancel</button>
-        <button type="submit" class="admin-btn admin-btn-primary">Send Notification</button>
-      </div>
-    </form>
-  </div>
+    </nav>
+  </section>
+  <p id="adminNotificationFeedback" class="notify-sr-only" role="status"></p>
 </div>

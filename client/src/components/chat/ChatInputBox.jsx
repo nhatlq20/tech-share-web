@@ -6,7 +6,7 @@ export const ChatInputBox = ({
   bookingId,
   onSendMessage,
   disabled = false,
-  placeholder = 'Nhập tin nhắn... (Nhấn Enter để gửi, Shift+Enter xuống dòng)',
+  placeholder = 'Type a message...',
 }) => {
   const [content, setContent] = useState('');
   const [imagePreview, setImagePreview] = useState(null);
@@ -15,6 +15,18 @@ export const ChatInputBox = ({
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
   const typingTimeoutRef = useRef(null);
+  const activeBookingRef = useRef(bookingId);
+  activeBookingRef.current = bookingId;
+
+  useEffect(() => {
+    setContent('');
+    setImagePreview(null);
+    setIsLocating(false);
+    return () => {
+      clearTimeout(typingTimeoutRef.current);
+      sendStopTyping(bookingId);
+    };
+  }, [bookingId]);
 
   // Auto resize textarea
   useEffect(() => {
@@ -84,13 +96,13 @@ export const ChatInputBox = ({
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      alert('Vui lòng chọn file hình ảnh hợp lệ (PNG, JPG, WEBP).');
+      alert('Please select a valid image (PNG, JPG or WEBP).');
       return;
     }
 
     const reader = new FileReader();
     reader.onload = (uploadEvent) => {
-      setImagePreview(uploadEvent.target?.result);
+      if (activeBookingRef.current === bookingId) setImagePreview(uploadEvent.target?.result);
     };
     reader.readAsDataURL(file);
 
@@ -108,7 +120,7 @@ export const ChatInputBox = ({
         if (file) {
           const reader = new FileReader();
           reader.onload = (uploadEvent) => {
-            setImagePreview(uploadEvent.target?.result);
+            if (activeBookingRef.current === bookingId) setImagePreview(uploadEvent.target?.result);
           };
           reader.readAsDataURL(file);
           e.preventDefault();
@@ -136,7 +148,7 @@ export const ChatInputBox = ({
     if (files && files[0] && files[0].type.startsWith('image/')) {
       const reader = new FileReader();
       reader.onload = (uploadEvent) => {
-        setImagePreview(uploadEvent.target?.result);
+        if (activeBookingRef.current === bookingId) setImagePreview(uploadEvent.target?.result);
       };
       reader.readAsDataURL(files[0]);
     }
@@ -145,29 +157,31 @@ export const ChatInputBox = ({
   // Chia sẻ vị trí hiện tại
   const handleShareLocation = () => {
     if (!('geolocation' in navigator)) {
-      alert('Trình duyệt của bạn không hỗ trợ định vị vị trí.');
+      alert('Your browser does not support location sharing.');
       return;
     }
 
     setIsLocating(true);
     navigator.geolocation.getCurrentPosition(
       (position) => {
+        if (activeBookingRef.current !== bookingId) return;
         setIsLocating(false);
         const { latitude, longitude } = position.coords;
         onSendMessage({
           type: 'location',
-          content: '📍 Tôi đang ở đây',
+          content: '📍 I am here',
           location: {
             latitude,
             longitude,
-            address: `Vĩ độ: ${latitude.toFixed(5)}, Kinh độ: ${longitude.toFixed(5)}`,
+            address: `Latitude: ${latitude.toFixed(5)}, Longitude: ${longitude.toFixed(5)}`,
           },
         });
       },
       (error) => {
+        if (activeBookingRef.current !== bookingId) return;
         setIsLocating(false);
-        console.warn('⚠️ Lỗi định vị:', error);
-        alert('Không thể lấy vị trí hiện tại. Vui lòng cấp quyền truy cập vị trí trên trình duyệt.');
+        console.warn('Location lookup failed:', error);
+        alert('Unable to get your location. Please allow location access in your browser.');
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
@@ -191,14 +205,14 @@ export const ChatInputBox = ({
             className="w-16 h-16 object-cover rounded-lg border border-slate-200"
           />
           <div className="flex flex-col pr-6">
-            <span className="text-xs font-semibold text-slate-800">Ảnh đính kèm</span>
-            <span className="text-[11px] text-slate-500">Sẵn sàng để gửi</span>
+            <span className="text-xs font-semibold text-slate-800">Attached image</span>
+            <span className="text-[11px] text-slate-500">Ready to send</span>
           </div>
           <button
             type="button"
             onClick={() => setImagePreview(null)}
             className="absolute top-1 right-1 w-5 h-5 rounded-full bg-slate-200 hover:bg-rose-100 hover:text-rose-600 flex items-center justify-center text-slate-600 transition-colors"
-            title="Gỡ ảnh"
+            title="Remove image"
           >
             <X size={12} />
           </button>
@@ -222,7 +236,7 @@ export const ChatInputBox = ({
             disabled={disabled}
             onClick={() => fileInputRef.current?.click()}
             className="p-2 hover:bg-slate-100 rounded-full text-slate-600 hover:text-teal-600 transition cursor-pointer"
-            title="Gửi ảnh thiết bị"
+            title="Send an image"
           >
             <ImageIcon size={19} />
           </button>
@@ -233,7 +247,7 @@ export const ChatInputBox = ({
             disabled={disabled || isLocating}
             onClick={handleShareLocation}
             className="p-2 hover:bg-slate-100 rounded-full text-slate-600 hover:text-teal-600 transition cursor-pointer"
-            title="Chia sẻ vị trí hẹn gặp"
+            title="Share meeting location"
           >
             {isLocating ? (
               <Loader2 size={19} className="animate-spin text-teal-600" />
@@ -254,19 +268,19 @@ export const ChatInputBox = ({
             disabled={disabled}
             placeholder={placeholder}
             rows={1}
-            className="w-full resize-none overflow-y-auto rounded-xl bg-slate-50 focus:bg-white border border-slate-200 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/30 py-2.5 px-3.5 text-xs sm:text-sm text-slate-800 placeholder-slate-400 outline-none transition-all leading-relaxed max-h-32"
+            className="w-full resize-none overflow-y-auto scrollbar-hide rounded-xl bg-slate-50 focus:bg-white border border-slate-200 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/30 py-2.5 px-3.5 text-xs sm:text-sm text-slate-800 placeholder-slate-400 outline-none transition-all leading-relaxed max-h-32"
           />
         </div>
 
-        {/* Nút Gửi */}
+        {/* Nút Send */}
         <button
           type="button"
           onClick={handleSend}
           disabled={disabled || (!content.trim() && !imagePreview)}
           className="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2.5 rounded-xl flex items-center gap-1.5 font-medium transition-all disabled:opacity-40 shadow-sm cursor-pointer shrink-0 active:scale-95 mb-0.5"
-          title="Gửi tin nhắn (Enter)"
+          title="Send message (Enter)"
         >
-          <span className="hidden sm:inline text-xs font-semibold">Gửi</span>
+          <span className="hidden sm:inline text-xs font-semibold">Send</span>
           <Send size={15} />
         </button>
       </div>

@@ -1,6 +1,6 @@
+import { findChat, resolveChatUser } from './services/chatIdentity.js';
 import { Server } from 'socket.io';
 import mongoose from 'mongoose';
-import Booking from './models/Booking.js';
 import { verifyOrDecodeToken } from './middlewares/authMiddleware.js';
 
 let ioInstance = null;
@@ -33,7 +33,7 @@ export const initSocket = (httpServer) => {
   });
 
   // Middleware xác thực JWT cho từng socket connection
-  ioInstance.use((socket, next) => {
+  ioInstance.use(async (socket, next) => {
     try {
       const token =
         socket.handshake.auth?.token ||
@@ -48,7 +48,8 @@ export const initSocket = (httpServer) => {
       const decoded = verifyOrDecodeToken(token);
 
       if (decoded) {
-        socket.userId = (decoded.id || decoded._id || decoded.userId)?.toString();
+        const profile = await resolveChatUser(decoded);
+        socket.userId = profile && profile.isActive !== false ? String(profile._id) : null;
         socket.user = decoded;
       } else {
         socket.userId = null;
@@ -69,7 +70,7 @@ export const initSocket = (httpServer) => {
       socket.join(userRoom);
       console.log(`🔌 [Socket.IO] User ${socket.userId} connected and joined room: ${userRoom}`);
     }
-    if (socket.user?.accountId && socket.user.accountId.toString() !== socket.userId) {
+    if (socket.userId && socket.user?.accountId && socket.user.accountId.toString() !== socket.userId) {
       const accountRoom = `user_${socket.user.accountId.toString()}`;
       socket.join(accountRoom);
       console.log(`🔌 [Socket.IO] User connected and joined account room: ${accountRoom}`);
@@ -93,7 +94,7 @@ export const initSocket = (httpServer) => {
         // Tìm thông tin booking để kiểm tra quyền tham gia
         let booking = null;
         try {
-          booking = await Booking.findById(bookingId).lean();
+          booking = await findChat(bookingId);
         } catch (dbErr) {
           console.warn('⚠️ Lỗi truy vấn Booking trong Socket handler:', dbErr.message);
         }
@@ -115,15 +116,7 @@ export const initSocket = (httpServer) => {
         const renterIdStr = (booking.renterId?._id || booking.renterId || booking.renter?._id || booking.renter)?.toString();
         const ownerIdStr = (booking.ownerId?._id || booking.ownerId || booking.owner?._id || booking.owner)?.toString();
         const currentUserId = socket.userId?.toString();
-        const userIds = [
-          socket.userId,
-          socket.user?._id,
-          socket.user?.id,
-          socket.user?.userId,
-          socket.user?.accountId,
-        ].filter(Boolean).map(String);
-
-        const isParticipant = userIds.includes(renterIdStr) || userIds.includes(ownerIdStr) || socket.user?.role === 'admin';
+        const isParticipant = [renterIdStr, ownerIdStr].includes(socket.userId);
 
         if (!isParticipant) {
           if (typeof callback === 'function') callback({ success: false, message: 'Access denied to this booking chat' });
@@ -157,7 +150,7 @@ export const initSocket = (httpServer) => {
 
     // 4. Bắn trạng thái đang soạn tin (Typing indicator)
     socket.on('typing', ({ bookingId }) => {
-      if (!bookingId) return;
+      if (!bookingId || !socket.rooms.has(`chat_${bookingId}`)) return;
       socket.to(`chat_${bookingId}`).emit('user_typing', {
         bookingId,
         userId: socket.userId,
@@ -166,7 +159,7 @@ export const initSocket = (httpServer) => {
 
     // 5. Bắn trạng thái dừng soạn tin (Stop typing)
     socket.on('stop_typing', ({ bookingId }) => {
-      if (!bookingId) return;
+      if (!bookingId || !socket.rooms.has(`chat_${bookingId}`)) return;
       socket.to(`chat_${bookingId}`).emit('user_stop_typing', {
         bookingId,
         userId: socket.userId,

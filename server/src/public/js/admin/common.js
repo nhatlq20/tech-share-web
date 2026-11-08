@@ -59,6 +59,7 @@ window.toggleNotificationDropdown = function() {
   if (dropdown) {
     const isVisible = dropdown.style.display === 'block';
     dropdown.style.display = isVisible ? 'none' : 'block';
+    document.getElementById('adminNotifBtn')?.setAttribute('aria-expanded', String(!isVisible));
   }
 };
 
@@ -68,7 +69,41 @@ document.addEventListener('click', function(e) {
   const btn = document.getElementById('adminNotifBtn');
   if (dropdown && btn && !dropdown.contains(e.target) && !btn.contains(e.target)) {
     dropdown.style.display = 'none';
+    btn.setAttribute('aria-expanded', 'false');
   }
+});
+
+window.updateAdminNotificationBadges = function(unread) {
+  if (!Number.isInteger(unread) || unread < 0) return;
+  const count = unread.toLocaleString('en-US');
+  document.querySelectorAll('[data-admin-unread-badge]').forEach((badge) => {
+    badge.hidden = unread === 0;
+    badge.textContent = unread ? count : '';
+    badge.setAttribute('aria-label', count + ' unread');
+  });
+  document.getElementById('adminNotifBtn')?.setAttribute('aria-label', 'Admin notifications, ' + count + ' unread');
+  const label = document.getElementById('adminNotifUnreadText');
+  if (label) label.textContent = count + ' unread';
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+  if (!document.getElementById('adminNotifBtn') || document.getElementById('adminNotificationCenter')) return;
+
+  async function refreshUnread() {
+    if (document.hidden) return;
+    try {
+      const response = await fetch('/api/admin/notifications/unread-count');
+      if (response.ok) {
+        const data = await response.json();
+        window.updateAdminNotificationBadges(data.unread);
+      }
+    } catch {
+      // A failed refresh leaves the last known count in place.
+    }
+  }
+  refreshUnread();
+  window.setInterval(refreshUnread, 30000);
+  document.addEventListener('visibilitychange', refreshUnread);
 });
 
 // Helper for formatted VND

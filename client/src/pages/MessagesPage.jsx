@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { MessageSquare } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -82,6 +82,7 @@ export const MessagesPage = () => {
         }
 
         const existing = prev[index];
+        if (existing.lastMessage?._id === msg._id) return prev;
         const isCurrentlyViewing = activeBookingIdRef.current === bId;
         const senderIdStr = (msg.senderId?._id || msg.senderId)?.toString();
         const isFromPartner = senderIdStr !== currentUserId;
@@ -118,12 +119,12 @@ export const MessagesPage = () => {
     };
 
     socket.on('new_message', handleNewMessage);
-    socket.on('receive_message', handleNewMessage);
+
     socket.on('conversations_updated', handleConversationsUpdated);
 
     return () => {
       socket.off('new_message', handleNewMessage);
-      socket.off('receive_message', handleNewMessage);
+
       socket.off('conversations_updated', handleConversationsUpdated);
     };
   }, [currentUserId, loadConversations]);
@@ -145,9 +146,12 @@ export const MessagesPage = () => {
   };
 
   // Tìm thông tin hội thoại đang active
-  const activeConversation = conversations.find(
-    (c) => c.bookingId === bookingId || c.bookings?.some((b) => String(b.bookingId) === String(bookingId))
-  );
+  const activeConversation = useMemo(() => {
+    const group = conversations.find((c) => c.bookingId === bookingId || c.bookings?.some((b) => b.bookingId === bookingId));
+    if (!group) return null;
+    const selected = group.bookings?.find((b) => b.bookingId === bookingId);
+    return { ...group, ...selected, bookingId };
+  }, [conversations, bookingId]);
 
   return (
     <div
@@ -170,7 +174,6 @@ export const MessagesPage = () => {
           isLoading={loading}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
-          currentUserId={currentUserId}
         />
       </div>
 
@@ -214,10 +217,10 @@ export const MessagesPage = () => {
               <MessageSquare size={36} />
             </div>
             <h3 className="text-lg font-bold text-slate-800">
-              Tin nhắn giao dịch thiết bị
+              Messages
             </h3>
             <p className="text-xs text-slate-500 max-w-sm mt-1.5 leading-relaxed">
-              Chọn một cuộc trò chuyện từ danh sách bên trái để trao đổi thông tin giao nhận, thời gian thuê và kiểm tra thiết bị với đối tác.
+              Select a conversation to discuss rental dates, pickup and device details.
             </p>
           </div>
         )}

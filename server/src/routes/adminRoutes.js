@@ -28,7 +28,10 @@ import {
 } from '../controllers/admin/adminReviewController.js';
 import {
   getAdminNotifications,
-  sendAdminNotification,
+  getAdminNotificationUnreadCount,
+  markAdminNotificationRead,
+  markAllAdminNotificationsRead,
+  requireAdminNotificationReader,
 } from '../controllers/admin/adminNotificationController.js';
 import {
   getAdminAdvancedAnalytics,
@@ -79,9 +82,11 @@ router.get('/reviews/:id', getAdminReviewDetails);
 router.patch('/reviews/:id/moderation', moderateAdminReview);
 router.get('/reviews', getAdminReviews);
 
-// ── PHASE 3: MODULE 7 — NOTIFICATION MANAGEMENT ───────────────────
-router.post('/notifications/send', sendAdminNotification);
-router.get('/notifications', getAdminNotifications);
+// ── ADMIN NOTIFICATION CENTER ─────────────────────────────────────
+router.get('/notifications/unread-count', requireAdminNotificationReader, getAdminNotificationUnreadCount);
+router.get('/notifications', requireAdminNotificationReader, getAdminNotifications);
+router.patch('/notifications/read-all', requireAdminNotificationReader, markAllAdminNotificationsRead);
+router.patch('/notifications/:id/read', requireAdminNotificationReader, markAdminNotificationRead);
 
 // ── PHASE 3: MODULE 8 — ADVANCED ANALYTICS & REPORTS ──────────────
 router.get('/analytics/advanced', getAdminAdvancedAnalytics);

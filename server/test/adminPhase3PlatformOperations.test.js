@@ -4,7 +4,6 @@ import express from 'express';
 import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
 import adminRoutes from '../src/routes/adminRoutes.js';
-import Notification from '../src/models/Notification.js';
 import User from '../src/models/User.js';
 import Device from '../src/models/Device.js';
 import Booking from '../src/models/Booking.js';
@@ -35,7 +34,6 @@ describe('PHASE 3: Platform Operations Integration Tests', () => {
 
   // In-memory data store for tests
   const store = {
-    notifications: new Map(),
     settings: new Map(),
     users: new Map(),
     devices: new Map(),
@@ -209,16 +207,6 @@ describe('PHASE 3: Platform Operations Integration Tests', () => {
 
     EkycRequest.countDocuments = async () => 0;
 
-    Notification.countDocuments = async () => store.notifications.size;
-    Notification.find = () => makeChain(Array.from(store.notifications.values()));
-    Notification.insertMany = async (docs = []) => {
-      docs.forEach((d) => {
-        const id = new mongoose.Types.ObjectId();
-        store.notifications.set(String(id), { _id: id, ...d, createdAt: new Date() });
-      });
-      return docs;
-    };
-
     SystemSetting.find = () => makeChain(Array.from(store.settings.values()));
     SystemSetting.findOne = (q = {}) => {
       let found = null;
@@ -271,67 +259,15 @@ describe('PHASE 3: Platform Operations Integration Tests', () => {
   // ══════════════════════════════════════════════════════════════════
   // SUITE 1: MODULE 7 — NOTIFICATION MANAGEMENT
   // ══════════════════════════════════════════════════════════════════
-  describe('Module 7: Notification Management', () => {
-    test('POST /api/admin/notifications/send — sends notification to specific users', async () => {
-      const res = await requestApi('POST', '/api/admin/notifications/send', {
-        headers: { Authorization: `Bearer ${adminToken}` },
-        body: {
-          targetType: 'specific_users',
-          userIds: [String(renterId)],
-          title: 'Chào mừng thành viên mới',
-          body: 'Khám phá các thiết bị mới có thể đặt thuê tuần này!',
-          type: 'promo',
-        },
-      });
-
-      assert.equal(res.status, 201);
-      assert.equal(res.body.success, true);
-      assert.equal(res.body.sentCount, 1);
-      assert.ok(store.notifications.size >= 1);
-    });
-
-    test('POST /api/admin/notifications/send — rejects missing title or body (HTTP 400)', async () => {
-      const res = await requestApi('POST', '/api/admin/notifications/send', {
-        headers: { Authorization: `Bearer ${adminToken}` },
-        body: {
-          targetType: 'all',
-          title: '',
-          body: '',
-        },
-      });
-
-      assert.equal(res.status, 400);
-      assert.equal(res.body.success, false);
-      assert.match(res.body.message, /tiêu đề/i);
-    });
-
-    test('POST /api/admin/notifications/send — broadcasts notification to specific role', async () => {
-      const res = await requestApi('POST', '/api/admin/notifications/send', {
-        headers: { Authorization: `Bearer ${adminToken}` },
-        body: {
-          targetType: 'role',
-          targetRole: 'renter',
-          title: 'Cập nhật chính sách bảo hiểm thiết bị',
-          body: 'TechShare nâng cấp gói bảo vệ người thuê lên 50.000.000đ',
-          type: 'system',
-        },
-      });
-
-      assert.equal(res.status, 201);
-      assert.equal(res.body.success, true);
-      assert.ok(res.body.sentCount >= 1);
-    });
-
-    test('GET /api/admin/notifications — lists notifications with pagination', async () => {
-      const res = await requestApi('GET', '/api/admin/notifications?page=1&limit=10', {
-        headers: { Authorization: `Bearer ${adminToken}` },
-      });
-
-      assert.equal(res.status, 200);
-      assert.equal(res.body.success, true);
-      assert.ok(Array.isArray(res.body.data));
-      assert.ok(res.body.data.length >= 1);
-    });
+  test('Notification composition and broadcast endpoints are absent', async () => {
+    const headers = { Authorization: `Bearer ${adminToken}` };
+    for (const [method, path] of [
+      ['POST', 'send'], ['POST', 'preview'], ['POST', 'broadcast'],
+      ['GET', 'analytics'], ['GET', 'recipients'],
+    ]) {
+      const res = await requestApi(method, '/api/admin/notifications/' + path, { headers });
+      assert.equal(res.status, 404, method + ' ' + path);
+    }
   });
 
   // ══════════════════════════════════════════════════════════════════

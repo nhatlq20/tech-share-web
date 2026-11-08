@@ -1,13 +1,5 @@
 import React, { useMemo } from 'react';
-import {
-  Search,
-  X,
-  Check,
-  CheckCheck,
-  ShieldCheck,
-  Smartphone,
-  MessageSquareOff,
-} from 'lucide-react';
+import { Search, X, MessageSquareOff } from 'lucide-react';
 
 /**
  * Format timestamp ngắn gọn hiển thị ở danh sách
@@ -23,36 +15,14 @@ const formatConversationTime = (dateString) => {
   const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-  if (diffMinutes < 1) return 'Vừa xong';
+  if (diffMinutes < 1) return 'Just now';
   if (diffMinutes < 60) return `${diffMinutes}m`;
   if (diffHours < 24) {
-    return date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
   }
-  if (diffDays === 1) return 'Hôm qua';
+  if (diffDays === 1) return 'Yesterday';
   if (diffDays < 7) return `${diffDays}d`;
-  return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
-};
-
-/**
- * Badge trạng thái đơn thuê
- */
-const BookingStatusBadge = ({ status }) => {
-  const config = {
-    pending: { label: 'Chờ duyệt', bg: 'bg-amber-50 text-amber-700 border-amber-200' },
-    approved: { label: 'Đã duyệt', bg: 'bg-blue-50 text-blue-700 border-blue-200' },
-    active: { label: 'Đang thuê', bg: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-    completed: { label: 'Hoàn tất', bg: 'bg-slate-100 text-slate-700 border-slate-200' },
-    cancelled: { label: 'Đã hủy', bg: 'bg-rose-50 text-rose-700 border-rose-200' },
-    rejected: { label: 'Từ chối', bg: 'bg-rose-50 text-rose-700 border-rose-200' },
-  }[status] || { label: status, bg: 'bg-slate-50 text-slate-600 border-slate-200' };
-
-  return (
-    <span
-      className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border leading-none ${config.bg}`}
-    >
-      {config.label}
-    </span>
-  );
+  return date.toLocaleDateString('en-US', { day: '2-digit', month: '2-digit' });
 };
 
 export const ConversationList = ({
@@ -62,7 +32,6 @@ export const ConversationList = ({
   isLoading = false,
   searchQuery = '',
   onSearchChange,
-  currentUserId,
 }) => {
   // Lọc theo từ khóa tìm kiếm (tên đối phương, tên thiết bị, mã đơn)
   const filteredConversations = useMemo(() => {
@@ -94,7 +63,7 @@ export const ConversationList = ({
       <div className="p-3.5 border-b border-slate-100 flex flex-col gap-2.5 bg-slate-50/50">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <h2 className="text-base font-bold text-slate-800">Tin nhắn giao dịch</h2>
+            <h2 className="text-base font-bold text-slate-800">Messages</h2>
             <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-teal-100 text-teal-800">
               {conversations.length}
             </span>
@@ -111,7 +80,7 @@ export const ConversationList = ({
             type="text"
             value={searchQuery}
             onChange={(e) => onSearchChange && onSearchChange(e.target.value)}
-            placeholder="Tìm theo tên máy hoặc đối phương..."
+            placeholder="Search conversations"
             className="w-full pl-9 pr-8 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 transition-all text-slate-800 placeholder-slate-400"
           />
           {searchQuery && (
@@ -127,17 +96,16 @@ export const ConversationList = ({
       </div>
 
       {/* 2. Conversations Scrollable List */}
-      <div className="flex-1 overflow-y-auto divide-y divide-slate-100">
+      <div className="min-h-0 flex-1 overflow-y-auto p-2">
         {isLoading ? (
           // Skeleton loading
-          <div className="p-3 space-y-3">
+          <div aria-hidden="true">
             {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="flex items-center gap-3 p-2.5 animate-pulse rounded-xl">
-                <div className="w-12 h-12 rounded-full bg-slate-200 flex-shrink-0" />
+              <div key={i} className="flex items-center gap-2.5 px-2.5 py-2 motion-safe:animate-pulse">
+                <div className="h-10 w-10 shrink-0 rounded-full bg-slate-200" />
                 <div className="flex-1 space-y-2">
-                  <div className="h-3.5 bg-slate-200 rounded w-2/3" />
-                  <div className="h-3 bg-slate-100 rounded w-1/2" />
-                  <div className="h-2.5 bg-slate-100 rounded w-4/5" />
+                  <div className="h-3 w-2/3 rounded bg-slate-200" />
+                  <div className="h-3 w-1/2 rounded bg-slate-100" />
                 </div>
               </div>
             ))}
@@ -149,12 +117,12 @@ export const ConversationList = ({
               <MessageSquareOff size={22} />
             </div>
             <p className="text-xs font-semibold text-slate-600">
-              {searchQuery ? 'Không tìm thấy cuộc trò chuyện nào' : 'Chưa có cuộc trò chuyện nào'}
+              {searchQuery ? 'No conversations found' : 'No conversations yet'}
             </p>
             <p className="text-[11px] text-slate-400 mt-1 max-w-[200px]">
               {searchQuery
-                ? 'Hãy thử tìm bằng từ khóa khác'
-                : 'Khi bạn đặt thuê hoặc có khách thuê thiết bị, hội thoại sẽ hiển thị ở đây.'}
+                ? 'Try another search'
+                : 'Open a device and contact its owner to start a conversation.'}
             </p>
           </div>
         ) : (
@@ -163,19 +131,18 @@ export const ConversationList = ({
               selectedBookingId === item.bookingId ||
               item.bookings?.some((b) => String(b.bookingId) === String(selectedBookingId));
             const partner = item.partner || {};
-            const device = item.device || {};
+            const displayName = partner.name || 'Profile unavailable';
             const lastMsg = item.lastMessage;
-            const isOwnLastMsg = lastMsg && currentUserId && (lastMsg.senderId === currentUserId || lastMsg.senderId?._id === currentUserId);
+            const timestamp = formatConversationTime(lastMsg?.createdAt);
             const unread = Number(item.unreadCount) || 0;
-            const multiBookingsCount = item.bookings?.length || 1;
 
             // Preview nội dung tin nhắn cuối
-            let lastMessagePreview = 'Chưa có tin nhắn nào';
+            let lastMessagePreview = 'No messages yet';
             if (lastMsg) {
               if (lastMsg.type === 'image') {
-                lastMessagePreview = '📷 [Hình ảnh]';
+                lastMessagePreview = 'Image';
               } else if (lastMsg.type === 'location') {
-                lastMessagePreview = '📍 [Vị trí]';
+                lastMessagePreview = 'Shared location';
               } else if (lastMsg.content) {
                 lastMessagePreview = lastMsg.content;
               }
@@ -185,107 +152,55 @@ export const ConversationList = ({
               <button
                 key={item.bookingId}
                 type="button"
+                aria-current={isSelected ? 'true' : undefined}
                 onClick={() => {
                   const currentInGroup = item.bookings?.find(
                     (b) => String(b.bookingId) === String(selectedBookingId)
                   );
                   onSelectConversation(currentInGroup ? currentInGroup.bookingId : item.bookingId);
                 }}
-                className={`w-full text-left p-3.5 flex items-start gap-3 transition-colors relative cursor-pointer ${isSelected
-                    ? 'bg-teal-50/70 border-l-4 border-teal-600'
-                    : 'hover:bg-slate-50/90 border-l-4 border-transparent'
+                className={`flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-700 ${isSelected
+                    ? 'bg-brand-100'
+                    : 'hover:bg-slate-50'
                   }`}
               >
-                {/* Avatar with Verified checkmark & Online Dot */}
-                <div className="relative flex-shrink-0">
-                  <div className="w-11 h-11 rounded-full overflow-hidden bg-slate-200 border border-slate-200 flex items-center justify-center font-bold text-slate-600 text-sm">
-                    {partner.avatar ? (
-                      <img
-                        src={partner.avatar}
-                        alt={partner.name || 'User'}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                        }}
-                      />
-                    ) : (
-                      <span>{(partner.name || 'U').charAt(0).toUpperCase()}</span>
-                    )}
-                  </div>
-                  {/* Chấm xanh Online */}
-                  <span
-                    className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white shadow-2xs"
-                    title="Đang trực tuyến"
-                  />
-                  {partner.isVerified && (
-                    <span
-                      title="Tài khoản đã xác minh"
-                      className="absolute -top-1 -right-1 bg-white rounded-full p-0.5 shadow-xs"
-                    >
-                      <ShieldCheck size={13} className="text-teal-600 fill-teal-100" />
-                    </span>
+                <div aria-hidden="true" className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-100 text-sm font-semibold text-brand-900">
+                  <span>{(partner.name || 'U').charAt(0).toUpperCase()}</span>
+                  {partner.avatar && (
+                    <img
+                      key={partner.avatar}
+                      src={partner.avatar}
+                      alt=""
+                      className="absolute inset-0 h-full w-full object-cover"
+                      onError={(event) => { event.currentTarget.hidden = true; }}
+                    />
                   )}
                 </div>
 
-                {/* Main conversation info */}
-                <div className="flex-1 min-w-0">
-                  {/* Row 1: Partner Name + Time */}
-                  <div className="flex items-center justify-between gap-1 mb-1">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-baseline justify-between gap-2">
                     <span
-                      className={`text-xs truncate ${
+                      className={`truncate text-sm leading-5 ${
                         unread > 0 ? 'font-bold text-slate-900' : 'font-semibold text-slate-800'
                       }`}
                     >
-                      {partner.name || 'Người dùng TechShare'}
+                      {displayName}
                     </span>
-                    <span className="text-[10px] text-slate-400 whitespace-nowrap flex-shrink-0">
-                      {formatConversationTime(item.updatedAt || lastMsg?.createdAt)}
-                    </span>
-                  </div>
-
-                  {/* Row 2: Device name (màu teal đậm) + Booking status + Multi-booking badge */}
-                  <div className="flex items-center gap-1.5 mb-1.5 text-[11px] flex-wrap">
-                    <Smartphone size={12} className="text-teal-600 flex-shrink-0" />
-                    <span className="truncate font-semibold text-teal-700 text-xs max-w-[130px]">
-                      {device.name || 'Thiết bị'}
-                    </span>
-                    <span className="text-slate-300">•</span>
-                    <BookingStatusBadge status={item.status} />
-                    {multiBookingsCount > 1 && (
-                      <span
-                        className="text-[10px] font-semibold text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded border border-teal-200 shrink-0"
-                        title={`${multiBookingsCount} đơn thuê với người này`}
-                      >
-                        {multiBookingsCount} đơn
-                      </span>
+                    {timestamp && (
+                      <time dateTime={lastMsg.createdAt} className="shrink-0 whitespace-nowrap text-[11px] text-slate-600">
+                        {timestamp}
+                      </time>
                     )}
                   </div>
 
-                  {/* Row 3: Last Message snippet + Status/Unread Badge */}
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-1 min-w-0 text-xs">
-                      {isOwnLastMsg && (
-                        <span className="flex-shrink-0 text-slate-400">
-                          {lastMsg.status === 'read' ? (
-                            <CheckCheck size={13} className="text-teal-500" />
-                          ) : (
-                            <Check size={13} />
-                          )}
-                        </span>
-                      )}
-                      <span
-                        className={`truncate ${unread > 0
-                            ? 'font-bold text-slate-900'
-                            : 'text-slate-500 font-normal'
-                          }`}
-                      >
-                        {lastMessagePreview}
-                      </span>
-                    </div>
-
+                  <div className="flex min-h-5 items-center justify-between gap-2">
+                    <span className={`truncate text-xs leading-5 ${unread > 0 ? 'font-semibold text-slate-800' : 'text-slate-600'}`}>
+                      {lastMessagePreview}
+                    </span>
                     {unread > 0 && (
-                      <span className="flex-shrink-0 min-w-4 h-4 px-1 rounded-full bg-rose-500 text-white font-bold text-[10px] flex items-center justify-center shadow-xs">
-                        {unread > 99 ? '99+' : unread}
+                      <span className="inline-flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full bg-brand-800 px-1.5 text-[10px] font-bold text-white">
+                        <span aria-hidden="true">{unread > 99 ? '99+' : unread}</span>
+                        <span className="sr-only">{unread} unread {unread === 1 ? 'message' : 'messages'}</span>
                       </span>
                     )}
                   </div>

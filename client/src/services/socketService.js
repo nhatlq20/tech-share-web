@@ -2,6 +2,8 @@ import { io } from 'socket.io-client';
 import { STORAGE_KEYS } from '../constants/config.js';
 
 let socket = null;
+let socketToken = null;
+const chatRooms = new Set();
 
 const getSocketServerUrl = () => {
   const apiUrl = process.env.REACT_APP_API_URL;
@@ -26,10 +28,12 @@ const getSocketServerUrl = () => {
 export const connectSocket = () => {
   const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
 
-  if (socket && socket.connected) {
+  if (socket && socketToken === token) {
     return socket;
   }
 
+  socket?.disconnect();
+  socketToken = token;
   const serverUrl = getSocketServerUrl();
 
   socket = io(serverUrl, {
@@ -44,6 +48,7 @@ export const connectSocket = () => {
   });
 
   socket.on('connect', () => {
+    chatRooms.forEach((id) => socket.emit('join_chat', id));
     console.log('🟢 [Socket.IO] Connected to chat server:', socket.id);
   });
 
@@ -65,6 +70,8 @@ export const disconnectSocket = () => {
   if (socket) {
     socket.disconnect();
     socket = null;
+    socketToken = null;
+    chatRooms.clear();
   }
 };
 
@@ -84,7 +91,8 @@ export const getSocket = () => {
 export const joinChat = (bookingId) => {
   const s = getSocket();
   if (s && bookingId) {
-    s.emit('join_chat', bookingId);
+    chatRooms.add(bookingId);
+    if (s.connected) s.emit('join_chat', bookingId);
   }
 };
 
@@ -94,7 +102,8 @@ export const joinChat = (bookingId) => {
 export const leaveChat = (bookingId) => {
   const s = getSocket();
   if (s && bookingId) {
-    s.emit('leave_chat', bookingId);
+    chatRooms.delete(bookingId);
+    if (s.connected) s.emit('leave_chat', bookingId);
   }
 };
 

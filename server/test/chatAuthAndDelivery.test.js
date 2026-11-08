@@ -1,3 +1,4 @@
+import ChatInquiry from '../src/models/ChatInquiry.js';
 import assert from 'node:assert/strict';
 import { test, describe, before, after, beforeEach } from 'node:test';
 import http from 'node:http';
@@ -51,6 +52,8 @@ describe('TC-CHAT: Real-Time Chat & Receiver Resolution Tests', () => {
   let shouldSimulateDbFailure = false;
 
   // Backup original model methods
+  const origInquiryFindById = ChatInquiry.findById;
+  const origInquiryFind = ChatInquiry.find;
   const origBookingFindById = Booking.findById;
   const origBookingFind = Booking.find;
   const origMessageCreate = Message.create;
@@ -92,6 +95,8 @@ describe('TC-CHAT: Real-Time Chat & Receiver Resolution Tests', () => {
       },
     };
 
+    ChatInquiry.findById = () => makeChain(null);
+    ChatInquiry.find = () => makeChain([]);
     // Mock Booking.findById
     Booking.findById = (id) => {
       const idStr = id?.toString();
@@ -169,6 +174,9 @@ describe('TC-CHAT: Real-Time Chat & Receiver Resolution Tests', () => {
   });
 
   after(async () => {
+    ChatInquiry.findById = origInquiryFindById;
+    ChatInquiry.find = origInquiryFind;
+    if (ioServer) await new Promise((resolve) => ioServer.close(resolve));
     // Restore original methods
     Booking.findById = origBookingFindById;
     Booking.find = origBookingFind;
@@ -178,7 +186,7 @@ describe('TC-CHAT: Real-Time Chat & Receiver Resolution Tests', () => {
     Message.find = origMessageFind;
     User.findById = origUserFindById;
 
-    if (server) {
+    if (server?.listening) {
       await new Promise((resolve) => server.close(resolve));
     }
   });

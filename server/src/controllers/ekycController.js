@@ -3,6 +3,7 @@ import { EkycRequest } from '../models/EkycRequest.js';
 import { User } from '../models/User.js';
 import { Account } from '../models/Account.js';
 import { createAndSendNotification } from '../services/notificationService.js';
+import { recordAdminNotification } from '../services/adminNotificationService.js';
 
 /**
  * Controller xử lý luồng eKYC từ phía người dùng (Renter / Member)
@@ -98,6 +99,8 @@ export const submitEkycRequest = async (req, res, next) => {
       reviewedBy: null,
       reviewedAt: null,
     });
+
+    await recordAdminNotification('ekyc', newRequest._id, newRequest.createdAt);
 
     // 6. Gửi thông báo xác nhận cho người dùng
     try {

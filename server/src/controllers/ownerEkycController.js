@@ -5,6 +5,7 @@ import { User } from '../models/User.js';
 import { Account } from '../models/Account.js';
 import { Role } from '../models/Role.js';
 import { createAndSendNotification } from '../services/notificationService.js';
+import { recordAdminNotification } from '../services/adminNotificationService.js';
 
 /**
  * Controller xử lý luồng eKYC Nâng cấp từ Renter lên Owner
@@ -139,6 +140,8 @@ export const submitOwnerEkycRequest = async (req, res, next) => {
       reviewedBy: null,
       reviewedAt: null,
     });
+
+    await recordAdminNotification('owner-verification', newRequest._id, newRequest.createdAt);
 
     // 7. Gửi thông báo xác nhận cho người dùng
     try {

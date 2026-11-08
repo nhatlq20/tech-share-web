@@ -36,14 +36,14 @@ const formatMessageTime = (dateString) => {
   if (!dateString) return '';
   const date = new Date(dateString);
   if (isNaN(date.getTime())) return '';
-  return date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+  return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 };
 
 /**
  * Helper format khoảng thời gian thuê (startDate -> endDate)
  */
 const formatDateRange = (start, end) => {
-  if (!start) return 'Chưa xác định ngày';
+  if (!start) return 'Dates not set';
   const s = formatDate(start);
   if (!end) return s;
   const e = formatDate(end);
@@ -55,13 +55,13 @@ const formatDateRange = (start, end) => {
  */
 const BookingStatusBadge = ({ status }) => {
   const config = {
-    pending: { label: 'Chờ duyệt', bg: 'bg-amber-50 text-amber-700 border-amber-200' },
-    approved: { label: 'Đã duyệt', bg: 'bg-blue-50 text-blue-700 border-blue-200' },
-    active: { label: 'Đang thuê', bg: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-    completed: { label: 'Hoàn tất', bg: 'bg-slate-100 text-slate-700 border-slate-200' },
-    cancelled: { label: 'Đã hủy', bg: 'bg-rose-50 text-rose-700 border-rose-200' },
-    rejected: { label: 'Từ chối', bg: 'bg-rose-50 text-rose-700 border-rose-200' },
-  }[status] || { label: status || 'Đơn thuê', bg: 'bg-slate-50 text-slate-600 border-slate-200' };
+    pending: { label: 'Pending', bg: 'bg-amber-50 text-amber-700 border-amber-200' },
+    approved: { label: 'Approved', bg: 'bg-blue-50 text-blue-700 border-blue-200' },
+    active: { label: 'Active', bg: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+    completed: { label: 'Completed', bg: 'bg-slate-100 text-slate-700 border-slate-200' },
+    cancelled: { label: 'Cancelled', bg: 'bg-rose-50 text-rose-700 border-rose-200' },
+    rejected: { label: 'Rejected', bg: 'bg-rose-50 text-rose-700 border-rose-200' },
+  }[status] || { label: status || 'Booking', bg: 'bg-slate-50 text-slate-600 border-slate-200' };
 
   return (
     <span
@@ -89,7 +89,7 @@ const ImageLightboxModal = ({ imageUrl, onClose }) => {
         type="button"
         onClick={onClose}
         className="absolute top-4 right-4 p-2 rounded-full bg-white/20 hover:bg-white/30 text-white transition cursor-pointer"
-        title="Đóng (Esc)"
+        title="Close (Esc)"
       >
         <X size={22} />
       </button>
@@ -99,7 +99,7 @@ const ImageLightboxModal = ({ imageUrl, onClose }) => {
       >
         <img
           src={imageUrl}
-          alt="Phóng to ảnh"
+          alt="Full size attachment"
           className="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl select-none"
         />
       </div>
@@ -138,11 +138,13 @@ export const ChatDetailView = ({
   const switcherDropdownRef = useRef(null);
 
   currentBookingIdRef.current = bookingId;
+  const conversationRef = useRef(conversation);
+  conversationRef.current = conversation;
 
   // Cập nhật bookingContext khi prop conversation thay đổi
   useEffect(() => {
-    if (conversation) {
-      setBookingContext((prev) => ({ ...(prev || {}), ...conversation }));
+    if (conversation?.bookingId === currentBookingIdRef.current) {
+      setBookingContext(conversation);
     }
   }, [conversation]);
 
@@ -175,6 +177,9 @@ export const ChatDetailView = ({
   const loadMessagesForBooking = useCallback(
     async (bId) => {
       if (!bId) return;
+      const conversation = conversationRef.current;
+      setPartnerTyping(false);
+      setBookingContext(conversation || null);
 
       // 1.1. Kiểm tra cache tin nhắn client-side
       const cached = messageCacheRef.current.get(bId);
@@ -229,23 +234,15 @@ export const ChatDetailView = ({
         const rawBooking = res?.booking || res?.data?.booking;
         const rawPartner = res?.partner || res?.data?.otherUser || res?.data?.partner;
 
-        let nextContext = null;
-        setBookingContext((prev) => {
-          const updated = { ...(prev || {}), ...(rawBooking || {}) };
-          if (rawPartner) {
-            updated.partner = {
-              _id: rawPartner._id?.toString() || rawPartner.id,
-              name: rawPartner.name || 'Người dùng TechShare',
-              avatar: rawPartner.avatar || '',
-              role: rawPartner.role || 'user',
-              isVerified: Boolean(rawPartner.isVerified),
-            };
-          }
-          nextContext = updated;
-          return updated;
-        });
+        const nextContext = { ...(rawBooking || {}) };
+        if (rawPartner) nextContext.partner = rawPartner;
+        setBookingContext(nextContext);
 
-        setMessages(rawList);
+        setMessages((previous) => {
+          const ids = new Set(rawList.map((item) => item._id));
+          const confirmed = new Set(rawList.map((item) => item.tempId).filter(Boolean));
+          return [...rawList, ...previous.filter((item) => String(item.bookingId) === bId && !ids.has(item._id) && !confirmed.has(item.tempId))];
+        });
         setErrorMsg(null);
 
         // Lưu bản snapshot vào bộ nhớ cache client
@@ -269,8 +266,8 @@ export const ChatDetailView = ({
             err.message === 'Failed to fetch' || err.message?.includes('NetworkError');
           setErrorMsg(
             isNetworkErr
-              ? 'Kết nối máy chủ bị gián đoạn. Vui lòng bấm thử lại.'
-              : (err.message || 'Không thể tải lịch sử trò chuyện.')
+              ? 'Connection interrupted. Please try again.'
+              : (err.message || 'Failed to load conversation history.')
           );
         }
       } finally {
@@ -279,7 +276,7 @@ export const ChatDetailView = ({
         }
       }
     },
-    [conversation, scrollToBottom]
+    [scrollToBottom]
   );
 
   // Kích hoạt nạp tin nhắn khi bookingId thay đổi
@@ -287,6 +284,7 @@ export const ChatDetailView = ({
     if (bookingId) {
       loadMessagesForBooking(bookingId);
     }
+    return () => abortControllerRef.current?.abort();
   }, [bookingId, loadMessagesForBooking]);
 
   // 2. Lifecycle Socket.io Event Listeners (Đăng ký 1 lần duy nhất trong suốt vòng đời Component)
@@ -330,7 +328,7 @@ export const ChatDetailView = ({
           return [...list, msg];
         });
 
-        // Nếu là tin nhắn từ đối tác gửi tới -> đánh dấu đã đọc
+        // Nếu là tin nhắn từ your contact gửi tới -> đánh dấu đã đọc
         const senderIdStr = (msg.senderId?._id || msg.senderId)?.toString();
         if (senderIdStr !== currentUserId) {
           apiMarkAsRead(msgBookingId).catch(() => {});
@@ -342,7 +340,7 @@ export const ChatDetailView = ({
 
     // Xử lý sự kiện tin nhắn đã được đối phương đọc
     const handleMessagesRead = (payload) => {
-      if (payload && payload.bookingId) {
+      if (payload && payload.bookingId && payload.readBy !== currentUserId) {
         const bId = payload.bookingId.toString();
 
         // Cập nhật cache
@@ -386,7 +384,7 @@ export const ChatDetailView = ({
     };
 
     socket.on('new_message', handleIncomingMessage);
-    socket.on('receive_message', handleIncomingMessage);
+
     socket.on('messages_read', handleMessagesRead);
     socket.on('user_typing', handleUserTyping);
     socket.on('user_stop_typing', handleUserStopTyping);
@@ -401,7 +399,7 @@ export const ChatDetailView = ({
 
     return () => {
       socket.off('new_message', handleIncomingMessage);
-      socket.off('receive_message', handleIncomingMessage);
+
       socket.off('messages_read', handleMessagesRead);
       socket.off('user_typing', handleUserTyping);
       socket.off('user_stop_typing', handleUserStopTyping);
@@ -413,9 +411,9 @@ export const ChatDetailView = ({
     };
   }, [currentUserId, scrollToBottom]);
 
-  // 3. Optimistic UI: Gửi tin nhắn tức thì (0ms delay)
+  // 3. Optimistic UI: Send tin nhắn tức thì (0ms delay)
   const handleSendMessage = async (payload) => {
-    if (!bookingId) return;
+    if (!bookingId || loading || errorMsg) return;
 
     const tempId = `temp-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
     const optimisticMessage = {
@@ -424,7 +422,7 @@ export const ChatDetailView = ({
       bookingId,
       senderId: {
         _id: currentUserId,
-        name: 'Tôi',
+        name: 'You',
       },
       type: payload.type || 'text',
       content: payload.content || '',
@@ -458,6 +456,7 @@ export const ChatDetailView = ({
 
       // Gọi API lưu vào DB và phát socket
       const res = await apiSendMessage(bookingId, {
+        tempId,
         type: payload.type,
         content: payload.content,
         mediaUrl: finalMediaUrl,
@@ -468,7 +467,8 @@ export const ChatDetailView = ({
 
       // Cập nhật tin nhắn tạm bằng tin nhắn chính thức từ DB trong cả state & cache
       setMessages((prev) => {
-        const list = Array.isArray(prev) ? prev : [];
+        if (currentBookingIdRef.current !== bookingId) { messageCacheRef.current.delete(bookingId); return prev; }
+        const list = (Array.isArray(prev) ? prev : []).filter((m) => m._id !== savedMessage._id || m.tempId === tempId);
         const nextList = list.map((m) => (m.tempId === tempId ? { ...savedMessage, tempId } : m));
         const cached = messageCacheRef.current.get(bookingId);
         if (cached) {
@@ -485,6 +485,7 @@ export const ChatDetailView = ({
       // Đánh dấu lỗi để người dùng có thể bấm gửi lại
       setMessages((prev) => {
         const list = Array.isArray(prev) ? prev : [];
+        if (currentBookingIdRef.current !== bookingId) { messageCacheRef.current.delete(bookingId); return prev; }
         const nextList = list.map((m) =>
           m.tempId === tempId ? { ...m, status: 'error', errorMsg: err.message } : m
         );
@@ -497,7 +498,7 @@ export const ChatDetailView = ({
     }
   };
 
-  // Thử lại tin nhắn bị lỗi
+  // Try again tin nhắn bị lỗi
   const handleRetryMessage = (failedMsg) => {
     setMessages((prev) => {
       const list = Array.isArray(prev) ? prev : [];
@@ -516,9 +517,10 @@ export const ChatDetailView = ({
     });
   };
 
-  const partner = bookingContext?.partner || bookingContext?.otherUser || {};
-  const device = bookingContext?.device || bookingContext?.booking?.device || {};
-  const partnerBookings = Array.isArray(bookingContext?.bookings) ? bookingContext.bookings : [];
+  const visibleContext = bookingContext?.bookingId === bookingId ? bookingContext : null;
+  const partner = visibleContext?.partner || visibleContext?.otherUser || {};
+  const device = visibleContext?.device || visibleContext?.booking?.device || {};
+  const partnerBookings = Array.isArray(visibleContext?.bookings) ? visibleContext.bookings : [];
   const otherBookings = partnerBookings.filter(
     (b) => String(b.bookingId || b._id) !== String(bookingId)
   );
@@ -536,13 +538,13 @@ export const ChatDetailView = ({
               type="button"
               onClick={onBack}
               className="md:hidden p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 transition cursor-pointer"
-              title="Quay lại danh sách"
+              title="Back to conversations"
             >
               <ChevronLeft size={20} />
             </button>
           )}
 
-          {/* Avatar đối tác kèm chấm xanh Online */}
+          {/* Avatar your contact kèm chấm xanh Online */}
           <div className="relative shrink-0">
             <div className="w-10 h-10 rounded-full bg-slate-200 overflow-hidden flex items-center justify-center font-bold text-slate-700 text-sm border border-slate-200">
               {partner.avatar ? (
@@ -559,13 +561,10 @@ export const ChatDetailView = ({
               )}
             </div>
             {/* Chấm xanh Online */}
-            <span
-              className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-white shadow-2xs"
-              title="Đang hoạt động"
-            />
+
             {partner.isVerified && (
               <span
-                title="Tài khoản đã xác minh"
+                title="Verified account"
                 className="absolute -top-1 -right-1 bg-white rounded-full p-0.5 shadow-2xs"
               >
                 <ShieldCheck size={12} className="text-teal-600 fill-teal-100" />
@@ -577,34 +576,34 @@ export const ChatDetailView = ({
           <div className="min-w-0">
             <div className="flex items-center gap-1.5 flex-wrap">
               <h3 className="text-sm font-bold text-slate-800 truncate">
-                {partner.name || 'Đối tác TechShare'}
+                {partner.name || 'Profile unavailable'}
               </h3>
               <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
-                {partner.role === 'owner' ? 'Chủ thiết bị' : 'Người thuê'}
+                {partner.role === 'owner' ? 'Device owner' : 'Renter'}
               </span>
             </div>
             <p className="text-[11px] text-slate-400">
               {partnerTyping ? (
                 <span className="text-teal-600 font-medium animate-pulse">
-                  Đang soạn tin nhắn...
+                  Typing...
                 </span>
               ) : (
-                <span className="text-emerald-600 font-medium">Trực tuyến</span>
+                null
               )}
             </p>
           </div>
         </div>
 
-        {/* Nút hành động nhanh bên phải: Xem chi tiết đơn & Xem thiết bị */}
+        {/* Nút hành động nhanh bên phải: View booking & View device */}
         <div className="flex items-center gap-2 shrink-0">
-          <Link
+          {!visibleContext?.isInquiry && <Link
             to={ROUTES.MY_BOOKINGS || '/my-bookings'}
             className="px-3 py-1.5 text-xs font-semibold rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition flex items-center gap-1.5 shadow-2xs"
-            title="Xem chi tiết đơn hàng"
+            title="View booking details"
           >
             <FileText size={13} className="text-slate-500" />
-            <span className="hidden sm:inline">Xem chi tiết đơn</span>
-          </Link>
+            <span className="hidden sm:inline">View booking</span>
+          </Link>}
           {device._id && (
             <Link
               to={
@@ -613,10 +612,10 @@ export const ChatDetailView = ({
                   : `/device/${device._id}`
               }
               className="px-3 py-1.5 text-xs font-semibold rounded-xl bg-teal-50 text-teal-700 border border-teal-200 hover:bg-teal-100 transition flex items-center gap-1.5 shadow-2xs"
-              title="Xem trang thiết bị"
+              title="View device page"
             >
               <ExternalLink size={13} className="text-teal-600" />
-              <span className="hidden sm:inline">Xem thiết bị</span>
+              <span className="hidden sm:inline">View device</span>
             </Link>
           )}
         </div>
@@ -625,14 +624,14 @@ export const ChatDetailView = ({
       {/* =========================================================================
           TẦNG 2: MINI BOOKING CONTEXT BAR
           ========================================================================= */}
-      <div className="bg-slate-50 border-b border-slate-200 px-4 sm:px-6 py-2.5 flex items-center justify-between gap-3 text-xs select-none shrink-0">
+      {!visibleContext?.isInquiry && <div className="bg-slate-50 border-b border-slate-200 px-4 sm:px-6 py-2.5 flex items-center justify-between gap-3 text-xs select-none shrink-0">
         <div className="flex items-center gap-3 min-w-0">
           {/* Ảnh thumbnail thiết bị */}
           <div className="w-10 h-10 rounded-lg overflow-hidden bg-white border border-slate-200 shrink-0 flex items-center justify-center">
             {device.image ? (
               <img
                 src={device.image}
-                alt={device.name || 'Thiết bị'}
+                alt={device.name || 'Device'}
                 className="w-full h-full object-cover"
               />
             ) : (
@@ -644,7 +643,7 @@ export const ChatDetailView = ({
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <p className="font-bold text-slate-800 text-xs truncate max-w-[180px] sm:max-w-xs md:max-w-sm">
-                {device.name || 'Thiết bị công nghệ'}
+                {device.name || 'Device'}
               </p>
               <span className="text-[10px] text-slate-400 font-mono">
                 #{bookingContext?.bookingCode || bookingId.substring(0, 8).toUpperCase()}
@@ -657,11 +656,11 @@ export const ChatDetailView = ({
               </span>
               <span className="text-slate-300">•</span>
               <span className="font-semibold text-slate-700">
-                Tổng: {formatPrice(bookingContext?.totalAmount || 0)}
+                Total: {formatPrice(bookingContext?.totalAmount || 0)}
               </span>
               {bookingContext?.deposit > 0 && (
                 <span className="text-slate-500 hidden sm:inline">
-                  (Cọc: {formatPrice(bookingContext.deposit)})
+                  (Deposit: {formatPrice(bookingContext.deposit)})
                 </span>
               )}
             </div>
@@ -679,9 +678,9 @@ export const ChatDetailView = ({
                 type="button"
                 onClick={() => setIsSwitcherOpen((prev) => !prev)}
                 className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 transition cursor-pointer shadow-2xs"
-                title="Chuyển sang đơn thuê khác giữa bạn và đối tác này"
+                title="Switch to another booking with this person"
               >
-                <span>Đơn thuê khác ({otherBookings.length})</span>
+                <span>Other bookings ({otherBookings.length})</span>
                 <ChevronDown
                   size={13}
                   className={`transition-transform duration-200 ${
@@ -694,8 +693,8 @@ export const ChatDetailView = ({
               {isSwitcherOpen && (
                 <div className="absolute right-0 top-full mt-1.5 w-72 sm:w-80 bg-white border border-slate-200 rounded-xl shadow-xl z-30 p-1.5 divide-y divide-slate-100 animate-in fade-in zoom-in-95 duration-150">
                   <div className="px-2.5 py-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
-                    <span>Đơn thuê khác với đối tác</span>
-                    <span className="text-teal-600 font-semibold">{otherBookings.length} đơn</span>
+                    <span>Other bookings with this person</span>
+                    <span className="text-teal-600 font-semibold">{otherBookings.length} bookings</span>
                   </div>
                   <div className="max-h-64 overflow-y-auto space-y-1 pt-1 divide-y divide-slate-50">
                     {otherBookings.map((b) => (
@@ -712,7 +711,7 @@ export const ChatDetailView = ({
                           {b.device?.image ? (
                             <img
                               src={b.device.image}
-                              alt={b.device.name || 'Thiết bị'}
+                              alt={b.device.name || 'Device'}
                               className="w-full h-full object-cover"
                             />
                           ) : (
@@ -722,7 +721,7 @@ export const ChatDetailView = ({
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-1 mb-0.5">
                             <span className="text-xs font-bold text-slate-800 truncate group-hover:text-teal-700">
-                              {b.device?.name || 'Thiết bị'}
+                              {b.device?.name || 'Device'}
                             </span>
                             <BookingStatusBadge status={b.status} />
                           </div>
@@ -746,16 +745,16 @@ export const ChatDetailView = ({
             </div>
           )}
         </div>
-      </div>
+      </div>}
 
       {/* =========================================================================
           KHUNG HIỂN THỊ TIN NHẮN (MESSAGE FEED & EMPTY STATE)
           ========================================================================= */}
       <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3 bg-slate-50/50">
-        {loading ? (
+        {loading || (!visibleContext && !errorMsg) ? (
           <div className="flex flex-col items-center justify-center h-48 text-slate-400 space-y-2">
             <RotateCw size={20} className="animate-spin text-teal-600" />
-            <span className="text-xs">Đang tải tin nhắn...</span>
+            <span className="text-xs">Loading messages...</span>
           </div>
         ) : errorMsg ? (
           <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl text-center text-xs text-rose-700 flex flex-col items-center gap-2">
@@ -766,7 +765,7 @@ export const ChatDetailView = ({
               onClick={() => loadMessagesForBooking(bookingId)}
               className="px-3 py-1 bg-rose-600 text-white rounded-lg text-xs font-semibold hover:bg-rose-700 transition"
             >
-              Thử lại
+              Try again
             </button>
           </div>
         ) : (!Array.isArray(messages) || messages.length === 0) ? (
@@ -776,15 +775,15 @@ export const ChatDetailView = ({
               <ShieldCheck size={28} />
             </div>
             <h4 className="text-sm font-bold text-slate-800">
-              Bắt đầu cuộc trò chuyện với {partner.name || 'đối tác'} về đơn thuê này
+              Start a conversation with {partner.name || 'your contact'} about this device
             </h4>
             <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
-              Hãy xác nhận thời gian, địa điểm bàn giao máy hoặc hỏi thêm thông tin phụ kiện kèm theo.
+              Ask about availability, pickup details or included accessories.
             </p>
             <div className="mt-4 p-3 bg-amber-50/80 border border-amber-200/80 rounded-xl text-left text-[11px] text-amber-900 flex items-start gap-2 shadow-2xs">
               <span className="text-sm shrink-0">💡</span>
               <p className="leading-relaxed">
-                <strong>Mẹo an toàn:</strong> Hãy trao đổi và gửi ảnh chụp hiện trạng thiết bị trực tiếp trong cuộc trò chuyện để hai bên dễ đối chiếu khi bàn giao.
+                <strong>Safety tip:</strong> Share device condition photos here so both participants can refer to them at handover.
               </p>
             </div>
           </div>
@@ -803,11 +802,11 @@ export const ChatDetailView = ({
                   isOwn ? 'justify-end items-end' : 'justify-start items-end gap-2.5'
                 }`}
               >
-                {/* Avatar đối tác ở cạnh dưới cùng bên trái bubble chat */}
+                {/* Avatar your contact ở cạnh dưới cùng bên trái bubble chat */}
                 {!isOwn && (
                   <div
                     className="w-8 h-8 rounded-full bg-slate-200 border border-slate-200 overflow-hidden shrink-0 shadow-2xs flex items-center justify-center font-bold text-xs text-slate-600 mb-0.5 select-none"
-                    title={partner.name || 'Đối tác'}
+                    title={partner.name || 'Partner'}
                   >
                     {partner.avatar ? (
                       <img
@@ -853,7 +852,7 @@ export const ChatDetailView = ({
                         >
                           <img
                             src={msg.mediaUrl}
-                            alt="Ảnh đính kèm"
+                            alt="Message attachment"
                             className="w-full h-auto max-h-64 object-cover rounded-xl transition duration-200 group-hover/img:scale-[1.02]"
                           />
                           <div className="absolute inset-0 bg-black/20 opacity-0 group-hover/img:opacity-100 transition flex items-center justify-center text-white">
@@ -880,14 +879,14 @@ export const ChatDetailView = ({
                           />
                           <div>
                             <p className="text-xs font-bold leading-tight">
-                              {msg.location.address || 'Vị trí được chia sẻ'}
+                              {msg.location.address || 'Shared location'}
                             </p>
                             <p
                               className={`text-[10px] font-mono mt-0.5 ${
                                 isOwn ? 'text-teal-100' : 'text-slate-500'
                               }`}
                             >
-                              Tọa độ: {msg.location.latitude?.toFixed(5)},{' '}
+                              Coordinates: {msg.location.latitude?.toFixed(5)},{' '}
                               {msg.location.longitude?.toFixed(5)}
                             </p>
                           </div>
@@ -903,7 +902,7 @@ export const ChatDetailView = ({
                               : 'bg-teal-600 text-white hover:bg-teal-700'
                           }`}
                         >
-                          <span>Mở trên Google Maps</span>
+                          <span>Open in Google Maps</span>
                           <ExternalLink size={12} />
                         </a>
                       </div>
@@ -920,29 +919,29 @@ export const ChatDetailView = ({
                       {isOwn && (
                         <span className="inline-flex items-center">
                           {isSending ? (
-                            <Clock size={11} className="animate-spin text-teal-200" title="Đang gửi..." />
+                            <Clock size={11} className="animate-spin text-teal-200" title="Sending..." />
                           ) : isError ? (
-                            <AlertCircle size={11} className="text-rose-500" title="Lỗi gửi tin" />
+                            <AlertCircle size={11} className="text-rose-500" title="Failed to send message" />
                           ) : isRead ? (
-                            <CheckCheck size={13} className="text-white" title="Đã xem" />
+                            <CheckCheck size={13} className="text-white" title="Seen" />
                           ) : (
-                            <Check size={12} title="Đã gửi" />
+                            <Check size={12} title="Sent" />
                           )}
                         </span>
                       )}
                     </div>
                   </div>
 
-                  {/* Nút Thử lại nếu tin nhắn bị lỗi */}
+                  {/* Nút Try again nếu tin nhắn bị lỗi */}
                   {isError && (
                     <div className="flex items-center gap-2 mt-1 mr-1">
-                      <span className="text-[11px] text-rose-600 font-medium">Không thể gửi</span>
+                      <span className="text-[11px] text-rose-600 font-medium">Failed to send</span>
                       <button
                         type="button"
                         onClick={() => handleRetryMessage(msg)}
                         className="text-[11px] text-teal-600 hover:underline font-bold cursor-pointer"
                       >
-                        Thử lại
+                        Try again
                       </button>
                     </div>
                   )}
@@ -957,7 +956,7 @@ export const ChatDetailView = ({
           <div className="flex items-end gap-2.5 justify-start">
             <div
               className="w-8 h-8 rounded-full bg-slate-200 border border-slate-200 overflow-hidden shrink-0 shadow-2xs flex items-center justify-center font-bold text-xs text-slate-600 mb-0.5 select-none"
-              title={partner.name || 'Đối tác'}
+              title={partner.name || 'Partner'}
             >
               {partner.avatar ? (
                 <img
@@ -987,7 +986,7 @@ export const ChatDetailView = ({
           THANH GỢI Ý TIN NHẮN MẪU NHANH
           ========================================================================= */}
       <QuickMessageBar
-        disabled={loading}
+        disabled={loading || Boolean(errorMsg) || !visibleContext}
         onSelectTemplate={(templateText) => {
           handleSendMessage({
             type: 'quick_template',
@@ -1002,7 +1001,7 @@ export const ChatDetailView = ({
       <ChatInputBox
         bookingId={bookingId}
         onSendMessage={handleSendMessage}
-        disabled={loading}
+        disabled={loading || Boolean(errorMsg) || !visibleContext}
       />
 
       {/* Lightbox hiển thị ảnh phóng to */}
