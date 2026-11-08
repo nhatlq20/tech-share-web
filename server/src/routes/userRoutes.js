@@ -25,9 +25,10 @@ router.put('/profile', protect, updateProfile);
 router.post('/avatar', protect, updateAvatar);
 router.patch('/avatar', protect, updateAvatar);
 
-// Danh sách yêu thích (Wishlist / Favorites) - đọc & đồng bộ trường `wishlist` trong collection `users`
+// Danh sách yêu thích (Wishlist / Favorites) - đồng bộ collection `wishlists` giữa App và Web
 router.get('/wishlist', optionalProtect, getWishlist);
 router.get('/favorites', optionalProtect, getWishlist);
+router.post('/wishlist/toggle/:deviceId', protect, toggleWishlistDevice);
 router.post('/wishlist/:deviceId', protect, toggleWishlistDevice);
 router.post('/favorites/:deviceId', protect, toggleWishlistDevice);
 router.patch('/wishlist/:deviceId', protect, toggleWishlistDevice);

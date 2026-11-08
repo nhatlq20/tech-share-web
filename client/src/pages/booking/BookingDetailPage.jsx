@@ -6,9 +6,7 @@ import {
   CalendarPlus,
   Clock,
   MapPin,
-  User,
-  Phone,
-  Mail,
+  Store,
   ShieldCheck,
   CreditCard,
   AlertCircle,
@@ -19,6 +17,8 @@ import {
   Truck,
   MessageSquare,
   Star,
+  RotateCcw,
+  ArrowRight,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { STRINGS } from '../../constants/strings.js';
@@ -31,9 +31,64 @@ import { CountdownBadge, RentalCountdownTimer } from '../../components/booking/C
 import { ExtensionModal } from '../../components/booking/ExtensionModal.jsx';
 import { RenterHandoverSection } from '../../components/booking/RenterHandoverSection.jsx';
 import { BookingReviewModal, BookingReviewSection } from '../../components/booking/BookingReviewModal.jsx';
-import { formatPrice, formatDateTime, formatDate } from '../../utils/formatters.js';
+import { formatDateTime, formatDate } from '../../utils/formatters.js';
 
 const T = STRINGS.booking.detail;
+
+const formatPriceVnd = (amount) =>
+  `${Math.round(Number(amount) || 0).toLocaleString('en-US')} ${STRINGS.COMMON.VND}`;
+
+const formatScheduleDateTime = (dateInput) => {
+  const d = new Date(dateInput);
+  if (Number.isNaN(d.getTime())) {
+    return { dateStr: '--/--/----', weekdayStr: '', timeStr: '--:--' };
+  }
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const hours = String(d.getHours()).padStart(2, '0');
+  const mins = String(d.getMinutes()).padStart(2, '0');
+
+  return {
+    dateStr: `${day}/${month}/${year}`,
+    weekdayStr: weekdays[d.getDay()],
+    timeStr: `${hours}:${mins}`,
+  };
+};
+
+const calculateDurationBetweenDates = (startInput, endInput, fallbackDays = 1) => {
+  const start = new Date(startInput).getTime();
+  const end = new Date(endInput).getTime();
+  const diffMs = end - start;
+
+  if (diffMs > 0) {
+    const totalHours = Math.max(1, Math.round(diffMs / (1000 * 60 * 60)));
+    const days = Math.floor(totalHours / 24);
+    const remHours = totalHours % 24;
+
+    let formattedLabel = '';
+    if (days > 0 && remHours > 0) {
+      formattedLabel = STRINGS.BOOKING_ITEM_CARD.DAYS_HOURS(days, remHours);
+    } else if (days > 0) {
+      formattedLabel = STRINGS.BOOKING_ITEM_CARD.DAYS_ONLY(days);
+    } else {
+      formattedLabel = STRINGS.BOOKING_ITEM_CARD.HOURS_ONLY(remHours);
+    }
+
+    return {
+      totalHours,
+      formattedLabel,
+      hoursBadge: `${totalHours}h`,
+    };
+  }
+
+  return {
+    totalHours: fallbackDays * 24,
+    formattedLabel: STRINGS.BOOKING_ITEM_CARD.DAYS_ONLY(fallbackDays || 1),
+    hoursBadge: `${(fallbackDays || 1) * 24}h`,
+  };
+};
 
 export const BookingDetailPage = () => {
   const { bookingId } = useParams();
@@ -158,31 +213,40 @@ export const BookingDetailPage = () => {
 
   const device = booking.device || booking.deviceId || {};
   const owner = booking.owner || booking.ownerId || device.owner || device.ownerId || {};
-  const renter = booking.renter || booking.renterId || {};
+  const targetDeviceId =
+    device._id ||
+    device.id ||
+    (typeof booking.deviceId === 'string' ? booking.deviceId : '') ||
+    (typeof booking.device === 'string' ? booking.device : '');
 
-  const deliveryMethod = booking.deliveryMethod || booking.delivery?.method || 'delivery';
-
+  const deliveryMethod = booking.deliveryMethod || booking.delivery?.method || 'pickup';
   const deliveryAddress =
     (typeof booking.deliveryAddress === 'string'
       ? booking.deliveryAddress
       : booking.deliveryAddress?.address) ||
     booking.delivery?.address ||
-    (deliveryMethod === 'pickup' ? (device.address || '') : (renter.address || '')) ||
-    '';
-
-  const recipientName =
-    booking.renterInfo?.name ||
-    (typeof booking.deliveryAddress === 'object' ? booking.deliveryAddress?.recipientName : '') ||
-    renter.name ||
-    '';
-
-  const recipientPhone =
-    booking.renterInfo?.phone ||
-    (typeof booking.deliveryAddress === 'object' ? booking.deliveryAddress?.phone : '') ||
-    renter.phone ||
-    '';
+    device.addressText ||
+    device.location?.addressText ||
+    device.address ||
+    STRINGS.BOOKING_CREATE.PICKUP_DEFAULT_NOTE;
 
   const canCancel = booking.canCancel ?? (booking.status === 'pending');
+  const isReviewed = Boolean(booking.isReviewed || booking.review);
+
+  const pickupInfo = formatScheduleDateTime(booking.startDate);
+  const returnInfo = formatScheduleDateTime(booking.endDate);
+  const durationBetweenDates = calculateDurationBetweenDates(
+    booking.startDate,
+    booking.endDate,
+    booking.totalDays
+  );
+  const dailyRate = Number(
+    booking.pricePerDayAtBooking ||
+      booking.dailyRate ||
+      device.dailyRate ||
+      device.pricePerDay ||
+      0
+  );
 
   return (
     <div className="min-h-screen bg-slate-50 py-4 px-4 sm:px-6 lg:px-8">
@@ -195,7 +259,7 @@ export const BookingDetailPage = () => {
               <button
                 type="button"
                 onClick={() => navigate(ROUTES.MY_BOOKINGS)}
-                className="p-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 hover:text-brand-600 hover:border-brand-200 transition flex-shrink-0"
+                className="p-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 hover:text-brand-600 hover:border-brand-200 transition shrink-0"
                 aria-label={T.backBtn}
               >
                 <ArrowLeft className="w-4 h-4" />
@@ -219,7 +283,7 @@ export const BookingDetailPage = () => {
                   </h1>
                   <BookingStatusBadge status={booking.status} size="sm" />
                   {booking.status === 'active' && booking.endDate && (
-                    <CountdownBadge startDate={booking.startDate} targetDate={booking.endDate} size="sm" />
+                    <CountdownBadge startDate={booking.startDate} targetDate={booking.endDate} compact />
                   )}
                   <span className="text-[11px] text-slate-400">
                     • {T.createdAtLabel}: {formatDateTime(booking.createdAt)}
@@ -228,7 +292,7 @@ export const BookingDetailPage = () => {
               </div>
             </div>
 
-            {/* Quick Action Buttons in Header */}
+            {/* Quick Action Buttons in Header (Synchronized with App actions) */}
             <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
               {booking.status === 'active' && booking.extensionRequest?.status !== 'pending' && (
                 <button
@@ -238,28 +302,45 @@ export const BookingDetailPage = () => {
                   className="px-3.5 py-1.5 rounded-full bg-brand-500 hover:bg-brand-600 text-white font-bold text-xs transition shadow-2xs flex items-center gap-1.5"
                 >
                   <CalendarPlus className="w-3.5 h-3.5" />
-                  <span>{STRINGS.booking.extension.openModalBtn}</span>
+                  <span>{STRINGS.BOOKING_ITEM_CARD.EXTEND_BTN}</span>
                 </button>
               )}
 
               {booking.status === 'completed' && (
-                <button
-                  type="button"
-                  id="header-review-booking-btn"
-                  onClick={() => setIsReviewModalOpen(true)}
-                  className={`px-3.5 py-1.5 rounded-full font-bold text-xs transition shadow-2xs flex items-center gap-1.5 ${
-                    booking.review
-                      ? 'bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100'
-                      : 'bg-amber-500 hover:bg-amber-600 text-white'
-                  }`}
-                >
-                  <Star className={`w-3.5 h-3.5 ${booking.review ? 'fill-amber-400 text-amber-400' : 'fill-current'}`} />
-                  <span>
-                    {booking.review
-                      ? `Reviewed (${booking.review.rating}.0) · Edit`
-                      : 'Write a Review'}
-                  </span>
-                </button>
+                <>
+                  {isReviewed ? (
+                    <>
+                      <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-600 text-xs font-bold">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>{STRINGS.BOOKING_ITEM_CARD.RATED_BTN}</span>
+                      </span>
+                      {targetDeviceId && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            navigate(ROUTES.BOOKING_CHECKOUT_PATH(targetDeviceId), {
+                              state: { device: device?._id ? device : undefined },
+                            })
+                          }
+                          className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full bg-brand-500 hover:bg-brand-600 text-white text-xs font-bold transition shadow-2xs"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5" />
+                          <span>{STRINGS.BOOKING_ITEM_CARD.REBOOK_BTN}</span>
+                        </button>
+                      )}
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      id="header-review-booking-btn"
+                      onClick={() => setIsReviewModalOpen(true)}
+                      className="px-3.5 py-1.5 rounded-full bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs transition shadow-2xs flex items-center gap-1.5"
+                    >
+                      <Star className="w-3.5 h-3.5 fill-current" />
+                      <span>{STRINGS.BOOKING_ITEM_CARD.RATE_BTN}</span>
+                    </button>
+                  )}
+                </>
               )}
 
               {canCancel && (
@@ -269,7 +350,7 @@ export const BookingDetailPage = () => {
                   onClick={handleOpenCancelModal}
                   className="px-3.5 py-1.5 rounded-full bg-red-50 text-red-600 font-bold text-xs hover:bg-red-100 border border-red-200 transition"
                 >
-                  {STRINGS.booking.cancel.openBtn}
+                  {STRINGS.BOOKING_ITEM_CARD.CANCEL_BTN}
                 </button>
               )}
             </div>
@@ -279,7 +360,7 @@ export const BookingDetailPage = () => {
           {extensionSuccessMsg && (
             <div className="mt-3 px-3.5 py-2 rounded-xl bg-emerald-50 text-emerald-800 text-xs border border-emerald-200 flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                 <span className="font-semibold">{extensionSuccessMsg}</span>
               </div>
               <button
@@ -296,7 +377,7 @@ export const BookingDetailPage = () => {
           {cancelSuccessMsg && (
             <div className="mt-3 px-3.5 py-2 rounded-xl bg-emerald-50 text-emerald-800 text-xs border border-emerald-200 flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                 <span className="font-semibold">{cancelSuccessMsg}</span>
               </div>
               <button
@@ -313,13 +394,13 @@ export const BookingDetailPage = () => {
           {booking.extensionRequest?.status === 'pending' && (
             <div className="mt-3 px-3.5 py-2 rounded-xl bg-amber-50 text-amber-900 border border-amber-200 text-xs flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                <Clock className="w-4 h-4 text-amber-600 shrink-0" />
                 <span>
                   <strong>{STRINGS.booking.extension.pendingBannerTitle}:</strong>{' '}
                   {STRINGS.booking.extension.pendingBannerDesc(
                     booking.extensionRequest.requestedDays,
                     formatDate(booking.extensionRequest.requestedEndDate),
-                    formatPrice(booking.extensionRequest.additionalFee)
+                    formatPriceVnd(booking.extensionRequest.additionalFee)
                   )}
                 </span>
               </div>
@@ -329,9 +410,18 @@ export const BookingDetailPage = () => {
             </div>
           )}
 
+          {booking.extensionRequest?.status === 'approved' && (
+            <div className="mt-3 px-3.5 py-2 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span className="font-semibold">
+                {STRINGS.BOOKING_ITEM_CARD.EXT_APPROVED(booking.extensionRequest.requestedDays)}
+              </span>
+            </div>
+          )}
+
           {booking.status === 'cancelled' && booking.cancelReason && (
             <div className="mt-3 px-3.5 py-2 rounded-xl bg-slate-100 text-slate-700 text-xs border border-slate-200 flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 text-slate-500 flex-shrink-0" />
+              <AlertCircle className="w-4 h-4 text-slate-500 shrink-0" />
               <div>
                 <span className="font-bold text-slate-800">{T.fields.cancelReason}: </span>
                 <span>{booking.cancelReason}</span>
@@ -341,7 +431,7 @@ export const BookingDetailPage = () => {
 
           {booking.status === 'rejected' && booking.rejectReason && (
             <div className="mt-3 px-3.5 py-2 rounded-xl bg-red-50 text-red-800 text-xs border border-red-200 flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+              <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
               <div>
                 <span className="font-bold text-red-900">{T.fields.rejectReason}: </span>
                 <span>{booking.rejectReason}</span>
@@ -373,16 +463,16 @@ export const BookingDetailPage = () => {
           onOpenReviewModal={() => setIsReviewModalOpen(true)}
         />
 
-        {/* Main 2-Column Compact Details Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3.5 items-start">
-          {/* Left Column (7 cols): Combined Device + Owner + Delivery Info */}
+        {/* Main 2-Column Web Details Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3.5 items-start mt-3.5">
+          {/* Left Column (7 cols): Unified Device & Owner Card + Handover Method & Location Card */}
           <div className="lg:col-span-7 flex flex-col gap-3.5">
-            {/* Combined Device & Owner Card */}
+            {/* 1. Unified Device & Owner Card (Synchronized with App's Unified Card) */}
             <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-100">
               <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
                 {/* Device Info (7 cols) */}
                 <div className="md:col-span-7 flex items-start gap-3.5 min-w-0">
-                  <div className="w-16 h-16 rounded-xl bg-slate-100 overflow-hidden flex-shrink-0 flex items-center justify-center border border-slate-200/70">
+                  <div className="w-16 h-16 rounded-xl bg-slate-100 overflow-hidden shrink-0 flex items-center justify-center border border-slate-200/70">
                     {device.images && device.images.length > 0 ? (
                       <img
                         src={device.images[0]}
@@ -397,11 +487,12 @@ export const BookingDetailPage = () => {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-[10px] font-bold uppercase tracking-wider text-brand-600">
-                        {device.brand || T.sections.device} {device.category ? `· ${device.category}` : ''}
+                        {device.brand || T.sections.device}
+                        {device.category ? ` • ${device.category}` : ''}
                       </span>
-                      {device._id && (
+                      {targetDeviceId && (
                         <Link
-                          to={ROUTES.DEVICE_DETAIL_PATH(device._id)}
+                          to={ROUTES.DEVICE_DETAIL_PATH(targetDeviceId)}
                           className="inline-flex items-center gap-1 text-[11px] font-semibold text-brand-600 hover:text-brand-700 shrink-0"
                         >
                           <span>{T.viewDeviceBtn}</span>
@@ -410,16 +501,18 @@ export const BookingDetailPage = () => {
                       )}
                     </div>
                     <h2 className="text-sm font-bold text-slate-900 truncate mt-0.5">
-                      {device.title || device.name || STRINGS.booking.myBookings.untitledDevice}
+                      {device.name || device.title || STRINGS.booking.myBookings.untitledDevice}
                     </h2>
-                    <p className="text-xs text-slate-500 mt-1 flex items-center gap-1 truncate">
-                      <MapPin className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-                      <span className="truncate">{device.address || T.notProvided}</span>
+                    <p className="text-sm font-extrabold text-brand-500 mt-1">
+                      {formatPriceVnd(dailyRate)}{' '}
+                      <span className="text-xs font-medium text-slate-500">
+                        {STRINGS.BOOKING_CREATE.PER_DAY}
+                      </span>
                     </p>
                   </div>
                 </div>
 
-                {/* Owner Info (5 cols) */}
+                {/* Owner Info & Direct Chat (5 cols) */}
                 <div className="md:col-span-5 md:border-l md:border-slate-100 md:pl-4 pt-3 md:pt-0 border-t border-slate-100 md:border-t-0">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1.5">
                     {T.sections.owner}
@@ -427,7 +520,7 @@ export const BookingDetailPage = () => {
                   {owner && (owner.name || owner.email) ? (
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="w-9 h-9 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center font-bold text-xs overflow-hidden flex-shrink-0">
+                        <div className="w-10 h-10 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center font-bold text-xs overflow-hidden shrink-0">
                           {owner.avatar ? (
                             <img src={owner.avatar} alt={owner.name} className="w-full h-full object-cover" />
                           ) : (
@@ -436,34 +529,33 @@ export const BookingDetailPage = () => {
                         </div>
                         <div className="min-w-0">
                           <div className="flex items-center gap-1">
-                            <span className="text-xs font-bold text-slate-900 truncate">{owner.name || 'Owner'}</span>
+                            <span className="text-xs font-bold text-slate-900 truncate">
+                              {owner.name || 'Device Owner'}
+                            </span>
                             {owner.isVerified && (
                               <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" title={T.ownerVerified} />
                             )}
                           </div>
-                          <p className="text-[11px] text-slate-400 truncate">{owner.email}</p>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded bg-amber-50 text-amber-600 text-[10px] font-bold">
+                              <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
+                              {owner.rating ? Number(owner.rating).toFixed(1) : '5.0'}
+                            </span>
+                            <span className="text-[11px] text-slate-400 truncate">
+                              • Device Owner
+                            </span>
+                          </div>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <Link
-                          to={ROUTES.MESSAGES_PATH(booking._id || booking.bookingCode)}
-                          id="chat-owner-btn"
-                          className="px-3 py-1.5 rounded-full bg-brand-50 hover:bg-brand-500 text-brand-700 hover:text-white border border-brand-200 hover:border-brand-500 font-semibold text-xs transition flex items-center gap-1"
-                        >
-                          <MessageSquare className="w-3 h-3" />
-                          <span>Chat</span>
-                        </Link>
-                        {owner.email && (
-                          <a
-                            href={`mailto:${owner.email}`}
-                            className="p-1.5 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 transition"
-                            title={T.emailOwnerBtn}
-                          >
-                            <Mail className="w-3.5 h-3.5" />
-                          </a>
-                        )}
-                      </div>
+                      <Link
+                        to={ROUTES.MESSAGES_PATH(booking._id || booking.bookingCode)}
+                        id="chat-owner-btn"
+                        className="px-3.5 py-1.5 rounded-full bg-brand-500 hover:bg-brand-600 text-white font-bold text-xs transition flex items-center gap-1.5 shrink-0 shadow-2xs"
+                      >
+                        <MessageSquare className="w-3.5 h-3.5" />
+                        <span>Chat</span>
+                      </Link>
                     </div>
                   ) : (
                     <p className="text-xs text-slate-400 italic">{T.ownerUnavailable}</p>
@@ -472,106 +564,109 @@ export const BookingDetailPage = () => {
               </div>
             </div>
 
-            {/* Compact Handover & Delivery Card */}
+            {/* 2. Handover Method & Location Card (Synchronized with App's Delivery Section) */}
             <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-100">
               <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
                 <h2 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-brand-500" />
-                  {T.sections.delivery}
-                </h2>
-                <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-brand-50 text-brand-700 border border-brand-100">
-                  {deliveryMethod === 'pickup' ? (
-                    <MapPin className="w-3 h-3 text-brand-600" />
+                  {deliveryMethod === 'delivery' ? (
+                    <Truck className="w-4 h-4 text-brand-500" />
                   ) : (
-                    <Truck className="w-3 h-3 text-brand-600" />
+                    <Store className="w-4 h-4 text-brand-500" />
                   )}
-                  <span>{T.deliveryMethods[deliveryMethod] || deliveryMethod}</span>
+                  {STRINGS.BOOKING_CREATE.DELIVERY_METHOD_TITLE}
+                </h2>
+                <span className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-brand-50 text-brand-600 border border-brand-200">
+                  {deliveryMethod === 'delivery' ? (
+                    <Truck className="w-3 h-3" />
+                  ) : (
+                    <Store className="w-3 h-3" />
+                  )}
+                  <span>
+                    {deliveryMethod === 'delivery'
+                      ? STRINGS.BOOKING_CREATE.DELIVERY_TITLE
+                      : STRINGS.BOOKING_CREATE.PICKUP_TITLE}
+                  </span>
                 </span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 text-xs">
-                {recipientName ? (
-                  <div className="sm:col-span-4 p-2.5 rounded-xl bg-slate-50 border border-slate-100">
-                    <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 block mb-0.5">
-                      {T.fields.recipient}
-                    </span>
-                    <p className="font-bold text-slate-800 flex items-center gap-1.5 truncate">
-                      <User className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                      <span className="truncate">{recipientName}</span>
-                    </p>
-                  </div>
-                ) : null}
-
-                {recipientPhone ? (
-                  <div className="sm:col-span-4 p-2.5 rounded-xl bg-slate-50 border border-slate-100">
-                    <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 block mb-0.5">
-                      {T.fields.phone}
-                    </span>
-                    <p className="font-bold text-slate-800 flex items-center gap-1.5 truncate">
-                      <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                      <span className="truncate">{recipientPhone}</span>
-                    </p>
-                  </div>
-                ) : null}
-
-                {deliveryAddress ? (
-                  <div className={`${recipientName && recipientPhone ? 'sm:col-span-4' : 'sm:col-span-8'} p-2.5 rounded-xl bg-slate-50 border border-slate-100`}>
-                    <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 block mb-0.5">
-                      {deliveryMethod === 'pickup' ? (T.fields.pickupAddress || 'Pickup Location') : T.fields.address}
-                    </span>
-                    <p className="font-bold text-slate-800 flex items-start gap-1.5" title={deliveryAddress}>
-                      <MapPin className="w-3.5 h-3.5 text-slate-400 mt-0.5 flex-shrink-0" />
-                      <span className="line-clamp-2">{deliveryAddress}</span>
-                    </p>
-                  </div>
-                ) : null}
-
-                {booking.note ? (
-                  <div className="sm:col-span-12 px-3 py-2 rounded-xl bg-slate-50 border border-slate-100 flex items-center gap-2">
-                    <span className="text-[11px] font-semibold text-slate-400 shrink-0">{T.fields.note}:</span>
-                    <p className="text-slate-700 italic truncate">"{booking.note}"</p>
-                  </div>
-                ) : null}
+              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex items-start gap-2.5 text-xs">
+                <MapPin className="w-4 h-4 text-brand-500 shrink-0 mt-0.5" />
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
+                    {deliveryMethod === 'pickup' ? T.fields.pickupAddress : T.fields.address}
+                  </span>
+                  <p className="font-semibold text-slate-800 leading-relaxed">
+                    {deliveryAddress}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Right Column (5 cols): Combined Rental Period & Payment Summary */}
+          {/* Right Column (5 cols): Rental Schedule + Payment Breakdown (Synchronized with App) */}
           <div className="lg:col-span-5 flex flex-col gap-3.5">
             <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-100">
-              {/* Top Section: Rental Schedule */}
+              {/* Top Section: Rental Period Route (Pickup -> Hours -> Return) */}
               <div className="pb-3.5 border-b border-slate-100">
-                <div className="flex items-center justify-between mb-2.5">
+                <div className="flex items-center justify-between mb-3">
                   <h2 className="text-sm font-bold text-slate-800 flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-brand-500" />
-                    {T.sections.period}
+                    {STRINGS.BOOKING_CREATE.RENTAL_TIME_TITLE}
                   </h2>
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-brand-50 text-brand-800 text-xs font-extrabold border border-brand-100">
-                    <span>{booking.totalDays} {booking.totalDays === 1 ? 'day' : 'days'}</span>
-                    {booking.extensionRequest?.status === 'approved' && (
-                      <span className="text-[10px] font-bold text-emerald-700">
-                        (+{booking.extensionRequest.requestedDays}d)
-                      </span>
-                    )}
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-brand-50 text-brand-600 text-xs font-extrabold border border-brand-200">
+                    <Clock className="w-3 h-3" />
+                    <span>{durationBetweenDates.formattedLabel}</span>
                   </span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2.5 text-xs">
-                  <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
-                    <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 block">
-                      {T.fields.pickupDate}
-                    </span>
-                    <span className="font-bold text-slate-800 mt-0.5 block">
-                      {formatDateTime(booking.startDate)}
+                {/* Balanced Pickup & Return Schedule Route Card (Matching App) */}
+                <div className="flex items-stretch justify-between gap-2">
+                  {/* Pickup Box */}
+                  <div className="flex-1 p-3 rounded-xl bg-slate-50 border border-slate-100">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-600">
+                        PICKUP
+                      </span>
+                    </div>
+                    <p className="text-xs sm:text-sm font-extrabold text-slate-900">
+                      {pickupInfo.dateStr}
+                    </p>
+                    <div className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 text-[11px] font-bold">
+                      <Clock className="w-3 h-3" />
+                      <span>
+                        {pickupInfo.weekdayStr} • {pickupInfo.timeStr}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Center Track: Arrow & Hours Badge */}
+                  <div className="flex flex-col items-center justify-center px-1">
+                    <div className="w-6 h-6 rounded-full bg-brand-50 text-brand-500 flex items-center justify-center">
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </div>
+                    <span className="mt-1 px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 text-[10px] font-extrabold">
+                      {durationBetweenDates.hoursBadge}
                     </span>
                   </div>
-                  <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
-                    <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 block">
-                      {T.fields.returnDate}
-                    </span>
-                    <span className="font-bold text-slate-800 mt-0.5 block">
-                      {formatDateTime(booking.endDate)}
-                    </span>
+
+                  {/* Return Box */}
+                  <div className="flex-1 p-3 rounded-xl bg-slate-50 border border-slate-100">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <span className="w-2 h-2 rounded-full bg-amber-500" />
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-600">
+                        RETURN
+                      </span>
+                    </div>
+                    <p className="text-xs sm:text-sm font-extrabold text-slate-900">
+                      {returnInfo.dateStr}
+                    </p>
+                    <div className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 text-[11px] font-bold">
+                      <Clock className="w-3 h-3" />
+                      <span>
+                        {returnInfo.weekdayStr} • {returnInfo.timeStr}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
@@ -586,10 +681,12 @@ export const BookingDetailPage = () => {
                 {booking.status === 'active' && (
                   booking.extensionRequest?.status === 'pending' ? (
                     <div className="mt-2.5 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-800 flex items-center gap-2">
-                      <Clock className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
+                      <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                       <span>
-                        {STRINGS.booking.extension.statusPendingBadge} (+{booking.extensionRequest.requestedDays}{' '}
-                        {booking.extensionRequest.requestedDays === 1 ? 'day' : 'days'})
+                        {STRINGS.BOOKING_ITEM_CARD.EXT_PENDING(
+                          booking.extensionRequest.requestedDays,
+                          (booking.extensionRequest.additionalFee || 0).toLocaleString('en-US')
+                        )}
                       </span>
                     </div>
                   ) : (
@@ -597,83 +694,77 @@ export const BookingDetailPage = () => {
                       type="button"
                       id="period-card-extend-btn"
                       onClick={() => setIsExtensionModalOpen(true)}
-                      className="mt-2.5 w-full py-2 px-4 rounded-xl bg-brand-50 hover:bg-brand-500 text-brand-700 hover:text-white border border-brand-200 hover:border-brand-500 font-bold text-xs transition flex items-center justify-center gap-1.5"
+                      className="mt-2.5 w-full py-2 px-4 rounded-xl bg-brand-50 hover:bg-brand-500 text-brand-600 hover:text-white border border-brand-200 hover:border-brand-500 font-bold text-xs transition flex items-center justify-center gap-1.5"
                     >
                       <CalendarPlus className="w-3.5 h-3.5" />
-                      <span>{STRINGS.booking.extension.openModalBtn}</span>
+                      <span>{STRINGS.BOOKING_ITEM_CARD.EXTEND_BTN}</span>
                     </button>
                   )
                 )}
               </div>
 
-              {/* Bottom Section: Pricing Breakdown */}
+              {/* Bottom Section: Payment Details (Synchronized with App's Pricing & Payment Card) */}
               <div className="pt-3.5">
-                <h2 className="text-sm font-bold text-slate-800 mb-2.5 flex items-center gap-2">
-                  <CreditCard className="w-4 h-4 text-brand-500" />
-                  {T.sections.pricing}
-                </h2>
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                    <CreditCard className="w-4 h-4 text-brand-500" />
+                    {STRINGS.PRICE_BREAKDOWN.TITLE}
+                  </h2>
+                  <span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[10px] font-bold capitalize">
+                    {T.paymentStatuses[booking.paymentStatus] || booking.paymentStatus}
+                  </span>
+                </div>
 
                 <div className="flex flex-col gap-2 text-xs text-slate-600">
                   <div className="flex justify-between">
-                    <span>{T.fields.dailyRate}</span>
-                    <span className="font-medium text-slate-800">
-                      {formatPrice(booking.pricePerDayAtBooking || booking.dailyRate || 0)} / day
-                    </span>
-                  </div>
-
-                  <div className="flex justify-between">
                     <span>
-                      {T.fields.rentalFee} ({booking.totalDays} {booking.totalDays === 1 ? 'day' : 'days'})
+                      {STRINGS.PRICE_BREAKDOWN.RENTAL_FEE(booking.totalDays || 1)} (×{' '}
+                      {formatPriceVnd(dailyRate)}):
                     </span>
-                    <span className="font-medium text-slate-800">
-                      {formatPrice(booking.rentalFee)}
+                    <span className="font-semibold text-slate-900">
+                      {formatPriceVnd(booking.rentalFee)}
                     </span>
                   </div>
 
                   {booking.discountAmount > 0 && (
                     <div className="flex justify-between text-emerald-600">
                       <span>
-                        {T.fields.discount}
-                        {booking.discountPercent ? ` (${booking.discountPercent}%)` : ''}
+                        {STRINGS.PRICE_BREAKDOWN.LONG_TERM_DISCOUNT(
+                          booking.discountPercent || 10
+                        )}
                       </span>
                       <span className="font-bold">
-                        -{formatPrice(booking.discountAmount)}
+                        -{formatPriceVnd(booking.discountAmount)}
+                      </span>
+                    </div>
+                  )}
+
+                  {booking.voucherDiscount > 0 && (
+                    <div className="flex justify-between text-emerald-600">
+                      <span>
+                        {T.fields.voucher} ({booking.voucherCode || 'Promo'}):
+                      </span>
+                      <span className="font-bold">
+                        -{formatPriceVnd(booking.voucherDiscount)}
                       </span>
                     </div>
                   )}
 
                   <div className="flex justify-between pt-1.5 border-t border-slate-100">
-                    <span>{T.fields.deposit}</span>
-                    <span className="font-medium text-slate-800">
-                      {formatPrice(booking.depositFee || booking.depositValue || 0)}
+                    <span>{STRINGS.PRICE_BREAKDOWN.DEPOSIT_FEE}</span>
+                    <span className="font-semibold text-slate-900">
+                      {formatPriceVnd(booking.depositFee || booking.depositValue || 0)}
                     </span>
                   </div>
 
-                  <div className="flex justify-between items-baseline pt-2 border-t border-slate-100">
-                    <span className="text-xs font-bold text-slate-900">{T.fields.total}</span>
-                    <span className="text-lg font-black text-brand-800">
-                      {formatPrice(booking.totalAmount)}
+                  <div className="flex justify-between items-baseline pt-2.5 border-t border-slate-200">
+                    <span className="text-xs font-bold text-slate-900">
+                      {STRINGS.PRICE_BREAKDOWN.TOTAL_PAYMENT}
+                    </span>
+                    <span className="text-lg font-extrabold text-brand-500">
+                      {formatPriceVnd(booking.totalAmount)}
                     </span>
                   </div>
-
-                  {/* Payment method and status inline */}
-                  <div className="mt-2 px-3 py-2 rounded-xl bg-slate-50 border border-slate-100 flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-slate-400">{T.fields.paymentMethod}:</span>
-                      <span className="font-semibold text-slate-700">
-                        {T.paymentMethods[booking.paymentMethod] || booking.paymentMethod}
-                      </span>
-                    </div>
-                    <span className="px-2 py-0.5 rounded-full bg-slate-200/80 text-slate-700 text-[10px] font-bold capitalize">
-                      {T.paymentStatuses[booking.paymentStatus] || booking.paymentStatus}
-                    </span>
-                  </div>
-
-                  {!canCancel && (
-                    <p className="text-[10px] text-slate-400 italic text-center mt-1">
-                      {T.cancelLockedHint}
-                    </p>
-                  )}
                 </div>
               </div>
             </div>

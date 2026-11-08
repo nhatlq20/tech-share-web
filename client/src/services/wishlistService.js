@@ -98,7 +98,11 @@ export const fetchWishlist = async ({ mergeLocal = true, signal } = {}) => {
     signal,
   });
 
-  const serverDevices = Array.isArray(res?.data) ? res.data : [];
+  const serverDevices = Array.isArray(res?.data)
+    ? res.data
+    : Array.isArray(res?.wishlist)
+    ? res.wishlist
+    : [];
   const serverIds = Array.isArray(res?.wishlistIds)
     ? res.wishlistIds.map(String)
     : serverDevices.map((d) => String(d._id || d.id));
@@ -154,10 +158,16 @@ export const toggleWishlist = async (deviceId, explicitAction) => {
       writeLocalWishlistIds(res.wishlistIds);
     }
 
+    const serverList = Array.isArray(res?.data)
+      ? res.data
+      : Array.isArray(res?.wishlist)
+      ? res.wishlist
+      : null;
+
     return {
-      isFavorite: res?.isFavorite ?? nextFav,
+      isFavorite: res?.isFavorite ?? res?.isInWishlist ?? nextFav,
       wishlistIds: res?.wishlistIds || optimisticIds,
-      devices: Array.isArray(res?.data) ? res.data : null,
+      devices: serverList,
     };
   } catch (err) {
     // Giữ nguyên trạng thái localStorage nếu mạng chập chờn (theo đặc tả H-07)
