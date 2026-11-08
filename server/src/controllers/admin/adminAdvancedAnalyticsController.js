@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { BUSINESS_RULES } from '../../constants/businessRules.js';
 import User from '../../models/User.js';
 import Device from '../../models/Device.js';
 import Booking from '../../models/Booking.js';
@@ -192,7 +193,7 @@ export const calculateAnalyticsData = async ({ filterStart, filterEnd, prevFilte
   const totalUserEscrow = allUsers.reduce((sum, u) => sum + (u.wallet?.escrowBalance || 0), 0);
   const totalUserBalance = allUsers.reduce((sum, u) => sum + (u.wallet?.balance || 0), 0);
   const totalEscrowLiabilities = activeEscrowLiabilities + totalUserEscrow;
-  const platformFeeRevenue = Math.round(totalRentalFee * 0.1);
+  const platformFeeRevenue = Math.round(totalRentalFee * BUSINESS_RULES.PLATFORM_FEE_RATE);
 
   // Growth against prior period
   let prevGBV = 0;

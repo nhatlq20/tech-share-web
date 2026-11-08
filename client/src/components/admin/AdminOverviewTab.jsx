@@ -64,47 +64,21 @@ export const AdminOverviewTab = ({
 
   // Fallbacks using standard sample metrics
   const safeKpi = {
-    totalUsers: kpi?.totalUsers ?? 18,
-    activeUsers: kpi?.activeUsers ?? 16,
-    totalDevices: kpi?.totalDevices ?? 98,
-    availableDevices: kpi?.availableDevices ?? 84,
-    activeBookings: kpi?.activeBookings ?? 28,
-    pendingEkyc: kpi?.pendingEkyc ?? 3,
-    totalRevenue: kpi?.totalRevenue ?? 838381000,
+    totalUsers: kpi?.totalUsers ?? 0,
+    activeUsers: kpi?.activeUsers ?? 0,
+    totalDevices: kpi?.totalDevices ?? 0,
+    availableDevices: kpi?.availableDevices ?? 0,
+    activeBookings: kpi?.activeBookings ?? 0,
+    pendingEkyc: kpi?.pendingEkyc ?? 0,
+    totalRevenue: kpi?.totalRevenue ?? 0,
     revenueFormatted:
-      kpi?.revenueFormatted || formatVND(kpi?.totalRevenue ?? 838381000),
+      kpi?.revenueFormatted || formatVND(kpi?.totalRevenue ?? 0),
   };
 
   const safeChartData = chartData || {
-    '7d': [
-      { name: 'Mon', revenue: 65000000, orders: 8 },
-      { name: 'Tue', revenue: 98000000, orders: 12 },
-      { name: 'Wed', revenue: 84000000, orders: 10 },
-      { name: 'Thu', revenue: 146000000, orders: 18 },
-      { name: 'Fri', revenue: 162000000, orders: 20 },
-      { name: 'Sat', revenue: 198000000, orders: 25 },
-      { name: 'Sun', revenue: 185381000, orders: 23 },
-    ],
-    month: [
-      { name: 'Week 1', revenue: 165000000, orders: 24 },
-      { name: 'Week 2', revenue: 210000000, orders: 32 },
-      { name: 'Week 3', revenue: 198000000, orders: 29 },
-      { name: 'Week 4', revenue: 265381000, orders: 41 },
-    ],
-    year: [
-      { name: 'Jan', revenue: 52000000, orders: 14 },
-      { name: 'Feb', revenue: 64000000, orders: 18 },
-      { name: 'Mar', revenue: 78000000, orders: 22 },
-      { name: 'Apr', revenue: 85000000, orders: 25 },
-      { name: 'May', revenue: 92000000, orders: 28 },
-      { name: 'Jun', revenue: 110000000, orders: 34 },
-      { name: 'Jul', revenue: 125000000, orders: 38 },
-      { name: 'Aug', revenue: 118000000, orders: 36 },
-      { name: 'Sep', revenue: 135000000, orders: 42 },
-      { name: 'Oct', revenue: 148000000, orders: 46 },
-      { name: 'Nov', revenue: 162000000, orders: 50 },
-      { name: 'Dec', revenue: 185000000, orders: 58 },
-    ],
+    '7d': [],
+    month: [],
+    year: [],
   };
 
   const activePoints =

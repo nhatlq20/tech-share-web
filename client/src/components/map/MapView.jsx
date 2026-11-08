@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { MAP_CONFIG } from '../../constants/config.js';
 
 const FAVI_MAP_API_KEY = process.env.REACT_APP_FAVI_MAP_API_KEY || process.env.VITE_FAVI_MAP_API_KEY || '';
 
@@ -132,11 +133,11 @@ export const MapView = ({
         try {
           const initialCenter = Number.isFinite(longitude) && Number.isFinite(latitude)
             ? [longitude, latitude]
-            : [105.85, 21.03];
+            : [MAP_CONFIG.DEFAULT_COORDS.LNG, MAP_CONFIG.DEFAULT_COORDS.LAT];
 
           const instanceOrPromise = window.FaviMap.create(containerRef.current, {
             center: initialCenter,
-            zoom: 13,
+            zoom: MAP_CONFIG.DEFAULT_ZOOM,
             key: FAVI_MAP_API_KEY,
           });
 
@@ -192,12 +193,12 @@ export const MapView = ({
         containerRef.current._leaflet_id = null;
       }
 
-      const initialLat = Number.isFinite(latitude) ? latitude : 21.0285;
-      const initialLng = Number.isFinite(longitude) ? longitude : 105.8542;
+      const initialLat = Number.isFinite(latitude) ? latitude : MAP_CONFIG.DEFAULT_COORDS.LAT;
+      const initialLng = Number.isFinite(longitude) ? longitude : MAP_CONFIG.DEFAULT_COORDS.LNG;
 
       const leafletInstance = L.map(containerRef.current, {
         center: [initialLat, initialLng],
-        zoom: 13,
+        zoom: MAP_CONFIG.DEFAULT_ZOOM,
         zoomControl: false,
       });
 

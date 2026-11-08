@@ -21,62 +21,29 @@ import { NotificationDropdown } from '../notifications/NotificationDropdown';
 import { STRINGS } from '../../constants/strings';
 import { ROUTES } from '../../routes/routes';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { API_CONFIG, STORAGE_KEYS } from '../../constants/config.js';
 import './AdminWorkspace.css';
 
 // Initial default state (safe fallback)
 const DEFAULT_KPI = {
-  totalUsers: 17,
-  activeUsers: 16,
-  totalDevices: 14,
-  availableDevices: 12,
-  activeBookings: 19,
-  pendingEkyc: 3,
+  totalUsers: 0,
+  activeUsers: 0,
+  totalDevices: 0,
+  availableDevices: 0,
+  pendingDevices: 0,
+  activeBookings: 0,
+  pendingEkyc: 0,
   pendingDisputes: 0,
-  totalRevenue: 48750000,
-  revenueFormatted: '48.750.000 ₫'
+  totalRevenue: 0,
+  revenueFormatted: '0 ₫'
 };
 const DEFAULT_CHARTS = {
-  '7d': [
-    { name: 'Mon', revenue: 65000000, orders: 8 },
-    { name: 'Tue', revenue: 98000000, orders: 12 },
-    { name: 'Wed', revenue: 84000000, orders: 10 },
-    { name: 'Thu', revenue: 146000000, orders: 18 },
-    { name: 'Fri', revenue: 162000000, orders: 20 },
-    { name: 'Sat', revenue: 198000000, orders: 25 },
-    { name: 'Sun', revenue: 185381000, orders: 23 },
-  ],
-  month: [
-    { name: 'Week 1', revenue: 165000000, orders: 24 },
-    { name: 'Week 2', revenue: 210000000, orders: 32 },
-    { name: 'Week 3', revenue: 198000000, orders: 29 },
-    { name: 'Week 4', revenue: 265381000, orders: 41 },
-  ],
-  year: [
-    { name: 'Jan', revenue: 52000000, orders: 14 },
-    { name: 'Feb', revenue: 64000000, orders: 18 },
-    { name: 'Mar', revenue: 78000000, orders: 22 },
-    { name: 'Apr', revenue: 85000000, orders: 25 },
-    { name: 'May', revenue: 92000000, orders: 28 },
-    { name: 'Jun', revenue: 110000000, orders: 34 },
-    { name: 'Jul', revenue: 125000000, orders: 38 },
-    { name: 'Aug', revenue: 118000000, orders: 36 },
-    { name: 'Sep', revenue: 135000000, orders: 42 },
-    { name: 'Oct', revenue: 148000000, orders: 46 },
-    { name: 'Nov', revenue: 162000000, orders: 50 },
-    { name: 'Dec', revenue: 185000000, orders: 58 },
-  ],
+  '7d': [],
+  month: [],
+  year: [],
 };
-const DEFAULT_CATEGORIES = [
-  { id: 'smartphone', name: 'Smartphone', count: 36, percent: 30, color: '#67BEC3' },
-  { id: 'tablet', name: 'Tablet & iPad', count: 18, percent: 15, color: '#A855F7' },
-  { id: 'laptop', name: 'Laptop & Workstation', count: 24, percent: 20, color: '#38BDF8' },
-  { id: 'camera', name: 'Camera & Lenses', count: 18, percent: 15, color: '#818CF8' },
-  { id: 'drone', name: 'Drone & Gimbal', count: 10, percent: 8, color: '#F472B6' },
-  { id: 'audio', name: 'Headphones & Audio', count: 6, percent: 5, color: '#FBBF24' },
-  { id: 'gaming', name: 'Gaming & VR', count: 4, percent: 3, color: '#34D399' },
-  { id: 'accessory', name: 'Phụ kiện công nghệ', count: 12, percent: 10, color: '#14B8A6' },
-];
-const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
+const DEFAULT_CATEGORIES = [];
+const API_BASE = API_CONFIG.BASE_URL;
 export const AdminDashboardScreen = () => {
   const { user, logout } = useAuth();
   const location = useLocation();
@@ -148,7 +115,7 @@ export const AdminDashboardScreen = () => {
   const fetchAllData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const token = localStorage.getItem('techshare_auth_token') || localStorage.getItem('techshare_token');
+      const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN) || localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN_LEGACY);
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
       // 1. Fetch Analytics & Live Admin Profile from MongoDB Atlas
@@ -163,14 +130,14 @@ export const AdminDashboardScreen = () => {
             setAdminProfile(raw.kpi.admin);
           }
           const kpiSource = raw.kpi || raw;
-          const totalRev = kpiSource.totalRevenue ?? kpiSource.totalRentalRevenue ?? 49770000;
+          const totalRev = kpiSource.totalRevenue ?? kpiSource.totalRentalRevenue ?? 0;
           setKpi({
-            totalUsers: kpiSource.totalUsers ?? 18,
-            activeUsers: kpiSource.activeUsers ?? kpiSource.verifiedUsers ?? 16,
-            totalDevices: kpiSource.totalDevices ?? 13,
-            availableDevices: kpiSource.availableDevices ?? 11,
+            totalUsers: kpiSource.totalUsers ?? 0,
+            activeUsers: kpiSource.activeUsers ?? kpiSource.verifiedUsers ?? 0,
+            totalDevices: kpiSource.totalDevices ?? 0,
+            availableDevices: kpiSource.availableDevices ?? 0,
             pendingDevices: kpiSource.pendingDevices ?? 0,
-            activeBookings: kpiSource.activeBookings ?? 3,
+            activeBookings: kpiSource.activeBookings ?? 0,
             pendingEkyc: kpiSource.pendingEkyc ?? kpiSource.pendingTasks?.ekyc ?? 0,
             pendingDisputes: kpiSource.pendingDisputes ?? kpiSource.pendingTasks?.disputes ?? 0,
             totalRevenue: totalRev,
@@ -328,20 +295,22 @@ export const AdminDashboardScreen = () => {
       const userMap = new Map();
 
       // Thêm Admin chính (fallback nếu không fetch được từ backend)
-      userMap.set('admin_1', {
-        _id: adminProfile?._id || user?._id || '64e0a12f9b1c2b001a111111',
-        name: (adminProfile?.name || user?.name) ? `${adminProfile?.name || user?.name} (System Admin)` : 'Admin (System Admin)',
-        email: adminProfile?.email || user?.email || '',
-        phone: adminProfile?.phone || user?.phone || '',
-        avatar: adminProfile?.avatar || user?.avatar || user?.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop',
-        role: 'admin',
-        isVerified: true,
-        trustScore: 100,
-        walletBalance: 24500000,
-        walletEscrowBalance: 12000000,
-        isActive: true,
-        createdAt: new Date('2026-09-01')
-      });
+      if (adminProfile || user) {
+        userMap.set('admin_1', {
+          _id: adminProfile?._id || user?._id || '',
+          name: (adminProfile?.name || user?.name) ? `${adminProfile?.name || user?.name} (System Admin)` : 'Admin (System Admin)',
+          email: adminProfile?.email || user?.email || '',
+          phone: adminProfile?.phone || user?.phone || '',
+          avatar: adminProfile?.avatar || user?.avatar || user?.avatarUrl || '',
+          role: 'admin',
+          isVerified: true,
+          trustScore: adminProfile?.trustScore || 100,
+          walletBalance: adminProfile?.walletBalance || 0,
+          walletEscrowBalance: adminProfile?.walletEscrowBalance || 0,
+          isActive: true,
+          createdAt: adminProfile?.createdAt || user?.createdAt || new Date()
+        });
+      }
 
       // Trích xuất Users từ hồ sơ eKYC thật trên MongoDB
       liveEkyc.forEach(ek => {
@@ -355,10 +324,10 @@ export const AdminDashboardScreen = () => {
           role: 'renter',
           isVerified: ek.status === 'approved',
           trustScore: ek.status === 'approved' ? 100 : 85,
-          walletBalance: 1500000,
-          walletEscrowBalance: 500000,
+          walletBalance: ek.walletBalance || 0,
+          walletEscrowBalance: ek.walletEscrowBalance || 0,
           isActive: true,
-          createdAt: ek.createdAt
+          createdAt: ek.createdAt || new Date()
         });
       });
 
@@ -368,18 +337,18 @@ export const AdminDashboardScreen = () => {
           const key = d.owner.email || d.owner.name;
           if (!userMap.has(key)) {
             userMap.set(key, {
-              _id: d.owner._id || `owner_${Math.random()}`,
+              _id: d.owner._id || `owner_${d._id}`,
               name: d.owner.name,
-              email: d.owner.email || 'owner@techshare.vn',
-              phone: d.owner.phone || '0912345678',
-              avatar: d.owner.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400',
+              email: d.owner.email || '',
+              phone: d.owner.phone || '',
+              avatar: d.owner.avatar || '',
               role: 'owner',
               isVerified: true,
-              trustScore: 96,
-              walletBalance: 8500000,
-              walletEscrowBalance: 3200000,
+              trustScore: d.owner.trustScore ?? 85,
+              walletBalance: d.owner.walletBalance || 0,
+              walletEscrowBalance: d.owner.walletEscrowBalance || 0,
               isActive: true,
-              createdAt: new Date('2026-09-15')
+              createdAt: d.owner.createdAt || d.createdAt || new Date()
             });
           }
         }

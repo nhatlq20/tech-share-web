@@ -30,6 +30,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import './AdminWorkspace.css';
+import { API_CONFIG } from '../../constants/config.js';
 
 const CATEGORIES = [
   { id: 'all', label: 'Tất cả danh mục', icon: Layers },
@@ -57,7 +58,7 @@ const QUICK_REJECT_REASONS = [
   'Thiết bị thuộc danh mục hạn chế hoặc không đủ điều kiện an toàn.',
 ];
 
-const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
+const API_BASE = API_CONFIG.BASE_URL;
 
 const formatVND = (num) => {
   return new Intl.NumberFormat('vi-VN', {

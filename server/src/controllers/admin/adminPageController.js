@@ -136,15 +136,15 @@ export const renderDashboardPage = async (req, res) => {
   try {
     const db = mongoose.connection.db;
     let kpi = {
-      totalUsers: 18,
-      activeUsers: 16,
-      totalDevices: 13,
-      availableDevices: 11,
-      activeBookings: 3,
+      totalUsers: 0,
+      activeUsers: 0,
+      totalDevices: 0,
+      availableDevices: 0,
+      activeBookings: 0,
       pendingEkyc: 0,
       pendingDisputes: 0,
-      totalRevenue: 48750000,
-      revenueFormatted: '48.750.000 ₫',
+      totalRevenue: 0,
+      revenueFormatted: '0 ₫',
     };
     let categories = [];
     let charts = {};
@@ -176,7 +176,7 @@ export const renderDashboardPage = async (req, res) => {
         const amount = Number(b.pricing?.totalAmount || b.pricing?.rentalFee || b.totalAmount || b.rentalFee || b.totalPrice || 0);
         totalRev += amount;
       }
-      if (totalRev === 0) totalRev = 301534000;
+      
 
       // Aggregation for 7d, month, year based on real MongoDB data
       const now = new Date();
