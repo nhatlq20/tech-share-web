@@ -1239,6 +1239,39 @@ export const STRINGS = {
     SUCCESS_TITLE: 'Thank You!',
     SUCCESS_MSG: 'Your review has been submitted successfully.',
   },
+
+  DEVICE_CARD: {
+    PRICE_SUFFIX: ' ₫/day',
+    DAILY_RATE: 'Daily Rate',
+    LOGIN_REQUIRED_TITLE: 'Login Required',
+    LOGIN_REQUIRED_MSG: 'Please log in to save devices to your wishlist.',
+    STATUS_LABELS: {
+      available: 'Available',
+      rented: 'Rented',
+      maintenance: 'Under Maintenance',
+      hidden: 'Unavailable',
+    },
+    UNAVAILABLE: 'Unavailable',
+  },
+
+  WISHLIST: {
+    TITLE: 'Wishlist',
+    BREADCRUMB_HOME: 'Home',
+    CURRENCY_VND: ' VND',
+    PER_DAY: '/day',
+    DAILY_RATE: 'Daily Rate',
+    AVAILABLE: 'Available',
+    RENTED: 'Rented',
+    DEFAULT_BRAND: 'TECH',
+    EMPTY_TITLE: 'No favorite devices yet',
+    EMPTY_SUBTITLE: 'Tap the heart icon on devices you like to save them and view them here!',
+    EXPLORE_DEVICES: 'Explore Devices',
+    SAVED_COUNT_PREFIX: 'Saved ',
+    SAVED_COUNT_SUFFIX: ' devices to wishlist',
+    GRID_VIEW: 'Grid view',
+    LIST_VIEW: 'List view',
+    LOADING: 'Loading wishlist...',
+  },
 };
 
 export default STRINGS;
