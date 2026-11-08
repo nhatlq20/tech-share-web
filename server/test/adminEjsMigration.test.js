@@ -260,40 +260,28 @@ test('ADMIN EJS MIGRATION: Security & Server-Rendered Views Test Suite', async (
     assert.match(res.body, /bookingSearchInput/);
   });
 
-  await t.test('TC-EJS-PAGE-06: Admin GET /admin/dispute-resolution renders dispute resolution page', async () => {
-    const res = await makeRequest(app, {
-      path: '/admin/dispute-resolution',
-      headers: {
-        Cookie: `techshare_admin_token=${adminToken}`,
-      },
-    });
-    assert.equal(res.statusCode, 200);
-    assert.match(res.body, /(?:Giải quyết Khiếu nại & Tranh chấp Cọc|Dispute Resolution & Deposit Escrow)/);
-    assert.match(res.body, /resolveDisputeModal/);
-  });
+  await t.test('Removed admin pages are absent from navigation and return 404', async () => {
+    const paths = [
+      '/admin/dispute-resolution',
+      '/admin/disputes',
+      '/admin/wallet',
+      '/admin/voucher-management',
+      '/admin/vouchers',
+      '/admin/roles-permissions',
+      '/admin/roles',
+      '/js/admin/roles-permissions.js',
+      '/admin/audit-logs',
+    ];
+    const headers = { Cookie: `techshare_admin_token=${adminToken}` };
+    const dashboard = await makeRequest(app, { path: '/admin/dashboard', headers });
+    assert.equal(dashboard.statusCode, 200);
+    assert.doesNotMatch(dashboard.body, />\s*FINANCE\s*</);
 
-  await t.test('TC-EJS-PAGE-07: Admin GET /admin/wallet renders platform wallet & escrow liabilities', async () => {
-    const res = await makeRequest(app, {
-      path: '/admin/wallet',
-      headers: {
-        Cookie: `techshare_admin_token=${adminToken}`,
-      },
-    });
-    assert.equal(res.statusCode, 200);
-    assert.match(res.body, /(?:Giám sát Ví & Giao dịch Tài chính Escrow|Escrow Financial Transactions & Wallet Monitoring)/);
-    assert.match(res.body, /Escrow Liabilities/);
-  });
-
-  await t.test('TC-EJS-PAGE-08: Admin GET /admin/voucher-management renders vouchers page', async () => {
-    const res = await makeRequest(app, {
-      path: '/admin/voucher-management',
-      headers: {
-        Cookie: `techshare_admin_token=${adminToken}`,
-      },
-    });
-    assert.equal(res.statusCode, 200);
-    assert.match(res.body, /(?:Quản lý Mã Giảm giá & Khuyến mãi \(Voucher\)|(Voucher)|Voucher & Promotion Management)/);
-    assert.match(res.body, /createVoucherModal/);
+    for (const path of paths) {
+      assert.ok(!dashboard.body.includes(`href="${path}"`), path);
+      const res = await makeRequest(app, { path, headers });
+      assert.equal(res.statusCode, 404, path);
+    }
   });
 
   await t.test('TC-EJS-PAGE-09: Admin GET /admin/review-moderation renders review moderation page', async () => {
@@ -305,18 +293,6 @@ test('ADMIN EJS MIGRATION: Security & Server-Rendered Views Test Suite', async (
     });
     assert.equal(res.statusCode, 200);
     assert.match(res.body, /(?:Kiểm duyệt Đánh giá & Bảo vệ Uy tín|Review Moderation & Reputation Protection)/);
-  });
-
-  await t.test('TC-EJS-PAGE-10: Admin GET /admin/roles-permissions renders roles & RBAC page', async () => {
-    const res = await makeRequest(app, {
-      path: '/admin/roles-permissions',
-      headers: {
-        Cookie: `techshare_admin_token=${adminToken}`,
-      },
-    });
-    assert.equal(res.statusCode, 200);
-    assert.match(res.body, /(?:Phân quyền & Quản lý Vai trò \(Roles & RBAC\)|(Roles & RBAC)|Roles & Permissions Management)/);
-    assert.match(res.body, /reassignRoleModal/);
   });
 
   await t.test('TC-EJS-PAGE-11: Admin GET /admin/notification-management renders notification broadcast page', async () => {
@@ -353,17 +329,6 @@ test('ADMIN EJS MIGRATION: Security & Server-Rendered Views Test Suite', async (
     assert.equal(res.statusCode, 200);
     assert.match(res.body, /(?:Cấu hình Tham số Nền tảng \(System Settings\)|(System Settings)|Platform Parameter Configuration)/);
     assert.match(res.body, /editSettingModal/);
-  });
-
-  await t.test('TC-EJS-PAGE-14: Admin GET /admin/audit-logs renders centralized audit logs page', async () => {
-    const res = await makeRequest(app, {
-      path: '/admin/audit-logs',
-      headers: {
-        Cookie: `techshare_admin_token=${adminToken}`,
-      },
-    });
-    assert.equal(res.statusCode, 200);
-    assert.match(res.body, /(?:Nhật ký Kiểm toán Hệ thống \(Audit Logs\)|(Audit Logs)|Centralized Audit Logs)/);
   });
 
   await t.test('TC-EJS-STATIC-01: GET /css/admin.css returns 200 with CSS content', async () => {

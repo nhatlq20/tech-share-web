@@ -80,7 +80,6 @@ describe('FEATURE: User Account Ban & Real-Time Logout Management', () => {
     const result = await banAccount({
       targetId: mockUserId,
       reason,
-      adminUser,
     });
 
     assert.equal(result.isbanned, true, 'Result must have isbanned=true');
@@ -101,14 +100,12 @@ describe('FEATURE: User Account Ban & Real-Time Logout Management', () => {
     await banAccount({
       targetId: mockUserId,
       reason: 'Lý do ban test',
-      adminUser,
     });
     assert.equal(mockAccountDoc.isbanned, true);
 
     // Unban
     const result = await unbanAccount({
       targetId: mockUserId,
-      adminUser,
     });
 
     assert.equal(result.isbanned, false);

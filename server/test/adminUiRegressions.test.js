@@ -244,13 +244,8 @@ test('TC-UI: TechShare Admin EJS UI Regression & Design Restoration Suite', asyn
       '/admin/booking-management',
       '/admin/review-moderation',
       '/admin/ekyc-verification',
-      '/admin/dispute-resolution',
-      '/admin/roles-permissions',
-      '/admin/wallet',
-      '/admin/voucher-management',
       '/admin/notification-management',
       '/admin/settings',
-      '/admin/audit-logs',
     ];
 
     for (const route of requiredRoutes) {

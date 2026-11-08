@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useLocation, useNavigate, Link } from 'react-router-dom';
 import {
   Star,
-  ShieldCheck,
   MapPin,
   Clock,
   ArrowRight,
@@ -333,12 +332,8 @@ export const DeviceDetailPage = () => {
                 <span>Chat with Device Owner</span>
               </Link>
 
-              {/* Escrow Guarantee */}
+              {/* Rental information */}
               <div className="pt-3 border-t border-slate-100 flex flex-col gap-2 text-xs text-slate-500">
-                <div className="flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-brand-500" />
-                  <span>100% Protected with TechShare Escrow</span>
-                </div>
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                   <span>Free cancellation before owner approval</span>

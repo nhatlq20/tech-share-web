@@ -6,7 +6,6 @@ import {
   Mail,
   Phone,
   MapPin,
-  Wallet,
   Star,
   Award,
   Sparkles,
@@ -30,14 +29,6 @@ import { OwnerEkycSubmitModal } from '../components/ekyc/OwnerEkycSubmitModal.js
 import { getMyOwnerEkycStatus } from '../services/ownerEkycService.js';
 import { ROUTES } from '../routes/routes.js';
 import './ProfilePage.css';
-
-// Format currency VND
-const formatVND = (amount = 0) => {
-  return new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND',
-  }).format(amount);
-};
 
 export const ProfilePage = () => {
   const navigate = useNavigate();
@@ -560,37 +551,13 @@ export const ProfilePage = () => {
 
         {/* KPI & Metrics Bar */}
         <div className="profile-kpi-grid">
-          {/* Available Balance */}
-          <div className="profile-kpi-card">
-            <div className="profile-kpi-icon-box" style={{ background: '#e8f6f7', color: '#286E74' }}>
-              <Wallet size={22} />
-            </div>
-            <div className="profile-kpi-info">
-              <span className="profile-kpi-label">Available Balance</span>
-              <span className="profile-kpi-value">{formatVND(profile.walletBalance ?? 0)}</span>
-              <span className="profile-kpi-sub">Ready for payments &amp; payouts</span>
-            </div>
-          </div>
-
-          {/* Escrow Balance */}
-          <div className="profile-kpi-card">
-            <div className="profile-kpi-icon-box" style={{ background: '#fef3c7', color: '#d97706' }}>
-              <ShieldCheck size={22} />
-            </div>
-            <div className="profile-kpi-info">
-              <span className="profile-kpi-label">Escrow Deposit</span>
-              <span className="profile-kpi-value">{formatVND(profile.walletEscrowBalance ?? 0)}</span>
-              <span className="profile-kpi-sub">Secures rental transactions</span>
-            </div>
-          </div>
-
           {/* Trust Score */}
           <div className="profile-kpi-card">
             <div className="profile-kpi-icon-box" style={{ background: '#ecfdf5', color: '#059669' }}>
               <Award size={22} />
             </div>
             <div className="profile-kpi-info">
-              <span className="profile-kpi-label">Escrow Trust Score</span>
+              <span className="profile-kpi-label">Trust Score</span>
               <span className="profile-kpi-value">{profile.trustScore ?? 100} / 100</span>
               <span className="profile-kpi-sub">Maximum trust rating</span>
             </div>

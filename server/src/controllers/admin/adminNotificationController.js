@@ -1,9 +1,7 @@
 import mongoose from 'mongoose';
 import Notification from '../../models/Notification.js';
 import User from '../../models/User.js';
-import AdminAuditLog from '../../models/AdminAuditLog.js';
 import { getIO } from '../../socket.js';
-import { logAdminAction } from '../../utils/auditLogger.js';
 
 /**
  * 1. GET /api/admin/notifications
@@ -152,7 +150,7 @@ export const sendAdminNotification = async (req, res, next) => {
       userId: uId,
       title: cleanTitle,
       body: cleanBody,
-      type: ['system', 'promo', 'booking', 'wallet'].includes(type) ? type : 'system',
+      type: ['system', 'promo', 'booking'].includes(type) ? type : 'system',
       url: url || null,
       relatedId: relatedId || null,
       isRead: false,
@@ -178,57 +176,10 @@ export const sendAdminNotification = async (req, res, next) => {
       console.warn('Lỗi phát sự kiện socket thông báo:', socketErr.message);
     }
 
-    // 6. Ghi nhật ký kiểm toán bảo mật
-    await logAdminAction(req, {
-      action: 'notification_broadcast',
-      targetType: 'Notification',
-      reason: `Phát thông báo: ${cleanTitle}`,
-      metadata: {
-        targetType,
-        targetRole,
-        recipientCount: recipientUserIds.length,
-        title: cleanTitle,
-        type,
-      },
-      status: 'success',
-    });
-
     return res.status(201).json({
       success: true,
       sentCount: recipientUserIds.length,
       message: `Đã gửi thông báo thành công đến ${recipientUserIds.length} người dùng.`,
-    });
-  } catch (err) {
-    next(err);
-  }
-};
-
-/**
- * 3. GET /api/admin/notifications/history
- * Lịch sử các lần phát thông báo diện rộng của ban quản trị
- */
-export const getAdminNotificationHistory = async (req, res, next) => {
-  try {
-    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
-    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 15));
-    const skip = (page - 1) * limit;
-
-    const total = await AdminAuditLog.countDocuments({ action: 'notification_broadcast' });
-    const history = await AdminAuditLog.find({ action: 'notification_broadcast' })
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
-      .lean();
-
-    return res.json({
-      success: true,
-      data: history,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit) || 1,
-      },
     });
   } catch (err) {
     next(err);

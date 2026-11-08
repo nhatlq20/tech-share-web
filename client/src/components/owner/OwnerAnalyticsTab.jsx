@@ -4,9 +4,7 @@ import {
   TrendingUp, 
   DollarSign, 
   Laptop, 
-  ShieldCheck, 
   Clock, 
-  Lock, 
   ArrowUpRight,
   User,
   ArrowRight
@@ -54,7 +52,6 @@ export const OwnerAnalyticsTab = ({
     totalRevenue: propKpi?.monthlyRevenue ?? 0,
     activeRentals: propKpi?.activeRentals ?? 0,
     totalDevices: propKpi?.totalDevices ?? 0,
-    escrowHolding: propKpi?.escrowHolding ?? 0,
     utilizationRate: propKpi?.utilizationRate ?? 0,
   };
 
@@ -142,7 +139,7 @@ export const OwnerAnalyticsTab = ({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
           {/* KPI 1: Net Revenue */}
           <div className="bg-white p-4 rounded-2xl shadow-sm hover:shadow-md transition-all border border-slate-100 flex flex-col justify-between">
             <div className="flex items-center justify-between mb-2">
@@ -189,32 +186,7 @@ export const OwnerAnalyticsTab = ({
               </div>
             </div>
           </div>
-
-          {/* KPI 3: Escrow Held Deposit */}
-          <div className="bg-white p-4 rounded-2xl shadow-sm hover:shadow-md transition-all border border-slate-100 flex flex-col justify-between">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-                {t.kpis?.escrowHolding || 'Escrow Deposits Held'}
-              </span>
-              <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100">
-                <ShieldCheck size={17} />
-              </div>
-            </div>
-            <div>
-              <div className="text-2xl font-extrabold text-slate-900 leading-tight">
-                {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(kpiData.escrowHolding)}
-              </div>
-              <div className="text-[11px] text-amber-700 font-semibold mt-1 flex items-center gap-1">
-                <Lock size={12} />
-                <span>{t.kpis?.escrowHoldingSub || 'TechShare Guaranteed'}</span>
-              </div>
-              <div className="text-[10px] text-slate-400 mt-0.5">
-                {t.kpis?.escrowHoldingDesc || '100% asset protection'}
-              </div>
-            </div>
-          </div>
-
-          {/* KPI 4: Fleet Utilization Rate */}
+          {/* KPI 3: Fleet Utilization Rate */}
           <div className="bg-white p-4 rounded-2xl shadow-sm hover:shadow-md transition-all border border-slate-100 flex flex-col justify-between">
             <div className="flex items-center justify-between mb-2">
               <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">

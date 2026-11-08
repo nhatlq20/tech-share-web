@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { MessageSquare, ShieldCheck, Sparkles } from 'lucide-react';
+import { MessageSquare } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { ROUTES } from '../routes/routes.js';
 import { connectSocket } from '../services/socketService.js';
@@ -219,11 +219,6 @@ export const MessagesPage = () => {
             <p className="text-xs text-slate-500 max-w-sm mt-1.5 leading-relaxed">
               Chọn một cuộc trò chuyện từ danh sách bên trái để trao đổi thông tin giao nhận, thời gian thuê và kiểm tra thiết bị với đối tác.
             </p>
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-2 text-[11px] text-slate-600 bg-white border border-slate-200 px-4 py-2.5 rounded-full shadow-2xs">
-              <ShieldCheck size={14} className="text-teal-600" />
-              <span>Mọi giao dịch & tin nhắn đều được bảo vệ bởi TechShare Escrow</span>
-              <Sparkles size={12} className="text-amber-500" />
-            </div>
           </div>
         )}
       </div>

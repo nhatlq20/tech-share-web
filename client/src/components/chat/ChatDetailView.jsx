@@ -784,7 +784,7 @@ export const ChatDetailView = ({
             <div className="mt-4 p-3 bg-amber-50/80 border border-amber-200/80 rounded-xl text-left text-[11px] text-amber-900 flex items-start gap-2 shadow-2xs">
               <span className="text-sm shrink-0">💡</span>
               <p className="leading-relaxed">
-                <strong>Mẹo an toàn:</strong> Hãy trao đổi và gửi ảnh chụp hiện trạng thiết bị trực tiếp trên TechShare để được bảo vệ quyền lợi cọc Escrow.
+                <strong>Mẹo an toàn:</strong> Hãy trao đổi và gửi ảnh chụp hiện trạng thiết bị trực tiếp trong cuộc trò chuyện để hai bên dễ đối chiếu khi bàn giao.
               </p>
             </div>
           </div>

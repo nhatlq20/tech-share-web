@@ -11,7 +11,6 @@ import {
   Trash2,
   Maximize2,
   X,
-  ShieldCheck,
   Sparkles,
   Image as ImageIcon,
   Loader2,
@@ -205,7 +204,7 @@ export const RenterHandoverSection = ({ booking, onBookingUpdated, compact = fal
               </h2>
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-50 text-teal-700 border border-teal-200">
                 <Sparkles className="w-2.5 h-2.5" />
-                {isApproved ? 'Ready for Handover' : 'Escrow Protected'}
+                {isApproved ? 'Ready for Handover' : 'Handover Details'}
               </span>
             </div>
             <p className="text-[11px] text-slate-500 mt-0.5">

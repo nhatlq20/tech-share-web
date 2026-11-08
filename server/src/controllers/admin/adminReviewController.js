@@ -4,7 +4,6 @@ import Device from '../../models/Device.js';
 import Booking from '../../models/Booking.js';
 import User from '../../models/User.js';
 import { syncDeviceRating } from '../../services/reviewService.js';
-import { logAdminAction } from '../../utils/auditLogger.js';
 
 /**
  * 1. GET /api/admin/reviews
@@ -145,7 +144,6 @@ export const moderateAdminReview = async (req, res, next) => {
       });
     }
 
-    const prevStatus = review.moderationStatus;
     const adminUserId = req.user?.userId || req.user?._id || req.user?.id;
 
     review.moderationStatus = moderationStatus;
@@ -168,23 +166,6 @@ export const moderateAdminReview = async (req, res, next) => {
         console.warn('Lỗi đồng bộ điểm đánh giá thiết bị:', syncErr.message);
       }
     }
-
-    // Ghi nhật ký kiểm toán bảo mật
-    await logAdminAction(req, {
-      action: 'review_moderate',
-      targetType: 'Review',
-      targetId: review._id,
-      reason: reason || `Chuyển trạng thái kiểm duyệt sang ${moderationStatus}`,
-      metadata: {
-        prevStatus,
-        newStatus: moderationStatus,
-        isHidden: review.isHidden,
-        deviceId: review.deviceId,
-        rating: review.rating,
-        deviceSummary: updatedSummary,
-      },
-      status: 'success',
-    });
 
     return res.json({
       success: true,

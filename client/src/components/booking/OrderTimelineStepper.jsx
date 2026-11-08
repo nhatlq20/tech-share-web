@@ -269,7 +269,7 @@ const localizeTimelineNote = (note) => {
     return 'Device handover completed and rental activated';
   }
   if (trimmed.includes('Hoàn tất đơn thuê')) {
-    return 'Rental completed and deposit refunded to renter';
+    return 'Rental completed';
   }
 
   return trimmed;

@@ -1,7 +1,5 @@
 import React from 'react';
 import {
-  ShieldCheck,
-  CheckCircle2,
   ArrowRight,
   Loader2,
   Tag,
@@ -159,22 +157,6 @@ export const OrderSummaryCard = ({
           <span className="font-semibold">{errorMessage}</span>
         </div>
       )}
-
-      {/* Web Escrow Guarantee Badges */}
-      <div className="pt-2.5 border-t border-slate-100 flex flex-col gap-1.5 text-[11px] text-slate-500">
-        <div className="flex items-center gap-1.5">
-          <ShieldCheck className="w-3.5 h-3.5 text-brand-500 shrink-0" />
-          <span className="truncate">{STRINGS.booking.summary.guarantees.item1}</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-          <span className="truncate">{STRINGS.booking.summary.guarantees.item2}</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-          <span className="truncate">{STRINGS.booking.summary.guarantees.item3}</span>
-        </div>
-      </div>
     </aside>
   );
 };

@@ -1,6 +1,5 @@
 import mongoose from 'mongoose';
 import SystemSetting from '../../models/SystemSetting.js';
-import { logAdminAction } from '../../utils/auditLogger.js';
 
 // Danh sách cấu hình mặc định ban đầu của TechShare
 const DEFAULT_SETTINGS = [
@@ -26,7 +25,6 @@ const DEFAULT_SETTINGS = [
     key: 'financial_policy',
     value: {
       platformServiceFeePercent: 10,
-      escrowHoldDaysAfterReturn: 3,
       minDepositPercent: 30,
       allowPartialDeposit: true,
     },
@@ -154,7 +152,6 @@ export const updateAdminSetting = async (req, res, next) => {
     const adminUserId = req.user?.userId || req.user?._id || req.user?.id;
 
     let setting = await SystemSetting.findOne({ key: cleanKey });
-    const oldValue = setting ? setting.value : null;
 
     if (!setting) {
       setting = new SystemSetting({
@@ -172,20 +169,6 @@ export const updateAdminSetting = async (req, res, next) => {
     }
 
     await setting.save();
-
-    // Ghi nhật ký kiểm toán bảo mật
-    await logAdminAction(req, {
-      action: 'system_setting_update',
-      targetType: 'SystemSetting',
-      targetId: cleanKey,
-      reason: `Cập nhật cấu hình '${cleanKey}'`,
-      metadata: {
-        key: cleanKey,
-        oldValue,
-        newValue: value,
-      },
-      status: 'success',
-    });
 
     return res.json({
       success: true,

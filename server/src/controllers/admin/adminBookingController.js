@@ -1,7 +1,5 @@
 import mongoose from 'mongoose';
 import Booking from '../../models/Booking.js';
-import Dispute from '../../models/Dispute.js';
-import { logAdminAction } from '../../utils/auditLogger.js';
 
 /**
  * MODULE 1: BOOKING MANAGEMENT CONTROLLER
@@ -187,12 +185,6 @@ export const getAdminBookingDetails = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Không tìm thấy đơn thuê.' });
     }
 
-    // Tra cứu xem có khiếu nại (dispute) liên quan không
-    const disputes = await Dispute.find({ bookingId: id })
-      .populate('raisedBy', 'name avatar email phone')
-      .populate('resolvedBy', 'name avatar email')
-      .lean();
-
     return res.json({
       success: true,
       data: {
@@ -200,7 +192,6 @@ export const getAdminBookingDetails = async (req, res, next) => {
         device: booking.deviceId,
         renter: booking.renterId,
         owner: booking.ownerId,
-        disputes,
       },
     });
   } catch (err) {
