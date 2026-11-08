@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
       const name = row.querySelector('.user-display-name')?.textContent || 'Người dùng';
       const email = row.getAttribute('data-email') || '';
-      const phone = row.getAttribute('data-phone') || 'Chưa cập nhật';
+      const phone = row.getAttribute('data-phone') || 'Not updated';
       const avatar = row.getAttribute('data-avatar') || '';
       const wallet = Number(row.getAttribute('data-wallet-balance')) || 0;
       const escrow = Number(row.getAttribute('data-escrow-balance')) || 0;
@@ -84,8 +84,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
       const vNote = document.getElementById('detailModalVerifiedNote');
       vNote.textContent = isVerified
-        ? '✓ Tài khoản đã hoàn tất xác thực eKYC CCCD cấp độ cao nhất.'
-        : '⚠️ Tài khoản chưa xác thực danh tính điện tử eKYC.';
+        ? '✓ Identity verified with highest National ID level (eKYC).'
+        : '⚠️ Account has not completed electronic identity verification (eKYC).';
 
       document.getElementById('userDetailModal').style.display = 'flex';
       if (window.lucide) window.lucide.createIcons();
@@ -111,17 +111,17 @@ document.addEventListener('DOMContentLoaded', function() {
       const iconEl = document.getElementById('lockModalIcon');
 
       if (isActive) {
-        titleEl.textContent = 'Xác nhận khóa tài khoản';
+        titleEl.textContent = 'Confirm Lock Account';
         iconEl.style.color = '#DC2626';
-        descEl.innerHTML = `Bạn có chắc chắn muốn <strong>khóa tài khoản</strong> của <strong>${escapeHtml(userName)}</strong> (${escapeHtml(userEmail)})? Người dùng này sẽ không thể đăng nhập hoặc thuê thiết bị trên TechShare.`;
+        descEl.innerHTML = `Are you sure you want to <strong>lock the account</strong> of <strong>${escapeHtml(userName)}</strong> (${escapeHtml(userEmail)})? This user will not be able to log in or rent devices on TechShare.`;
         submitBtn.className = 'admin-btn admin-btn-danger';
-        submitBtn.textContent = 'Đồng ý Khóa';
+        submitBtn.textContent = 'Confirm Lock';
       } else {
-        titleEl.textContent = 'Xác nhận mở khóa tài khoản';
+        titleEl.textContent = 'Confirm Unlock Account';
         iconEl.style.color = '#16A34A';
-        descEl.innerHTML = `Bạn có chắc chắn muốn <strong>mở khóa tài khoản</strong> của <strong>${escapeHtml(userName)}</strong> (${escapeHtml(userEmail)})?`;
+        descEl.innerHTML = `Are you sure you want to <strong>unlock the account</strong> of <strong>${escapeHtml(userName)}</strong> (${escapeHtml(userEmail)})?`;
         submitBtn.className = 'admin-btn admin-btn-success';
-        submitBtn.textContent = 'Đồng ý Mở khóa';
+        submitBtn.textContent = 'Confirm Unlock';
       }
 
       document.getElementById('lockConfirmModal').style.display = 'flex';
@@ -140,7 +140,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const willBeActive = currentStatus !== 'active';
 
       confirmLockBtn.disabled = true;
-      confirmLockBtn.textContent = 'Đang xử lý...';
+      confirmLockBtn.textContent = 'Processing...';
 
       try {
         const response = await fetch(`/api/admin/users/${userId}/status`, {
@@ -161,37 +161,37 @@ document.addEventListener('DOMContentLoaded', function() {
           const statusCell = targetRowForLock.querySelector('.user-status-cell');
           if (statusCell) {
             statusCell.innerHTML = willBeActive
-              ? '<span class="admin-pill-badge active"><span style="width: 6px; height: 6px; border-radius: 50%; background-color: #22C55E; flex-shrink: 0;"></span> Hoạt động</span>'
-              : '<span class="admin-pill-badge locked"><span style="width: 6px; height: 6px; border-radius: 50%; background-color: #EF4444; flex-shrink: 0;"></span> Đã khóa</span>';
+              ? '<span class="admin-pill-badge active"><span style="width: 6px; height: 6px; border-radius: 50%; background-color: #22C55E; flex-shrink: 0;"></span> Active</span>'
+              : '<span class="admin-pill-badge locked"><span style="width: 6px; height: 6px; border-radius: 50%; background-color: #EF4444; flex-shrink: 0;"></span> Locked</span>';
           }
 
           const actionBtn = targetRowForLock.querySelector('.btn-toggle-status');
           if (actionBtn) {
             actionBtn.className = `btn-toggle-status ${willBeActive ? 'admin-user-btn-lock' : 'admin-user-btn-unlock'}`;
-            actionBtn.title = willBeActive ? 'Khóa tài khoản này' : 'Mở khóa tài khoản';
+            actionBtn.title = willBeActive ? 'Lock this account' : 'Unlock this account';
             actionBtn.innerHTML = `
               <i data-lucide="${willBeActive ? 'lock' : 'unlock'}" style="width: 13px; height: 13px; flex-shrink: 0;"></i>
-              <span>${willBeActive ? 'Khóa' : 'Mở khóa'}</span>
+              <span>${willBeActive ? 'Lock' : 'Unlock'}</span>
             `;
           }
 
           if (window.showAdminToast) {
             window.showAdminToast(
-              'Thao tác thành công',
-              `Đã ${willBeActive ? 'mở khóa' : 'khóa'} tài khoản thành công.`,
+              'Operation Successful',
+              `Account successfully ${willBeActive ? 'unlocked' : 'locked'}.`,
               'success'
             );
           }
           if (window.lucide) window.lucide.createIcons();
         } else {
           if (window.showAdminToast) {
-            window.showAdminToast('Lỗi cập nhật', data.message || 'Không thể thay đổi trạng thái tài khoản.', 'error');
+            window.showAdminToast('Update Error', data.message || 'Failed to update account status.', 'error');
           }
         }
       } catch (err) {
         console.error('Lỗi khi cập nhật trạng thái người dùng:', err);
         if (window.showAdminToast) {
-          window.showAdminToast('Lỗi mạng', 'Không thể kết nối đến máy chủ.', 'error');
+          window.showAdminToast('Network Error', 'Unable to connect to server.', 'error');
         }
       } finally {
         confirmLockBtn.disabled = false;

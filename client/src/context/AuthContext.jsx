@@ -13,7 +13,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
     try {
       const savedUser = localStorage.getItem(STORAGE_KEYS.USER_DATA);
-      const savedAccount = localStorage.getItem('techshare_account');
+      const savedAccount = localStorage.getItem(STORAGE_KEYS.ACCOUNT_DATA);
       if (savedUser) {
         const parsed = JSON.parse(savedUser);
         if (!parsed.role && savedAccount) {
@@ -30,7 +30,7 @@ export const AuthProvider = ({ children }) => {
 
   const [account, setAccount] = useState(() => {
     try {
-      const saved = localStorage.getItem('techshare_account');
+      const saved = localStorage.getItem(STORAGE_KEYS.ACCOUNT_DATA);
       return saved ? JSON.parse(saved) : null;
     } catch {
       return null;
@@ -49,7 +49,7 @@ export const AuthProvider = ({ children }) => {
     }
     if (newAccount) {
       setAccount(newAccount);
-      localStorage.setItem('techshare_account', JSON.stringify(newAccount));
+      localStorage.setItem(STORAGE_KEYS.ACCOUNT_DATA, JSON.stringify(newAccount));
     }
     if (newUser) {
       if (!newUser.role && newAccount?.role) {
@@ -70,7 +70,7 @@ export const AuthProvider = ({ children }) => {
     setAccount(null);
     localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
     localStorage.removeItem(STORAGE_KEYS.USER_DATA);
-    localStorage.removeItem('techshare_account');
+    localStorage.removeItem(STORAGE_KEYS.ACCOUNT_DATA);
     window.location.href = ROUTES.HOME;
   };
 
@@ -97,7 +97,7 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(u));
         if (res.account) {
           setAccount(res.account);
-          localStorage.setItem('techshare_account', JSON.stringify(res.account));
+          localStorage.setItem(STORAGE_KEYS.ACCOUNT_DATA, JSON.stringify(res.account));
         }
         return u;
       }

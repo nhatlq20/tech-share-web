@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
+import { STORAGE_KEYS, API_CONFIG } from '../constants/config.js';
 
 export const AdminPage = () => {
   const location = useLocation();
@@ -11,10 +12,10 @@ export const AdminPage = () => {
 
     // Chuyển toàn bộ luồng sang giao diện EJS Server-Side Rendering
     const token =
-      localStorage.getItem('techshare_auth_token') ||
-      localStorage.getItem('techshare_token');
+      localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN) ||
+      localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN_LEGACY);
     const targetUrl = location.pathname + location.search;
-    const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
+    const apiUrl = API_CONFIG.BASE_URL;
 
     const navigateToAdmin = () => {
       // Nếu URL hiện tại đã là targetUrl, reload để CRA Dev Proxy gửi request lên backend Express EJS
@@ -81,7 +82,7 @@ export const AdminPage = () => {
         }}
       ></div>
       <p style={{ fontWeight: 600, fontSize: '15px' }}>
-        Đang chuyển sang Cổng Quản trị TechShare (EJS)...
+        Redirecting to TechShare Admin Portal (EJS)...
       </p>
       <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
     </div>

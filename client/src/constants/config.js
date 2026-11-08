@@ -5,7 +5,7 @@
  * Toàn bộ URL endpoint, timeouts, magic numbers, phân trang và ngưỡng logic.
  */
 
-const getBaseApiUrl = () => {
+export const getBaseApiUrl = () => {
   const envUrl = process.env.REACT_APP_API_URL;
   if (envUrl) {
     return envUrl.includes(':5000') ? envUrl.replace(':5000', ':8000') : envUrl;
@@ -14,7 +14,7 @@ const getBaseApiUrl = () => {
 };
 
 export const API_CONFIG = {
-  BASE_URL: process.env.REACT_APP_API_URL || "http://localhost:8000/api",
+  BASE_URL: getBaseApiUrl(),
   TIMEOUT_MS: 15000,
   ENDPOINTS: {
     ADMIN_KPI: "/admin/kpi",
@@ -125,8 +125,18 @@ export const MAGIC_NUMBERS = {
 
 export const STORAGE_KEYS = {
   AUTH_TOKEN: "techshare_token",
+  AUTH_TOKEN_LEGACY: "techshare_auth_token",
   USER_DATA: "techshare_user",
+  ACCOUNT_DATA: "techshare_account",
   THEME_MODE: "techshare_theme",
+};
+
+export const MAP_CONFIG = {
+  DEFAULT_COORDS: {
+    LAT: 21.0285,
+    LNG: 105.8542,
+  },
+  DEFAULT_ZOOM: 13,
 };
 
 /**
@@ -174,6 +184,7 @@ export const BOOKING_TERMINAL_STATUSES = [
 const CONFIG = {
   API_CONFIG,
   MAGIC_NUMBERS,
+  MAP_CONFIG,
   STORAGE_KEYS,
   BOOKING_STATUS,
 };

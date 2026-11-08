@@ -5,6 +5,7 @@ import User from '../models/User.js';
 import Account from '../models/Account.js';
 import Review from '../models/Review.js';
 import Voucher from '../models/Voucher.js';
+import { BUSINESS_RULES } from '../constants/businessRules.js';
 import { createAndSendNotification } from '../services/notificationService.js';
 import { getIO } from '../socket.js';
 import { uploadToCloudinary } from '../services/cloudinaryService.js';
@@ -667,12 +668,13 @@ export const createBooking = async (req, res, next) => {
 
     let discountPercent = 0;
     let longRentalDiscount = 0;
-    if (totalDays >= 7) {
-      discountPercent = 20;
-      longRentalDiscount = Math.round(rentalFee * 0.2);
-    } else if (totalDays >= 3) {
-      discountPercent = 10;
-      longRentalDiscount = Math.round(rentalFee * 0.1);
+    const { TIER_1, TIER_2 } = BUSINESS_RULES.LONG_RENTAL_DISCOUNTS;
+    if (totalDays >= TIER_2.MIN_DAYS) {
+      discountPercent = TIER_2.DISCOUNT_PERCENT;
+      longRentalDiscount = Math.round(rentalFee * TIER_2.DISCOUNT_RATE);
+    } else if (totalDays >= TIER_1.MIN_DAYS) {
+      discountPercent = TIER_1.DISCOUNT_PERCENT;
+      longRentalDiscount = Math.round(rentalFee * TIER_1.DISCOUNT_RATE);
     }
 
     let appliedVoucherCode = '';
@@ -1201,12 +1203,13 @@ export const validatePricing = async (req, res, next) => {
 
     let discountPercent = 0;
     let longRentalDiscount = 0;
-    if (totalDays >= 7) {
-      discountPercent = 20;
-      longRentalDiscount = Math.round(rentalFee * 0.2);
-    } else if (totalDays >= 3) {
-      discountPercent = 10;
-      longRentalDiscount = Math.round(rentalFee * 0.1);
+    const { TIER_1, TIER_2 } = BUSINESS_RULES.LONG_RENTAL_DISCOUNTS;
+    if (totalDays >= TIER_2.MIN_DAYS) {
+      discountPercent = TIER_2.DISCOUNT_PERCENT;
+      longRentalDiscount = Math.round(rentalFee * TIER_2.DISCOUNT_RATE);
+    } else if (totalDays >= TIER_1.MIN_DAYS) {
+      discountPercent = TIER_1.DISCOUNT_PERCENT;
+      longRentalDiscount = Math.round(rentalFee * TIER_1.DISCOUNT_RATE);
     }
 
     let voucherDiscount = 0;

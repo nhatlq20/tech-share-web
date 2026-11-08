@@ -396,8 +396,8 @@ describe('PHASE 3: Platform Operations Integration Tests', () => {
       assert.equal(res.status, 200);
       assert.ok(res.headers.get('content-type').includes('text/csv'));
       assert.ok(typeof res.body === 'string');
-      assert.ok(res.body.includes('Chỉ số'));
-      assert.ok(res.body.includes('Tổng giá trị giao dịch'));
+      assert.ok(/(?:Chỉ số|Metric)/.test(res.body));
+      assert.ok(/(?:Tổng giá trị giao dịch|Gross Booking Value|Total Transaction Volume)/.test(res.body));
     });
   });
 

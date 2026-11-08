@@ -1,11 +1,6 @@
 import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
-
-const CANDIDATE_JWT_SECRETS = [
-  process.env.JWT_SECRET,
-  'techshare_mma301_super_secret_jwt_key_2026',
-  'techshare_jwt_secret_key_2026',
-].filter(Boolean);
+import { getJwtConfig } from '../config/env.js';
 
 /**
  * Giải mã và xác thực chữ ký JWT qua các khóa bí mật hợp lệ của hệ thống
@@ -13,7 +8,8 @@ const CANDIDATE_JWT_SECRETS = [
 export const verifyOrDecodeToken = (token) => {
   if (!token || token === 'null' || token === 'undefined') return null;
 
-  for (const secret of CANDIDATE_JWT_SECRETS) {
+  const { secrets } = getJwtConfig();
+  for (const secret of secrets) {
     try {
       return jwt.verify(token, secret);
     } catch {

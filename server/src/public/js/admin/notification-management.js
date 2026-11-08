@@ -36,13 +36,13 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         const data = await res.json();
         if (res.ok && data.success) {
-          if (window.showAdminToast) window.showAdminToast('Đã phát sóng', 'Thông báo đã được gửi đến thành viên.', 'success');
+          if (window.showAdminToast) window.showAdminToast('Broadcast Sent', 'Notification sent to users.', 'success');
           setTimeout(() => window.location.reload(), 600);
         } else {
-          if (window.showAdminToast) window.showAdminToast('Lỗi', data.message || 'Không thể phát sóng thông báo.', 'error');
+          if (window.showAdminToast) window.showAdminToast('Error', data.message || 'Failed to broadcast notification.', 'error');
         }
       } catch (err) {
-        if (window.showAdminToast) window.showAdminToast('Lỗi mạng', err.message, 'error');
+        if (window.showAdminToast) window.showAdminToast('Network Error', err.message, 'error');
       }
     });
   }

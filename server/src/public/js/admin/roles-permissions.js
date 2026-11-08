@@ -41,13 +41,13 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         const data = await res.json();
         if (res.ok && data.success) {
-          if (window.showAdminToast) window.showAdminToast('Thành công', 'Đã cập nhật vai trò tài khoản.', 'success');
+          if (window.showAdminToast) window.showAdminToast('Success', 'Account role updated successfully.', 'success');
           setTimeout(() => window.location.reload(), 500);
         } else {
-          if (window.showAdminToast) window.showAdminToast('Lỗi phân quyền', data.message || 'Không thể thay đổi vai trò.', 'error');
+          if (window.showAdminToast) window.showAdminToast('Permission Error', data.message || 'Failed to change role.', 'error');
         }
       } catch (err) {
-        if (window.showAdminToast) window.showAdminToast('Lỗi mạng', err.message, 'error');
+        if (window.showAdminToast) window.showAdminToast('Network Error', err.message, 'error');
       } finally {
         modal.style.display = 'none';
       }

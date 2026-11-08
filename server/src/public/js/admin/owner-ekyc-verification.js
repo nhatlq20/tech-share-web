@@ -9,13 +9,13 @@ document.querySelectorAll('[data-owner-ekyc-review]').forEach((form) => {
     const buttons = Array.from(form.querySelectorAll('button'));
     const status = form.querySelector('[role="status"]');
     if (action === 'reject' && !reason) {
-      status.textContent = 'Nhập lý do từ chối.';
+      status.textContent = 'Please enter a rejection reason.';
       return;
     }
-    if (action === 'approve' && !window.confirm('Duyệt hồ sơ và cấp quyền Chủ thiết bị?')) return;
+    if (action === 'approve' && !window.confirm('Approve request and grant Owner privileges?')) return;
 
     buttons.forEach((button) => { button.disabled = true; });
-    status.textContent = 'Đang cập nhật hồ sơ…';
+    status.textContent = 'Updating request…';
     try {
       const response = await fetch(`/api/admin/owner-ekyc/${id}/${action}`, {
         method: 'PATCH',
@@ -24,7 +24,7 @@ document.querySelectorAll('[data-owner-ekyc-review]').forEach((form) => {
       });
       const data = await response.json();
       if (!response.ok || !data.success) {
-        throw new Error(data.message || 'Không thể cập nhật hồ sơ.');
+        throw new Error(data.message || 'Failed to update request.');
       }
       window.location.reload();
     } catch (error) {

@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const notes = document.getElementById('disputeNotesInput').value.trim();
 
       if (deduction < 0 || deduction > deposit) {
-        alert('Số tiền khấu trừ không hợp lệ (không được âm và không được vượt quá số tiền ký quỹ đang giữ).');
+        alert('Invalid deduction amount (cannot be negative and cannot exceed escrow deposit held).');
         return;
       }
 
@@ -52,13 +52,13 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         const data = await res.json();
         if (res.ok && data.success) {
-          if (window.showAdminToast) window.showAdminToast('Thành công', 'Đã phân xử và quyết toán tranh chấp.', 'success');
+          if (window.showAdminToast) window.showAdminToast('Success', 'Dispute resolved and escrow settled.', 'success');
           setTimeout(() => window.location.reload(), 600);
         } else {
-          if (window.showAdminToast) window.showAdminToast('Lỗi', data.message || 'Không thể giải quyết tranh chấp.', 'error');
+          if (window.showAdminToast) window.showAdminToast('Error', data.message || 'Failed to resolve dispute.', 'error');
         }
       } catch (err) {
-        if (window.showAdminToast) window.showAdminToast('Lỗi mạng', err.message, 'error');
+        if (window.showAdminToast) window.showAdminToast('Network Error', err.message, 'error');
       }
     });
   }
@@ -79,10 +79,10 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         const data = await res.json();
         if (res.ok && data.success) {
-          if (window.showAdminToast) window.showAdminToast('Đã bác bỏ', 'Đã bác bỏ khiếu nại tranh chấp.', 'success');
+          if (window.showAdminToast) window.showAdminToast('Dismissed', 'Dispute claim dismissed.', 'success');
           setTimeout(() => window.location.reload(), 600);
         } else {
-          if (window.showAdminToast) window.showAdminToast('Lỗi', data.message || 'Không thể bác bỏ tranh chấp.', 'error');
+          if (window.showAdminToast) window.showAdminToast('Error', data.message || 'Failed to dismiss dispute.', 'error');
         }
       } catch (err) {
         if (window.showAdminToast) window.showAdminToast('Lỗi mạng', err.message, 'error');
