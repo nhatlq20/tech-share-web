@@ -6,7 +6,6 @@ import {
   X,
   AlertCircle,
   ZoomIn,
-  User,
   CreditCard,
   MapPin,
   Calendar,
@@ -28,22 +27,22 @@ import {
 import './AdminOwnerEkycTab.css';
 
 const COMMON_REJECT_REASONS = [
-  'Ảnh chân dung cầm CCCD bị mờ, lóa sáng hoặc che khuất khuôn mặt.',
-  'Thông tin thẻ CCCD trên tay không trùng khớp với 2 ảnh CCCD đã nộp.',
-  'Hình ảnh CCCD bị mất góc, không hiển thị rõ họ tên hoặc số CCCD.',
-  'Ảnh chân dung cầm CCCD có dấu hiệu chỉnh sửa hoặc không phải ảnh chụp thật.',
+  'Portrait photo holding ID card is blurry, overexposed, or face is obscured.',
+  'ID card information held in photo does not match the submitted ID card photos.',
+  'ID card photo has cropped corners or name and ID number are not clearly legible.',
+  'Selfie holding ID card shows signs of digital editing or is not authentic.',
 ];
 
-export const AdminOwnerEkycTab = () => {
+export const AdminOwnerEkycTab = ({ onStatusChange }) => {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState('pending');
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Lightbox xem ảnh kích thước lớn
+  // Lightbox for large image viewing
   const [lightbox, setLightbox] = useState(null); // { url, title }
 
-  // Modal Từ chối
+  // Rejection modal state
   const [rejectModalReq, setRejectModalReq] = useState(null);
   const [rejectReason, setRejectReason] = useState(COMMON_REJECT_REASONS[0]);
   const [customRejectReason, setCustomRejectReason] = useState('');
@@ -59,7 +58,7 @@ export const AdminOwnerEkycTab = () => {
     }
   }, [toast]);
 
-  // Fetch danh sách đơn
+  // Fetch requests from API
   const fetchRequests = useCallback(async () => {
     setLoading(true);
     try {
@@ -67,7 +66,7 @@ export const AdminOwnerEkycTab = () => {
       const items = Array.isArray(res?.data) ? res.data : [];
       setRequests(items);
     } catch (err) {
-      console.warn('Lỗi fetch Owner eKYC requests:', err);
+      console.warn('Failed to fetch Owner eKYC requests:', err);
     } finally {
       setLoading(false);
     }
@@ -77,12 +76,12 @@ export const AdminOwnerEkycTab = () => {
     fetchRequests();
   }, [fetchRequests]);
 
-  // Thống kê số lượng
+  // Status counts
   const pendingCount = requests.filter((r) => r.status === 'pending').length;
   const approvedCount = requests.filter((r) => r.status === 'approved').length;
   const rejectedCount = requests.filter((r) => r.status === 'rejected').length;
 
-  // Lọc theo statusFilter và searchTerm
+  // Filter requests
   const filteredRequests = requests.filter((r) => {
     const matchesStatus = statusFilter === 'all' || r.status === statusFilter;
     if (!matchesStatus) return false;
@@ -112,12 +111,15 @@ export const AdminOwnerEkycTab = () => {
         prev.map((r) => (r._id === id ? { ...r, status: 'approved' } : r))
       );
       setToast({
-        message: `Đã phê duyệt hồ sơ và nâng cấp quyền Chủ thiết bị (Owner) cho "${name}" thành công!`,
+        message: `Successfully approved and upgraded "${name}" to Device Owner!`,
         type: 'success',
       });
+      if (typeof onStatusChange === 'function') {
+        onStatusChange({ action: 'approve', requestId: id });
+      }
     } catch (err) {
       setToast({
-        message: `Đã xảy ra lỗi khi duyệt nâng cấp Owner cho "${name}".`,
+        message: `Failed to approve Owner upgrade for "${name}".`,
         type: 'error',
       });
     } finally {
@@ -148,13 +150,16 @@ export const AdminOwnerEkycTab = () => {
         )
       );
       setToast({
-        message: `Đã từ chối hồ sơ nâng cấp của "${rejectModalReq.fullName || rejectModalReq.name}".`,
+        message: `Rejected Owner application for "${rejectModalReq.fullName || rejectModalReq.name}".`,
         type: 'info',
       });
+      if (typeof onStatusChange === 'function') {
+        onStatusChange({ action: 'reject', requestId: rejectModalReq._id });
+      }
       setRejectModalReq(null);
     } catch {
       setToast({
-        message: 'Lỗi khi từ chối hồ sơ.',
+        message: 'Error while rejecting application.',
         type: 'error',
       });
     } finally {
@@ -207,10 +212,9 @@ export const AdminOwnerEkycTab = () => {
             <Crown size={24} />
           </div>
           <div>
-            <h2 className="admin-owner-ekyc-title">Xét duyệt eKYC Nâng cấp Owner (3 ảnh)</h2>
+            <h2 className="admin-owner-ekyc-title">Owner Upgrade Verification (3 Photos)</h2>
             <p className="admin-owner-ekyc-desc">
-              Quản lý và thẩm định hồ sơ nâng cấp từ Renter lên Chủ thiết bị (Owner) qua CCCD 2 mặt
-              & ảnh selfie cầm thẻ.
+              Review and authenticate Renter to Device Owner upgrade applications via 2-sided ID card & selfie holding ID card.
             </p>
           </div>
         </div>
@@ -222,7 +226,7 @@ export const AdminOwnerEkycTab = () => {
             className={`admin-owner-stat-pill ${statusFilter === 'all' ? 'active' : ''}`}
             onClick={() => setStatusFilter('all')}
           >
-            <span>Tất cả</span>
+            <span>All</span>
             <span className="admin-owner-stat-count">{requests.length}</span>
           </button>
           <button
@@ -230,7 +234,7 @@ export const AdminOwnerEkycTab = () => {
             className={`admin-owner-stat-pill ${statusFilter === 'pending' ? 'active' : ''}`}
             onClick={() => setStatusFilter('pending')}
           >
-            <span>Chờ duyệt</span>
+            <span>Pending</span>
             <span className="admin-owner-stat-count">{pendingCount}</span>
           </button>
           <button
@@ -238,7 +242,7 @@ export const AdminOwnerEkycTab = () => {
             className={`admin-owner-stat-pill ${statusFilter === 'approved' ? 'active' : ''}`}
             onClick={() => setStatusFilter('approved')}
           >
-            <span>Đã duyệt</span>
+            <span>Approved</span>
             <span className="admin-owner-stat-count">{approvedCount}</span>
           </button>
           <button
@@ -246,7 +250,7 @@ export const AdminOwnerEkycTab = () => {
             className={`admin-owner-stat-pill ${statusFilter === 'rejected' ? 'active' : ''}`}
             onClick={() => setStatusFilter('rejected')}
           >
-            <span>Bị từ chối</span>
+            <span>Rejected</span>
             <span className="admin-owner-stat-count">{rejectedCount}</span>
           </button>
         </div>
@@ -268,7 +272,7 @@ export const AdminOwnerEkycTab = () => {
         <Search size={17} color="#64748b" />
         <input
           type="text"
-          placeholder="Tìm theo tên, email, SĐT hoặc số CCCD..."
+          placeholder="Search by name, email, phone or ID number..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           style={{
@@ -285,19 +289,18 @@ export const AdminOwnerEkycTab = () => {
       {loading ? (
         <div className="admin-owner-empty-state">
           <Loader2 size={32} className="animate-spin" style={{ color: '#67BEC3' }} />
-          <span>Đang tải danh sách hồ sơ nâng cấp Owner...</span>
+          <span>Loading Owner upgrade applications...</span>
         </div>
       ) : filteredRequests.length === 0 ? (
         <div className="admin-owner-empty-state">
           <ShieldCheck size={44} color="#94a3b8" />
           <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: '#334155', margin: 0 }}>
             {statusFilter === 'pending'
-              ? 'Hiện tại không có hồ sơ nâng cấp Owner nào đang chờ duyệt'
-              : 'Không tìm thấy hồ sơ phù hợp'}
+              ? 'No pending Owner verification requests at this time'
+              : 'No matching applications found'}
           </h3>
           <p style={{ fontSize: '0.85rem', margin: 0 }}>
-            Các hồ sơ đăng ký nâng cấp Chủ thiết bị từ phía người thuê sẽ hiển thị tại đây để bạn xét
-            duyệt.
+            Submitted upgrade applications from renters will appear here for review.
           </p>
         </div>
       ) : (
@@ -325,7 +328,7 @@ export const AdminOwnerEkycTab = () => {
                         {req.fullName || req.name}
                         {req.userTrust?.isVerified && (
                           <span
-                            title="Tài khoản đã có Tích Xanh Renter"
+                            title="Account has completed Renter verification"
                             style={{
                               display: 'inline-flex',
                               alignItems: 'center',
@@ -337,28 +340,28 @@ export const AdminOwnerEkycTab = () => {
                               borderRadius: '4px',
                             }}
                           >
-                            <ShieldCheck size={12} /> Đã eKYC Thuê
+                            <ShieldCheck size={12} /> Renter Verified
                           </span>
                         )}
                       </h4>
                       <div className="admin-owner-card-meta">
                         <span className="admin-owner-card-meta-item">
-                          <Mail size={13} /> {req.email || 'Chưa có email'}
+                          <Mail size={13} /> {req.email || 'No email provided'}
                         </span>
                         <span className="admin-owner-card-meta-item">
-                          <Phone size={13} /> {req.phone || 'Chưa có SĐT'}
+                          <Phone size={13} /> {req.phone || 'No phone provided'}
                         </span>
                         <span className="admin-owner-card-meta-item">
-                          <MapPin size={13} /> {req.address || 'Chưa có địa chỉ'}
+                          <MapPin size={13} /> {req.address || 'No address provided'}
                         </span>
                         {req.idCardNumber && (
                           <span className="admin-owner-card-meta-item">
-                            <CreditCard size={13} /> CCCD: <strong>{req.idCardNumber}</strong>
+                            <CreditCard size={13} /> ID Card: <strong>{req.idCardNumber}</strong>
                           </span>
                         )}
                         <span className="admin-owner-card-meta-item">
-                          <Calendar size={13} /> Ngày gửi:{' '}
-                          {req.createdAt ? new Date(req.createdAt).toLocaleString('vi-VN') : '—'}
+                          <Calendar size={13} /> Submitted:{' '}
+                          {req.createdAt ? new Date(req.createdAt).toLocaleString('en-US') : '—'}
                         </span>
                       </div>
                     </div>
@@ -368,17 +371,17 @@ export const AdminOwnerEkycTab = () => {
                   <div className={`admin-owner-badge ${req.status}`}>
                     {isItemPending && (
                       <>
-                        <AlertTriangle size={13} /> Chờ duyệt
+                        <AlertTriangle size={13} /> Pending Review
                       </>
                     )}
                     {isItemApproved && (
                       <>
-                        <CheckCircle size={13} /> Đã là Owner
+                        <CheckCircle size={13} /> Owner Approved
                       </>
                     )}
                     {isItemRejected && (
                       <>
-                        <XCircle size={13} /> Bị từ chối
+                        <XCircle size={13} /> Rejected
                       </>
                     )}
                   </div>
@@ -386,71 +389,71 @@ export const AdminOwnerEkycTab = () => {
 
                 {/* 3 Images Grid */}
                 <div className="admin-owner-3images-grid">
-                  {/* Image 1: Mặt trước */}
+                  {/* Image 1: Front */}
                   <div
                     className="admin-owner-img-box"
                     onClick={() =>
                       setLightbox({
                         url: req.idCardFrontUrl,
-                        title: `Mặt trước CCCD - ${req.fullName || req.name}`,
+                        title: `Front of ID Card - ${req.fullName || req.name}`,
                       })
                     }
                   >
                     <span className="admin-owner-img-label">
                       <CreditCard size={12} />
-                      1. Mặt trước CCCD
+                      1. Front of ID Card
                     </span>
                     <img
                       src={req.idCardFrontUrl}
-                      alt="CCCD Mặt trước"
+                      alt="Front of ID Card"
                       className="admin-owner-img"
                     />
                     <div className="admin-owner-img-zoom-hint">
-                      <ZoomIn size={18} /> Phóng to
+                      <ZoomIn size={18} /> Enlarge
                     </div>
                   </div>
 
-                  {/* Image 2: Mặt sau */}
+                  {/* Image 2: Back */}
                   <div
                     className="admin-owner-img-box"
                     onClick={() =>
                       setLightbox({
                         url: req.idCardBackUrl,
-                        title: `Mặt sau CCCD - ${req.fullName || req.name}`,
+                        title: `Back of ID Card - ${req.fullName || req.name}`,
                       })
                     }
                   >
                     <span className="admin-owner-img-label">
                       <CreditCard size={12} />
-                      2. Mặt sau CCCD
+                      2. Back of ID Card
                     </span>
-                    <img src={req.idCardBackUrl} alt="CCCD Mặt sau" className="admin-owner-img" />
+                    <img src={req.idCardBackUrl} alt="Back of ID Card" className="admin-owner-img" />
                     <div className="admin-owner-img-zoom-hint">
-                      <ZoomIn size={18} /> Phóng to
+                      <ZoomIn size={18} /> Enlarge
                     </div>
                   </div>
 
-                  {/* Image 3: Chân dung cầm CCCD */}
+                  {/* Image 3: Selfie holding ID */}
                   <div
                     className="admin-owner-img-box"
                     onClick={() =>
                       setLightbox({
                         url: req.idCardHoldingUrl,
-                        title: `Ảnh chân dung cầm CCCD - ${req.fullName || req.name}`,
+                        title: `Selfie holding ID Card - ${req.fullName || req.name}`,
                       })
                     }
                   >
                     <span className="admin-owner-img-label highlight">
                       <Camera size={12} />
-                      3. Chân dung cầm CCCD ⭐
+                      3. Selfie with ID Card ⭐
                     </span>
                     <img
                       src={req.idCardHoldingUrl}
-                      alt="Chân dung cầm CCCD"
+                      alt="Selfie holding ID Card"
                       className="admin-owner-img"
                     />
                     <div className="admin-owner-img-zoom-hint">
-                      <ZoomIn size={18} /> Phóng to
+                      <ZoomIn size={18} /> Enlarge
                     </div>
                   </div>
                 </div>
@@ -462,7 +465,7 @@ export const AdminOwnerEkycTab = () => {
                       <div className="admin-owner-rejection-note">
                         <AlertCircle size={15} />
                         <span>
-                          <strong>Lý do từ chối:</strong> {req.rejectReason}
+                          <strong>Rejection reason:</strong> {req.rejectReason}
                         </span>
                       </div>
                     )}
@@ -470,10 +473,10 @@ export const AdminOwnerEkycTab = () => {
                       <div className="admin-owner-approval-note">
                         <CheckCircle2 size={15} />
                         <span>
-                          Tài khoản đã được nâng cấp thành <strong>Chủ thiết bị (Owner)</strong> vào{' '}
+                          Account granted <strong>Device Owner</strong> privileges on{' '}
                           {req.reviewedAt
-                            ? new Date(req.reviewedAt).toLocaleString('vi-VN')
-                            : 'hệ thống'}
+                            ? new Date(req.reviewedAt).toLocaleString('en-US')
+                            : 'system'}
                         </span>
                       </div>
                     )}
@@ -489,7 +492,7 @@ export const AdminOwnerEkycTab = () => {
                         disabled={actionLoadingId === req._id}
                       >
                         <XCircle size={15} />
-                        Từ chối
+                        Reject
                       </button>
                       <button
                         type="button"
@@ -502,7 +505,7 @@ export const AdminOwnerEkycTab = () => {
                         ) : (
                           <Crown size={15} />
                         )}
-                        Phê duyệt làm Owner
+                        Approve as Owner
                       </button>
                     </div>
                   )}
@@ -546,7 +549,7 @@ export const AdminOwnerEkycTab = () => {
             >
               <h3 className="admin-owner-reject-title">
                 <XCircle size={20} color="#dc2626" />
-                Từ chối hồ sơ nâng cấp Owner
+                Reject Owner Upgrade Application
               </h3>
               <button
                 type="button"
@@ -563,9 +566,8 @@ export const AdminOwnerEkycTab = () => {
             </div>
 
             <p style={{ fontSize: '0.85rem', color: '#64748b', margin: 0 }}>
-              Chọn lý do từ chối hồ sơ của{' '}
-              <strong>{rejectModalReq.fullName || rejectModalReq.name}</strong>. Người dùng sẽ nhận
-              được thông báo và có thể chụp lại ảnh mới để gửi lại.
+              Select a reason for rejecting the application of{' '}
+              <strong>{rejectModalReq.fullName || rejectModalReq.name}</strong>. The user will be notified and can retake clearer photos to resubmit.
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
@@ -602,11 +604,11 @@ export const AdminOwnerEkycTab = () => {
                   marginBottom: '0.35rem',
                 }}
               >
-                Hoặc nhập lý do khác:
+                Or provide custom reason:
               </label>
               <textarea
                 className="admin-owner-reject-textarea"
-                placeholder="Nhập chi tiết yêu cầu bổ sung hình ảnh..."
+                placeholder="Specify required corrections or photo guidelines..."
                 value={customRejectReason}
                 onChange={(e) => setCustomRejectReason(e.target.value)}
               />
@@ -619,7 +621,7 @@ export const AdminOwnerEkycTab = () => {
                 style={{ background: '#f1f5f9', color: '#475569', border: 'none' }}
                 onClick={() => setRejectModalReq(null)}
               >
-                Hủy bỏ
+                Cancel
               </button>
               <button
                 type="button"
@@ -633,7 +635,7 @@ export const AdminOwnerEkycTab = () => {
                 ) : (
                   <XCircle size={15} />
                 )}
-                Xác nhận từ chối
+                Confirm Rejection
               </button>
             </div>
           </div>
@@ -644,4 +646,3 @@ export const AdminOwnerEkycTab = () => {
 };
 
 export default AdminOwnerEkycTab;
-

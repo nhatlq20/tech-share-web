@@ -560,7 +560,7 @@ export const AdminDashboardScreen = () => {
               value={globalSearch}
               onChange={(e) => setGlobalSearch(e.target.value)}
             />
-          </button>
+          </div>
 
           {/* Notification Bell Dropdown */}
           <NotificationDropdown />
@@ -626,7 +626,11 @@ export const AdminDashboardScreen = () => {
 
           {currentTab === 'ekyc' && <AdminEkycTab requests={ekycRequests} onApprove={handleApproveEkyc} onReject={handleRejectEkyc} isLoading={isLoading} />}
 
-          {currentTab === 'owner-ekyc' && <AdminOwnerEkycTab />}
+          {currentTab === 'owner-ekyc' && (
+            <AdminOwnerEkycTab
+              onStatusChange={() => setPendingOwnerEkycCount((prev) => Math.max(0, prev - 1))}
+            />
+          )}
         </section>
       </main>
     </div>;

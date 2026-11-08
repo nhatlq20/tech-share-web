@@ -34,7 +34,7 @@ export const getAdminOwnerEkycList = async (params = {}) => {
 
 /**
  * Phê duyệt hồ sơ nâng cấp Owner (chuyển role thành Owner)
- * @param {string} id - ID của hồ sơ owner_ekyc_requests
+ * @param {string} id - ID của hồ sơ owner_request
  */
 export const approveAdminOwnerEkyc = async (id) => {
   return await api.patch(`/admin/owner-ekyc/${id}/approve`);
@@ -42,7 +42,7 @@ export const approveAdminOwnerEkyc = async (id) => {
 
 /**
  * Từ chối hồ sơ nâng cấp Owner kèm lý do
- * @param {string} id - ID của hồ sơ owner_ekyc_requests
+ * @param {string} id - ID của hồ sơ owner_request
  * @param {string} reason - Lý do từ chối
  */
 export const rejectAdminOwnerEkyc = async (id, reason) => {

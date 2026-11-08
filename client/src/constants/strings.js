@@ -126,6 +126,7 @@ export const STRINGS = {
       devicesTab: 'Device Moderation',
       usersTab: 'User Management',
       ekycTab: 'eKYC Verification',
+      ownerEkycTab: 'Owner Verification',
       settingsTab: 'System Settings',
       switchToClient: 'Switch to Marketplace',
       logout: 'Log Out',
