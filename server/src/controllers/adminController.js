@@ -647,8 +647,8 @@ export const getAdminDeviceDetails = async (req, res, next) => {
         rejectReason: device.rejectReason || device.moderationReason || '',
         moderatedBy: device.moderatedBy || device.reviewedBy || null,
         moderatedAt: device.moderatedAt || device.reviewedAt || null,
-        address: device.address || '',
-        location: device.location || { type: 'Point', coordinates: [105.7826, 21.0285] },
+        address: device.address || owner?.address || '',
+        location: device.location || (owner?.location?.coordinates ? owner.location : null),
         createdAt: device.createdAt || new Date(),
         owner: owner || {
           name: 'Đối tác TechShare',

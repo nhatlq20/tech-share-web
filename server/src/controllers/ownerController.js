@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
 import { createAndSendNotification } from '../services/notificationService.js';
 import { getIO } from '../socket.js';
+import { resolveDeviceLocation } from '../utils/locationHelper.js';
 
 /**
  * Helper to get MongoDB collections safely
@@ -375,7 +376,7 @@ export const getOwnerOverview = async (req, res, next) => {
  */
 export const getOwnerDevices = async (req, res, next) => {
   try {
-    const { devicesCol } = getCollections();
+    const { devicesCol, usersCol } = getCollections();
     const ownerId = await resolveOwnerId(req);
 
     if (!ownerId) {
@@ -387,41 +388,51 @@ export const getOwnerDevices = async (req, res, next) => {
 
     const ownerFilter = buildDeviceOwnerQuery(ownerId);
 
-    const devices = await devicesCol
-      .find({
-        ...ownerFilter,
-        isDeleted: { $ne: true },
-      })
-      .sort({ createdAt: -1 })
-      .toArray();
+    const [devices, ownerDoc] = await Promise.all([
+      devicesCol
+        .find({
+          ...ownerFilter,
+          isDeleted: { $ne: true },
+        })
+        .sort({ createdAt: -1 })
+        .toArray(),
+      usersCol.findOne({
+        _id: mongoose.Types.ObjectId.isValid(ownerId)
+          ? new mongoose.Types.ObjectId(ownerId)
+          : ownerId,
+      }),
+    ]);
 
-    const formattedDevices = devices.map((d) => ({
-      _id: d._id.toString(),
-      id: d._id.toString(),
-      name: d.name || d.title || 'Thiết bị',
-      title: d.title || d.name || 'Thiết bị',
-      brand: d.brand || '',
-      category: d.category || 'other',
-      dailyRate: Number(d.dailyRate ?? d.pricePerDay) || 0,
-      pricePerDay: Number(d.pricePerDay ?? d.dailyRate) || 0,
-      depositAmount: Number(d.depositAmount ?? d.depositValue) || 0,
-      depositValue: Number(d.depositValue ?? d.depositAmount) || 0,
-      status: d.status || 'available',
-      moderationStatus: d.moderationStatus || 'approved',
-      moderationReason: d.moderationReason || d.rejectReason || '',
-      rejectReason: d.rejectReason || d.moderationReason || '',
-      moderatedBy: d.moderatedBy || d.reviewedBy || null,
-      moderatedAt: d.moderatedAt || d.reviewedAt || null,
-      images: Array.isArray(d.images) && d.images.length > 0 ? d.images : ['https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=400&q=80'],
-      ratingAvg: Number(d.ratingAvg ?? d.stats?.ratingAvg ?? d.rating) || 5.0,
-      rentalCount: Number(d.rentalCount ?? d.stats?.rentalCount) || 0,
-      condition: d.condition || 'Good',
-      specs: d.specs || {},
-      location: d.location || null,
-      address: d.location?.addressText || d.addressText || d.address || '',
-      blockedDates: Array.isArray(d.blockedDates) ? d.blockedDates : [],
-      createdAt: d.createdAt || new Date().toISOString(),
-    }));
+    const formattedDevices = devices.map((d) => {
+      const loc = resolveDeviceLocation(d, ownerDoc);
+      return {
+        _id: d._id.toString(),
+        id: d._id.toString(),
+        name: d.name || d.title || 'Thiết bị',
+        title: d.title || d.name || 'Thiết bị',
+        brand: d.brand || '',
+        category: d.category || 'other',
+        dailyRate: Number(d.dailyRate ?? d.pricePerDay) || 0,
+        pricePerDay: Number(d.pricePerDay ?? d.dailyRate) || 0,
+        depositAmount: Number(d.depositAmount ?? d.depositValue) || 0,
+        depositValue: Number(d.depositValue ?? d.depositAmount) || 0,
+        status: d.status || 'available',
+        moderationStatus: d.moderationStatus || 'approved',
+        moderationReason: d.moderationReason || d.rejectReason || '',
+        rejectReason: d.rejectReason || d.moderationReason || '',
+        moderatedBy: d.moderatedBy || d.reviewedBy || null,
+        moderatedAt: d.moderatedAt || d.reviewedAt || null,
+        images: Array.isArray(d.images) && d.images.length > 0 ? d.images : ['https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=400&q=80'],
+        ratingAvg: Number(d.ratingAvg ?? d.stats?.ratingAvg ?? d.rating) || 5.0,
+        rentalCount: Number(d.rentalCount ?? d.stats?.rentalCount) || 0,
+        condition: d.condition || 'Good',
+        specs: d.specs || {},
+        location: loc,
+        address: loc?.addressText || ownerDoc?.address || d.address || '',
+        blockedDates: Array.isArray(d.blockedDates) ? d.blockedDates : [],
+        createdAt: d.createdAt || new Date().toISOString(),
+      };
+    });
 
     return res.status(200).json({
       success: true,
@@ -435,7 +446,7 @@ export const getOwnerDevices = async (req, res, next) => {
 
 export const getOwnerDeviceById = async (req, res, next) => {
   try {
-    const { devicesCol } = getCollections();
+    const { devicesCol, usersCol } = getCollections();
     const ownerId = await resolveOwnerId(req);
     const { id } = req.params;
 
@@ -452,11 +463,18 @@ export const getOwnerDeviceById = async (req, res, next) => {
       });
     }
 
-    const device = await devicesCol.findOne({
-      _id: new mongoose.Types.ObjectId(id),
-      ...buildDeviceOwnerQuery(ownerId),
-      isDeleted: { $ne: true },
-    });
+    const [device, ownerDoc] = await Promise.all([
+      devicesCol.findOne({
+        _id: new mongoose.Types.ObjectId(id),
+        ...buildDeviceOwnerQuery(ownerId),
+        isDeleted: { $ne: true },
+      }),
+      usersCol.findOne({
+        _id: mongoose.Types.ObjectId.isValid(ownerId)
+          ? new mongoose.Types.ObjectId(ownerId)
+          : ownerId,
+      }),
+    ]);
 
     if (!device) {
       return res.status(404).json({
@@ -464,6 +482,8 @@ export const getOwnerDeviceById = async (req, res, next) => {
         message: 'Không tìm thấy thiết bị trong kho của bạn.',
       });
     }
+
+    const loc = resolveDeviceLocation(device, ownerDoc);
 
     return res.status(200).json({
       success: true,
@@ -481,8 +501,8 @@ export const getOwnerDeviceById = async (req, res, next) => {
         dailyRate: Number(device.dailyRate ?? device.pricePerDay) || 0,
         depositAmount: Number(device.depositAmount ?? device.depositValue) || 0,
         addressText:
-          device.location?.addressText || device.addressText || device.address || '',
-        location: device.location || null,
+          loc?.addressText || ownerDoc?.address || device.address || '',
+        location: loc,
         specs: device.specs || {},
         images: Array.isArray(device.images) ? device.images : [],
       },
@@ -592,31 +612,6 @@ export const updateOwnerDevice = async (req, res, next) => {
       });
     }
 
-    const coordinates = location?.coordinates;
-    const longitudeValue = coordinates?.[0] ?? longitude;
-    const latitudeValue = coordinates?.[1] ?? latitude;
-    const parsedLongitude = Number(longitudeValue);
-    const parsedLatitude = Number(latitudeValue);
-    const address = location?.addressText ?? addressText;
-    if (
-      !Array.isArray(coordinates) ||
-      coordinates.length !== 2 ||
-      location?.type !== 'Point' ||
-      !Number.isFinite(parsedLongitude) ||
-      parsedLongitude < -180 ||
-      parsedLongitude > 180 ||
-      !Number.isFinite(parsedLatitude) ||
-      parsedLatitude < -90 ||
-      parsedLatitude > 90 ||
-      typeof address !== 'string' ||
-      !address.trim()
-    ) {
-      return res.status(400).json({
-        success: false,
-        message: 'Vui lòng nhập địa chỉ và tọa độ hợp lệ.',
-      });
-    }
-
     let parsedSpecs = specs ?? {};
     if (typeof parsedSpecs === 'string') {
       try {
@@ -666,14 +661,12 @@ export const updateOwnerDevice = async (req, res, next) => {
       pricePerDay: price,
       depositAmount: deposit,
       depositValue: deposit,
-      location: {
-        type: 'Point',
-        coordinates: [parsedLongitude, parsedLatitude],
-        addressText: address.trim(),
-      },
       specs: parsedSpecs,
       updatedAt: new Date(),
     };
+    if (addressText || req.body.address) {
+      update.address = (addressText || req.body.address || '').trim();
+    }
     if (images !== undefined) update.images = images;
     if (year === undefined) delete update.yearOfManufacture;
 
@@ -696,12 +689,26 @@ export const updateOwnerDevice = async (req, res, next) => {
       });
     }
 
-    const updatedDevice = await devicesCol.findOne({
-      _id: new mongoose.Types.ObjectId(id),
-    });
+    const [updatedDevice, ownerDoc] = await Promise.all([
+      devicesCol.findOne({
+        _id: new mongoose.Types.ObjectId(id),
+      }),
+      usersCol.findOne({
+        _id: mongoose.Types.ObjectId.isValid(ownerId)
+          ? new mongoose.Types.ObjectId(ownerId)
+          : ownerId,
+      }),
+    ]);
+
+    const loc = resolveDeviceLocation(updatedDevice, ownerDoc);
+
     return res.status(200).json({
       success: true,
-      data: updatedDevice,
+      data: {
+        ...updatedDevice,
+        location: loc,
+        address: loc?.addressText || ownerDoc?.address || updatedDevice?.address || '',
+      },
       message: 'Cập nhật thiết bị thành công.',
     });
   } catch (error) {
@@ -734,10 +741,7 @@ export const createOwnerDevice = async (req, res, next) => {
       description,
       images,
       specs,
-      location,
       addressText,
-      latitude,
-      longitude,
     } = req.body;
 
     if (!name || !dailyRate) {
@@ -745,44 +749,6 @@ export const createOwnerDevice = async (req, res, next) => {
         success: false,
         message: 'Name and daily rate are required.',
       });
-    }
-
-    const coordinates = location?.coordinates;
-    const hasMalformedCoordinates =
-      coordinates !== undefined &&
-      (!Array.isArray(coordinates) || coordinates.length !== 2);
-    const longitudeValue = coordinates?.[0] ?? longitude;
-    const latitudeValue = coordinates?.[1] ?? latitude;
-    const parsedLongitude = Number(longitudeValue);
-    const parsedLatitude = Number(latitudeValue);
-    const deviceAddress = location?.addressText ?? addressText;
-    const hasValidLocation =
-      (!location?.type || location.type === 'Point') &&
-      !hasMalformedCoordinates &&
-      ['number', 'string'].includes(typeof longitudeValue) &&
-      ['number', 'string'].includes(typeof latitudeValue) &&
-      longitudeValue != null &&
-      longitudeValue !== '' &&
-      latitudeValue != null &&
-      latitudeValue !== '' &&
-      Number.isFinite(parsedLongitude) &&
-      parsedLongitude >= -180 &&
-      parsedLongitude <= 180 &&
-      Number.isFinite(parsedLatitude) &&
-      parsedLatitude >= -90 &&
-      parsedLatitude <= 90;
-
-    if (location || latitude != null || longitude != null) {
-      if (
-        !hasValidLocation ||
-        typeof deviceAddress !== 'string' ||
-        !deviceAddress.trim()
-      ) {
-        return res.status(400).json({
-          success: false,
-          message: 'Valid device location is required.',
-        });
-      }
     }
 
     const newDevice = {
@@ -793,15 +759,7 @@ export const createOwnerDevice = async (req, res, next) => {
       depositAmount: Number(depositAmount) || 0,
       condition: (condition || '').trim(),
       description: (description || '').trim(),
-      ...(hasValidLocation
-        ? {
-            location: {
-              type: 'Point',
-              coordinates: [parsedLongitude, parsedLatitude],
-              addressText: (deviceAddress || '').trim(),
-            },
-          }
-        : {}),
+      address: (addressText || '').trim(),
       images: Array.isArray(images) && images.length > 0 ? images : ['https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=400&q=80'],
       specs: specs || {},
       ownerId: mongoose.Types.ObjectId.isValid(ownerId) ? new mongoose.Types.ObjectId(ownerId) : ownerId,
@@ -823,10 +781,21 @@ export const createOwnerDevice = async (req, res, next) => {
     };
 
     const result = await devicesCol.insertOne(newDevice);
+
+    const ownerDoc = await usersCol.findOne({
+      _id: mongoose.Types.ObjectId.isValid(ownerId)
+        ? new mongoose.Types.ObjectId(ownerId)
+        : ownerId,
+    });
+
+    const loc = resolveDeviceLocation(newDevice, ownerDoc);
+
     const createdDevice = {
       ...newDevice,
       _id: result.insertedId.toString(),
       id: result.insertedId.toString(),
+      location: loc,
+      address: loc?.addressText || ownerDoc?.address || newDevice.address || '',
     };
 
     return res.status(201).json({

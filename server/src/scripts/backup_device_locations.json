@@ -1,0 +1,1922 @@
+[
+  {
+    "_id": "6ad1cfaef8e0116329d9b99a",
+    "ownerId": "6ad1cfadf8e0116329d9b974",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.8544,
+        21.0285
+      ],
+      "addressText": "Hoan Kiem District, Hanoi"
+    }
+  },
+  {
+    "_id": "6ad1cfaef8e0116329d9b99c",
+    "ownerId": "6ad1cfadf8e0116329d9b974",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.8544,
+        21.0285
+      ],
+      "addressText": "Hoan Kiem District, Hanoi"
+    }
+  },
+  {
+    "_id": "6ad1cfaef8e0116329d9b99e",
+    "ownerId": "6ad1cfadf8e0116329d9b978",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        106.7009,
+        10.7769
+      ],
+      "addressText": "District 1, Ho Chi Minh City"
+    }
+  },
+  {
+    "_id": "6ad1cfaef8e0116329d9b9a0",
+    "ownerId": "6ad1cfadf8e0116329d9b97c",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        106.6669,
+        10.7679
+      ],
+      "addressText": "District 10, Ho Chi Minh City"
+    }
+  },
+  {
+    "_id": "6ad1cfaef8e0116329d9b9a2",
+    "ownerId": "6ad1cfadf8e0116329d9b980",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.8454,
+        21.0065
+      ],
+      "addressText": "Hai Ba Trung District, Hanoi"
+    }
+  },
+  {
+    "_id": "6ad1cfaef8e0116329d9b9a4",
+    "ownerId": "6ad1cfadf8e0116329d9b984",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.8234,
+        21.0185
+      ],
+      "addressText": "Dong Da District, Hanoi"
+    }
+  },
+  {
+    "_id": "6ad1cfaef8e0116329d9b9a6",
+    "ownerId": "6ad1cfadf8e0116329d9b978",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        106.7009,
+        10.7769
+      ],
+      "addressText": "District 1, Ho Chi Minh City"
+    }
+  },
+  {
+    "_id": "6ad1cfaef8e0116329d9b9a8",
+    "ownerId": "6ad1cfadf8e0116329d9b984",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.8234,
+        21.0185
+      ],
+      "addressText": "Dong Da District, Hanoi"
+    }
+  },
+  {
+    "_id": "6ad1cfaef8e0116329d9b9aa",
+    "ownerId": "6ad1cfadf8e0116329d9b974",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.8544,
+        21.0285
+      ],
+      "addressText": "Hoan Kiem District, Hanoi"
+    }
+  },
+  {
+    "_id": "6ad1cfaef8e0116329d9b9ac",
+    "ownerId": "6ad1cfadf8e0116329d9b980",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.8454,
+        21.0065
+      ],
+      "addressText": "Hai Ba Trung District, Hanoi"
+    }
+  },
+  {
+    "_id": "590408599ac7c1c98a3d8757",
+    "ownerId": "6ad1cfadf8e0116329d9b97c",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.895,
+        21.044
+      ],
+      "addressText": "Long Bien District, Hanoi"
+    }
+  },
+  {
+    "_id": "2d9c10bfc0ce3db33bc5484b",
+    "ownerId": "6ad1cfadf8e0116329d9b974",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.818,
+        21.067
+      ],
+      "addressText": "Tay Ho District, Hanoi"
+    }
+  },
+  {
+    "_id": "368732cf515f4fb39e8e33fc",
+    "ownerId": "6ad1cfadf8e0116329d9b980",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.821,
+        21.0355
+      ],
+      "addressText": "Ba Dinh District, Hanoi"
+    }
+  },
+  {
+    "_id": "c59be2cc4615b34452127aba",
+    "ownerId": "6ad1cfadf8e0116329d9b980",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.776,
+        20.97
+      ],
+      "addressText": "Ha Dong District, Hanoi"
+    }
+  },
+  {
+    "_id": "cb229bc1899b71b611fa2f61",
+    "ownerId": "6ad1cfadf8e0116329d9b978",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.8454,
+        21.0065
+      ],
+      "addressText": "Hai Ba Trung District, Hanoi"
+    }
+  },
+  {
+    "_id": "1d42199c7bdabd6e9ef41b12",
+    "ownerId": "6ad1cfadf8e0116329d9b984",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.793,
+        21.036
+      ],
+      "addressText": "Cau Giay District, Hanoi"
+    }
+  },
+  {
+    "_id": "8a6a2a06453679e0aa90478a",
+    "ownerId": "6ad1cfadf8e0116329d9b984",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.803,
+        20.997
+      ],
+      "addressText": "Thanh Xuan District, Hanoi"
+    }
+  },
+  {
+    "_id": "238daa3c9c0a326e706b2ece",
+    "ownerId": "6ad1cfadf8e0116329d9b97c",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.8234,
+        21.0185
+      ],
+      "addressText": "Dong Da District, Hanoi"
+    }
+  },
+  {
+    "_id": "c1bdd8b95ec8c86be695f58f",
+    "ownerId": "6ad1cfadf8e0116329d9b974",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.8544,
+        21.0285
+      ],
+      "addressText": "Hoan Kiem District, Hanoi"
+    }
+  },
+  {
+    "_id": "8f6eadc8e3000d0c33b8e7a7",
+    "ownerId": "6ad1cfadf8e0116329d9b984",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.8454,
+        21.0065
+      ],
+      "addressText": "Hai Ba Trung District, Hanoi"
+    }
+  },
+  {
+    "_id": "7ec756b2750eaba5d79414ae",
+    "ownerId": "6ad1cfadf8e0116329d9b984",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.756,
+        21.031
+      ],
+      "addressText": "Nam Tu Liem District, Hanoi"
+    }
+  },
+  {
+    "_id": "57504fda3f549e759dfa16eb",
+    "ownerId": "6ad1cfadf8e0116329d9b97c",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.803,
+        20.997
+      ],
+      "addressText": "Thanh Xuan District, Hanoi"
+    }
+  },
+  {
+    "_id": "47d6edd44f20f7cffaee971c",
+    "ownerId": "6ad1cfadf8e0116329d9b974",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.8234,
+        21.0185
+      ],
+      "addressText": "Dong Da District, Hanoi"
+    }
+  },
+  {
+    "_id": "c87a1160f8d4fb5f98911f99",
+    "ownerId": "6ad1cfadf8e0116329d9b97c",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.793,
+        21.036
+      ],
+      "addressText": "Cau Giay District, Hanoi"
+    }
+  },
+  {
+    "_id": "96ac6b7ac2904105508a0c5a",
+    "ownerId": "6ad1cfadf8e0116329d9b980",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.818,
+        21.067
+      ],
+      "addressText": "Tay Ho District, Hanoi"
+    }
+  },
+  {
+    "_id": "d56c4c92eaee1adadd57445d",
+    "ownerId": "6ad1cfadf8e0116329d9b978",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.821,
+        21.0355
+      ],
+      "addressText": "Ba Dinh District, Hanoi"
+    }
+  },
+  {
+    "_id": "20ae2319fc83a0e27b7f5de6",
+    "ownerId": "6ad1cfadf8e0116329d9b980",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.8544,
+        21.0285
+      ],
+      "addressText": "Hoan Kiem District, Hanoi"
+    }
+  },
+  {
+    "_id": "ce7ed00347cf0ffbf22b5ebb",
+    "ownerId": "6ad1cfadf8e0116329d9b97c",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.776,
+        20.97
+      ],
+      "addressText": "Ha Dong District, Hanoi"
+    }
+  },
+  {
+    "_id": "933580aa02a82c6faa048b1f",
+    "ownerId": "6ad1cfadf8e0116329d9b974",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.756,
+        21.031
+      ],
+      "addressText": "Nam Tu Liem District, Hanoi"
+    }
+  },
+  {
+    "_id": "6ad9d3bbd3eb87009d7400cc",
+    "ownerId": "6ad1cfadf8e0116329d9b978",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.8234,
+        21.0185
+      ],
+      "addressText": "Dong Da District, Hanoi"
+    }
+  },
+  {
+    "_id": "7b3a859b28318234f143801e",
+    "ownerId": "6ad1cfadf8e0116329d9b984",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.8544,
+        21.0285
+      ],
+      "addressText": "Hoan Kiem District, Hanoi"
+    }
+  },
+  {
+    "_id": "25b292a09253cca403a8f061",
+    "ownerId": "6ad1cfadf8e0116329d9b978",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.895,
+        21.044
+      ],
+      "addressText": "Long Bien District, Hanoi"
+    }
+  },
+  {
+    "_id": "d17e76da805923d94a87f387",
+    "ownerId": "6ad1cfadf8e0116329d9b980",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.793,
+        21.036
+      ],
+      "addressText": "Cau Giay District, Hanoi"
+    }
+  },
+  {
+    "_id": "10ee9829c7f79d79f485805b",
+    "ownerId": "6ad1cfadf8e0116329d9b97c",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.821,
+        21.0355
+      ],
+      "addressText": "Ba Dinh District, Hanoi"
+    }
+  },
+  {
+    "_id": "71df2737f51dd073454681df",
+    "ownerId": "6ad1cfadf8e0116329d9b980",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.818,
+        21.067
+      ],
+      "addressText": "Tay Ho District, Hanoi"
+    }
+  },
+  {
+    "_id": "f6fe9649f2cf967f53d85c30",
+    "ownerId": "6ad1cfadf8e0116329d9b978",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.776,
+        20.97
+      ],
+      "addressText": "Ha Dong District, Hanoi"
+    }
+  },
+  {
+    "_id": "a9d9a3cfe7968709dac108d9",
+    "ownerId": "6ad1cfadf8e0116329d9b97c",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.803,
+        20.997
+      ],
+      "addressText": "Thanh Xuan District, Hanoi"
+    }
+  },
+  {
+    "_id": "72db9d3a2d20c2b91e0508d2",
+    "ownerId": "6ad1cfadf8e0116329d9b984",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.8454,
+        21.0065
+      ],
+      "addressText": "Hai Ba Trung District, Hanoi"
+    }
+  },
+  {
+    "_id": "f727a349fe333bb5fe16eaaa",
+    "ownerId": "6ad1cfadf8e0116329d9b97c",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.756,
+        21.031
+      ],
+      "addressText": "Nam Tu Liem District, Hanoi"
+    }
+  },
+  {
+    "_id": "ab4d9b7c83b7a6e4868846dd",
+    "ownerId": "6ad1cfadf8e0116329d9b974",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.793,
+        21.036
+      ],
+      "addressText": "Cau Giay District, Hanoi"
+    }
+  },
+  {
+    "_id": "6a35a8e1bb22df5818c9f933",
+    "ownerId": "6ad1cfadf8e0116329d9b984",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.821,
+        21.0355
+      ],
+      "addressText": "Ba Dinh District, Hanoi"
+    }
+  },
+  {
+    "_id": "e5a27cd8ad201360d10ffc5c",
+    "ownerId": "6ad1cfadf8e0116329d9b978",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.8544,
+        21.0285
+      ],
+      "addressText": "Hoan Kiem District, Hanoi"
+    }
+  },
+  {
+    "_id": "9500180c33b30cb813f019fc",
+    "ownerId": "6ad1cfadf8e0116329d9b980",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.8234,
+        21.0185
+      ],
+      "addressText": "Dong Da District, Hanoi"
+    }
+  },
+  {
+    "_id": "16d697da86a1e9fcfb70688a",
+    "ownerId": "6ad1cfadf8e0116329d9b980",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.895,
+        21.044
+      ],
+      "addressText": "Long Bien District, Hanoi"
+    }
+  },
+  {
+    "_id": "a8fe73aacff20bf5ce1e3eca",
+    "ownerId": "6ad1cfadf8e0116329d9b974",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.895,
+        21.044
+      ],
+      "addressText": "Long Bien District, Hanoi"
+    }
+  },
+  {
+    "_id": "6cf57fbba9b74f0d00e8c663",
+    "ownerId": "6ad1cfadf8e0116329d9b980",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.818,
+        21.067
+      ],
+      "addressText": "Tay Ho District, Hanoi"
+    }
+  },
+  {
+    "_id": "24c6e1756ba4db6384b0bef1",
+    "ownerId": "6ad1cfadf8e0116329d9b978",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.776,
+        20.97
+      ],
+      "addressText": "Ha Dong District, Hanoi"
+    }
+  },
+  {
+    "_id": "d40be4d86bbc7fbe2fe83696",
+    "ownerId": "6ad1cfadf8e0116329d9b984",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.8454,
+        21.0065
+      ],
+      "addressText": "Hai Ba Trung District, Hanoi"
+    }
+  },
+  {
+    "_id": "82c7267ecc49576f0ed05329",
+    "ownerId": "6ad1cfadf8e0116329d9b97c",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.803,
+        20.997
+      ],
+      "addressText": "Thanh Xuan District, Hanoi"
+    }
+  },
+  {
+    "_id": "99e666936c91724295491000",
+    "ownerId": "6ad1cfadf8e0116329d9b984",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.756,
+        21.031
+      ],
+      "addressText": "Nam Tu Liem District, Hanoi"
+    }
+  },
+  {
+    "_id": "a391455a4e03fd25e5672c92",
+    "ownerId": "6ad1cfadf8e0116329d9b980",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.8544,
+        21.0285
+      ],
+      "addressText": "Hoan Kiem District, Hanoi"
+    }
+  },
+  {
+    "_id": "5dd86c38a251bf6a676b7506",
+    "ownerId": "6ad1cfadf8e0116329d9b974",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.8234,
+        21.0185
+      ],
+      "addressText": "Dong Da District, Hanoi"
+    }
+  },
+  {
+    "_id": "da7b28596b55f36dfe0af0a2",
+    "ownerId": "6ad1cfadf8e0116329d9b97c",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.793,
+        21.036
+      ],
+      "addressText": "Cau Giay District, Hanoi"
+    }
+  },
+  {
+    "_id": "2bf72dd25a26509a80e1a076",
+    "ownerId": "6ad1cfadf8e0116329d9b978",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.821,
+        21.0355
+      ],
+      "addressText": "Ba Dinh District, Hanoi"
+    }
+  },
+  {
+    "_id": "ece2673381861fe53ad6cfb3",
+    "ownerId": "6ad1cfadf8e0116329d9b984",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.756,
+        21.031
+      ],
+      "addressText": "Nam Tu Liem District, Hanoi"
+    }
+  },
+  {
+    "_id": "679432babe7ff3a8740431a8",
+    "ownerId": "6ad1cfadf8e0116329d9b97c",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.803,
+        20.997
+      ],
+      "addressText": "Thanh Xuan District, Hanoi"
+    }
+  },
+  {
+    "_id": "ce57f24882cc3d013c1817e0",
+    "ownerId": "6ad1cfadf8e0116329d9b984",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.8454,
+        21.0065
+      ],
+      "addressText": "Hai Ba Trung District, Hanoi"
+    }
+  },
+  {
+    "_id": "7f508e9975e39182a09c24f4",
+    "ownerId": "6ad1cfadf8e0116329d9b974",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.895,
+        21.044
+      ],
+      "addressText": "Long Bien District, Hanoi"
+    }
+  },
+  {
+    "_id": "45996b8eb6256f3d94b37b33",
+    "ownerId": "6ad1cfadf8e0116329d9b978",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.776,
+        20.97
+      ],
+      "addressText": "Ha Dong District, Hanoi"
+    }
+  },
+  {
+    "_id": "fb2d680b96d615c87d52450d",
+    "ownerId": "6ad1cfadf8e0116329d9b980",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.818,
+        21.067
+      ],
+      "addressText": "Tay Ho District, Hanoi"
+    }
+  },
+  {
+    "_id": "dd8e8d2e521479bd5aaba87a",
+    "ownerId": "6ad1cfadf8e0116329d9b978",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.77,
+        10
+      ],
+      "addressText": "Cai Rang District, Can Tho"
+    }
+  },
+  {
+    "_id": "87ceac0c622d1a64b8364938",
+    "ownerId": "6ad1cfadf8e0116329d9b978",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.782,
+        10.029
+      ],
+      "addressText": "Ninh Kieu District, Can Tho"
+    }
+  },
+  {
+    "_id": "b79be8e6b435543211c216e6",
+    "ownerId": "6ad1cfadf8e0116329d9b97c",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.788,
+        10.033
+      ],
+      "addressText": "Ninh Kieu District, Can Tho"
+    }
+  },
+  {
+    "_id": "dd28bb7577eecf4ff2901865",
+    "ownerId": "6ad1cfadf8e0116329d9b984",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.618,
+        10.121
+      ],
+      "addressText": "O Mon District, Can Tho"
+    }
+  },
+  {
+    "_id": "702d113cf0e00cdcf1b0b254",
+    "ownerId": "6ad1cfadf8e0116329d9b980",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.691,
+        9.992
+      ],
+      "addressText": "Phong Dien District, Can Tho"
+    }
+  },
+  {
+    "_id": "40cdb56c3a26dedbb8975826",
+    "ownerId": "6ad1cfadf8e0116329d9b974",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.742,
+        10.065
+      ],
+      "addressText": "Binh Thuy District, Can Tho"
+    }
+  },
+  {
+    "_id": "a5f77dd183294464f6edbe6b",
+    "ownerId": "6ad1cfadf8e0116329d9b974",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.776,
+        10.011
+      ],
+      "addressText": "Cai Rang District, Can Tho"
+    }
+  },
+  {
+    "_id": "4afa1333ed1708f02d947b14",
+    "ownerId": "6ad1cfadf8e0116329d9b97c",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.531,
+        10.269
+      ],
+      "addressText": "Thot Not District, Can Tho"
+    }
+  },
+  {
+    "_id": "6b8359660bb55dec40c8c625",
+    "ownerId": "6ad1cfadf8e0116329d9b984",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.756,
+        10.056
+      ],
+      "addressText": "Binh Thuy District, Can Tho"
+    }
+  },
+  {
+    "_id": "e31dd458ee7a19a6549ce295",
+    "ownerId": "6ad1cfadf8e0116329d9b984",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.782,
+        10.029
+      ],
+      "addressText": "Ninh Kieu District, Can Tho"
+    }
+  },
+  {
+    "_id": "d3a894c4b0161bcc94dff12d",
+    "ownerId": "6ad1cfadf8e0116329d9b980",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.742,
+        10.065
+      ],
+      "addressText": "Binh Thuy District, Can Tho"
+    }
+  },
+  {
+    "_id": "c1b91bf04f85692fc350b42d",
+    "ownerId": "6ad1cfadf8e0116329d9b97c",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.618,
+        10.121
+      ],
+      "addressText": "O Mon District, Can Tho"
+    }
+  },
+  {
+    "_id": "7a3485cb6467018bfaa409a1",
+    "ownerId": "6ad1cfadf8e0116329d9b974",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.788,
+        10.033
+      ],
+      "addressText": "Ninh Kieu District, Can Tho"
+    }
+  },
+  {
+    "_id": "0a74b6495bdaeeb99a503a89",
+    "ownerId": "6ad1cfadf8e0116329d9b984",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.77,
+        10
+      ],
+      "addressText": "Cai Rang District, Can Tho"
+    }
+  },
+  {
+    "_id": "4b1a09899093ef70333ddfe0",
+    "ownerId": "6ad1cfadf8e0116329d9b978",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.691,
+        9.992
+      ],
+      "addressText": "Phong Dien District, Can Tho"
+    }
+  },
+  {
+    "_id": "aa435694e14412feac72985c",
+    "ownerId": "6ad1cfadf8e0116329d9b978",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.791,
+        10.044
+      ],
+      "addressText": "Ninh Kieu District, Can Tho"
+    }
+  },
+  {
+    "_id": "2ccb9f52a6a18e65b4a0bafc",
+    "ownerId": "6ad1cfadf8e0116329d9b974",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.531,
+        10.269
+      ],
+      "addressText": "Thot Not District, Can Tho"
+    }
+  },
+  {
+    "_id": "d52be58fb17ba77899c92269",
+    "ownerId": "6ad1cfadf8e0116329d9b97c",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.791,
+        10.044
+      ],
+      "addressText": "Ninh Kieu District, Can Tho"
+    }
+  },
+  {
+    "_id": "093ae1abeac24459f874d772",
+    "ownerId": "6ad1cfadf8e0116329d9b978",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.788,
+        10.033
+      ],
+      "addressText": "Ninh Kieu District, Can Tho"
+    }
+  },
+  {
+    "_id": "77f252320e0df59c5f701ef2",
+    "ownerId": "6ad1cfadf8e0116329d9b984",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.776,
+        10.011
+      ],
+      "addressText": "Cai Rang District, Can Tho"
+    }
+  },
+  {
+    "_id": "6d30bc5a43bc0fb290d11365",
+    "ownerId": "6ad1cfadf8e0116329d9b984",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.742,
+        10.065
+      ],
+      "addressText": "Binh Thuy District, Can Tho"
+    }
+  },
+  {
+    "_id": "662c0d9a17a8b8874f1704d4",
+    "ownerId": "6ad1cfadf8e0116329d9b980",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.756,
+        10.056
+      ],
+      "addressText": "Binh Thuy District, Can Tho"
+    }
+  },
+  {
+    "_id": "a59863522a425836ef3c1feb",
+    "ownerId": "6ad1cfadf8e0116329d9b974",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.77,
+        10
+      ],
+      "addressText": "Cai Rang District, Can Tho"
+    }
+  },
+  {
+    "_id": "a3812ef2690324c2343a9863",
+    "ownerId": "6ad1cfadf8e0116329d9b980",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.618,
+        10.121
+      ],
+      "addressText": "O Mon District, Can Tho"
+    }
+  },
+  {
+    "_id": "5de9e923f59455e17e55f752",
+    "ownerId": "6ad1cfadf8e0116329d9b978",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.691,
+        9.992
+      ],
+      "addressText": "Phong Dien District, Can Tho"
+    }
+  },
+  {
+    "_id": "78272418fa81a81406199910",
+    "ownerId": "6ad1cfadf8e0116329d9b980",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.776,
+        10.011
+      ],
+      "addressText": "Cai Rang District, Can Tho"
+    }
+  },
+  {
+    "_id": "dc571d33cb871b92bb3e42cb",
+    "ownerId": "6ad1cfadf8e0116329d9b974",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.531,
+        10.269
+      ],
+      "addressText": "Thot Not District, Can Tho"
+    }
+  },
+  {
+    "_id": "37cf1d900e0a63552a0dabe5",
+    "ownerId": "6ad1cfadf8e0116329d9b984",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.782,
+        10.029
+      ],
+      "addressText": "Ninh Kieu District, Can Tho"
+    }
+  },
+  {
+    "_id": "e8c7ff403195ffd4ace11b3a",
+    "ownerId": "6ad1cfadf8e0116329d9b974",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.618,
+        10.121
+      ],
+      "addressText": "O Mon District, Can Tho"
+    }
+  },
+  {
+    "_id": "56738b497fd0ac24f91acfb5",
+    "ownerId": "6ad1cfadf8e0116329d9b974",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.756,
+        10.056
+      ],
+      "addressText": "Binh Thuy District, Can Tho"
+    }
+  },
+  {
+    "_id": "de17baa36ac604822dc3a469",
+    "ownerId": "6ad1cfadf8e0116329d9b97c",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.77,
+        10
+      ],
+      "addressText": "Cai Rang District, Can Tho"
+    }
+  },
+  {
+    "_id": "616da2a0cc927ee8ac501673",
+    "ownerId": "6ad1cfadf8e0116329d9b978",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.742,
+        10.065
+      ],
+      "addressText": "Binh Thuy District, Can Tho"
+    }
+  },
+  {
+    "_id": "7c6764b19c4da2be549dc590",
+    "ownerId": "6ad1cfadf8e0116329d9b984",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.791,
+        10.044
+      ],
+      "addressText": "Ninh Kieu District, Can Tho"
+    }
+  },
+  {
+    "_id": "623254b69a4cac39b39d903c",
+    "ownerId": "6ad1cfadf8e0116329d9b980",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.788,
+        10.033
+      ],
+      "addressText": "Ninh Kieu District, Can Tho"
+    }
+  },
+  {
+    "_id": "206ed9180b9bef6f80f70a93",
+    "ownerId": "6ad1cfadf8e0116329d9b984",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.782,
+        10.029
+      ],
+      "addressText": "Ninh Kieu District, Can Tho"
+    }
+  },
+  {
+    "_id": "0e84254293570d4f0443b16f",
+    "ownerId": "6ad1cfadf8e0116329d9b974",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.531,
+        10.269
+      ],
+      "addressText": "Thot Not District, Can Tho"
+    }
+  },
+  {
+    "_id": "4103007f3de3e715146c7881",
+    "ownerId": "6ad1cfadf8e0116329d9b978",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.691,
+        9.992
+      ],
+      "addressText": "Phong Dien District, Can Tho"
+    }
+  },
+  {
+    "_id": "db81880ea0fb32414b1590ef",
+    "ownerId": "6ad1cfadf8e0116329d9b980",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.776,
+        10.011
+      ],
+      "addressText": "Cai Rang District, Can Tho"
+    }
+  },
+  {
+    "_id": "f97840d3b124ae90785ae8bc",
+    "ownerId": "6ad1cfadf8e0116329d9b97c",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.756,
+        10.056
+      ],
+      "addressText": "Binh Thuy District, Can Tho"
+    }
+  },
+  {
+    "_id": "f674ada1229f87194544acba",
+    "ownerId": "6ad1cfadf8e0116329d9b980",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.742,
+        10.065
+      ],
+      "addressText": "Binh Thuy District, Can Tho"
+    }
+  },
+  {
+    "_id": "f124ea1736978e8a35986eee",
+    "ownerId": "6ad1cfadf8e0116329d9b984",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.77,
+        10
+      ],
+      "addressText": "Cai Rang District, Can Tho"
+    }
+  },
+  {
+    "_id": "873bb38d505c4d9693b7a1f7",
+    "ownerId": "6ad1cfadf8e0116329d9b978",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.791,
+        10.044
+      ],
+      "addressText": "Ninh Kieu District, Can Tho"
+    }
+  },
+  {
+    "_id": "7fa9f4c1702e136494d416e5",
+    "ownerId": "6ad1cfadf8e0116329d9b974",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.788,
+        10.033
+      ],
+      "addressText": "Ninh Kieu District, Can Tho"
+    }
+  },
+  {
+    "_id": "f04edfddde68afb78e676ada",
+    "ownerId": "6ad1cfadf8e0116329d9b97c",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.618,
+        10.121
+      ],
+      "addressText": "O Mon District, Can Tho"
+    }
+  },
+  {
+    "_id": "64d69cc4dbfba74a6931e946",
+    "ownerId": "6ad1cfadf8e0116329d9b978",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.791,
+        10.044
+      ],
+      "addressText": "Ninh Kieu District, Can Tho"
+    }
+  },
+  {
+    "_id": "8be97025beca567b79979c08",
+    "ownerId": "6ad1cfadf8e0116329d9b974",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.531,
+        10.269
+      ],
+      "addressText": "Thot Not District, Can Tho"
+    }
+  },
+  {
+    "_id": "e31d2abc38bbaa24217c67f9",
+    "ownerId": "6ad1cfadf8e0116329d9b980",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.776,
+        10.011
+      ],
+      "addressText": "Cai Rang District, Can Tho"
+    }
+  },
+  {
+    "_id": "8c41708bee58e38ec7959925",
+    "ownerId": "6ad1cfadf8e0116329d9b97c",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.756,
+        10.056
+      ],
+      "addressText": "Binh Thuy District, Can Tho"
+    }
+  },
+  {
+    "_id": "cc938fc9db1e83f5f5733e2e",
+    "ownerId": "6ad1cfadf8e0116329d9b984",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.782,
+        10.029
+      ],
+      "addressText": "Ninh Kieu District, Can Tho"
+    }
+  },
+  {
+    "_id": "6655c40c0cf457d2d7c5778d",
+    "ownerId": "6ad1cfadf8e0116329d9b978",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        105.691,
+        9.992
+      ],
+      "addressText": "Phong Dien District, Can Tho"
+    }
+  },
+  {
+    "_id": "50dba723d4e025bfe773ffd7",
+    "ownerId": "6ad1cfadf8e0116329d9b97c",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        106.678,
+        10.8
+      ],
+      "addressText": "Phu Nhuan District, Ho Chi Minh City"
+    }
+  },
+  {
+    "_id": "daaffae0b91f77d338da583a",
+    "ownerId": "6ad1cfadf8e0116329d9b978",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        106.674,
+        10.837
+      ],
+      "addressText": "Go Vap District, Ho Chi Minh City"
+    }
+  },
+  {
+    "_id": "52a26387e0e12cb6c26bbba3",
+    "ownerId": "6ad1cfadf8e0116329d9b974",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        106.6669,
+        10.7679
+      ],
+      "addressText": "District 10, Ho Chi Minh City"
+    }
+  },
+  {
+    "_id": "31ddaf3371ee96945a483ec0",
+    "ownerId": "6ad1cfadf8e0116329d9b978",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        106.721,
+        10.733
+      ],
+      "addressText": "District 7, Ho Chi Minh City"
+    }
+  },
+  {
+    "_id": "3a57b8250dfff346c8aeb6f3",
+    "ownerId": "6ad1cfadf8e0116329d9b980",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        106.652,
+        10.798
+      ],
+      "addressText": "Tan Binh District, Ho Chi Minh City"
+    }
+  },
+  {
+    "_id": "6015722c4debeea9879a48ba",
+    "ownerId": "6ad1cfadf8e0116329d9b984",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        106.7009,
+        10.7769
+      ],
+      "addressText": "District 1, Ho Chi Minh City"
+    }
+  },
+  {
+    "_id": "53102d212ba187690e5e2007",
+    "ownerId": "6ad1cfadf8e0116329d9b984",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        106.711,
+        10.802
+      ],
+      "addressText": "Binh Thanh District, Ho Chi Minh City"
+    }
+  },
+  {
+    "_id": "62c9095f896a32e97320b5bc",
+    "ownerId": "6ad1cfadf8e0116329d9b980",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        106.684,
+        10.784
+      ],
+      "addressText": "District 3, Ho Chi Minh City"
+    }
+  },
+  {
+    "_id": "15e9fd56810f9af4ca91342a",
+    "ownerId": "6ad1cfadf8e0116329d9b97c",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        106.668,
+        10.754
+      ],
+      "addressText": "District 5, Ho Chi Minh City"
+    }
+  },
+  {
+    "_id": "2109aad5d69a6f3b822f85d2",
+    "ownerId": "6ad1cfadf8e0116329d9b980",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        106.6669,
+        10.7679
+      ],
+      "addressText": "District 10, Ho Chi Minh City"
+    }
+  },
+  {
+    "_id": "e87aec43b2002a9f24bd24f4",
+    "ownerId": "6ad1cfadf8e0116329d9b984",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        106.721,
+        10.733
+      ],
+      "addressText": "District 7, Ho Chi Minh City"
+    }
+  },
+  {
+    "_id": "49c3a24b8229d641f0e49a19",
+    "ownerId": "6ad1cfadf8e0116329d9b978",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        106.652,
+        10.798
+      ],
+      "addressText": "Tan Binh District, Ho Chi Minh City"
+    }
+  },
+  {
+    "_id": "b5fab18a45870c0e512b893a",
+    "ownerId": "6ad1cfadf8e0116329d9b97c",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        106.711,
+        10.802
+      ],
+      "addressText": "Binh Thanh District, Ho Chi Minh City"
+    }
+  },
+  {
+    "_id": "7fb8c234d46d4f51c39f5c87",
+    "ownerId": "6ad1cfadf8e0116329d9b978",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        106.684,
+        10.784
+      ],
+      "addressText": "District 3, Ho Chi Minh City"
+    }
+  },
+  {
+    "_id": "12fd10255712a3f89e217b5c",
+    "ownerId": "6ad1cfadf8e0116329d9b974",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        106.668,
+        10.754
+      ],
+      "addressText": "District 5, Ho Chi Minh City"
+    }
+  },
+  {
+    "_id": "2a516d2a1804780a0bc25a3f",
+    "ownerId": "6ad1cfadf8e0116329d9b97c",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        106.7009,
+        10.7769
+      ],
+      "addressText": "District 1, Ho Chi Minh City"
+    }
+  },
+  {
+    "_id": "127123c753230005420caf3e",
+    "ownerId": "6ad1cfadf8e0116329d9b980",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        106.754,
+        10.849
+      ],
+      "addressText": "Thu Duc City, Ho Chi Minh City"
+    }
+  },
+  {
+    "_id": "6eb2310c1ab6f04094e92fd6",
+    "ownerId": "6ad1cfadf8e0116329d9b974",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        106.674,
+        10.837
+      ],
+      "addressText": "Go Vap District, Ho Chi Minh City"
+    }
+  },
+  {
+    "_id": "186f32a3d3de03215609ae15",
+    "ownerId": "6ad1cfadf8e0116329d9b980",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        106.7009,
+        10.7769
+      ],
+      "addressText": "District 1, Ho Chi Minh City"
+    }
+  },
+  {
+    "_id": "237b391a14da80509d048105",
+    "ownerId": "6ad1cfadf8e0116329d9b978",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        106.668,
+        10.754
+      ],
+      "addressText": "District 5, Ho Chi Minh City"
+    }
+  },
+  {
+    "_id": "8f043cab28c37ebfb597bf4a",
+    "ownerId": "6ad1cfadf8e0116329d9b974",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        106.721,
+        10.733
+      ],
+      "addressText": "District 7, Ho Chi Minh City"
+    }
+  },
+  {
+    "_id": "6f991ae0a24ac353b9b00827",
+    "ownerId": "6ad1cfadf8e0116329d9b97c",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        106.684,
+        10.784
+      ],
+      "addressText": "District 3, Ho Chi Minh City"
+    }
+  },
+  {
+    "_id": "f2c5f86fcc4c89ea28903ab1",
+    "ownerId": "6ad1cfadf8e0116329d9b978",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        106.678,
+        10.8
+      ],
+      "addressText": "Phu Nhuan District, Ho Chi Minh City"
+    }
+  },
+  {
+    "_id": "84ad15646c63a6c37c0a4adb",
+    "ownerId": "6ad1cfadf8e0116329d9b984",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        106.754,
+        10.849
+      ],
+      "addressText": "Thu Duc City, Ho Chi Minh City"
+    }
+  },
+  {
+    "_id": "5d6b83c8d2a0d7a6caf81d23",
+    "ownerId": "6ad1cfadf8e0116329d9b97c",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        106.711,
+        10.802
+      ],
+      "addressText": "Binh Thanh District, Ho Chi Minh City"
+    }
+  },
+  {
+    "_id": "4ad4536156f77c4f20c2bebd",
+    "ownerId": "6ad1cfadf8e0116329d9b974",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        106.678,
+        10.8
+      ],
+      "addressText": "Phu Nhuan District, Ho Chi Minh City"
+    }
+  },
+  {
+    "_id": "22371be28f27b71484589314",
+    "ownerId": "6ad1cfadf8e0116329d9b980",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        106.6669,
+        10.7679
+      ],
+      "addressText": "District 10, Ho Chi Minh City"
+    }
+  },
+  {
+    "_id": "ac2d54c1decb8ee444aa90ca",
+    "ownerId": "6ad1cfadf8e0116329d9b978",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        106.652,
+        10.798
+      ],
+      "addressText": "Tan Binh District, Ho Chi Minh City"
+    }
+  },
+  {
+    "_id": "45568100806ec28c15f1708c",
+    "ownerId": "6ad1cfadf8e0116329d9b974",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        106.7009,
+        10.7769
+      ],
+      "addressText": "District 1, Ho Chi Minh City"
+    }
+  },
+  {
+    "_id": "f246c40df9c27f0c38a53c91",
+    "ownerId": "6ad1cfadf8e0116329d9b97c",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        106.674,
+        10.837
+      ],
+      "addressText": "Go Vap District, Ho Chi Minh City"
+    }
+  },
+  {
+    "_id": "f9bfa3ece2db1503dd78a3be",
+    "ownerId": "6ad1cfadf8e0116329d9b978",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        106.754,
+        10.849
+      ],
+      "addressText": "Thu Duc City, Ho Chi Minh City"
+    }
+  },
+  {
+    "_id": "ef28748479e19bdc1e09b797",
+    "ownerId": "6ad1cfadf8e0116329d9b984",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        106.684,
+        10.784
+      ],
+      "addressText": "District 3, Ho Chi Minh City"
+    }
+  },
+  {
+    "_id": "b3c2b815ee7e806ae4d28b48",
+    "ownerId": "6ad1cfadf8e0116329d9b97c",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        106.721,
+        10.733
+      ],
+      "addressText": "District 7, Ho Chi Minh City"
+    }
+  },
+  {
+    "_id": "18de75388416c14386e4c708",
+    "ownerId": "6ad1cfadf8e0116329d9b980",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        106.668,
+        10.754
+      ],
+      "addressText": "District 5, Ho Chi Minh City"
+    }
+  },
+  {
+    "_id": "0b1db77956d95990233beb05",
+    "ownerId": "6ad1cfadf8e0116329d9b980",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        106.6669,
+        10.7679
+      ],
+      "addressText": "District 10, Ho Chi Minh City"
+    }
+  },
+  {
+    "_id": "62fdd0ecf8ea83328d86e565",
+    "ownerId": "6ad1cfadf8e0116329d9b978",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        106.652,
+        10.798
+      ],
+      "addressText": "Tan Binh District, Ho Chi Minh City"
+    }
+  },
+  {
+    "_id": "8e169f8cc689637e4f7ce1eb",
+    "ownerId": "6ad1cfadf8e0116329d9b974",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        106.678,
+        10.8
+      ],
+      "addressText": "Phu Nhuan District, Ho Chi Minh City"
+    }
+  },
+  {
+    "_id": "2d9a8084d74d841a201dbcfc",
+    "ownerId": "6ad1cfadf8e0116329d9b97c",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        106.711,
+        10.802
+      ],
+      "addressText": "Binh Thanh District, Ho Chi Minh City"
+    }
+  },
+  {
+    "_id": "e45ffcd064a49df0343953a4",
+    "ownerId": "6ad1cfadf8e0116329d9b984",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        106.674,
+        10.837
+      ],
+      "addressText": "Go Vap District, Ho Chi Minh City"
+    }
+  },
+  {
+    "_id": "33857a67b082131c80ec405c",
+    "ownerId": "6ad1cfadf8e0116329d9b984",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        106.721,
+        10.733
+      ],
+      "addressText": "District 7, Ho Chi Minh City"
+    }
+  },
+  {
+    "_id": "afe07846617587eb40f2e7cf",
+    "ownerId": "6ad1cfadf8e0116329d9b980",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        106.754,
+        10.849
+      ],
+      "addressText": "Thu Duc City, Ho Chi Minh City"
+    }
+  },
+  {
+    "_id": "f57b92908c8e7e2322ae1f5b",
+    "ownerId": "6ad1cfadf8e0116329d9b97c",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        106.7009,
+        10.7769
+      ],
+      "addressText": "District 1, Ho Chi Minh City"
+    }
+  },
+  {
+    "_id": "5aa236af18a6460c4c7c7dd6",
+    "ownerId": "6ad1cfadf8e0116329d9b974",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        106.668,
+        10.754
+      ],
+      "addressText": "District 5, Ho Chi Minh City"
+    }
+  },
+  {
+    "_id": "a42ed5c4c5c458e259fc4207",
+    "ownerId": "6ad1cfadf8e0116329d9b978",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        106.684,
+        10.784
+      ],
+      "addressText": "District 3, Ho Chi Minh City"
+    }
+  },
+  {
+    "_id": "5fc2d0091473655ffbdc8f55",
+    "ownerId": "6ad1cfadf8e0116329d9b984",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        106.674,
+        10.837
+      ],
+      "addressText": "Go Vap District, Ho Chi Minh City"
+    }
+  },
+  {
+    "_id": "a6f473008fe9f76a2e2a8a04",
+    "ownerId": "6ad1cfadf8e0116329d9b980",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        106.754,
+        10.849
+      ],
+      "addressText": "Thu Duc City, Ho Chi Minh City"
+    }
+  },
+  {
+    "_id": "c414e1b6b87b4dbda6c2f7a4",
+    "ownerId": "6ad1cfadf8e0116329d9b974",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        106.678,
+        10.8
+      ],
+      "addressText": "Phu Nhuan District, Ho Chi Minh City"
+    }
+  },
+  {
+    "_id": "41bc62292a63f1bacd14983e",
+    "ownerId": "6ad1cfadf8e0116329d9b97c",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        106.711,
+        10.802
+      ],
+      "addressText": "Binh Thanh District, Ho Chi Minh City"
+    }
+  },
+  {
+    "_id": "38c0d6c520db1cbc80f794a6",
+    "ownerId": "6ad1cfadf8e0116329d9b978",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        106.652,
+        10.798
+      ],
+      "addressText": "Tan Binh District, Ho Chi Minh City"
+    }
+  },
+  {
+    "_id": "21d5a46725498e620ce31786",
+    "ownerId": "6ad1cfadf8e0116329d9b980",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        106.6669,
+        10.7679
+      ],
+      "addressText": "District 10, Ho Chi Minh City"
+    }
+  }
+]

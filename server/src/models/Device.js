@@ -75,24 +75,7 @@ const deviceSchema = new mongoose.Schema(
       min: 0,
     },
 
-    // 4. Vị trí Địa lý GeoJSON
-    location: {
-      type: {
-        type: String,
-        enum: ['Point'],
-        default: 'Point',
-      },
-      coordinates: {
-        type: [Number], // [lng, lat]
-        required: true,
-      },
-      addressText: {
-        type: String,
-        required: true,
-      },
-    },
-
-    // 5. Trạng thái Kho, Lịch bận & Kiểm duyệt Admin
+    // 4. Trạng thái Kho, Lịch bận & Kiểm duyệt Admin
     status: {
       type: String,
       enum: ['available', 'maintenance', 'hidden', 'rented'],
@@ -173,13 +156,49 @@ deviceSchema.virtual('owner', {
   justOne: true,
 });
 
+// Dynamic location resolved from owner (Single Source of Truth: users.location)
+deviceSchema.virtual('location').get(function () {
+  const owner = (this.ownerId && typeof this.ownerId === 'object' && this.ownerId.location)
+    ? this.ownerId
+    : (this.owner && typeof this.owner === 'object' && this.owner.location)
+      ? this.owner
+      : null;
+
+  if (
+    owner?.location?.type === 'Point' &&
+    Array.isArray(owner.location.coordinates) &&
+    owner.location.coordinates.length === 2
+  ) {
+    const [lng, lat] = owner.location.coordinates;
+    const numLng = Number(lng);
+    const numLat = Number(lat);
+    if (
+      Number.isFinite(numLng) &&
+      Number.isFinite(numLat) &&
+      numLng >= -180 &&
+      numLng <= 180 &&
+      numLat >= -90 &&
+      numLat <= 90
+    ) {
+      return {
+        type: 'Point',
+        coordinates: [numLng, numLat],
+        addressText: owner.address || owner.location?.addressText || '',
+      };
+    }
+  }
+  return null;
+});
+
 deviceSchema.virtual('addressText')
-  .get(function () { return this.location?.addressText ?? ''; })
-  .set(function (v) { this.set('location.addressText', v); });
+  .get(function () {
+    return this.location?.addressText ?? (this.owner?.address || (typeof this.ownerId === 'object' ? this.ownerId?.address : '')) ?? '';
+  });
 
 deviceSchema.virtual('address')
-  .get(function () { return this.location?.addressText ?? ''; })
-  .set(function (v) { this.set('location.addressText', v); });
+  .get(function () {
+    return this.location?.addressText ?? (this.owner?.address || (typeof this.ownerId === 'object' ? this.ownerId?.address : '')) ?? '';
+  });
 
 deviceSchema.virtual('ratingAvg')
   .get(function () { return this.stats?.ratingAvg ?? 0; })
@@ -229,7 +248,6 @@ deviceSchema.pre('save', function (next) {
   next();
 });
 
-deviceSchema.index({ location: '2dsphere' });
 deviceSchema.index({ category: 1, status: 1, isDeleted: 1 });
 deviceSchema.index({ name: 'text', brand: 'text', description: 'text' });
 deviceSchema.index({ isDeleted: 1, moderationStatus: 1, createdAt: -1 });

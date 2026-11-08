@@ -5,10 +5,13 @@ import { getNearbyDevices } from '../src/controllers/deviceController.js';
 let originalDb, pipeline;
 beforeEach(() => {
   originalDb = mongoose.connection.db; pipeline = null;
-  mongoose.connection.db = { collection: () => ({ aggregate(stages) {
-    pipeline = stages;
-    return { toArray: async () => [{ data: [], totals: [] }] };
-  } }) };
+  mongoose.connection.db = { collection: (name) => {
+    assert.equal(name, 'users');
+    return { aggregate(stages) {
+      pipeline = stages;
+      return { toArray: async () => [{ data: [], totals: [] }] };
+    } };
+  } };
 });
 afterEach(() => { mongoose.connection.db = originalDb; });
 async function request(query = {}) {
@@ -22,11 +25,13 @@ test('nearby uses 10km and only available, undeleted valid GeoJSON devices', asy
   const geo = pipeline[0].$geoNear;
   assert.deepEqual(geo.near.coordinates, [105.8542, 21.0285]);
   assert.equal(geo.maxDistance, 10000);
-  assert.equal(geo.query.status, 'available');
-  assert.deepEqual(geo.query.isDeleted, { $ne: true });
   assert.equal(geo.query['location.type'], 'Point');
   assert.deepEqual(geo.query['location.coordinates'], { $size: 2 });
-  assert.deepEqual(pipeline[1].$sort, { distanceMeters: 1, _id: 1 });
+  const deviceMatch = pipeline[1].$lookup.pipeline[0].$match;
+  assert.equal(deviceMatch.status, 'available');
+  assert.deepEqual(deviceMatch.isDeleted, { $ne: true });
+  const sortStage = pipeline.find(s => s.$sort).$sort;
+  assert.deepEqual(sortStage, { distanceMeters: 1, _id: 1 });
 });
 test('radius cannot expand beyond 10km', async () => {
   await request({ radius: '100000' }); assert.equal(pipeline[0].$geoNear.maxDistance, 10000);

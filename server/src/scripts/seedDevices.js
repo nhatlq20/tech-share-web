@@ -368,24 +368,24 @@ export const seedDevelopmentDevices = async () => {
     const conn = await mongoose.connect(mongoUri);
     console.log(`✅ Connected successfully to: ${conn.connection.name}`);
 
-    // Ensure geospatial 2dsphere index exists on Device collection
-    await Device.collection.createIndex({ location: '2dsphere' });
-    console.log('✅ Created 2dsphere index on location field');
-
     // Clean existing dev devices to prevent duplicate accumulation (Idempotent)
     const deleteResult = await Device.deleteMany({});
     console.log(`🧹 Cleaned ${deleteResult.deletedCount} existing devices from development database.`);
 
     // Insert curated devices
-    const devicesToInsert = DEVELOPMENT_DEVICES.map((d) => ({
-      ...d,
-      status: 'available',
-      moderationStatus: 'approved',
-      moderationReason: '',
-      rejectReason: '',
-      moderatedBy: null,
-      moderatedAt: new Date(),
-    }));
+    const devicesToInsert = DEVELOPMENT_DEVICES.map((d) => {
+      const dev = { ...d };
+      delete dev.location;
+      return {
+        ...dev,
+        status: 'available',
+        moderationStatus: 'approved',
+        moderationReason: '',
+        rejectReason: '',
+        moderatedBy: null,
+        moderatedAt: new Date(),
+      };
+    });
     const inserted = await Device.insertMany(devicesToInsert);
     console.log(`🎉 Successfully inserted ${inserted.length} development devices!`);
 

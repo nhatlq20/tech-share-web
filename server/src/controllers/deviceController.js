@@ -1,6 +1,8 @@
 import mongoose from "mongoose";
 import Device from "../models/Device.js";
+import User from "../models/User.js";
 import { uploadToCloudinary } from "../services/cloudinaryService.js";
+import { resolveDeviceLocation } from "../utils/locationHelper.js";
 
 /**
  * Helper to get MongoDB collections safely if Mongoose connection is ready
@@ -11,6 +13,14 @@ const getDevicesCollection = () => {
     throw new Error("Database connection is not initialized yet.");
   }
   return db.collection("devices");
+};
+
+const getUsersCollection = () => {
+  const db = mongoose.connection.db;
+  if (!db) {
+    throw new Error("Database connection is not initialized yet.");
+  }
+  return db.collection("users");
 };
 
 const RECOMMENDATION_DEFAULT_PAGE = 1;
@@ -92,13 +102,8 @@ export const getRecommendedDevices = async (req, res, next) => {
     if (categoryFilter && categoryFilter !== "all" && !allowedCategories.includes(categoryFilter)) {
       return res.status(400).json({ success: false, message: "Valid device category is required." });
     }
-    const deviceFilter = {
-      status: "available",
-      isDeleted: { $ne: true },
-      $or: [
-        { moderationStatus: "approved" },
-        { moderationStatus: { $exists: false } },
-      ],
+    const userGeoFilter = {
+      isActive: { $ne: false },
       "location.type": "Point",
       "location.coordinates": { $size: 2 },
       "location.coordinates.0": {
@@ -111,6 +116,15 @@ export const getRecommendedDevices = async (req, res, next) => {
         $gte: -MAX_LATITUDE,
         $lte: MAX_LATITUDE,
       },
+    };
+
+    const deviceFilter = {
+      status: "available",
+      isDeleted: { $ne: true },
+      $or: [
+        { moderationStatus: "approved" },
+        { moderationStatus: { $exists: false } },
+      ],
     };
     // Filter before sorting/pagination so totals and every page belong to this category.
     if (categoryFilter && categoryFilter !== "all") deviceFilter.category = categoryFilter;
@@ -130,7 +144,7 @@ export const getRecommendedDevices = async (req, res, next) => {
       ];
     }
 
-    const [result] = await getDevicesCollection()
+    const [result] = await getUsersCollection()
       .aggregate([
         {
           $geoNear: {
@@ -139,7 +153,43 @@ export const getRecommendedDevices = async (req, res, next) => {
             distanceField: "distanceMeters",
             spherical: true,
             maxDistance: HOME_RECOMMENDATION_MAX_DISTANCE_METERS,
-            query: deviceFilter,
+            query: userGeoFilter,
+          },
+        },
+        {
+          $lookup: {
+            from: "devices",
+            localField: "_id",
+            foreignField: "ownerId",
+            pipeline: [{ $match: deviceFilter }],
+            as: "deviceList",
+          },
+        },
+        { $unwind: "$deviceList" },
+        {
+          $replaceRoot: {
+            newRoot: {
+              $mergeObjects: [
+                "$deviceList",
+                {
+                  distanceMeters: "$distanceMeters",
+                  location: {
+                    type: "$location.type",
+                    coordinates: "$location.coordinates",
+                    addressText: { $ifNull: ["$address", ""] },
+                  },
+                  owner: {
+                    _id: "$_id",
+                    name: "$name",
+                    avatar: "$avatar",
+                    address: "$address",
+                    trust: "$trust",
+                    rating: "$rating",
+                    totalReviews: "$totalReviews",
+                  },
+                },
+              ],
+            },
           },
         },
         {
@@ -255,6 +305,7 @@ export const getDevices = async (req, res, next) => {
     if (mongoose.connection.readyState === 1) {
       total = await Device.countDocuments(filter);
       devices = await Device.find(filter)
+        .populate("ownerId", "name email phone avatar address location trust rating totalReviews")
         .sort(sortOptions)
         .skip(skip)
         .limit(limitNum)
@@ -269,31 +320,48 @@ export const getDevices = async (req, res, next) => {
         .skip(skip)
         .limit(limitNum)
         .toArray();
+
+      const ownerIds = [...new Set(devices.map((d) => d.ownerId).filter(Boolean))];
+      if (ownerIds.length > 0) {
+        const usersCol = getUsersCollection();
+        const owners = await usersCol.find({ _id: { $in: ownerIds } }).toArray();
+        const ownerMap = new Map(owners.map((u) => [u._id.toString(), u]));
+        devices = devices.map((d) => ({
+          ...d,
+          ownerId: ownerMap.get(d.ownerId?.toString()) || null,
+        }));
+      }
     }
 
     // Normalize output fields
-    const normalizedDevices = devices.map((d) => ({
-      _id: d._id ? d._id.toString() : "",
-      title: d.title || d.name || "Untitled Device",
-      name: d.name || d.title || "Untitled Device",
-      brand: d.brand || "",
-      category: d.category || "other",
-      condition: d.condition || "good",
-      dailyRate: d.dailyRate ?? d.pricePerDay ?? 0,
-      pricePerDay: d.pricePerDay ?? d.dailyRate ?? 0,
-      depositValue: d.depositValue || 0,
-      rating: d.stats?.ratingAvg ?? d.rating ?? d.ratingAvg ?? 0,
-      ratingAvg: d.stats?.ratingAvg ?? d.ratingAvg ?? d.rating ?? 0,
-      reviewCount: d.stats?.ratingCount ?? d.reviewCount ?? 0,
-      images: Array.isArray(d.images) ? d.images : [],
-      location: d.location || {
-        type: "Point",
-        coordinates: [105.7826, 21.0285],
-      },
-      address: d.address || "",
-      status: d.status || "available",
-      createdAt: d.createdAt || new Date(),
-    }));
+    const normalizedDevices = devices.map((d) => {
+      const loc = resolveDeviceLocation(d, d.ownerId);
+      return {
+        _id: d._id ? d._id.toString() : "",
+        title: d.title || d.name || "Untitled Device",
+        name: d.name || d.title || "Untitled Device",
+        brand: d.brand || "",
+        category: d.category || "other",
+        condition: d.condition || "good",
+        dailyRate: d.dailyRate ?? d.pricePerDay ?? 0,
+        pricePerDay: d.pricePerDay ?? d.dailyRate ?? 0,
+        depositValue: d.depositValue || 0,
+        rating: d.stats?.ratingAvg ?? d.rating ?? d.ratingAvg ?? 0,
+        ratingAvg: d.stats?.ratingAvg ?? d.ratingAvg ?? d.rating ?? 0,
+        reviewCount: d.stats?.ratingCount ?? d.reviewCount ?? 0,
+        images: Array.isArray(d.images) ? d.images : [],
+        location: loc,
+        address: loc?.addressText || (typeof d.ownerId === "object" ? d.ownerId?.address : "") || d.address || "",
+        status: d.status || "available",
+        createdAt: d.createdAt || new Date(),
+        owner: d.ownerId && typeof d.ownerId === "object" ? {
+          _id: d.ownerId._id?.toString(),
+          name: d.ownerId.name,
+          avatar: d.ownerId.avatar,
+          address: d.ownerId.address,
+        } : undefined,
+      };
+    });
 
     return res.status(200).json({
       success: true,
@@ -323,6 +391,9 @@ export const getNearbyDevices = async (req, res, next) => {
       latitude,
       longitude,
       radius = 10000,
+      category,
+      availability,
+      sort,
       page = 1,
       limit = 12,
     } = req.query;
@@ -353,8 +424,39 @@ export const getNearbyDevices = async (req, res, next) => {
         message: "Valid coordinates, radius, page and limit are required.",
       });
     }
-    const collection = getDevicesCollection();
-    const [result] = await collection
+
+    const userGeoFilter = {
+      isActive: { $ne: false },
+      "location.type": "Point",
+      "location.coordinates": { $size: 2 },
+      "location.coordinates.0": { $type: "number", $gte: -180, $lte: 180 },
+      "location.coordinates.1": { $type: "number", $gte: -90, $lte: 90 },
+    };
+
+    const deviceFilter = {
+      status: "available",
+      isDeleted: { $ne: true },
+      $or: [
+        { moderationStatus: "approved" },
+        { moderationStatus: { $exists: false } },
+      ],
+    };
+
+    if (category && typeof category === "string" && category.trim().toLowerCase() !== "all") {
+      deviceFilter.category = category.trim().toLowerCase();
+    }
+    if (availability && typeof availability === "string" && availability.trim().toLowerCase() !== "all") {
+      deviceFilter.status = availability.trim().toLowerCase();
+    }
+
+    let sortStage = { distanceMeters: 1, _id: 1 };
+    if (sort === "lowest_price" || sort === "price_asc" || sort === "pricePerDay") {
+      sortStage = { pricePerDay: 1, distanceMeters: 1, _id: 1 };
+    } else if (sort === "highest_rating" || sort === "rating_desc" || sort === "rating") {
+      sortStage = { "stats.ratingAvg": -1, distanceMeters: 1, _id: 1 };
+    }
+
+    const [result] = await getUsersCollection()
       .aggregate([
         {
           $geoNear: {
@@ -363,26 +465,52 @@ export const getNearbyDevices = async (req, res, next) => {
             distanceField: "distanceMeters",
             maxDistance,
             spherical: true,
-            query: {
-              status: "available",
-              isDeleted: { $ne: true },
-              $or: [
-                { moderationStatus: "approved" },
-                { moderationStatus: { $exists: false } },
+            query: userGeoFilter,
+          },
+        },
+        {
+          $lookup: {
+            from: "devices",
+            localField: "_id",
+            foreignField: "ownerId",
+            pipeline: [{ $match: deviceFilter }],
+            as: "deviceList",
+          },
+        },
+        { $unwind: "$deviceList" },
+        {
+          $replaceRoot: {
+            newRoot: {
+              $mergeObjects: [
+                "$deviceList",
+                {
+                  distanceMeters: "$distanceMeters",
+                  location: {
+                    type: "$location.type",
+                    coordinates: "$location.coordinates",
+                    addressText: { $ifNull: ["$address", ""] },
+                  },
+                  owner: {
+                    _id: "$_id",
+                    name: "$name",
+                    avatar: "$avatar",
+                    address: "$address",
+                    trust: "$trust",
+                    rating: "$rating",
+                    totalReviews: "$totalReviews",
+                  },
+                },
               ],
-              "location.type": "Point",
-              "location.coordinates": { $size: 2 },
-              "location.coordinates.0": { $type: "number", $gte: -180, $lte: 180 },
-              "location.coordinates.1": { $type: "number", $gte: -90, $lte: 90 },
             },
           },
         },
-        { $sort: { distanceMeters: 1, _id: 1 } },
+        { $sort: sortStage },
         ...geoPaginationStages(pageNum, limitNum),
       ])
       .toArray();
-    const devices = result.data;
-    const total = result.totals[0]?.total || 0;
+
+    const devices = result?.data || [];
+    const total = result?.totals?.[0]?.total || 0;
     return res.status(200).json({
       success: true,
       count: devices.length,
@@ -392,6 +520,7 @@ export const getNearbyDevices = async (req, res, next) => {
         limit: limitNum,
         total,
         totalPages: Math.ceil(total / limitNum) || 1,
+        hasNextPage: pageNum * limitNum < total,
       },
     });
   } catch (error) {
@@ -427,6 +556,14 @@ export const getDeviceById = async (req, res, next) => {
         message: "Device not found",
       });
     }
+
+    device.location = resolveDeviceLocation(device);
+    device.address =
+      device.location?.addressText ||
+      (typeof device.ownerId === "object" ? device.ownerId?.address : "") ||
+      (typeof device.owner === "object" ? device.owner?.address : "") ||
+      device.address ||
+      "";
 
     return res.status(200).json({
       success: true,
@@ -500,46 +637,6 @@ export const createDevice = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "Invalid deposit amount",
-      });
-    }
-
-    const coordinates = location?.coordinates;
-    const hasMalformedCoordinates =
-      coordinates !== undefined &&
-      (!Array.isArray(coordinates) || coordinates.length !== 2);
-    const longitudeValue = coordinates?.[0] ?? longitude;
-    const latitudeValue = coordinates?.[1] ?? latitude;
-    const parsedLongitude = Number(longitudeValue);
-    const parsedLatitude = Number(latitudeValue);
-    const deviceAddress = location?.addressText ?? addressText ?? address;
-
-    if (
-      (location?.type && location.type !== "Point") ||
-      hasMalformedCoordinates ||
-      !["number", "string"].includes(typeof longitudeValue) ||
-      !["number", "string"].includes(typeof latitudeValue) ||
-      longitudeValue == null ||
-      longitudeValue === "" ||
-      latitudeValue == null ||
-      latitudeValue === "" ||
-      !Number.isFinite(parsedLongitude) ||
-      parsedLongitude < -180 ||
-      parsedLongitude > 180 ||
-      !Number.isFinite(parsedLatitude) ||
-      parsedLatitude < -90 ||
-      parsedLatitude > 90
-    ) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "Valid device location is required (longitude -180 to 180, latitude -90 to 90)",
-      });
-    }
-
-    if (typeof deviceAddress !== "string" || !deviceAddress.trim()) {
-      return res.status(400).json({
-        success: false,
-        message: "Device address is required",
       });
     }
 
@@ -624,12 +721,7 @@ export const createDevice = async (req, res) => {
       pricePerDay: price,
       depositValue: deposit,
       depositAmount: deposit,
-      address: deviceAddress?.trim() || (addressText ?? address),
-      location: {
-        type: "Point",
-        coordinates: [parsedLongitude, parsedLatitude],
-        addressText: (deviceAddress || addressText || address || "").trim(),
-      },
+      address: (addressText ?? address ?? "").trim(),
       specs: parsedSpecs,
       images: imageUrls,
       status: "hidden",
@@ -641,10 +733,16 @@ export const createDevice = async (req, res) => {
       moderatedAt: null,
       reviewedAt: null,
     });
+
+    const ownerDoc = await User.findById(ownerId).lean();
+    const responseData = device.toObject({ virtuals: true });
+    responseData.location = resolveDeviceLocation(responseData, ownerDoc);
+    responseData.address = responseData.location?.addressText || ownerDoc?.address || responseData.address || "";
+
     return res.status(201).json({
       success: true,
       message: "Đăng thiết bị thành công! Bài đăng đang chờ Admin kiểm duyệt trước khi hiển thị công khai trên sàn.",
-      data: device,
+      data: responseData,
     });
   } catch (error) {
     console.error("Create Device Error:", error);
@@ -670,7 +768,10 @@ export const myDevices = async (req, res) => {
     const devices = await Device.find({
       $or: [{ owner: ownerId }, { ownerId: ownerId }],
       isDeleted: { $ne: true },
-    }).sort({ createdAt: -1 });
+    })
+      .populate("ownerId", "name email phone avatar address location")
+      .sort({ createdAt: -1 })
+      .lean({ virtuals: true });
 
     if (devices.length === 0) {
       return res.status(200).json({
@@ -680,10 +781,19 @@ export const myDevices = async (req, res) => {
       });
     }
 
+    const formattedDevices = devices.map((d) => {
+      const loc = resolveDeviceLocation(d, d.ownerId);
+      return {
+        ...d,
+        location: loc,
+        address: loc?.addressText || (typeof d.ownerId === "object" ? d.ownerId?.address : "") || d.address || "",
+      };
+    });
+
     return res.status(200).json({
       success: true,
       message: "Lấy danh sách thiết bị thành công",
-      devices,
+      devices: formattedDevices,
     });
   } catch (error) {
     return res.status(500).json({
@@ -786,10 +896,15 @@ export const updateDevice = async (req, res) => {
 
     await device.save();
 
+    const ownerDoc = await User.findById(device.ownerId || device.owner).lean();
+    const responseData = device.toObject({ virtuals: true });
+    responseData.location = resolveDeviceLocation(responseData, ownerDoc);
+    responseData.address = responseData.location?.addressText || ownerDoc?.address || responseData.address || "";
+
     return res.status(200).json({
       success: true,
       message: "Cập nhật thiết bị thành công! Bài đăng đang chờ Admin kiểm duyệt lại.",
-      data: device,
+      data: responseData,
     });
   } catch (error) {
     return res.status(500).json({

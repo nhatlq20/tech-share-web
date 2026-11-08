@@ -15,7 +15,6 @@ import {
   RefreshCw,
   PackageOpen,
   MapPin,
-  ArrowRight,
 } from 'lucide-react';
 import { deviceService } from '../services/deviceService.js';
 import { DeviceGrid } from '../components/device/DeviceGrid.jsx';
