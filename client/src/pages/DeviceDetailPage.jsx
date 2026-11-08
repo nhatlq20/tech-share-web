@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useLocation, Link } from 'react-router-dom';
+import { useParams, useLocation, useNavigate, Link } from 'react-router-dom';
 import {
   Star,
   ShieldCheck,
@@ -15,6 +15,7 @@ import {
   Heart,
 } from 'lucide-react';
 import { ROUTES } from '../routes/routes.js';
+import { useAuth } from '../context/AuthContext.jsx';
 import { API_CONFIG } from '../constants/config.js';
 import { STRINGS } from '../constants/strings.js';
 import { api } from '../services/api.js';
@@ -40,6 +41,8 @@ export const DeviceDetailPage = () => {
   const { deviceId, id } = useParams();
   const currentDeviceId = deviceId || id;
   const location = useLocation();
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const openedFromMap = location.state?.from === ROUTES.NEARBY;
 
   const [device, setDevice] = useState(null);
@@ -47,16 +50,20 @@ export const DeviceDetailPage = () => {
   const [error, setError] = useState(null);
   const [activeImage, setActiveImage] = useState(0);
   const [ratingSummary, setRatingSummary] = useState(null);
-  const [isFavorite, setIsFavorite] = useState(() => isDeviceInWishlist(currentDeviceId));
+  const [isFavorite, setIsFavorite] = useState(() => isAuthenticated && isDeviceInWishlist(currentDeviceId));
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      setIsFavorite(false);
+      return;
+    }
     setIsFavorite(isDeviceInWishlist(currentDeviceId));
     const handleWishlistEvent = () => {
       setIsFavorite(isDeviceInWishlist(currentDeviceId));
     };
     window.addEventListener(WISHLIST_UPDATED_EVENT, handleWishlistEvent);
     return () => window.removeEventListener(WISHLIST_UPDATED_EVENT, handleWishlistEvent);
-  }, [currentDeviceId]);
+  }, [currentDeviceId, isAuthenticated]);
 
   useEffect(() => {
     let isMounted = true;
@@ -89,6 +96,10 @@ export const DeviceDetailPage = () => {
 
   const handleToggleFavorite = async () => {
     if (!currentDeviceId) return;
+    if (!isAuthenticated) {
+      navigate(ROUTES.LOGIN);
+      return;
+    }
     setIsFavorite((prev) => !prev);
     const res = await toggleWishlist(currentDeviceId);
     setIsFavorite(Boolean(res.isFavorite));

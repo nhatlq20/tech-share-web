@@ -215,8 +215,6 @@ export const AppRoutes = () => {
         <Route path={ROUTES.HOME}               element={<HomePage />} />
         <Route path={ROUTES.COMPARE_DEVICES}    element={<AiDeviceComparePage />} />
         <Route path={ROUTES.EXPLORE}            element={<CatalogPage />} />
-        <Route path={ROUTES.WISHLIST}           element={<WishlistPage />} />
-        <Route path="/favorites"                element={<Navigate to={ROUTES.WISHLIST} replace />} />
         <Route path={ROUTES.DEVICE_DETAIL}      element={<DeviceDetailPage />} />
         <Route path={ROUTES.DEVICE_DETAIL_LEGACY} element={<DeviceDetailPage />} />
         <Route path={ROUTES.BOOKING_CHECKOUT}   element={<BookingCheckoutPage />} />
@@ -226,6 +224,15 @@ export const AppRoutes = () => {
         <Route path={ROUTES.FORGOT_PASSWORD}    element={<ForgotPasswordPage />} />
 
         {/* Cần đăng nhập (bất kỳ role) */}
+        <Route
+          path={ROUTES.WISHLIST}
+          element={
+            <ProtectedRoute roles={['renter', 'owner', 'admin']}>
+              <WishlistPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/favorites" element={<Navigate to={ROUTES.WISHLIST} replace />} />
         <Route
           path={ROUTES.MY_BOOKINGS}
           element={

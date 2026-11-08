@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Star, ImageOff, MapPin, Heart } from 'lucide-react';
 import { ROUTES } from '../../routes/routes.js';
+import { useAuth } from '../../context/AuthContext.jsx';
 import { formatPrice } from '../../utils/formatters.js';
 import {
   isDeviceInWishlist,
@@ -57,11 +58,17 @@ export const formatConditionLabel = (condition) => {
  * @param {Function} [props.onFavoriteChange] Optional callback when favorite state is toggled
  */
 export const DeviceCard = ({ device, onFavoriteChange }) => {
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const deviceId = String(device?._id || device?.id || '');
   const [imgError, setImgError] = useState(false);
-  const [isFavorite, setIsFavorite] = useState(() => isDeviceInWishlist(deviceId));
+  const [isFavorite, setIsFavorite] = useState(() => isAuthenticated && isDeviceInWishlist(deviceId));
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      setIsFavorite(false);
+      return;
+    }
     setIsFavorite(isDeviceInWishlist(deviceId));
 
     const handleWishlistEvent = (e) => {
@@ -79,7 +86,7 @@ export const DeviceCard = ({ device, onFavoriteChange }) => {
       window.removeEventListener(WISHLIST_UPDATED_EVENT, handleWishlistEvent);
       window.removeEventListener('storage', handleWishlistEvent);
     };
-  }, [deviceId]);
+  }, [deviceId, isAuthenticated]);
 
   if (!device || typeof device !== 'object') {
     return null;
@@ -112,6 +119,10 @@ export const DeviceCard = ({ device, onFavoriteChange }) => {
     e.preventDefault();
     e.stopPropagation();
     if (!deviceId) return;
+    if (!isAuthenticated) {
+      navigate(ROUTES.LOGIN);
+      return;
+    }
     const nextState = !isFavorite;
     setIsFavorite(nextState);
     const res = await toggleWishlist(deviceId);
