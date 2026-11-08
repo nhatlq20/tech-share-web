@@ -235,6 +235,8 @@ export const EkycSubmitModal = ({
     }
   };
 
+  if (!isOpen) return null;
+
   return (
     <div className="ekyc-modal-backdrop" onClick={onClose}>
       <div className="ekyc-modal-card" onClick={(e) => e.stopPropagation()}>
@@ -530,7 +532,7 @@ export const EkycSubmitModal = ({
                   </div>
                 ) : (
                   <>
-                    <div className="ekyc-upload-icon-circle" style={{ background: '#f5f3ff', color: '#7c3aed' }}>
+                    <div className="ekyc-upload-icon-circle" style={{ background: '#e6f7f8', color: '#286e74' }}>
                       <Camera size={22} />
                     </div>
                     <span className="ekyc-upload-card-title">Back of ID Card</span>
@@ -543,7 +545,7 @@ export const EkycSubmitModal = ({
                         <div className="ekyc-progress-bar-bg">
                           <div
                             className="ekyc-progress-bar-fill"
-                            style={{ width: `${backProgress || 45}%`, background: '#7c3aed' }}
+                            style={{ width: `${backProgress || 45}%`, background: '#286e74' }}
                           />
                         </div>
                         <span className="ekyc-progress-text">
@@ -551,7 +553,7 @@ export const EkycSubmitModal = ({
                         </span>
                       </div>
                     ) : (
-                      <label className="ekyc-upload-btn-label" style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #4c1d95 100%)' }}>
+                      <label className="ekyc-upload-btn-label">
                         <Upload size={14} />
                         <span>Upload Back Photo</span>
                         <input

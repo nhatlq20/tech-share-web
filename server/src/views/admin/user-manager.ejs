@@ -71,7 +71,7 @@
                 data-role="<%= user.role || 'renter' %>"
                 data-status="<%= (user.isbanned || !user.isActive) ? 'locked' : 'active' %>"
                 data-is-banned="<%= user.isbanned ? 'true' : 'false' %>"
-                data-ban-reason="<%= (user.banReason || '').replace(/"/g, '&quot;') %>"
+                data-ban-reason="<%= (user.banReason || '').replace(/\x22/g, '&quot;') %>"
                 data-wallet-balance="<%= user.walletBalance || 0 %>"
                 data-escrow-balance="<%= user.walletEscrowBalance || 0 %>"
                 data-trust-score="<%= user.trustScore || 100 %>"

@@ -203,9 +203,13 @@ export const getOwnerOverview = async (req, res, next) => {
     const ownerObjectId = mongoose.Types.ObjectId.isValid(ownerId)
       ? new mongoose.Types.ObjectId(ownerId)
       : null;
-    const ownerProfile = ownerObjectId
+    let ownerProfile = ownerObjectId
       ? await usersCol.findOne({ _id: ownerObjectId })
       : await usersCol.findOne({ _id: ownerId });
+
+    if (!ownerProfile && ownerObjectId) {
+      ownerProfile = await usersCol.findOne({ accountId: ownerObjectId });
+    }
 
     // 1. Devices summary
     const totalDevices = await devicesCol.countDocuments({
@@ -349,7 +353,8 @@ export const getOwnerOverview = async (req, res, next) => {
         id: ownerId,
         name: ownerProfile?.name || 'Equipment Partner',
         email: ownerProfile?.email || '',
-        avatarUrl: ownerProfile?.avatarUrl || ownerProfile?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop',
+        avatar: ownerProfile?.avatar || ownerProfile?.avatarUrl || '',
+        avatarUrl: ownerProfile?.avatar || ownerProfile?.avatarUrl || '',
         isVerified: ownerProfile?.isVerified ?? false,
       },
     };

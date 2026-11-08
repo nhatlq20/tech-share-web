@@ -56,6 +56,23 @@ export const OwnerDashboardScreen = () => {
     /^\/owner\/devices\/([^/]+)\/edit$/,
   );
 
+  // Avatar và thông tin thực tế ưu tiên từ tài khoản đăng nhập (user)
+  const currentAvatar =
+    user?.avatar ||
+    user?.avatarUrl ||
+    kpi?.owner?.avatar ||
+    kpi?.owner?.avatarUrl ||
+    (user?.name ? `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.name)}` : "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400");
+
+  const currentOwner = {
+    ...kpi?.owner,
+    ...user,
+    avatar: currentAvatar,
+    avatarUrl: currentAvatar,
+    name: user?.name || kpi?.owner?.name || STRINGS.owner.sidebar.ownerName,
+    email: user?.email || kpi?.owner?.email || "",
+  };
+
   // Sync route navigation
   const handleNavigate = (path) => {
     if (!path) return;
@@ -282,7 +299,7 @@ export const OwnerDashboardScreen = () => {
         onNavigate={handleNavigate}
         pendingCount={pendingApprovalsCount}
         unreadMessagesCount={unreadMessagesCount}
-        owner={kpi?.owner || user}
+        owner={currentOwner}
         onLogout={logout}
       />
 
@@ -294,7 +311,7 @@ export const OwnerDashboardScreen = () => {
             <Search size={16} style={{ color: "#67BEC3", flexShrink: 0 }} />
             <input
               type="text"
-              placeholder={STRINGS.admin.dashboard.searchPlaceholder}
+              placeholder={STRINGS.owner?.devices?.searchPlaceholder || "Search by equipment name, category, brand..."}
               value={globalSearch}
               onChange={(e) => setGlobalSearch(e.target.value)}
             />
@@ -340,11 +357,7 @@ export const OwnerDashboardScreen = () => {
               }}
             >
               <img
-                src={
-                  (kpi?.owner || user)?.avatarUrl ||
-                  (kpi?.owner || user)?.avatar ||
-                  "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400"
-                }
+                src={currentAvatar}
                 alt={STRINGS.owner.sidebar.avatarAlt}
                 style={{
                   width: "36px",
@@ -362,16 +375,15 @@ export const OwnerDashboardScreen = () => {
                     color: "#0F172A",
                   }}
                 >
-                  {(kpi?.owner || user)?.name || STRINGS.owner.sidebar.ownerName}
+                  {currentOwner.name}
                 </span>
                 <span
                   style={{
                     fontSize: "11px",
-                    color: "#286E74",
-                    fontWeight: 600,
+                    color: "#64748B",
                   }}
                 >
-                  {STRINGS.owner.sidebar.ownerRole}
+                  {currentOwner.email || STRINGS.owner.sidebar.ownerRole}
                 </span>
               </div>
             </div>

@@ -315,6 +315,8 @@ export const OwnerEkycSubmitModal = ({
   const isApproved = statusData?.request?.status === 'approved' || statusData?.isOwner;
   const isRenterVerified = statusData?.isRenterVerified ?? true;
 
+  if (!isOpen) return null;
+
   return (
     <div className="owner-ekyc-modal-backdrop" onClick={onClose}>
       <div className="owner-ekyc-modal-card" onClick={(e) => e.stopPropagation()}>

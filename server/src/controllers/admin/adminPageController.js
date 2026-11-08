@@ -154,7 +154,7 @@ export const renderDashboardPage = async (req, res) => {
       const usersCol = db.collection('users');
       const devicesCol = db.collection('devices');
       const bookingsCol = db.collection('bookings');
-      const ekycCol = db.collection('ekycrequests');
+      const ekycCol = db.collection('ekyc_requests');
       const disputesCol = db.collection('disputes');
 
       const totalUsers = await usersCol.countDocuments({});
@@ -446,35 +446,66 @@ export const renderDeviceModerationPage = async (req, res) => {
   }
 };
 
-// 7. GET /admin/ekyc-verification & /admin/ekyc
+// 7. GET /admin/ekyc-verification & /admin/ekyc (Renter eKYC Verification)
 export const renderEkycVerificationPage = async (req, res) => {
   try {
     const db = mongoose.connection.db;
     let requests = [];
+    let counts = { all: 0, pending: 0, approved: 0, rejected: 0 };
 
     if (db) {
-      const ekycCol = db.collection('ekycrequests');
+      const ekycCol = db.collection('ekyc_requests');
       const usersCol = db.collection('users');
-      const raw = await ekycCol.find({}).sort({ createdAt: -1 }).limit(50).toArray();
+      const raw = await ekycCol.find({}).sort({ createdAt: -1 }).limit(100).toArray();
 
       requests = await Promise.all(raw.map(async (r) => {
-        let user = { name: r.fullName || 'TechShare User', email: 'user@techshare.vn' };
+        let user = {
+          name: r.fullName || 'Người dùng TechShare',
+          email: r.email || 'user@techshare.vn',
+          phone: r.phone || '',
+          address: r.address || 'Chưa cập nhật',
+          avatar: '',
+        };
         if (r.userId) {
           try {
             const u = await usersCol.findOne({ _id: new mongoose.Types.ObjectId(String(r.userId)) });
-            if (u) user = { name: u.name || r.fullName, email: u.email || 'user@techshare.vn' };
+            if (u) {
+              user = {
+                name: r.fullName || u.name || 'Người dùng TechShare',
+                email: r.email || u.email || 'user@techshare.vn',
+                phone: r.phone || u.phone || '',
+                address: r.address || u.address || 'Chưa cập nhật',
+                avatar: u.avatar || '',
+              };
+            }
           } catch {}
         }
-        return { ...r, _id: String(r._id), user };
+        return {
+          ...r,
+          _id: String(r._id),
+          fullName: r.fullName || user.name,
+          idCardNumber: r.idCardNumber || r.idNumber || r.citizenId || '',
+          idCardFrontUrl: r.idCardFrontUrl || r.frontCardUrl || r.frontImage || '',
+          idCardBackUrl: r.idCardBackUrl || r.backCardUrl || r.backImage || '',
+          status: r.status || 'pending',
+          rejectReason: r.rejectReason || '',
+          createdAt: r.createdAt || new Date(),
+          user,
+        };
       }));
+
+      counts.all = requests.length;
+      counts.pending = requests.filter(r => (r.status || 'pending') === 'pending').length;
+      counts.approved = requests.filter(r => r.status === 'approved').length;
+      counts.rejected = requests.filter(r => r.status === 'rejected').length;
     }
 
     return res.render('admin/layouts/main', {
-      title: 'eKYC Verification — TechShare Admin',
+      title: 'Xác thực eKYC Người thuê (Renter) — TechShare Admin',
       activePage: 'ekyc',
       pageScript: '/js/admin/ekyc-verification.js',
       body: await new Promise((resolve, reject) => {
-        res.render('admin/ekyc-verification', { requests }, (err, html) => {
+        res.render('admin/ekyc-verification', { requests, counts }, (err, html) => {
           if (err) reject(err);
           else resolve(html);
         });
@@ -486,38 +517,79 @@ export const renderEkycVerificationPage = async (req, res) => {
   }
 };
 
+// 7b. GET /admin/owner-verification & /admin/owner-ekyc-verification (Owner Upgrade Verification)
 export const renderOwnerEkycPage = async (req, res, next) => {
-  const statuses = {
-    all: 'Tất cả',
-    pending: 'Chờ duyệt',
-    approved: 'Đã duyệt',
-    rejected: 'Bị từ chối',
-  };
-  const status = typeof req.query.status === 'string' && Object.hasOwn(statuses, req.query.status)
-    ? req.query.status
-    : 'all';
-
   try {
-    const { data: requests, total, page, limit } = await listOwnerEkycRequests({
-      status,
-      page: req.query.page,
-    });
-    const body = await new Promise((resolve, reject) => {
-      res.render('admin/owner-ekyc-verification', {
-        requests, statuses, status, page, hasNextPage: page * limit < total,
-      }, (error, html) => {
-        if (error) reject(error);
-        else resolve(html);
-      });
-    });
+    const db = mongoose.connection.db;
+    let requests = [];
+    let counts = { all: 0, pending: 0, approved: 0, rejected: 0 };
+
+    if (db) {
+      const ownerReqCol = db.collection('owner_request');
+      const usersCol = db.collection('users');
+
+      const raw = await ownerReqCol.find({}).sort({ createdAt: -1 }).limit(100).toArray();
+
+      requests = await Promise.all(raw.map(async (r) => {
+        let user = {
+          name: r.fullName || 'Người dùng TechShare',
+          email: r.email || '',
+          phone: r.phone || '',
+          address: r.address || 'Chưa cập nhật',
+          avatar: '',
+        };
+        if (r.userId) {
+          try {
+            const u = await usersCol.findOne({ _id: new mongoose.Types.ObjectId(String(r.userId)) });
+            if (u) {
+              user = {
+                name: r.fullName || u.name || 'Người dùng TechShare',
+                email: r.email || u.email || '',
+                phone: r.phone || u.phone || '',
+                address: r.address || u.address || 'Chưa cập nhật',
+                avatar: u.avatar || '',
+              };
+            }
+          } catch {}
+        }
+        return {
+          ...r,
+          _id: String(r._id),
+          fullName: r.fullName || user.name,
+          email: r.email || user.email,
+          phone: r.phone || user.phone,
+          address: r.address || user.address,
+          idCardNumber: r.idCardNumber || '',
+          idCardFrontUrl: r.idCardFrontUrl || '',
+          idCardBackUrl: r.idCardBackUrl || '',
+          idCardHoldingUrl: r.idCardHoldingUrl || '',
+          status: r.status || 'pending',
+          rejectReason: r.rejectReason || '',
+          createdAt: r.createdAt || new Date(),
+          user,
+        };
+      }));
+
+      counts.all = requests.length;
+      counts.pending = requests.filter(r => (r.status || 'pending') === 'pending').length;
+      counts.approved = requests.filter(r => r.status === 'approved').length;
+      counts.rejected = requests.filter(r => r.status === 'rejected').length;
+    }
+
     return res.set('Cache-Control', 'no-store').render('admin/layouts/main', {
-      title: 'Owner Verification — TechShare Admin',
+      title: 'Xét duyệt Nâng cấp Chủ thiết bị (Owner Verification) — TechShare Admin',
       activePage: 'owner-ekyc',
       pageScript: '/js/admin/owner-ekyc-verification.js',
-      body,
+      body: await new Promise((resolve, reject) => {
+        res.render('admin/owner-ekyc-verification', { requests, counts }, (err, html) => {
+          if (err) reject(err);
+          else resolve(html);
+        });
+      }),
     });
-  } catch (error) {
-    next(error);
+  } catch (err) {
+    console.error('Error in renderOwnerEkycPage:', err);
+    return res.status(500).send('Lỗi máy chủ');
   }
 };
 

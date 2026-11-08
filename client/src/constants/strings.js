@@ -34,6 +34,13 @@ export const STRINGS = {
     vnd: 'đ',
   },
 
+  // Admin fallback strings (for compatibility)
+  admin: {
+    dashboard: {
+      searchPlaceholder: 'Search by equipment name, category, brand...',
+    },
+  },
+
   // Home & Landing Page Module (English)
   home: {
     recommended: {

@@ -41,9 +41,8 @@ router.get('/users', renderUserManagerPage);
 router.get('/device-moderation', renderDeviceModerationPage);
 router.get('/devices', renderDeviceModerationPage);
 
-router.get('/ekyc-verification', renderEkycVerificationPage);
-router.get('/ekyc', renderEkycVerificationPage);
-router.get(['/owner-ekyc-verification', '/owner-ekyc'], requireAdmin, renderOwnerEkycPage);
+router.get(['/ekyc-verification', '/ekyc', '/renter-ekyc'], renderEkycVerificationPage);
+router.get(['/owner-verification', '/owner-ekyc-verification', '/owner-ekyc'], renderOwnerEkycPage);
 
 router.get('/booking-management', renderBookingManagementPage);
 router.get('/bookings', renderBookingManagementPage);

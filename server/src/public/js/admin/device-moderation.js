@@ -50,6 +50,57 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
+  function updateDeviceModalViewMode(status, reason) {
+    const rejectSec = document.getElementById('deviceRejectSection');
+    const actionsBox = document.getElementById('devicePendingActions');
+    const approvedNotice = document.getElementById('deviceApprovedNotice');
+    const rejectedNotice = document.getElementById('deviceRejectedNotice');
+    const reasonText = document.getElementById('deviceRejectedReasonText');
+    const reasonInput = document.getElementById('moderateRejectReason');
+    const reasonError = document.getElementById('deviceRejectError');
+
+    // Reset error styling
+    if (reasonInput) {
+      reasonInput.style.borderColor = '#CBD5E1';
+      reasonInput.style.backgroundColor = '#FFFFFF';
+      reasonInput.style.boxShadow = 'none';
+      reasonInput.value = '';
+    }
+    if (reasonError) reasonError.style.display = 'none';
+
+    if (status === 'pending') {
+      if (rejectSec) rejectSec.style.display = 'block';
+      if (actionsBox) actionsBox.style.display = 'flex';
+      if (approvedNotice) approvedNotice.style.display = 'none';
+      if (rejectedNotice) rejectedNotice.style.display = 'none';
+    } else if (status === 'approved') {
+      if (rejectSec) rejectSec.style.display = 'none';
+      if (actionsBox) actionsBox.style.display = 'none';
+      if (approvedNotice) approvedNotice.style.display = 'block';
+      if (rejectedNotice) rejectedNotice.style.display = 'none';
+    } else if (status === 'rejected') {
+      if (rejectSec) rejectSec.style.display = 'none';
+      if (actionsBox) actionsBox.style.display = 'none';
+      if (approvedNotice) approvedNotice.style.display = 'none';
+      if (rejectedNotice) rejectedNotice.style.display = 'block';
+      if (reasonText) reasonText.textContent = reason || 'Không có lý do chi tiết';
+    }
+  }
+
+  // Real-time input listener to clear validation error
+  const devReasonInputEl = document.getElementById('moderateRejectReason');
+  const devReasonErrorEl = document.getElementById('deviceRejectError');
+  if (devReasonInputEl) {
+    devReasonInputEl.addEventListener('input', function() {
+      if (this.value.trim().length > 0) {
+        this.style.borderColor = '#CBD5E1';
+        this.style.backgroundColor = '#FFFFFF';
+        this.style.boxShadow = 'none';
+        if (devReasonErrorEl) devReasonErrorEl.style.display = 'none';
+      }
+    });
+  }
+
   // Modal handler
   let currentTargetDevice = null;
   document.querySelectorAll('.btn-moderate-device').forEach(function(btn) {
@@ -66,12 +117,14 @@ document.addEventListener('DOMContentLoaded', function() {
       const dailyRate = Number(row.getAttribute('data-daily-rate')) || 0;
       const deposit = Number(row.getAttribute('data-deposit')) || 0;
       const reason = row.getAttribute('data-reason') || '';
+      const status = row.getAttribute('data-status') || 'pending';
 
       document.getElementById('modalDeviceTitle').textContent = title;
       document.getElementById('modalDeviceImg').src = img;
       document.getElementById('modalDeviceSpecs').textContent = `${brand.toUpperCase()} • ${category} • Condition: ${condition}`;
       document.getElementById('modalDeviceRates').textContent = `${window.formatVND ? window.formatVND(dailyRate) : dailyRate} / day • Deposit: ${window.formatVND ? window.formatVND(deposit) : deposit}`;
-      document.getElementById('moderateRejectReason').value = reason;
+      
+      updateDeviceModalViewMode(status, reason);
 
       document.getElementById('deviceModerateModal').style.display = 'flex';
       if (window.lucide) window.lucide.createIcons();
@@ -90,7 +143,39 @@ document.addEventListener('DOMContentLoaded', function() {
   async function submitModeration(action) {
     if (!currentTargetDevice) return;
     const deviceId = currentTargetDevice.getAttribute('data-device-id');
-    const reason = document.getElementById('moderateRejectReason').value.trim();
+    const reasonInput = document.getElementById('moderateRejectReason');
+    const reasonError = document.getElementById('deviceRejectError');
+    const reason = (reasonInput ? reasonInput.value : '').trim();
+
+    if (action === 'reject') {
+      if (!reason) {
+        if (reasonInput) {
+          reasonInput.style.borderColor = '#EF4444';
+          reasonInput.style.backgroundColor = '#FEF2F2';
+          reasonInput.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.15)';
+          reasonInput.focus();
+        }
+        if (reasonError) {
+          reasonError.style.display = 'flex';
+          if (window.lucide && typeof window.lucide.createIcons === 'function') {
+            window.lucide.createIcons();
+          }
+        }
+        return;
+      }
+      if (reasonError) reasonError.style.display = 'none';
+    }
+
+    const btnApprove = document.getElementById('btnApproveDeviceSubmit');
+    const btnReject = document.getElementById('btnRejectDeviceSubmit');
+    if (btnApprove) {
+      btnApprove.disabled = true;
+      if (action === 'approve') btnApprove.textContent = 'Đang phê duyệt...';
+    }
+    if (btnReject) {
+      btnReject.disabled = true;
+      if (action === 'reject') btnReject.textContent = 'Đang từ chối...';
+    }
 
     try {
       const res = await fetch(`/api/admin/devices/${deviceId}/moderate`, {
@@ -102,6 +187,10 @@ document.addEventListener('DOMContentLoaded', function() {
       if (res.ok && data.success) {
         const newStatus = action === 'approve' ? 'approved' : 'rejected';
         currentTargetDevice.setAttribute('data-status', newStatus);
+        currentTargetDevice.setAttribute('data-reason', reason);
+
+        const btnLabel = currentTargetDevice.querySelector('.btn-moderate-device-label');
+        if (btnLabel) btnLabel.textContent = 'Xem chi tiết';
 
         const badgeCell = currentTargetDevice.querySelector('.device-status-badge-cell');
         if (badgeCell) {
@@ -109,6 +198,9 @@ document.addEventListener('DOMContentLoaded', function() {
             ? '<span class="admin-pill-badge" style="background-color: #ECFDF5; color: #16A34A;">Approved</span>'
             : '<span class="admin-pill-badge" style="background-color: #FEF2F2; color: #DC2626;">Rejected</span>';
         }
+
+        updateDeviceModalViewMode(newStatus, reason);
+
         if (window.showAdminToast) {
           window.showAdminToast('Success', action === 'approve' ? 'Device approved successfully.' : 'Device listing rejected.', 'success');
         }
@@ -118,7 +210,14 @@ document.addEventListener('DOMContentLoaded', function() {
     } catch (err) {
       if (window.showAdminToast) window.showAdminToast('Network Error', err.message, 'error');
     } finally {
-      document.getElementById('deviceModerateModal').style.display = 'none';
+      if (btnApprove) {
+        btnApprove.disabled = false;
+        btnApprove.textContent = 'Phê duyệt niêm yết';
+      }
+      if (btnReject) {
+        btnReject.disabled = false;
+        btnReject.textContent = 'Từ chối niêm yết';
+      }
     }
   }
 
