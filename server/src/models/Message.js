@@ -8,10 +8,12 @@ const messageSchema = new mongoose.Schema(
   {
     bookingId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Booking',
+      refPath: 'conversationModel',
       required: true,
       index: true,
     },
+    conversationModel: { type: String, enum: ['Booking', 'ChatInquiry'], default: 'Booking' },
+    tempId: { type: String, maxlength: 100 },
     senderId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',

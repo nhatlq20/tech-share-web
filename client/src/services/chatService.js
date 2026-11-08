@@ -83,3 +83,5 @@ export const chatService = {
 };
 
 export default chatService;
+
+export const openDeviceChat = (deviceId) => api.post('/chats/devices/' + encodeURIComponent(deviceId), {}, { headers: getAuthHeaders() });

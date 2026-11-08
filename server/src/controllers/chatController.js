@@ -1,3 +1,6 @@
+import { createHash } from 'node:crypto';
+import ChatInquiry from '../models/ChatInquiry.js';
+import { findChat, resolveChatUser } from '../services/chatIdentity.js';
 import mongoose from 'mongoose';
 import Message from '../models/Message.js';
 import Booking from '../models/Booking.js';
@@ -5,11 +8,48 @@ import User from '../models/User.js';
 import Device from '../models/Device.js';
 import { getIO } from '../socket.js';
 
+export async function authenticateChat(req, res, next) {
+  try {
+    const user = await resolveChatUser(req.user);
+    if (!user || user.isActive === false) return res.status(403).json({ message: 'An active user profile is required.' });
+    req.chatUserId = String(user._id);
+    next();
+  } catch (error) { next(error); }
+}
+
+export async function openDeviceChat(req, res, next) {
+  try {
+    const { deviceId } = req.params;
+    if (!mongoose.isObjectIdOrHexString(deviceId)) return res.status(400).json({ message: 'Invalid device ID.' });
+    const device = await Device.findOne({ _id: deviceId, isDeleted: { $ne: true } }).lean();
+    const owner = device && await User.findById(device.ownerId).select('_id accountId name avatar isActive').lean();
+    const account = owner?.accountId && await mongoose.connection.db.collection('accounts').findOne({ _id: owner.accountId });
+    if (!owner || !account || owner.isActive === false || account.isActive === false || account.isbanned) {
+      return res.status(404).json({ message: 'The device owner is unavailable.' });
+    }
+    const renterId = getUserId(req);
+    if (String(owner._id) === renterId) return res.status(400).json({ message: 'You cannot message yourself.' });
+    const existing = await Booking.findOne({
+      $and: [ { $or: [{ deviceId }, { device: deviceId }] },
+        { $or: [{ renterId, ownerId: owner._id }, { renter: renterId, owner: owner._id }] } ],
+    }).sort({ updatedAt: -1 }).select('_id').lean();
+    if (existing) return res.json({ success: true, bookingId: String(existing._id) });
+    // Deterministic MongoDB primary key makes concurrent upserts safe before indexes are built.
+    const key = createHash('sha256').update([deviceId.toLowerCase(), renterId, String(owner._id)].join(':')).digest('hex').slice(0, 24);
+    try {
+      await ChatInquiry.updateOne({ _id: key }, { $setOnInsert: {
+        deviceId, renterId, ownerId: owner._id, isInquiry: true,
+      } }, { upsert: true });
+    } catch (error) { if (error.code !== 11000) throw error; }
+    return res.json({ success: true, bookingId: key });
+  } catch (error) { next(error); }
+}
+
 /**
  * Helper: Lấy userId an toàn từ req.user
  */
 const getUserId = (req) => {
-  return (req.user?.id || req.user?._id || req.user?.userId)?.toString();
+  return (req.chatUserId || req.user?.userId || req.user?._id || req.user?.id)?.toString();
 };
 
 /**
@@ -38,12 +78,17 @@ export const getConversations = async (req, res, next) => {
     })
       .populate('deviceId', 'name title images category dailyRate pricePerDay brand')
       .populate('device', 'name title images category dailyRate pricePerDay brand')
-      .populate('renterId', 'name avatar role isVerified email phone')
-      .populate('renter', 'name avatar role isVerified email phone')
-      .populate('ownerId', 'name avatar role isVerified email phone')
-      .populate('owner', 'name avatar role isVerified email phone')
+      .populate('renterId', 'name avatar role isVerified')
+      .populate('renter', 'name avatar role isVerified')
+      .populate('ownerId', 'name avatar role isVerified')
+      .populate('owner', 'name avatar role isVerified')
       .sort({ updatedAt: -1 })
       .lean();
+
+    const inquiries = await ChatInquiry.find({ $or: [{ renterId: userObjId }, { ownerId: userObjId }] })
+      .populate('deviceId', 'name images category pricePerDay')
+      .populate('renterId', 'name avatar').populate('ownerId', 'name avatar').lean();
+    bookings.push(...inquiries);
 
     if (!bookings || bookings.length === 0) {
       return res.status(200).json({ success: true, data: [] });
@@ -86,7 +131,7 @@ export const getConversations = async (req, res, next) => {
       unreadCountsAgg.map((item) => [item._id.toString(), item.unreadCount])
     );
 
-    // Gom nhóm các booking theo từng đối tác duy nhất (partnerId)
+    // Gom nhóm các booking theo từng your contact duy nhất (partnerId)
     const partnerMap = new Map();
 
     for (const booking of bookings) {
@@ -112,14 +157,14 @@ export const getConversations = async (req, res, next) => {
       const deviceData = deviceObj
         ? {
           _id: deviceObj._id?.toString(),
-          name: deviceObj.name || deviceObj.title || 'Thiết bị công nghệ',
+          name: deviceObj.name || deviceObj.title || 'Device',
           image: Array.isArray(deviceObj.images) && deviceObj.images[0] ? deviceObj.images[0] : '',
           dailyRate: deviceObj.dailyRate || deviceObj.pricePerDay || 0,
           category: deviceObj.category || 'tech',
         }
         : {
           _id: '',
-          name: 'Thiết bị công nghệ',
+          name: 'Device',
           image: '',
           dailyRate: 0,
           category: 'tech',
@@ -127,6 +172,7 @@ export const getConversations = async (req, res, next) => {
 
       const bookingItem = {
         bookingId,
+        isInquiry: Boolean(booking.isInquiry),
         bookingCode: booking.bookingCode || `B${bookingId.substring(0, 8).toUpperCase()}`,
         status: booking.status || 'pending',
         roleInChat,
@@ -155,14 +201,14 @@ export const getConversations = async (req, res, next) => {
           partner: partner
             ? {
               _id: partner._id?.toString() || partner.id,
-              name: partner.name || 'Người dùng TechShare',
+              name: partner.name || 'Profile unavailable',
               avatar: partner.avatar || '',
               role: partner.role || (isUserRenter ? 'owner' : 'renter'),
               isVerified: Boolean(partner.isVerified),
             }
             : {
               _id: partnerId,
-              name: isUserRenter ? 'Chủ thiết bị' : 'Người thuê',
+              name: isUserRenter ? 'Device owner' : 'Renter',
               avatar: '',
               role: isUserRenter ? 'owner' : 'renter',
               isVerified: false,
@@ -184,9 +230,9 @@ export const getConversations = async (req, res, next) => {
       rejected: 0,
     };
 
-    // Tạo danh sách hội thoại duy nhất cho mỗi đối tác
+    // Tạo danh sách hội thoại duy nhất cho mỗi your contact
     const uniqueConversations = Array.from(partnerMap.values()).map((group) => {
-      // Sắp xếp các đơn thuê của đối tác này:
+      // Sắp xếp các đơn thuê của your contact này:
       // Ưu tiên đơn có tin nhắn mới nhất, sau đó đến đơn đang hoạt động (active > approved > pending > completed)
       group.bookings.sort((a, b) => {
         const timeA = new Date(a.updatedAt).getTime();
@@ -202,10 +248,10 @@ export const getConversations = async (req, res, next) => {
 
       const primaryBooking = group.bookings[0];
 
-      // Cộng dồn toàn bộ tin nhắn chưa đọc từ mọi đơn thuê của đối tác này
+      // Cộng dồn toàn bộ tin nhắn chưa đọc từ mọi đơn thuê của your contact này
       const totalUnreadCount = group.bookings.reduce((sum, b) => sum + (b.unreadCount || 0), 0);
 
-      // Tìm tin nhắn mới nhất xuyên suốt mọi đơn thuê của đối tác này
+      // Tìm tin nhắn mới nhất xuyên suốt mọi đơn thuê của your contact này
       let latestMessage = primaryBooking.lastMessage;
       let latestTime = primaryBooking.updatedAt;
 
@@ -222,6 +268,7 @@ export const getConversations = async (req, res, next) => {
       }
 
       return {
+        isInquiry: primaryBooking.isInquiry,
         partnerId: group.partnerId,
         partner: group.partner,
         bookingId: primaryBooking.bookingId,
@@ -236,7 +283,7 @@ export const getConversations = async (req, res, next) => {
         lastMessage: latestMessage,
         unreadCount: totalUnreadCount,
         updatedAt: latestTime,
-        bookings: group.bookings, // Danh sách toàn bộ các đơn thuê của đối tác này
+        bookings: group.bookings, // Danh sách toàn bộ các đơn thuê của your contact này
       };
     });
 
@@ -269,14 +316,7 @@ export const getMessages = async (req, res, next) => {
       ? new mongoose.Types.ObjectId(currentUserId)
       : currentUserId;
 
-    const booking = await Booking.findById(bookingId)
-      .populate('deviceId', 'name title images category dailyRate pricePerDay brand')
-      .populate('device', 'name title images category dailyRate pricePerDay brand')
-      .populate('renterId', 'name avatar role isVerified email phone')
-      .populate('renter', 'name avatar role isVerified email phone')
-      .populate('ownerId', 'name avatar role isVerified email phone')
-      .populate('owner', 'name avatar role isVerified email phone')
-      .lean();
+    const booking = await findChat(bookingId, true);
 
     if (!booking) {
       return res.status(404).json({ success: false, message: 'Booking not found.' });
@@ -287,7 +327,7 @@ export const getMessages = async (req, res, next) => {
     const ownerObj = booking.ownerId || booking.owner;
     const renterIdStr = renterObj?._id?.toString() || renterObj?.toString();
     const ownerIdStr = ownerObj?._id?.toString() || ownerObj?.toString();
-    const isAdmin = req.user?.role === 'admin';
+    const isAdmin = false;
 
     if (currentUserId !== renterIdStr && currentUserId !== ownerIdStr && !isAdmin) {
       return res.status(403).json({ success: false, message: 'Access denied to this conversation.' });
@@ -300,14 +340,14 @@ export const getMessages = async (req, res, next) => {
     const deviceData = deviceObj
       ? {
         _id: deviceObj._id?.toString(),
-        name: deviceObj.name || deviceObj.title || 'Thiết bị công nghệ',
+        name: deviceObj.name || deviceObj.title || 'Device',
         image: Array.isArray(deviceObj.images) && deviceObj.images[0] ? deviceObj.images[0] : '',
         dailyRate: deviceObj.dailyRate || deviceObj.pricePerDay || 0,
         category: deviceObj.category || 'tech',
       }
       : {
         _id: '',
-        name: 'Thiết bị công nghệ',
+        name: 'Device',
         image: '',
         dailyRate: 0,
         category: 'tech',
@@ -331,9 +371,14 @@ export const getMessages = async (req, res, next) => {
         .sort({ updatedAt: -1 })
         .lean();
 
+      const inquiries = await ChatInquiry.find({ $or: [
+        { renterId: userObjId, ownerId: partnerObjId }, { renterId: partnerObjId, ownerId: userObjId },
+      ] }).populate('deviceId', 'name images category pricePerDay').lean();
+      partnerBookings.push(...inquiries);
       allPartnerBookings = partnerBookings.map((b) => {
         const dObj = b.deviceId || b.device;
         return {
+          isInquiry: Boolean(b.isInquiry),
           bookingId: b._id.toString(),
           bookingCode: b.bookingCode || `B${b._id.toString().substring(0, 8).toUpperCase()}`,
           status: b.status || 'pending',
@@ -344,17 +389,18 @@ export const getMessages = async (req, res, next) => {
           device: dObj
             ? {
               _id: dObj._id?.toString(),
-              name: dObj.name || dObj.title || 'Thiết bị công nghệ',
+              name: dObj.name || dObj.title || 'Device',
               image: Array.isArray(dObj.images) && dObj.images[0] ? dObj.images[0] : '',
               dailyRate: dObj.dailyRate || dObj.pricePerDay || 0,
               category: dObj.category || 'tech',
             }
-            : { _id: '', name: 'Thiết bị', image: '', dailyRate: 0, category: 'tech' },
+            : { _id: '', name: 'Device', image: '', dailyRate: 0, category: 'tech' },
         };
       });
     }
 
     const bookingContext = {
+      isInquiry: Boolean(booking.isInquiry),
       bookingId,
       bookingCode: booking.bookingCode || `B${bookingId.substring(0, 8).toUpperCase()}`,
       status: booking.status || 'pending',
@@ -379,14 +425,14 @@ export const getMessages = async (req, res, next) => {
       partner: partner
         ? {
           _id: partner._id?.toString() || partner.id,
-          name: partner.name || 'Người dùng TechShare',
+          name: partner.name || 'Profile unavailable',
           avatar: partner.avatar || '',
           role: partner.role || (isUserRenter ? 'owner' : 'renter'),
           isVerified: Boolean(partner.isVerified),
         }
         : {
           _id: '',
-          name: isUserRenter ? 'Chủ thiết bị' : 'Người thuê',
+          name: isUserRenter ? 'Device owner' : 'Renter',
           avatar: '',
           role: isUserRenter ? 'owner' : 'renter',
           isVerified: false,
@@ -460,7 +506,7 @@ export const uploadImage = async (req, res, next) => {
 
 /**
  * 4. POST /api/chats/:bookingId/messages
- * Gửi tin nhắn mới, lưu MongoDB và truyền phát Socket.IO Real-time
+ * Send tin nhắn mới, lưu MongoDB và truyền phát Socket.IO Real-time
  */
 export const sendMessage = async (req, res, next) => {
   try {
@@ -496,7 +542,7 @@ export const sendMessage = async (req, res, next) => {
     }
 
     // 3. Kiểm tra booking tồn tại
-    const booking = await Booking.findById(bookingId).lean();
+    const booking = await findChat(bookingId);
     if (!booking) {
       return res.status(404).json({ success: false, message: 'Booking not found.' });
     }
@@ -509,17 +555,11 @@ export const sendMessage = async (req, res, next) => {
     }
 
     // 4. Kiểm tra quyền hạn của người gửi
-    const userIds = [
-      req.user?.userId,
-      req.user?._id,
-      req.user?.id,
-      req.user?.accountId,
-      currentUserId,
-    ].filter(Boolean).map(String);
+    const userIds = [currentUserId];
 
     const isRenter = userIds.includes(renterIdStr);
     const isOwner = userIds.includes(ownerIdStr);
-    const isAdmin = req.user?.role === 'admin';
+    const isAdmin = false;
 
     if (!isRenter && !isOwner && !isAdmin) {
       return res.status(403).json({ success: false, message: 'You are not a participant of this booking.' });
@@ -539,18 +579,22 @@ export const sendMessage = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Could not determine receiver for booking.' });
     }
 
+    const recipient = await User.findById(receiverIdStr).select('_id isActive').lean();
+    if (!recipient || recipient.isActive === false) return res.status(404).json({ message: 'The recipient is unavailable.' });
     const senderId = new mongoose.Types.ObjectId(currentUserId);
     const receiverId = new mongoose.Types.ObjectId(receiverIdStr);
 
     // 6. Lưu bản ghi tin nhắn mới vào MongoDB
     const messageDoc = await Message.create({
       bookingId: new mongoose.Types.ObjectId(bookingId),
+      conversationModel: booking.isInquiry ? 'ChatInquiry' : 'Booking',
       senderId,
       receiverId,
       type,
       content: (content || '').trim(),
       mediaUrl: mediaUrl || '',
-      location: location && location.latitude && location.longitude ? location : null,
+      location: type === 'location' ? location : null,
+      tempId: typeof req.body.tempId === 'string' ? req.body.tempId.slice(0, 100) : undefined,
       status: 'sent',
     });
 
@@ -566,11 +610,8 @@ export const sendMessage = async (req, res, next) => {
         const receiverRoom = `user_${receiverIdStr}`;
 
         // Phát sự kiện nhận tin nhắn mới (hỗ trợ cả receive_message và new_message)
-        io.to(chatRoom).emit('receive_message', populatedMessage);
-        io.to(chatRoom).emit('new_message', populatedMessage);
-
-        io.to(receiverRoom).emit('receive_message', populatedMessage);
-        io.to(receiverRoom).emit('new_message', populatedMessage);
+        io.to(chatRoom).to(receiverRoom).to(`user_${currentUserId}`).emit('receive_message', populatedMessage);
+        io.to(chatRoom).to(receiverRoom).to(`user_${currentUserId}`).emit('new_message', populatedMessage);
 
         // Bắn In-App Notification Banner cho người nhận
         const senderUser = await User.findById(currentUserId).select('name avatar').lean().catch(() => null);
@@ -580,15 +621,15 @@ export const sendMessage = async (req, res, next) => {
           messageId: populatedMessage._id.toString(),
           sender: {
             id: currentUserId,
-            name: senderUser?.name || 'Đối tác TechShare',
+            name: senderUser?.name || 'Profile unavailable',
             avatar: senderUser?.avatar || '',
           },
           content:
             type === 'image'
-              ? '[Hình ảnh]'
+              ? '[Image]'
               : type === 'location'
-                ? '[Chia sẻ vị trí]'
-                : populatedMessage.content || 'Bạn có tin nhắn mới',
+                ? '[Shared location]'
+                : populatedMessage.content || 'You have a new message',
           createdAt: populatedMessage.createdAt,
         });
 
@@ -630,6 +671,11 @@ export const markAsRead = async (req, res, next) => {
     const userObjId = mongoose.Types.ObjectId.isValid(currentUserId)
       ? new mongoose.Types.ObjectId(currentUserId)
       : currentUserId;
+
+    const chat = await findChat(bookingId);
+    if (!chat) return res.status(404).json({ message: 'Conversation not found.' });
+    const participants = [chat.renterId || chat.renter, chat.ownerId || chat.owner].map(String);
+    if (!participants.includes(currentUserId)) return res.status(403).json({ message: 'Access denied to this conversation.' });
 
     // Cập nhật tất cả tin nhắn gửi cho user hiện tại trong booking này
     const result = await Message.updateMany(

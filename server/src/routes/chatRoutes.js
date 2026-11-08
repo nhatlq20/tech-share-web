@@ -1,6 +1,8 @@
 import express from 'express';
 import { protect } from '../middlewares/authMiddleware.js';
 import {
+  authenticateChat,
+  openDeviceChat,
   getConversations,
   getMessages,
   uploadImage,
@@ -12,7 +14,8 @@ import {
 const router = express.Router();
 
 // Tất cả endpoints chat đều yêu cầu đăng nhập
-router.use(protect);
+router.use(protect, authenticateChat);
+router.post('/devices/:deviceId', openDeviceChat);
 
 // 1. Danh sách hội thoại của user
 router.get('/conversations', getConversations);

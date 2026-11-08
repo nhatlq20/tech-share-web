@@ -1,3 +1,4 @@
+import { openDeviceChat } from '../services/chatService.js';
 import React, { useState, useEffect } from 'react';
 import { useParams, useLocation, useNavigate, Link } from 'react-router-dom';
 import {
@@ -50,6 +51,23 @@ export const DeviceDetailPage = () => {
     ? 'Back to Map'
     : (location.state?.fromLabel || 'Back to Home');
 
+  const [openingChat, setOpeningChat] = useState(false);
+  const [chatError, setChatError] = useState('');
+  const handleOpenChat = async () => {
+    if (!isAuthenticated) {
+      navigate(ROUTES.LOGIN, { state: { from: location.pathname } });
+      return;
+    }
+    if (openingChat) return;
+    setOpeningChat(true);
+    setChatError('');
+    try {
+      const result = await openDeviceChat(currentDeviceId);
+      navigate(ROUTES.MESSAGES_PATH(result.bookingId));
+    } catch (error) {
+      setChatError(error.message || 'Unable to open this conversation.');
+    } finally { setOpeningChat(false); }
+  };
   const [device, setDevice] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -324,13 +342,17 @@ export const DeviceDetailPage = () => {
               </Link>
 
               {/* Message Owner CTA */}
-              <Link
-                to={ROUTES.MESSAGES}
-                className="w-full py-2.5 px-4 rounded-xl font-semibold text-xs border border-slate-200 text-slate-700 hover:bg-slate-50 transition flex items-center justify-center gap-1.5"
+              <button
+                type="button"
+                disabled={openingChat}
+                aria-busy={openingChat}
+                onClick={handleOpenChat}
+                className="flex min-h-12 w-full items-center justify-center gap-2.5 rounded-xl border border-brand-500 bg-brand-50 px-4 py-3 text-sm font-bold text-brand-900 transition-colors enabled:hover:border-brand-700 enabled:hover:bg-brand-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-800 focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-70"
               >
-                <MessageSquare className="w-3.5 h-3.5 text-teal-600" />
-                <span>Chat with Device Owner</span>
-              </Link>
+                <MessageSquare aria-hidden="true" className="h-5 w-5 shrink-0 text-brand-800" />
+                <span>{openingChat ? 'Opening conversation…' : 'Chat with Device Owner'}</span>
+              </button>
+              {chatError && <p role="alert" className="text-xs text-red-600">{chatError}</p>}
 
               {/* Rental information */}
               <div className="pt-3 border-t border-slate-100 flex flex-col gap-2 text-xs text-slate-500">

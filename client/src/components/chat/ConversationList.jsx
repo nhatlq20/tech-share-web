@@ -23,14 +23,14 @@ const formatConversationTime = (dateString) => {
   const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-  if (diffMinutes < 1) return 'Vừa xong';
+  if (diffMinutes < 1) return 'Just now';
   if (diffMinutes < 60) return `${diffMinutes}m`;
   if (diffHours < 24) {
-    return date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
   }
-  if (diffDays === 1) return 'Hôm qua';
+  if (diffDays === 1) return 'Yesterday';
   if (diffDays < 7) return `${diffDays}d`;
-  return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
+  return date.toLocaleDateString('en-US', { day: '2-digit', month: '2-digit' });
 };
 
 /**
@@ -38,12 +38,12 @@ const formatConversationTime = (dateString) => {
  */
 const BookingStatusBadge = ({ status }) => {
   const config = {
-    pending: { label: 'Chờ duyệt', bg: 'bg-amber-50 text-amber-700 border-amber-200' },
-    approved: { label: 'Đã duyệt', bg: 'bg-blue-50 text-blue-700 border-blue-200' },
-    active: { label: 'Đang thuê', bg: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-    completed: { label: 'Hoàn tất', bg: 'bg-slate-100 text-slate-700 border-slate-200' },
-    cancelled: { label: 'Đã hủy', bg: 'bg-rose-50 text-rose-700 border-rose-200' },
-    rejected: { label: 'Từ chối', bg: 'bg-rose-50 text-rose-700 border-rose-200' },
+    pending: { label: 'Pending', bg: 'bg-amber-50 text-amber-700 border-amber-200' },
+    approved: { label: 'Approved', bg: 'bg-blue-50 text-blue-700 border-blue-200' },
+    active: { label: 'Active', bg: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+    completed: { label: 'Completed', bg: 'bg-slate-100 text-slate-700 border-slate-200' },
+    cancelled: { label: 'Cancelled', bg: 'bg-rose-50 text-rose-700 border-rose-200' },
+    rejected: { label: 'Rejected', bg: 'bg-rose-50 text-rose-700 border-rose-200' },
   }[status] || { label: status, bg: 'bg-slate-50 text-slate-600 border-slate-200' };
 
   return (
@@ -94,7 +94,7 @@ export const ConversationList = ({
       <div className="p-3.5 border-b border-slate-100 flex flex-col gap-2.5 bg-slate-50/50">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <h2 className="text-base font-bold text-slate-800">Tin nhắn giao dịch</h2>
+            <h2 className="text-base font-bold text-slate-800">Messages</h2>
             <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-teal-100 text-teal-800">
               {conversations.length}
             </span>
@@ -111,7 +111,7 @@ export const ConversationList = ({
             type="text"
             value={searchQuery}
             onChange={(e) => onSearchChange && onSearchChange(e.target.value)}
-            placeholder="Tìm theo tên máy hoặc đối phương..."
+            placeholder="Search conversations"
             className="w-full pl-9 pr-8 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 transition-all text-slate-800 placeholder-slate-400"
           />
           {searchQuery && (
@@ -149,12 +149,12 @@ export const ConversationList = ({
               <MessageSquareOff size={22} />
             </div>
             <p className="text-xs font-semibold text-slate-600">
-              {searchQuery ? 'Không tìm thấy cuộc trò chuyện nào' : 'Chưa có cuộc trò chuyện nào'}
+              {searchQuery ? 'No conversations found' : 'No conversations yet'}
             </p>
             <p className="text-[11px] text-slate-400 mt-1 max-w-[200px]">
               {searchQuery
-                ? 'Hãy thử tìm bằng từ khóa khác'
-                : 'Khi bạn đặt thuê hoặc có khách thuê thiết bị, hội thoại sẽ hiển thị ở đây.'}
+                ? 'Try another search'
+                : 'Open a device and contact its owner to start a conversation.'}
             </p>
           </div>
         ) : (
@@ -170,12 +170,12 @@ export const ConversationList = ({
             const multiBookingsCount = item.bookings?.length || 1;
 
             // Preview nội dung tin nhắn cuối
-            let lastMessagePreview = 'Chưa có tin nhắn nào';
+            let lastMessagePreview = 'No messages yet';
             if (lastMsg) {
               if (lastMsg.type === 'image') {
-                lastMessagePreview = '📷 [Hình ảnh]';
+                lastMessagePreview = '📷 [Image]';
               } else if (lastMsg.type === 'location') {
-                lastMessagePreview = '📍 [Vị trí]';
+                lastMessagePreview = '📍 [Location]';
               } else if (lastMsg.content) {
                 lastMessagePreview = lastMsg.content;
               }
@@ -213,13 +213,10 @@ export const ConversationList = ({
                     )}
                   </div>
                   {/* Chấm xanh Online */}
-                  <span
-                    className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white shadow-2xs"
-                    title="Đang trực tuyến"
-                  />
+
                   {partner.isVerified && (
                     <span
-                      title="Tài khoản đã xác minh"
+                      title="Verified account"
                       className="absolute -top-1 -right-1 bg-white rounded-full p-0.5 shadow-xs"
                     >
                       <ShieldCheck size={13} className="text-teal-600 fill-teal-100" />
@@ -236,7 +233,7 @@ export const ConversationList = ({
                         unread > 0 ? 'font-bold text-slate-900' : 'font-semibold text-slate-800'
                       }`}
                     >
-                      {partner.name || 'Người dùng TechShare'}
+                      {partner.name || 'Profile unavailable'}
                     </span>
                     <span className="text-[10px] text-slate-400 whitespace-nowrap flex-shrink-0">
                       {formatConversationTime(item.updatedAt || lastMsg?.createdAt)}
@@ -247,16 +244,16 @@ export const ConversationList = ({
                   <div className="flex items-center gap-1.5 mb-1.5 text-[11px] flex-wrap">
                     <Smartphone size={12} className="text-teal-600 flex-shrink-0" />
                     <span className="truncate font-semibold text-teal-700 text-xs max-w-[130px]">
-                      {device.name || 'Thiết bị'}
+                      {device.name || 'Device'}
                     </span>
                     <span className="text-slate-300">•</span>
-                    <BookingStatusBadge status={item.status} />
+                    <BookingStatusBadge status={item.isInquiry ? 'Inquiry' : item.status} />
                     {multiBookingsCount > 1 && (
                       <span
                         className="text-[10px] font-semibold text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded border border-teal-200 shrink-0"
-                        title={`${multiBookingsCount} đơn thuê với người này`}
+                        title={`${multiBookingsCount} bookings with this person`}
                       >
-                        {multiBookingsCount} đơn
+                        {multiBookingsCount} bookings
                       </span>
                     )}
                   </div>
