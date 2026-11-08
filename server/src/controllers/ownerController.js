@@ -549,7 +549,7 @@ export const getOwnerDeviceById = async (req, res, next) => {
 
 export const updateOwnerDevice = async (req, res, next) => {
   try {
-    const { devicesCol } = getCollections();
+    const { devicesCol, usersCol } = getCollections();
     const ownerId = await resolveOwnerId(req);
     const { id } = req.params;
 
