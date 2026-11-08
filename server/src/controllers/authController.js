@@ -10,6 +10,8 @@ import { sendOtpEmail, sendResetPasswordOtpEmail } from '../services/emailServic
 import { uploadToCloudinary, deleteFromCloudinary } from '../services/cloudinaryService.js';
 import { isValidCoordinates } from '../utils/locationHelper.js';
 
+const USER_RESPONSE_PROJECTION = '-passwordHash -wallet -walletBalance -walletEscrowBalance';
+
 /**
  * Helper tra cứu mã quyền (role code: 'admin', 'owner', 'renter') từ account.roleId trong collection roles
  */
@@ -99,16 +101,16 @@ export const login = async (req, res) => {
     // Lấy thông tin chi tiết từ collection users qua accountId hoặc account.userId
     let user = null;
     if (account.userId) {
-      user = await User.findById(account.userId).lean();
+      user = await User.findById(account.userId).select(USER_RESPONSE_PROJECTION).lean();
     }
     if (!user) {
-      user = await User.findOne({ accountId: account._id }).lean();
+      user = await User.findOne({ accountId: account._id }).select(USER_RESPONSE_PROJECTION).lean();
     }
     if (!user && account.username) {
-      user = await User.findOne({ username: account.username }).lean();
+      user = await User.findOne({ username: account.username }).select(USER_RESPONSE_PROJECTION).lean();
     }
     if (!user && account.email) {
-      user = await User.findOne({ email: account.email }).lean();
+      user = await User.findOne({ email: account.email }).select(USER_RESPONSE_PROJECTION).lean();
     }
 
     // Tra cứu mã quyền thực tế từ roleId (trong collection roles)
@@ -216,7 +218,7 @@ export const getProfile = async (req, res) => {
     }
 
     // Truy vấn collection users
-    const user = await User.findById(targetUserId).lean();
+    const user = await User.findById(targetUserId).select(USER_RESPONSE_PROJECTION).lean();
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -274,7 +276,7 @@ export const getCurrentUser = async (req, res) => {
     const accountId = req.user?.accountId;
 
     let [user, account] = await Promise.all([
-      userId ? User.findById(userId).lean() : null,
+      userId ? User.findById(userId).select(USER_RESPONSE_PROJECTION).lean() : null,
       accountId
         ? Account.findById(accountId)
             .select('-passwordHash')
@@ -284,7 +286,7 @@ export const getCurrentUser = async (req, res) => {
     ]);
 
     if (!user && account) {
-      user = await User.findOne({ accountId: account._id }).lean();
+      user = await User.findOne({ accountId: account._id }).select(USER_RESPONSE_PROJECTION).lean();
     }
     if (!account && user?.accountId) {
       account = await Account.findById(user.accountId)
@@ -385,7 +387,7 @@ export const updateAvatar = async (req, res) => {
       { avatar: finalAvatarUrl },
       { new: true }
     )
-      .select('-passwordHash')
+      .select(USER_RESPONSE_PROJECTION)
       .lean();
 
     if (!updatedUser) {
@@ -686,8 +688,6 @@ export const registerVerifyOtp = async (req, res) => {
       referralCode: '',
       referredBy: null,
       wishlist: [],
-      walletBalance: 0,
-      walletEscrowBalance: 0,
       expoPushToken: '',
       pushTokens: [],
       fcmTokens: [],
@@ -843,7 +843,7 @@ export const updateProfile = async (req, res) => {
       { $set: updateFields },
       { new: true, runValidators: true }
     )
-      .select('-passwordHash')
+      .select(USER_RESPONSE_PROJECTION)
       .lean();
 
     if (!updatedUser) {

@@ -8,11 +8,8 @@ import Notification from '../src/models/Notification.js';
 import User from '../src/models/User.js';
 import Device from '../src/models/Device.js';
 import Booking from '../src/models/Booking.js';
-import Dispute from '../src/models/Dispute.js';
 import EkycRequest from '../src/models/EkycRequest.js';
-import Voucher from '../src/models/Voucher.js';
 import SystemSetting from '../src/models/SystemSetting.js';
-import AdminAuditLog from '../src/models/AdminAuditLog.js';
 import Role from '../src/models/Role.js';
 import Account from '../src/models/Account.js';
 
@@ -40,13 +37,10 @@ describe('PHASE 3: Platform Operations Integration Tests', () => {
   const store = {
     notifications: new Map(),
     settings: new Map(),
-    auditLogs: new Map(),
     users: new Map(),
     devices: new Map(),
     bookings: new Map(),
-    disputes: new Map(),
     ekycRequests: new Map(),
-    vouchers: new Map(),
     roles: new Map(),
     accounts: new Map(),
   };
@@ -209,17 +203,11 @@ describe('PHASE 3: Platform Operations Integration Tests', () => {
           _id: null,
           grossBookingValue: 1500000,
           totalRentalFee: 1000000,
-          totalDeposits: 500000,
-          escrowHeld: 1500000,
-          depositsHeld: 500000,
         },
       ];
     };
 
-    Dispute.countDocuments = async () => 0;
     EkycRequest.countDocuments = async () => 0;
-
-    Voucher.find = () => makeChain([{ code: 'TECHSHARE10', usedCount: 5, type: 'percent', value: 10 }]);
 
     Notification.countDocuments = async () => store.notifications.size;
     Notification.find = () => makeChain(Array.from(store.notifications.values()));
@@ -260,18 +248,6 @@ describe('PHASE 3: Platform Operations Integration Tests', () => {
       return s;
     };
 
-    AdminAuditLog.countDocuments = async () => store.auditLogs.size;
-    AdminAuditLog.find = () => makeChain(Array.from(store.auditLogs.values()));
-    AdminAuditLog.create = async (doc) => {
-      const entry = { _id: new mongoose.Types.ObjectId(), ...doc, createdAt: new Date() };
-      store.auditLogs.set(String(entry._id), entry);
-      return entry;
-    };
-    AdminAuditLog.aggregate = async () => [
-      { _id: 'notification_broadcast', count: 1 },
-      { _id: 'system_setting_update', count: 1 },
-    ];
-
     // Express app setup
     app = express();
     app.use(express.json());
@@ -303,7 +279,7 @@ describe('PHASE 3: Platform Operations Integration Tests', () => {
           targetType: 'specific_users',
           userIds: [String(renterId)],
           title: 'Chào mừng thành viên mới',
-          body: 'Bạn nhận được 1 voucher giảm 10% cho đơn thuê đầu tiên!',
+          body: 'Khám phá các thiết bị mới có thể đặt thuê tuần này!',
           type: 'promo',
         },
       });
@@ -355,16 +331,6 @@ describe('PHASE 3: Platform Operations Integration Tests', () => {
       assert.equal(res.body.success, true);
       assert.ok(Array.isArray(res.body.data));
       assert.ok(res.body.data.length >= 1);
-    });
-
-    test('GET /api/admin/notifications/history — retrieves broadcast history', async () => {
-      const res = await requestApi('GET', '/api/admin/notifications/history', {
-        headers: { Authorization: `Bearer ${adminToken}` },
-      });
-
-      assert.equal(res.status, 200);
-      assert.equal(res.body.success, true);
-      assert.ok(Array.isArray(res.body.data));
     });
   });
 
@@ -430,7 +396,7 @@ describe('PHASE 3: Platform Operations Integration Tests', () => {
       assert.equal(typeof res.body.data.value.enabled, 'boolean');
     });
 
-    test('PATCH /api/admin/settings/:key — updates setting value and logs audit', async () => {
+    test('PATCH /api/admin/settings/:key — updates and persists the setting value', async () => {
       const res = await requestApi('PATCH', '/api/admin/settings/platform_maintenance', {
         headers: { Authorization: `Bearer ${adminToken}` },
         body: {
@@ -442,12 +408,7 @@ describe('PHASE 3: Platform Operations Integration Tests', () => {
       assert.equal(res.status, 200);
       assert.equal(res.body.success, true);
       assert.equal(res.body.data.value.enabled, true);
-
-      // Verify audit entry created
-      const audit = Array.from(store.auditLogs.values()).find(
-        (a) => a.action === 'system_setting_update' && a.targetId === 'platform_maintenance'
-      );
-      assert.ok(audit, 'Cập nhật cấu hình phải tạo nhật ký kiểm toán');
+      assert.equal(store.settings.get('platform_maintenance').value.enabled, true);
     });
 
     test('PATCH /api/admin/settings/:key — PREVENTS modifying forbidden server secrets (HTTP 403)', async () => {
@@ -464,43 +425,22 @@ describe('PHASE 3: Platform Operations Integration Tests', () => {
     });
   });
 
-  // ══════════════════════════════════════════════════════════════════
-  // SUITE 4: MODULE 10 — CENTRALIZED AUDIT LOGS
-  // ══════════════════════════════════════════════════════════════════
-  describe('Module 10: Centralized Audit Logs', () => {
-    test('GET /api/admin/audit-logs — queries audit logs with pagination and filters', async () => {
-      const res = await requestApi('GET', '/api/admin/audit-logs?page=1&limit=15', {
+  test('Removed audit endpoints return 404 even for an admin', async () => {
+    const paths = [
+      '/api/admin/audit-logs',
+      '/api/admin/audit-logs/stats',
+      '/api/admin/audit-logs/export',
+      '/api/admin/notifications/history',
+    ];
+
+    for (const path of paths) {
+      const res = await requestApi('GET', path, {
         headers: { Authorization: `Bearer ${adminToken}` },
       });
-
-      assert.equal(res.status, 200);
-      assert.equal(res.body.success, true);
-      assert.ok(Array.isArray(res.body.data));
-      assert.ok(res.body.data.length >= 1);
-    });
-
-    test('GET /api/admin/audit-logs/stats — retrieves audit operation statistics', async () => {
-      const res = await requestApi('GET', '/api/admin/audit-logs/stats', {
-        headers: { Authorization: `Bearer ${adminToken}` },
-      });
-
-      assert.equal(res.status, 200);
-      assert.equal(res.body.success, true);
-      assert.equal(typeof res.body.data.totalLogs, 'number');
-      assert.equal(typeof res.body.data.successRate, 'number');
-    });
-
-    test('GET /api/admin/audit-logs/export — exports audit logs as CSV', async () => {
-      const res = await requestApi('GET', '/api/admin/audit-logs/export', {
-        headers: { Authorization: `Bearer ${adminToken}` },
-      });
-
-      assert.equal(res.status, 200);
-      assert.ok(res.headers.get('content-type').includes('text/csv'));
-      assert.ok(typeof res.body === 'string');
-      assert.ok(res.body.includes('Thời gian,Quản trị viên'));
-    });
+      assert.equal(res.status, 404, path);
+    }
   });
+
 
   // ══════════════════════════════════════════════════════════════════
   // SUITE 5: SECURITY & RBAC REJECTION
@@ -522,14 +462,6 @@ describe('PHASE 3: Platform Operations Integration Tests', () => {
 
     test('Reject non-admin access to /api/admin/analytics/advanced with HTTP 403', async () => {
       const res = await requestApi('GET', '/api/admin/analytics/advanced', {
-        headers: { Authorization: `Bearer ${renterToken}` },
-      });
-      assert.equal(res.status, 403);
-      assert.equal(res.body.success, false);
-    });
-
-    test('Reject non-admin access to /api/admin/audit-logs with HTTP 403', async () => {
-      const res = await requestApi('GET', '/api/admin/audit-logs', {
         headers: { Authorization: `Bearer ${renterToken}` },
       });
       assert.equal(res.status, 403);

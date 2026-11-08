@@ -43,7 +43,6 @@ export const toggleUserBanStatus = async (req, res, next) => {
       const result = await banAccount({
         targetId: id,
         reason: banReason,
-        adminUser: req.user,
       });
 
       return res.json({
@@ -61,7 +60,6 @@ export const toggleUserBanStatus = async (req, res, next) => {
     } else {
       const result = await unbanAccount({
         targetId: id,
-        adminUser: req.user,
       });
 
       return res.json({

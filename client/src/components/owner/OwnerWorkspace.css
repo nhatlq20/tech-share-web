@@ -402,7 +402,6 @@
 .owner-calendar-container,
 .owner-devices-container,
 .owner-bookings-container,
-.owner-wallet-container,
 .owner-analytics-container {
   flex: 1;
   min-height: 0;

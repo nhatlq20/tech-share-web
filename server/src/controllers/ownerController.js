@@ -247,11 +247,6 @@ export const getOwnerOverview = async (req, res, next) => {
       return sum + Math.max(0, fee);
     }, 0);
 
-    // Escrow held deposit
-    const escrowHolding = allOwnerBookings
-      .filter((b) => ['active', 'approved'].includes(b.status))
-      .reduce((sum, b) => sum + (Number(b.depositFee) || Number(b.depositAmount) || 0), 0);
-
     // 4. Rating average & utilization rate
     const devicesList = await devicesCol
       .find({ ...ownerFilter, isDeleted: { $ne: true } })
@@ -344,8 +339,6 @@ export const getOwnerOverview = async (req, res, next) => {
       pendingApprovals,
       monthlyRevenue: totalRevenue,
       monthlyRevenueFormatted: formatVND(totalRevenue),
-      escrowHolding,
-      escrowHoldingFormatted: formatVND(escrowHolding),
       utilizationRate,
       trustScore: ownerProfile?.trustScore || 100,
       ratingAvg: parseFloat(avgRating),
@@ -1060,8 +1053,6 @@ export const getOwnerBookings = async (req, res, next) => {
           discountAmount: Number(b.discountAmount) || 0,
           deliveryAddress: b.deliveryAddress || b.delivery?.address || '',
           note: b.note || '',
-          paymentMethod: b.paymentMethod || 'escrow',
-          paymentStatus: b.paymentStatus || 'escrow_hold',
           status: b.status || 'pending',
           deliveryMethod: b.deliveryMethod || 'pickup',
           rejectReason: b.rejectReason || '',
@@ -1344,7 +1335,7 @@ export const completeBooking = async (req, res, next) => {
 
     return res.status(200).json({
       success: true,
-      message: 'Rental returned and completed. Deposit released.',
+      message: 'Rental returned and completed.',
     });
   } catch (error) {
     return next(error);

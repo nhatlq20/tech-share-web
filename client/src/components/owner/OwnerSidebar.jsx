@@ -6,7 +6,6 @@ import {
   MessageSquare, 
   Package, 
   PlusCircle, 
-  Wallet, 
   Sparkles,
   ExternalLink, 
   LogOut, 
@@ -64,12 +63,6 @@ export const OwnerSidebar = ({
       label: 'List New Devices',
       path: ROUTES.OWNER_DEVICE_NEW,
       icon: PlusCircle,
-    },
-    {
-      id: 'wallet',
-      label: 'Revenue & Deposit Wallet',
-      path: ROUTES.OWNER_WALLET,
-      icon: Wallet,
     },
     {
       id: 'ai_assistant',

@@ -24,10 +24,6 @@ const roleSchema = new mongoose.Schema(
       default: '',
       trim: true,
     },
-    permissions: [{
-      type: String,
-      trim: true,
-    }],
     isActive: {
       type: Boolean,
       default: true,

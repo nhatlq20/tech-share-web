@@ -39,14 +39,9 @@ export const ROUTES = {
 
   // Phase 1: Core Governance Admin Routes
   ADMIN_BOOKINGS: '/admin/bookings',
-  ADMIN_DISPUTES: '/admin/disputes',
-  ADMIN_WALLET: '/admin/wallet',
-  ADMIN_AUDIT_LOGS: '/admin/audit-logs',
 
   // Phase 2: Business Operations Admin Routes
-  ADMIN_VOUCHERS: '/admin/vouchers',
   ADMIN_REVIEWS: '/admin/reviews',
-  ADMIN_ROLES: '/admin/roles',
 
   // Phase 3: Platform Operations Admin Routes
   ADMIN_ANALYTICS: '/admin/analytics',
@@ -67,7 +62,6 @@ export const ROUTES = {
   OWNER_BOOKINGS: '/owner/bookings',
   OWNER_CALENDAR: '/owner/calendar',
   OWNER_ANALYTICS: '/owner/analytics',
-  OWNER_WALLET: '/owner/wallet',
   OWNER_AI_ASSISTANT: '/owner/ai-assistant',
   OWNER_MESSAGES: '/owner/messages',
   OWNER_MESSAGES_CHAT: '/owner/messages/:bookingId',

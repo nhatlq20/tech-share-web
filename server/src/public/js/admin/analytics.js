@@ -304,97 +304,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // 4. Chart 4: Escrow & Wallet Trends (Grouped Bar)
-  function renderWalletEscrow(escrowData) {
-    const canvas = document.getElementById('walletEscrowChart');
-    if (!canvas) return;
-    destroyChart('walletEscrow');
-
-    const ctx = canvas.getContext('2d');
-    const validData = escrowData || [];
-
-    const labels = validData.map(d => d.label);
-    const locked = validData.map(d => Number(d.depositsLocked) || 0);
-    const released = validData.map(d => Number(d.depositsReleased) || 0);
-    const payouts = validData.map(d => Number(d.rentalPayouts) || 0);
-
-    const maxVal = Math.max(...locked, ...released, ...payouts, 1000000);
-
-    window.__ANALYTICS_CHARTS__.walletEscrow = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: labels,
-        datasets: [
-          {
-            label: 'Escrow Locked',
-            data: locked,
-            backgroundColor: '#F59E0B',
-            borderRadius: 6,
-          },
-          {
-            label: 'Deposit Released',
-            data: released,
-            backgroundColor: '#10B981',
-            borderRadius: 6,
-          },
-          {
-            label: 'Owner Payouts',
-            data: payouts,
-            backgroundColor: '#286E74',
-            borderRadius: 6,
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            position: 'top',
-            align: 'end',
-            labels: {
-              boxWidth: 10,
-              font: { family: 'Be Vietnam Pro', size: 11 },
-              color: '#64748B',
-            },
-          },
-          tooltip: {
-            backgroundColor: 'rgba(15, 23, 42, 0.95)',
-            padding: 12,
-            cornerRadius: 10,
-            callbacks: {
-              label: function(context) {
-                return ` ${context.dataset.label}: ${formatVND(context.raw)}`;
-              },
-            },
-          },
-        },
-        scales: {
-          x: {
-            grid: { display: false },
-            ticks: {
-              color: '#94A3B8',
-              font: { family: 'Be Vietnam Pro', size: 11 },
-            },
-          },
-          y: {
-            suggestedMin: 0,
-            suggestedMax: Math.ceil(maxVal * 1.15),
-            grid: { color: '#F1F5F9' },
-            ticks: {
-              color: '#94A3B8',
-              font: { family: 'Be Vietnam Pro', size: 11 },
-              callback: function(val) {
-                return formatShortVND(val) + '₫';
-              },
-            },
-          },
-        },
-      },
-    });
-  }
-
-  // 5. Chart 5: Booking Conversion Funnel (HTML Steps)
+  // 4. Booking Conversion Funnel (HTML Steps)
   function renderBookingFunnel(funnelData) {
     const container = document.getElementById('bookingFunnelContainer');
     if (!container) return;
@@ -431,19 +341,15 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!kpi) return;
     const gbvEl = document.getElementById('kpiGrossBookingValue');
     const revEl = document.getElementById('kpiPlatformRevenue');
-    const escEl = document.getElementById('kpiEscrowLiabilities');
     const growthEl = document.getElementById('kpiGbvGrowth');
 
     const compEl = document.getElementById('kpiCompletionRate');
     const compDesc = document.getElementById('kpiCompletionDesc');
     const cancEl = document.getElementById('kpiCancellationRate');
     const cancDesc = document.getElementById('kpiCancellationDesc');
-    const dispEl = document.getElementById('kpiDisputeRate');
-    const dispDesc = document.getElementById('kpiDisputeDesc');
 
     if (gbvEl) gbvEl.textContent = formatVND(kpi.grossBookingValue);
     if (revEl) revEl.textContent = formatVND(kpi.platformFeeRevenue);
-    if (escEl) escEl.textContent = formatVND(kpi.escrowLiabilities);
 
     if (growthEl && kpi.growth) {
       const g = kpi.growth.gbvGrowthPercent;
@@ -456,9 +362,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (cancEl) cancEl.textContent = `${kpi.cancellationRate}%`;
     if (cancDesc) cancDesc.textContent = `${kpi.cancelledBookings || 0} / ${kpi.totalBookings || 0} cancelled / rejected orders`;
-
-    if (dispEl) dispEl.textContent = `${kpi.disputeRate}%`;
-    if (dispDesc) dispDesc.textContent = `${kpi.disputedBookings || 0} / ${kpi.totalBookings || 0} disputed orders`;
   }
 
   // Fetch updated data from API
@@ -490,7 +393,6 @@ document.addEventListener('DOMContentLoaded', function() {
       renderRevenueTrends(d.revenueTrends);
       renderBookingStatus(d.bookingStatusDistribution);
       renderCategoryRevenue(d.revenueByCategory);
-      renderWalletEscrow(d.walletEscrowTrends);
       renderBookingFunnel(d.bookingFunnel);
 
       if (window.lucide && typeof window.lucide.createIcons === 'function') {
@@ -549,7 +451,6 @@ document.addEventListener('DOMContentLoaded', function() {
         renderRevenueTrends(initialData.revenueTrends);
         renderBookingStatus(initialData.bookingStatusDistribution);
         renderCategoryRevenue(initialData.revenueByCategory);
-        renderWalletEscrow(initialData.walletEscrowTrends);
         renderBookingFunnel(initialData.bookingFunnel);
       } else {
         fetchAnalytics('30d');

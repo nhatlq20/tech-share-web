@@ -61,14 +61,12 @@ const bookingSchema = new mongoose.Schema(
       default: '',
     }, // Lý do hủy hoặc từ chối đơn
 
-    // 3. Nhóm Chi tiết Tài chính (Gom 7 trường tiền tệ)
+    // 3. Chi tiết giá thuê
     pricing: {
       pricePerDayAtBooking: { type: Number, required: true },
       rentalFee: { type: Number, required: true },
       discountPercent: { type: Number, default: 0 },
       depositFee: { type: Number, required: true, default: 0 },
-      voucherCode: { type: String, default: '' },
-      voucherDiscount: { type: Number, default: 0 },
       totalAmount: { type: Number, required: true },
     },
 
@@ -152,7 +150,7 @@ bookingSchema.virtual('totalDays').get(function () {
 });
 
 // Mapping nhóm pricing <-> trường phẳng
-['pricePerDayAtBooking', 'rentalFee', 'discountPercent', 'depositFee', 'voucherCode', 'voucherDiscount', 'totalAmount'].forEach((field) => {
+['pricePerDayAtBooking', 'rentalFee', 'discountPercent', 'depositFee', 'totalAmount'].forEach((field) => {
   bookingSchema.virtual(field)
     .get(function () { return this.pricing?.[field]; })
     .set(function (v) {

@@ -1,7 +1,6 @@
 import mongoose from 'mongoose';
 import { Account } from '../models/Account.js';
 import { User } from '../models/User.js';
-import AdminAuditLog from '../models/AdminAuditLog.js';
 import { getIO } from '../socket.js';
 
 /**
@@ -83,10 +82,9 @@ export const resolveUserAndAccount = async (targetId) => {
  * Khóa tài khoản người dùng:
  * - Cập nhật `isbanned: true`, `banReason: reason`, `isActive: false` trong collection `accounts`
  * - Đồng bộ `isActive: false`, `isbanned: true` trong collection `users`
- * - Ghi Audit Log hành động của Admin
  * - Phát tín hiệu Socket.IO thời gian thực để đá người dùng ra ngay lập tức
  */
-export const banAccount = async ({ targetId, reason, adminUser }) => {
+export const banAccount = async ({ targetId, reason }) => {
   const { user, account } = await resolveUserAndAccount(targetId);
 
   if (!user && !account) {
@@ -155,30 +153,7 @@ export const banAccount = async ({ targetId, reason, adminUser }) => {
     }
   }
 
-  // 3. Ghi log kiểm toán (Admin Audit Log) nếu DB đang kết nối
-  try {
-    const adminId = adminUser?._id || adminUser?.id || adminUser?.userId;
-    if (mongoose.connection.readyState === 1 && adminId && mongoose.isValidObjectId(adminId)) {
-      await AdminAuditLog.create({
-        adminId: new mongoose.Types.ObjectId(String(adminId)),
-        action: 'BAN_USER',
-        targetType: 'User',
-        targetId: user?._id || account?._id,
-        reason: finalReason,
-        details: {
-          accountId: account?._id,
-          userId: user?._id,
-          username: account?.username || user?.username,
-          email: account?.email || user?.email,
-          reason: finalReason,
-        },
-      });
-    }
-  } catch (auditErr) {
-    console.warn('⚠️ Lỗi ghi Audit Log khi khóa tài khoản:', auditErr.message);
-  }
-
-  // 4. Phát tín hiệu Socket.IO thời gian thực đến mọi phiên làm việc đang online của tài khoản
+  // 3. Phát tín hiệu Socket.IO thời gian thực đến mọi phiên làm việc đang online của tài khoản
   try {
     const io = getIO();
     if (io) {
@@ -220,7 +195,7 @@ export const banAccount = async ({ targetId, reason, adminUser }) => {
  * - Cập nhật `isbanned: false`, `banReason: ''`, `isActive: true` trong collection `accounts`
  * - Đồng bộ `isActive: true`, `isbanned: false` trong collection `users`
  */
-export const unbanAccount = async ({ targetId, adminUser }) => {
+export const unbanAccount = async ({ targetId }) => {
   const { user, account } = await resolveUserAndAccount(targetId);
 
   if (!user && !account) {
@@ -288,28 +263,6 @@ export const unbanAccount = async ({ targetId, adminUser }) => {
         }
       );
     }
-  }
-
-  // 3. Ghi audit log nếu DB đang kết nối
-  try {
-    const adminId = adminUser?._id || adminUser?.id || adminUser?.userId;
-    if (mongoose.connection.readyState === 1 && adminId && mongoose.isValidObjectId(adminId)) {
-      await AdminAuditLog.create({
-        adminId: new mongoose.Types.ObjectId(String(adminId)),
-        action: 'UNBAN_USER',
-        targetType: 'User',
-        targetId: user?._id || account?._id,
-        reason: 'Quản trị viên mở khóa tài khoản',
-        details: {
-          accountId: account?._id,
-          userId: user?._id,
-          username: account?.username || user?.username,
-          email: account?.email || user?.email,
-        },
-      });
-    }
-  } catch (auditErr) {
-    console.warn('⚠️ Lỗi ghi Audit Log khi mở khóa tài khoản:', auditErr.message);
   }
 
   return {

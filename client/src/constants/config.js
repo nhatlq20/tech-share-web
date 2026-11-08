@@ -41,7 +41,6 @@ export const API_CONFIG = {
     OWNER_HANDOVER_QR: (bookingId) => `/bookings/${bookingId}/handover`,
     OWNER_COMPLETE_BOOKING: (bookingId) => `/bookings/${bookingId}/complete`,
     OWNER_ANALYTICS: "/devices/owner/analytics",
-    OWNER_WALLET: "/wallet/me",
     AI_GENERATE_DESCRIPTION: "/ai/generate-description",
     DEVICES: "/devices",
     DEVICES_RECOMMENDED: "/devices/recommended",
@@ -73,7 +72,7 @@ export const API_CONFIG = {
 
 export const MAGIC_NUMBERS = {
   HOME_RECOMMENDATIONS: { INITIAL_PAGE: 1, PAGE_SIZE: 24 },
-  // Điểm tín nhiệm Escrow (Trust Score)
+  // Điểm tín nhiệm
   TRUST_SCORE: {
     MAX: 100,
     EXCELLENT_THRESHOLD: 85,
@@ -103,8 +102,6 @@ export const MAGIC_NUMBERS = {
     LONG_RENTAL_TIER_1_DISCOUNT_PERCENT: 10,
     LONG_RENTAL_TIER_2_DAYS: 7,
     LONG_RENTAL_TIER_2_DISCOUNT_PERCENT: 20,
-    VOUCHER_WELCOME50_DISCOUNT: 50000,
-    VOUCHER_WEEKEND10_PERCENT: 10,
     MY_BOOKINGS_PAGE_SIZE: 7,
     CANCEL_REASON_MAX_LENGTH: 300,
     TABLE_SKELETON_ROWS: 6,

@@ -6,7 +6,7 @@
         Equipment Rental Management
       </h1>
       <p style="font-size: 12px; color: #64748B; margin-top: 4px; margin-bottom: 0;">
-        Monitor rental lifecycle, handover deadlines, fulfillment, and escrow disbursement
+        Monitor the rental lifecycle, handover deadlines, and fulfillment
       </p>
     </div>
 
@@ -33,7 +33,6 @@
       <option value="in_progress">Active Rental</option>
       <option value="completed">Completed</option>
       <option value="cancelled">Cancelled</option>
-      <option value="disputed">Disputed</option>
     </select>
   </div>
 
@@ -112,7 +111,6 @@
                       in_progress: { bg: '#E8F6F7', color: '#286E74', label: 'Active' },
                       completed: { bg: '#ECFDF5', color: '#16A34A', label: 'Completed' },
                       cancelled: { bg: '#F1F5F9', color: '#64748B', label: 'Cancelled' },
-                      disputed: { bg: '#FEF2F2', color: '#DC2626', label: 'Disputed' },
                     };
                     var st = statusMap[b.status] || { bg: '#F1F5F9', color: '#64748B', label: b.status };
                   %>

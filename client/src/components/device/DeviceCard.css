@@ -160,12 +160,16 @@
 .device-card-price-wrap {
   display: flex;
   align-items: baseline;
+  justify-content: flex-start;
+  margin-right: auto;
+  text-align: left;
 }
 
 .device-card-price {
   font-size: 15px;
   font-weight: 800;
   color: #0f172a;
+  text-align: left;
 }
 
 .device-card-rating-wrap {

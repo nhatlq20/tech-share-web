@@ -99,7 +99,7 @@ describe('TECHSHARE ADMIN ANALYTICS EJS & FINANCIAL CHARTS TEST SUITE', () => {
   });
 
   // TC-ANALYTICS-01: All charts load successfully and render canvas elements
-  test('TC-ANALYTICS-01: Admin analytics EJS page renders all 5 chart containers and KPI cards', async () => {
+  test('TC-ANALYTICS-01: Admin analytics renders booking and revenue charts', async () => {
     const token = makeAdminToken();
     const res = await fetch(`${baseUrl}/admin/analytics`, {
       headers: {
@@ -114,7 +114,6 @@ describe('TECHSHARE ADMIN ANALYTICS EJS & FINANCIAL CHARTS TEST SUITE', () => {
     assert.ok(html.includes('id="revenueTrendsChart"'), 'Chart 1 canvas exists');
     assert.ok(html.includes('id="bookingStatusChart"'), 'Chart 2 canvas exists');
     assert.ok(html.includes('id="categoryRevenueChart"'), 'Chart 3 canvas exists');
-    assert.ok(html.includes('id="walletEscrowChart"'), 'Chart 4 canvas exists');
     assert.ok(html.includes('id="bookingFunnelContainer"'), 'Chart 5 funnel container exists');
     assert.ok(html.includes('/js/admin/analytics.js'), 'analytics.js script included');
   });
@@ -174,7 +173,6 @@ describe('TECHSHARE ADMIN ANALYTICS EJS & FINANCIAL CHARTS TEST SUITE', () => {
     const data = await calculateAnalyticsData({ ...dateRange, period: '30d' });
 
     assert.ok(data.kpi.platformFeeRevenue < data.kpi.grossBookingValue, 'Platform fee is smaller than GBV');
-    assert.ok(data.kpi.platformFeeRevenue < data.kpi.escrowLiabilities, 'Platform fee excludes refundable deposits');
   });
 
   // TC-ANALYTICS-06: Booking status counts match database records
@@ -202,21 +200,6 @@ describe('TECHSHARE ADMIN ANALYTICS EJS & FINANCIAL CHARTS TEST SUITE', () => {
         'Categories are sorted by revenue descending'
       );
     }
-  });
-
-  // TC-ANALYTICS-08: Wallet transaction aggregation avoids double counting
-  test('TC-ANALYTICS-08: Wallet & escrow trends distinctly group deposit lock, release, and payouts', async () => {
-    if (!mongoConnected) return;
-
-    const dateRange = resolveDateRange('30d');
-    const data = await calculateAnalyticsData({ ...dateRange, period: '30d' });
-
-    assert.ok(Array.isArray(data.walletEscrowTrends), 'walletEscrowTrends is array');
-    data.walletEscrowTrends.forEach((item) => {
-      assert.ok(typeof item.depositsLocked === 'number', 'depositsLocked is number');
-      assert.ok(typeof item.depositsReleased === 'number', 'depositsReleased is number');
-      assert.ok(typeof item.rentalPayouts === 'number', 'rentalPayouts is number');
-    });
   });
 
   // TC-ANALYTICS-09: Funnel uses verified historical transitions
@@ -266,7 +249,6 @@ describe('TECHSHARE ADMIN ANALYTICS EJS & FINANCIAL CHARTS TEST SUITE', () => {
     assert.ok(js.includes('renderRevenueTrends'), 'Contains renderRevenueTrends function');
     assert.ok(js.includes('renderBookingStatus'), 'Contains renderBookingStatus function');
     assert.ok(js.includes('renderCategoryRevenue'), 'Contains renderCategoryRevenue function');
-    assert.ok(js.includes('renderWalletEscrow'), 'Contains renderWalletEscrow function');
     assert.ok(js.includes('renderBookingFunnel'), 'Contains renderBookingFunnel function');
   });
 
@@ -315,7 +297,6 @@ describe('TECHSHARE ADMIN ANALYTICS EJS & FINANCIAL CHARTS TEST SUITE', () => {
     const html = await res.text();
 
     assert.ok(html.includes('analytics-charts-grid-row1'), 'Row 1 responsive grid exists');
-    assert.ok(html.includes('analytics-charts-grid-row2'), 'Row 2 responsive grid exists');
     assert.ok(html.includes('@media (max-width: 1024px)'), '1024px media query exists');
   });
 

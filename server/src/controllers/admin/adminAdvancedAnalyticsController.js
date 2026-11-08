@@ -1,10 +1,6 @@
 import mongoose from 'mongoose';
 import { BUSINESS_RULES } from '../../constants/businessRules.js';
-import User from '../../models/User.js';
-import Device from '../../models/Device.js';
 import Booking from '../../models/Booking.js';
-import Dispute from '../../models/Dispute.js';
-import WalletTransaction from '../../models/WalletTransaction.js';
 
 /**
  * Category friendly names mapping
@@ -31,7 +27,6 @@ const STATUS_CONFIG = {
   completed: { label: 'Completed', color: '#10B981' },
   cancelled: { label: 'Cancelled', color: '#64748B' },
   rejected: { label: 'Rejected', color: '#EF4444' },
-  disputed: { label: 'Disputed', color: '#DC2626' },
 };
 
 /**
@@ -78,19 +73,13 @@ export const calculateAnalyticsData = async ({ filterStart, filterEnd, prevFilte
 
   let bookings = [];
   let prevBookings = [];
-  let allUsers = [];
-  let disputesCount = 0;
   let categoryAgg = [];
-  let walletTransactions = [];
 
   let grossBookingValue = 0;
   let totalRentalFee = 0;
-  let totalDepositFee = 0;
-  let activeEscrowLiabilities = 0;
   let completedCount = 0;
   let cancelledCount = 0;
   let rejectedCount = 0;
-  let disputedCount = 0;
   let pendingCount = 0;
   let approvedCount = 0;
   let activeCount = 0;
@@ -104,12 +93,6 @@ export const calculateAnalyticsData = async ({ filterStart, filterEnd, prevFilte
     prevBookings = await db.collection('bookings').find({
       createdAt: { $gte: prevFilterStart, $lte: prevFilterEnd },
     }).toArray();
-
-    allUsers = await db.collection('users').find().project({ 'wallet.balance': 1, 'wallet.escrowBalance': 1 }).toArray();
-
-    disputesCount = await db.collection('disputes').countDocuments({
-      createdAt: { $gte: filterStart, $lte: filterEnd },
-    });
 
     categoryAgg = await db.collection('bookings').aggregate([
       {
@@ -139,37 +122,25 @@ export const calculateAnalyticsData = async ({ filterStart, filterEnd, prevFilte
       { $sort: { totalRevenue: -1 } },
     ]).toArray();
 
-    walletTransactions = await db.collection('wallet_transactions').find({
-      createdAt: { $gte: filterStart, $lte: filterEnd },
-    }).toArray();
-
     bookings.forEach((b) => {
       const p = b.pricing || {};
       const rent = Number(p.rentalFee || b.rentalFee || 0);
       const total = Number(p.totalAmount || b.totalAmount || b.totalPrice || rent);
-      const dep = Number(p.depositFee || b.depositFee || b.depositAmount || 0);
 
       if (b.status !== 'cancelled' && b.status !== 'rejected') {
         grossBookingValue += total;
         totalRentalFee += rent;
-        totalDepositFee += dep;
       }
-
-      if (['pending', 'approved', 'active', 'delivering'].includes(b.status)) {
-        activeEscrowLiabilities += dep;
-      }
-
       if (b.status === 'completed') completedCount++;
       else if (b.status === 'cancelled') cancelledCount++;
       else if (b.status === 'rejected') rejectedCount++;
-      else if (b.status === 'disputed') disputedCount++;
       else if (b.status === 'pending') pendingCount++;
       else if (b.status === 'approved') approvedCount++;
-      else if (b.status === 'active' || b.status === 'delivering') activeCount++;
+      else if (['active', 'delivering', 'disputed'].includes(b.status)) activeCount++;
     });
   } else {
     // 2. Mocked unit test suite environment (where DB is offline or Booking.aggregate is stubbed)
-    let fin = { grossBookingValue: 1500000, totalRentalFee: 1000000, totalDeposits: 500000, escrowHeld: 1500000, depositsHeld: 500000 };
+    let fin = { grossBookingValue: 1500000, totalRentalFee: 1000000 };
     try {
       if (typeof Booking.aggregate === 'function') {
         const mockResult = await Booking.aggregate();
@@ -181,7 +152,6 @@ export const calculateAnalyticsData = async ({ filterStart, filterEnd, prevFilte
 
     grossBookingValue = fin.grossBookingValue || 1500000;
     totalRentalFee = fin.totalRentalFee || 1000000;
-    activeEscrowLiabilities = fin.escrowHeld || fin.totalDeposits || 500000;
     completedCount = 1;
     pendingCount = 0;
     approvedCount = 0;
@@ -190,9 +160,6 @@ export const calculateAnalyticsData = async ({ filterStart, filterEnd, prevFilte
     categoryAgg = [{ _id: 'laptop', totalRevenue: 1000000, count: 1 }];
   }
 
-  const totalUserEscrow = allUsers.reduce((sum, u) => sum + (u.wallet?.escrowBalance || 0), 0);
-  const totalUserBalance = allUsers.reduce((sum, u) => sum + (u.wallet?.balance || 0), 0);
-  const totalEscrowLiabilities = activeEscrowLiabilities + totalUserEscrow;
   const platformFeeRevenue = Math.round(totalRentalFee * BUSINESS_RULES.PLATFORM_FEE_RATE);
 
   // Growth against prior period
@@ -221,10 +188,6 @@ export const calculateAnalyticsData = async ({ filterStart, filterEnd, prevFilte
 
   const cancellationRate = totalBookingsCount > 0
     ? Number((((cancelledCount + rejectedCount) / totalBookingsCount) * 100).toFixed(1))
-    : 0;
-
-  const disputeRate = totalBookingsCount > 0
-    ? Number(((disputedCount / totalBookingsCount) * 100).toFixed(1))
     : 0;
 
   // ── CHART 1: REVENUE & TRANSACTION TRENDS ──────────────────────────────
@@ -312,7 +275,6 @@ export const calculateAnalyticsData = async ({ filterStart, filterEnd, prevFilte
     completed: completedCount,
     cancelled: cancelledCount,
     rejected: rejectedCount,
-    disputed: disputedCount,
   };
 
   const bookingStatusDistribution = Object.keys(STATUS_CONFIG).map((key) => {
@@ -337,55 +299,7 @@ export const calculateAnalyticsData = async ({ filterStart, filterEnd, prevFilte
     percent: Number((((item.totalRevenue || 0) / totalCatRevenue) * 100).toFixed(1)),
   }));
 
-  // ── CHART 4: ESCROW & WALLET TRENDS ────────────────────────────────────
-  const walletEscrowTrends = buckets.map((bucket) => {
-    let depositsLocked = 0;
-    let depositsReleased = 0;
-    let rentalPayouts = 0;
-    let walletTopups = 0;
-
-    bookings.forEach((b) => {
-      const bDate = new Date(b.createdAt);
-      if (bDate >= bucket.start && bDate < bucket.end) {
-        const dep = Number(b.pricing?.depositFee || b.depositFee || 0);
-        if (dep > 0 && b.status !== 'cancelled' && b.status !== 'rejected') {
-          depositsLocked += dep;
-        }
-      }
-    });
-
-    bookings.forEach((b) => {
-      if (b.status === 'completed') {
-        const compDate = new Date(b.updatedAt || b.createdAt);
-        if (compDate >= bucket.start && compDate < bucket.end) {
-          const dep = Number(b.pricing?.depositFee || b.depositFee || 0);
-          const rent = Number(b.pricing?.rentalFee || b.rentalFee || 0);
-          depositsReleased += dep;
-          rentalPayouts += Math.round(rent * 0.9);
-        }
-      }
-    });
-
-    walletTransactions.forEach((tx) => {
-      const txDate = new Date(tx.createdAt);
-      if (txDate >= bucket.start && txDate < bucket.end) {
-        if (tx.type === 'topup') walletTopups += Number(tx.amount || 0);
-        else if (tx.type === 'deposit_hold' || tx.type === 'deposit_lock') depositsLocked += Number(tx.amount || 0);
-        else if (tx.type === 'deposit_release' || tx.type === 'deposit_refund') depositsReleased += Number(tx.amount || 0);
-        else if (tx.type === 'rental_income' || tx.type === 'rental_payout') rentalPayouts += Number(tx.amount || 0);
-      }
-    });
-
-    return {
-      label: bucket.label,
-      depositsLocked,
-      depositsReleased,
-      rentalPayouts,
-      walletTopups,
-    };
-  });
-
-  // ── CHART 5: BOOKING CONVERSION FUNNEL ──────────────────────────────────
+  // ── CHART 4: BOOKING CONVERSION FUNNEL ──────────────────────────────────
   let createdStage = 0;
   let approvedStage = 0;
   let activeStage = 0;
@@ -457,36 +371,27 @@ export const calculateAnalyticsData = async ({ filterStart, filterEnd, prevFilte
       totalRentalFee,
       platformFeeRevenue,
       platformServiceFeeRevenue: platformFeeRevenue,
-      escrowLiabilities: totalEscrowLiabilities,
-      escrowHeld: totalEscrowLiabilities,
       completionRate,
       bookingCompletionRate: Number(completionRate),
       cancellationRate,
-      disputeRate,
       totalBookings: totalBookingsCount,
       completedBookings: completedCount,
       cancelledBookings: cancelledCount + rejectedCount,
-      disputedBookings: disputedCount,
       growth: {
         gbvGrowthPercent,
         revenueGrowthPercent,
       },
-      walletBalance: totalUserBalance,
-      escrowBalance: totalUserEscrow,
-      disputesCount,
     },
     charts: {
       bookingTrends,
       revenueTrends,
       bookingStatusDistribution,
       categoryDistribution: revenueByCategory,
-      walletEscrowTrends,
       bookingFunnel,
     },
     revenueTrends,
     bookingStatusDistribution,
     revenueByCategory,
-    walletEscrowTrends,
     bookingFunnel,
   };
 };
@@ -548,13 +453,10 @@ export const exportAdminAnalyticsReport = async (req, res, next) => {
     lines.push('1. FINANCIAL & OPERATIONAL METRICS (KPIS)');
     lines.push('Metric,Value,Unit,Notes');
     lines.push(`Gross Booking Value (GBV),${data.kpi.grossBookingValue},VND,"Total booking value excluding cancellations"`);
-    lines.push(`Total Transaction Volume,${data.kpi.grossBookingValue},VND,"Includes rental fee and escrow deposit"`);
     lines.push(`Total Rental Revenue,${data.kpi.totalRentalFee},VND,"Actual rental fee"`);
     lines.push(`Net Platform Service Fee Revenue (10%),${data.kpi.platformFeeRevenue},VND,"10% platform service fee on actual rental"`);
-    lines.push(`Escrow Liabilities,${data.kpi.escrowLiabilities},VND,"Security deposits currently held in escrow"`);
     lines.push(`Booking Completion Rate,${data.kpi.completionRate},%,"${data.kpi.completedBookings} / ${data.kpi.totalBookings} orders"`);
     lines.push(`Cancellation Rate,${data.kpi.cancellationRate},%,"${data.kpi.cancelledBookings} / ${data.kpi.totalBookings} orders"`);
-    lines.push(`Deposit Dispute Rate,${data.kpi.disputeRate},%,"${data.kpi.disputedBookings} / ${data.kpi.totalBookings} orders"`);
     lines.push(`GBV Growth vs Prior Period,${data.kpi.growth.gbvGrowthPercent},%,""`);
     lines.push(`Revenue Growth vs Prior Period,${data.kpi.growth.revenueGrowthPercent},%,""`);
     lines.push('');

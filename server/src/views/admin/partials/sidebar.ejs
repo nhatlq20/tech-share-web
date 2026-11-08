@@ -114,50 +114,6 @@
           </span>
         <% } %>
       </a>
-      <a href="/admin/dispute-resolution" class="admin-nav-item <%= activePage === 'disputes' ? 'active' : '' %>">
-        <div style="display: flex; align-items: center; gap: 11px; min-width: 0; flex: 1;">
-          <i data-lucide="scale" style="width: 17px; height: 17px; flex-shrink: 0;"></i>
-          <span style="font-size: 12.5px; font-weight: <%= activePage === 'disputes' ? '700' : '600' %>; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-            Dispute Resolution
-          </span>
-        </div>
-        <% if (typeof pendingCounts !== 'undefined' && pendingCounts.disputes > 0) { %>
-          <span class="admin-nav-badge" style="background-color: #EF4444; color: #FFFFFF;" title="<%= pendingCounts.disputes %> disputes pending resolution">
-            <%= pendingCounts.disputes %>
-          </span>
-        <% } %>
-      </a>
-      <a href="/admin/roles-permissions" class="admin-nav-item <%= activePage === 'roles' ? 'active' : '' %>">
-        <div style="display: flex; align-items: center; gap: 11px; min-width: 0; flex: 1;">
-          <i data-lucide="key-round" style="width: 17px; height: 17px; flex-shrink: 0;"></i>
-          <span style="font-size: 12.5px; font-weight: <%= activePage === 'roles' ? '700' : '600' %>; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-            Role Management
-          </span>
-        </div>
-      </a>
-    </div>
-
-    <!-- Group: FINANCE -->
-    <div style="margin-bottom: 14px;">
-      <div class="admin-nav-section-title" style="padding: 4px 16px; font-size: 10px; color: #94A3B8; font-weight: 700; letter-spacing: 0.05em;">
-        FINANCE
-      </div>
-      <a href="/admin/wallet" class="admin-nav-item <%= activePage === 'wallet' ? 'active' : '' %>">
-        <div style="display: flex; align-items: center; gap: 11px; min-width: 0; flex: 1;">
-          <i data-lucide="wallet" style="width: 17px; height: 17px; flex-shrink: 0;"></i>
-          <span style="font-size: 12.5px; font-weight: <%= activePage === 'wallet' ? '700' : '600' %>; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-            Wallet & Transactions
-          </span>
-        </div>
-      </a>
-      <a href="/admin/voucher-management" class="admin-nav-item <%= activePage === 'vouchers' ? 'active' : '' %>">
-        <div style="display: flex; align-items: center; gap: 11px; min-width: 0; flex: 1;">
-          <i data-lucide="tag" style="width: 17px; height: 17px; flex-shrink: 0;"></i>
-          <span style="font-size: 12.5px; font-weight: <%= activePage === 'vouchers' ? '700' : '600' %>; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-            Voucher Management
-          </span>
-        </div>
-      </a>
     </div>
 
     <!-- Group: SYSTEM -->
@@ -178,14 +134,6 @@
           <i data-lucide="settings" style="width: 17px; height: 17px; flex-shrink: 0;"></i>
           <span style="font-size: 12.5px; font-weight: <%= activePage === 'settings' ? '700' : '600' %>; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
             System Settings
-          </span>
-        </div>
-      </a>
-      <a href="/admin/audit-logs" class="admin-nav-item <%= activePage === 'audit-logs' ? 'active' : '' %>">
-        <div style="display: flex; align-items: center; gap: 11px; min-width: 0; flex: 1;">
-          <i data-lucide="file-text" style="width: 17px; height: 17px; flex-shrink: 0;"></i>
-          <span style="font-size: 12.5px; font-weight: <%= activePage === 'audit-logs' ? '700' : '600' %>; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-            Audit Logs
           </span>
         </div>
       </a>

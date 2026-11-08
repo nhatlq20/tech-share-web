@@ -3,7 +3,6 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { Account } from '../../models/Account.js';
 import { User } from '../../models/User.js';
-import { Role } from '../../models/Role.js';
 import { resolveRoleCode } from '../authController.js';
 import { getAdminAnalytics } from '../adminController.js';
 import { listOwnerEkycRequests } from '../adminOwnerEkycController.js';
@@ -143,7 +142,6 @@ export const renderDashboardPage = async (req, res) => {
       availableDevices: 0,
       activeBookings: 0,
       pendingEkyc: 0,
-      pendingDisputes: 0,
       totalRevenue: 0,
       revenueFormatted: '0 ₫',
     };
@@ -163,11 +161,6 @@ export const renderDashboardPage = async (req, res) => {
       const availableDevices = await devicesCol.countDocuments({ isDeleted: { $ne: true }, status: { $in: ['available', 'active', 'sẵn sàng'] } });
       const activeBookings = await bookingsCol.countDocuments({ status: { $in: ['pending', 'confirmed', 'in_progress', 'delivering'] } });
       const pendingEkyc = await ekycCol.countDocuments({ status: 'pending' });
-      let pendingDisputes = 0;
-      try {
-        pendingDisputes = await disputesCol.countDocuments({ status: { $in: ['pending', 'in_review'] } });
-      } catch {}
-
       const allBookings = await bookingsCol.find({
         status: { $nin: ['cancelled', 'rejected'] }
       }).toArray();
@@ -261,7 +254,6 @@ export const renderDashboardPage = async (req, res) => {
         availableDevices,
         activeBookings,
         pendingEkyc,
-        pendingDisputes,
         totalRevenue: totalRev,
         revenueFormatted: new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalRev),
       };
@@ -368,11 +360,9 @@ export const renderUserManagerPage = async (req, res) => {
           role: role,
           isVerified: Boolean(u.isVerified),
           trustScore: typeof u.trustScore === 'number' ? u.trustScore : 88,
-          walletBalance: typeof u.walletBalance === 'number' ? u.walletBalance : 2500000,
-          walletEscrowBalance: typeof u.walletEscrowBalance === 'number' ? u.walletEscrowBalance : 1200000,
           isActive: !isbanned && isActive,
-          isbanned: isbanned,
-          banReason: banReason,
+          isbanned,
+          banReason,
           createdAt: u.createdAt || new Date(),
         };
       }));
@@ -657,119 +647,6 @@ export const renderBookingManagementPage = async (req, res) => {
   }
 };
 
-// 9. GET /admin/dispute-resolution & /admin/disputes
-export const renderDisputeResolutionPage = async (req, res) => {
-  try {
-    const db = mongoose.connection.db;
-    let disputes = [];
-
-    if (db) {
-      const disputesCol = db.collection('disputes');
-      const usersCol = db.collection('users');
-
-      const raw = await disputesCol.find({}).sort({ createdAt: -1 }).limit(50).toArray();
-
-      disputes = await Promise.all(raw.map(async (d) => {
-        let raisedBy = { name: 'Complainant' };
-        if (d.raisedBy) {
-          try {
-            const u = await usersCol.findOne({ _id: new mongoose.Types.ObjectId(String(d.raisedBy)) });
-            if (u) raisedBy = { name: u.name || 'Người khiếu nại' };
-          } catch {}
-        }
-        return {
-          ...d,
-          _id: String(d._id),
-          raisedBy,
-        };
-      }));
-    }
-
-    return res.render('admin/layouts/main', {
-      title: 'Dispute Resolution — TechShare Admin',
-      activePage: 'disputes',
-      pageScript: '/js/admin/dispute-resolution.js',
-      body: await new Promise((resolve, reject) => {
-        res.render('admin/dispute-resolution', { disputes }, (err, html) => {
-          if (err) reject(err);
-          else resolve(html);
-        });
-      }),
-    });
-  } catch (err) {
-    console.error('Error in renderDisputeResolutionPage:', err);
-    return res.status(500).send('Lỗi máy chủ');
-  }
-};
-
-// 10. GET /admin/wallet
-export const renderWalletPage = async (req, res) => {
-  try {
-    const db = mongoose.connection.db;
-    let overview = { totalUserBalance: 142500000, totalEscrowHeld: 48500000, totalPlatformFee: 4977000 };
-    let transactions = [];
-
-    if (db) {
-      const txCol = db.collection('wallettransactions');
-      const usersCol = db.collection('users');
-
-      transactions = await txCol.find({}).sort({ createdAt: -1 }).limit(50).toArray();
-      transactions = await Promise.all(transactions.map(async (tx) => {
-        let user = { name: 'Member', email: 'user@techshare.vn' };
-        if (tx.userId) {
-          try {
-            const u = await usersCol.findOne({ _id: new mongoose.Types.ObjectId(String(tx.userId)) });
-            if (u) user = { name: u.name || 'Thành viên', email: u.email || 'user@techshare.vn' };
-          } catch {}
-        }
-        return { ...tx, _id: String(tx._id), user };
-      }));
-    }
-
-    return res.render('admin/layouts/main', {
-      title: 'Wallet & Transactions — TechShare Admin',
-      activePage: 'wallet',
-      body: await new Promise((resolve, reject) => {
-        res.render('admin/wallet', { overview, transactions }, (err, html) => {
-          if (err) reject(err);
-          else resolve(html);
-        });
-      }),
-    });
-  } catch (err) {
-    console.error('Error in renderWalletPage:', err);
-    return res.status(500).send('Lỗi máy chủ');
-  }
-};
-
-// 11. GET /admin/voucher-management & /admin/vouchers
-export const renderVoucherManagementPage = async (req, res) => {
-  try {
-    const db = mongoose.connection.db;
-    let vouchers = [];
-
-    if (db) {
-      const vouchersCol = db.collection('vouchers');
-      vouchers = await vouchersCol.find({}).sort({ createdAt: -1 }).toArray();
-    }
-
-    return res.render('admin/layouts/main', {
-      title: 'Voucher Management — TechShare Admin',
-      activePage: 'vouchers',
-      pageScript: '/js/admin/voucher-management.js',
-      body: await new Promise((resolve, reject) => {
-        res.render('admin/voucher-management', { vouchers }, (err, html) => {
-          if (err) reject(err);
-          else resolve(html);
-        });
-      }),
-    });
-  } catch (err) {
-    console.error('Error in renderVoucherManagementPage:', err);
-    return res.status(500).send('Lỗi máy chủ');
-  }
-};
-
 // 12. GET /admin/review-moderation & /admin/reviews
 export const renderReviewModerationPage = async (req, res) => {
   try {
@@ -816,43 +693,6 @@ export const renderReviewModerationPage = async (req, res) => {
     });
   } catch (err) {
     console.error('Error in renderReviewModerationPage:', err);
-    return res.status(500).send('Lỗi máy chủ');
-  }
-};
-
-// 13. GET /admin/roles-permissions & /admin/roles
-export const renderRolesPermissionsPage = async (req, res) => {
-  try {
-    const db = mongoose.connection.db;
-    let roles = [];
-    let accounts = [];
-
-    if (db) {
-      const rolesCol = db.collection('roles');
-      const accountsCol = db.collection('accounts');
-
-      const rawRoles = await rolesCol.find({}).toArray();
-      roles = await Promise.all(rawRoles.map(async (r) => {
-        const count = await accountsCol.countDocuments({ roleId: r._id });
-        return { ...r, _id: String(r._id), accountCount: count };
-      }));
-
-      accounts = await accountsCol.find({}).sort({ createdAt: -1 }).limit(100).toArray();
-    }
-
-    return res.render('admin/layouts/main', {
-      title: 'Role Management — TechShare Admin',
-      activePage: 'roles',
-      pageScript: '/js/admin/roles-permissions.js',
-      body: await new Promise((resolve, reject) => {
-        res.render('admin/roles-permissions', { roles, accounts }, (err, html) => {
-          if (err) reject(err);
-          else resolve(html);
-        });
-      }),
-    });
-  } catch (err) {
-    console.error('Error in renderRolesPermissionsPage:', err);
     return res.status(500).send('Lỗi máy chủ');
   }
 };
@@ -939,33 +779,6 @@ export const renderSettingsPage = async (req, res) => {
     });
   } catch (err) {
     console.error('Error in renderSettingsPage:', err);
-    return res.status(500).send('Lỗi máy chủ');
-  }
-};
-
-// 17. GET /admin/audit-logs
-export const renderAuditLogsPage = async (req, res) => {
-  try {
-    const db = mongoose.connection.db;
-    let logs = [];
-
-    if (db) {
-      const auditCol = db.collection('admin_audit_logs');
-      logs = await auditCol.find({}).sort({ createdAt: -1 }).limit(50).toArray();
-    }
-
-    return res.render('admin/layouts/main', {
-      title: 'Audit Logs — TechShare Admin',
-      activePage: 'audit-logs',
-      body: await new Promise((resolve, reject) => {
-        res.render('admin/audit-logs', { logs }, (err, html) => {
-          if (err) reject(err);
-          else resolve(html);
-        });
-      }),
-    });
-  } catch (err) {
-    console.error('Error in renderAuditLogsPage:', err);
     return res.status(500).send('Lỗi máy chủ');
   }
 };

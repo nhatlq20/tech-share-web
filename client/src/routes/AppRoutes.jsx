@@ -135,47 +135,7 @@ export const AppRoutes = () => {
         }
       />
       <Route
-        path={ROUTES.ADMIN_DISPUTES}
-        element={
-          <ProtectedRoute roles={['admin']}>
-            <AdminPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path={ROUTES.ADMIN_WALLET}
-        element={
-          <ProtectedRoute roles={['admin']}>
-            <AdminPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path={ROUTES.ADMIN_AUDIT_LOGS}
-        element={
-          <ProtectedRoute roles={['admin']}>
-            <AdminPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path={ROUTES.ADMIN_VOUCHERS}
-        element={
-          <ProtectedRoute roles={['admin']}>
-            <AdminPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
         path={ROUTES.ADMIN_REVIEWS}
-        element={
-          <ProtectedRoute roles={['admin']}>
-            <AdminPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path={ROUTES.ADMIN_ROLES}
         element={
           <ProtectedRoute roles={['admin']}>
             <AdminPage />
@@ -260,14 +220,6 @@ export const AppRoutes = () => {
         path={ROUTES.OWNER_ANALYTICS}
         element={
           <ProtectedRoute roles={['owner']}>
-            <OwnerPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path={ROUTES.OWNER_WALLET}
-        element={
-          <ProtectedRoute roles={['owner', 'admin']}>
             <OwnerPage />
           </ProtectedRoute>
         }

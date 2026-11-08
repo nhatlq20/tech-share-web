@@ -11,15 +11,10 @@ import {
   renderEkycVerificationPage,
   renderOwnerEkycPage,
   renderBookingManagementPage,
-  renderDisputeResolutionPage,
-  renderWalletPage,
-  renderVoucherManagementPage,
   renderReviewModerationPage,
-  renderRolesPermissionsPage,
   renderNotificationManagementPage,
   renderAnalyticsPage,
   renderSettingsPage,
-  renderAuditLogsPage,
 } from '../controllers/admin/adminPageController.js';
 
 const router = express.Router();
@@ -47,19 +42,8 @@ router.get(['/owner-verification', '/owner-ekyc-verification', '/owner-ekyc'], r
 router.get('/booking-management', renderBookingManagementPage);
 router.get('/bookings', renderBookingManagementPage);
 
-router.get('/dispute-resolution', renderDisputeResolutionPage);
-router.get('/disputes', renderDisputeResolutionPage);
-
-router.get('/wallet', renderWalletPage);
-
-router.get('/voucher-management', renderVoucherManagementPage);
-router.get('/vouchers', renderVoucherManagementPage);
-
 router.get('/review-moderation', renderReviewModerationPage);
 router.get('/reviews', renderReviewModerationPage);
-
-router.get('/roles-permissions', renderRolesPermissionsPage);
-router.get('/roles', renderRolesPermissionsPage);
 
 router.get('/notification-management', renderNotificationManagementPage);
 router.get('/notifications', renderNotificationManagementPage);
@@ -67,7 +51,5 @@ router.get('/notifications', renderNotificationManagementPage);
 router.get('/analytics', renderAnalyticsPage);
 
 router.get('/settings', renderSettingsPage);
-
-router.get('/audit-logs', renderAuditLogsPage);
 
 export default router;

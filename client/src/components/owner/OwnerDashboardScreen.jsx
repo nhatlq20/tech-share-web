@@ -6,7 +6,6 @@ import { OwnerOverviewTab } from "./OwnerOverviewTab";
 import { OwnerBookingsTab } from "./OwnerBookingsTab";
 import { OwnerCalendarTab } from "./OwnerCalendarTab";
 import { OwnerAnalyticsTab } from "./OwnerAnalyticsTab";
-import { OwnerWalletTab } from "./OwnerWalletTab";
 import { OwnerAIAssistantTab } from "./OwnerAIAssistantTab";
 import PostDevicePage from "../../pages/PostDevicePage";
 import MyDevicesPage from "../../pages/owner/MyDevicesPage";
@@ -35,8 +34,6 @@ export const OwnerDashboardScreen = () => {
     pendingApprovals: 0,
     monthlyRevenue: 0,
     monthlyRevenueFormatted: "0 ₫",
-    escrowHolding: 0,
-    escrowHoldingFormatted: "0 ₫",
     utilizationRate: 0,
     trustScore: 100,
     ratingAvg: 5.0,
@@ -466,11 +463,6 @@ export const OwnerDashboardScreen = () => {
               utilization={utilization}
               onNavigate={handleNavigate}
             />
-          )}
-
-          {/* F. /owner/wallet */}
-          {currentPath === ROUTES.OWNER_WALLET && (
-            <OwnerWalletTab kpi={kpi} bookings={bookings} />
           )}
 
           {/* G. /owner/ai-assistant */}

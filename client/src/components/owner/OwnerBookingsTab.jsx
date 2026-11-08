@@ -509,7 +509,7 @@ export const OwnerBookingsTab = ({
         </div>
       )}
 
-      {/* MODAL 3: Đối soát ảnh trả máy & Hoàn cọc (N-02, N-03) */}
+      {/* Kiểm tra tình trạng thiết bị khi trả */}
       {returnBooking && (
         <div className="owner-modal-overlay">
           <div className="owner-modal-card max-w-lg">
@@ -561,17 +561,7 @@ export const OwnerBookingsTab = ({
               </div>
             </div>
 
-            <div className="flex justify-between items-center gap-3">
-              <button
-                type="button"
-                className="px-4 py-2.5 rounded-full border border-rose-200 text-rose-600 font-semibold text-xs hover:bg-rose-50 transition"
-                onClick={() => {
-                  alert('Dispute report initiated and sent to TechShare Admin for resolution.');
-                  setReturnBooking(null);
-                }}
-              >
-                {t.modalReturn.claimDispute}
-              </button>
+            <div className="flex justify-end items-center gap-3">
               <button
                 type="button"
                 className="px-6 py-2.5 rounded-full bg-emerald-600 text-white font-semibold text-xs hover:bg-emerald-700 transition shadow-sm hover:shadow-md flex items-center gap-1.5"

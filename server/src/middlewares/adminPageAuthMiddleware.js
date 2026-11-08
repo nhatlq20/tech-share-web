@@ -49,7 +49,6 @@ export const protectAdminPage = async (req, res, next) => {
     let pendingEkycCount = 0;
     let pendingOwnerEkycCount = 0;
     let pendingDevicesCount = 0;
-    let pendingDisputesCount = 0;
 
     if (db) {
       const usersCol = db.collection('users');
@@ -94,7 +93,6 @@ export const protectAdminPage = async (req, res, next) => {
         pendingEkycCount = await db.collection('ekyc_requests').countDocuments({ status: 'pending' });
         pendingOwnerEkycCount = await db.collection('owner_request').countDocuments({ status: 'pending' });
         pendingDevicesCount = await db.collection('devices').countDocuments({ moderationStatus: 'pending', isDeleted: { $ne: true } });
-        pendingDisputesCount = await db.collection('disputes').countDocuments({ status: { $in: ['pending', 'in_review'] } });
       } catch {}
     }
 
@@ -103,7 +101,6 @@ export const protectAdminPage = async (req, res, next) => {
       ekyc: pendingEkycCount,
       ownerEkyc: pendingOwnerEkycCount,
       devices: pendingDevicesCount,
-      disputes: pendingDisputesCount,
     };
   } catch (err) {
     console.error('Error resolving admin profile in protectAdminPage:', err);
@@ -113,7 +110,7 @@ export const protectAdminPage = async (req, res, next) => {
       avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop',
       role: 'admin',
     };
-    res.locals.pendingCounts = { ekyc: 0, ownerEkyc: 0, devices: 0, disputes: 0 };
+    res.locals.pendingCounts = { ekyc: 0, ownerEkyc: 0, devices: 0 };
   }
 
   return next();

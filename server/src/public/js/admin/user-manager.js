@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
-  // Modal 2: View User Details & Escrow
+  // View user details
   document.querySelectorAll('.btn-view-user').forEach(function(btn) {
     btn.addEventListener('click', function() {
       const row = btn.closest('.user-table-row');
@@ -66,8 +66,6 @@ document.addEventListener('DOMContentLoaded', function() {
       const email = row.getAttribute('data-email') || '';
       const phone = row.getAttribute('data-phone') || 'Not updated';
       const avatar = row.getAttribute('data-avatar') || '';
-      const wallet = Number(row.getAttribute('data-wallet-balance')) || 0;
-      const escrow = Number(row.getAttribute('data-escrow-balance')) || 0;
       const trustScore = Number(row.getAttribute('data-trust-score')) || 100;
       const isVerified = row.getAttribute('data-is-verified') === 'true';
       const isBanned = row.getAttribute('data-is-banned') === 'true' || row.getAttribute('data-status') === 'locked';
@@ -76,8 +74,6 @@ document.addEventListener('DOMContentLoaded', function() {
       document.getElementById('detailModalName').textContent = name;
       document.getElementById('detailModalContact').textContent = `${email} • ${phone}`;
       document.getElementById('detailModalAvatar').src = avatar;
-      document.getElementById('detailModalWallet').textContent = window.formatVND ? window.formatVND(wallet) : `${wallet.toLocaleString()} ₫`;
-      document.getElementById('detailModalEscrow').textContent = window.formatVND ? window.formatVND(escrow) : `${escrow.toLocaleString()} ₫`;
       document.getElementById('detailModalTrustScore').textContent = `${trustScore}/100`;
 
       // Hiển thị khung thông tin khóa nếu tài khoản đang bị khóa

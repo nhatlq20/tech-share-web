@@ -187,14 +187,6 @@ export const STRINGS = {
         lockedStatus: 'Locked',
         emptyMessage: 'No matching users found.',
       },
-      modalWallet: {
-        title: 'Financial Portfolio & Escrow Trust Profile',
-        availableBalance: 'Available Wallet Balance',
-        heldBalance: 'Held Escrow Balance',
-        trustScoreTitle: 'Escrow Trust Score',
-        verifiedStatus: 'Citizen eKYC identity verified',
-        unverifiedStatus: 'eKYC pending verification',
-      },
       modalLock: {
         titleLock: 'Lock User Account',
         titleUnlock: 'Unlock User Account',
@@ -265,7 +257,6 @@ export const STRINGS = {
       bookingsTab: 'Rental Requests',
       calendarTab: 'Availability Calendar',
       analyticsTab: 'Revenue Analytics',
-      walletTab: 'Escrow Wallet',
       switchClientBtn: 'Switch to Marketplace',
       logoutBtn: 'Log Out',
       ownerName: 'Chủ thiết bị',
@@ -296,7 +287,6 @@ export const STRINGS = {
         manageDevices: 'Manage Equipment',
         manageBookings: 'Rental Requests',
         blockCalendar: 'Block Calendar',
-        viewWallet: 'Escrow Wallet',
       },
       recentBookings: {
         title: 'Recent Rental Requests',
@@ -462,18 +452,17 @@ export const STRINGS = {
         closeBtn: 'Close',
       },
       modalReturn: {
-        title: 'Condition Inspection & Deposit Release',
+        title: 'Return Condition Inspection',
         instruction: 'Verify returned equipment condition against pre-rental inspection photos:',
         beforeLabel: 'Pre-handover Photos',
         afterLabel: 'Return Inspection Photos',
-        confirmComplete: 'Confirm Good Condition & Release Deposit',
-        claimDispute: 'Report Damage / Hold Deposit',
+        confirmComplete: 'Confirm Equipment Return',
       },
       toasts: {
         approveSuccess: 'Rental request approved successfully!',
         rejectSuccess: 'Rental request rejected!',
         handoverSuccess: 'Equipment handover completed!',
-        completeSuccess: 'Rental completed and deposit refunded to customer!',
+        completeSuccess: 'Rental completed successfully!',
       },
     },
 
@@ -519,9 +508,6 @@ export const STRINGS = {
         activeRentals: 'Active Rented Equipment',
         activeRentalsSub: 'units in fleet',
         activeRentalsDesc: 'Active revenue generating',
-        escrowHolding: 'Escrow Deposits Held',
-        escrowHoldingSub: 'TechShare Guaranteed',
-        escrowHoldingDesc: '100% asset protection',
         utilizationRate: 'Fleet Utilization Rate',
         utilizationRateSub: 'High utilization efficiency',
       },
@@ -551,35 +537,6 @@ export const STRINGS = {
         viewAllBtn: 'View all requests',
       },
     },
-
-    wallet: {
-      title: 'Escrow Internal Wallet',
-      subtitle: 'Secure transaction management, available rental earnings and frozen escrow deposits',
-      availableBalance: 'Available Balance',
-      heldDeposit: 'Held Deposits (Escrow)',
-      totalEarned: 'Total Earnings Received',
-      withdrawBtn: 'Request Withdrawal',
-      topupBtn: 'Top Up Funds',
-      transactionsTitle: 'Balance Transaction History',
-      table: {
-        colId: 'Tx ID',
-        colType: 'Transaction Type',
-        colAmount: 'Amount',
-        colBooking: 'Associated Order',
-        colDate: 'Timestamp',
-        colStatus: 'Status',
-      },
-      types: {
-        rental_income: 'Rental Payout',
-        deposit_hold: 'Escrow Deposit Held',
-        deposit_refund: 'Deposit Refunded',
-        withdraw: 'Bank Withdrawal',
-      },
-      status: {
-        success: 'Successful',
-        pending: 'Processing',
-      },
-    },
   },
 
   // Booking & Checkout Module
@@ -590,7 +547,7 @@ export const STRINGS = {
       breadcrumbDetail: 'Device Details',
       breadcrumbCheckout: 'Checkout',
       headerTitle: 'Rent Tech Device',
-      headerSubtitle: 'Choose your rental period, confirm delivery details, and secure your booking via TechShare Escrow.',
+      headerSubtitle: 'Choose your rental period and confirm the handover details.',
       steps: {
         step1: '1. Select Dates & Info',
         step2: '2. Review Cost & Discounts',
@@ -662,28 +619,6 @@ export const STRINGS = {
       notePlaceholder: 'e.g. Pickup after 5 PM, please include HDMI adapter...',
     },
 
-    payment: {
-      title: 'Security Deposit & Payment Method',
-      subtitle: 'All TechShare transactions are 100% protected through our secure Escrow protocol',
-      methods: {
-        escrow: {
-          title: 'TechShare Escrow Wallet',
-          badge: 'Recommended',
-          desc: 'Your deposit and rental fee are held safely in Escrow. Funds are released to owner only after handover inspection.',
-        },
-        bankTransfer: {
-          title: 'Bank Transfer (VietQR)',
-          badge: 'Instant Verification',
-          desc: 'Scan VietQR code for automatic payment verification within 30 seconds.',
-        },
-        cod: {
-          title: 'Pay Upon Handover (COD)',
-          badge: 'In-person Handover',
-          desc: 'Inspect the device and pay in person at the agreed handover location.',
-        },
-      },
-    },
-
     agreement: {
       title: 'Terms & Rental Agreement',
       termsText: 'I have read and agree to the TechShare Terms of Service and Equipment Compensation Policy.',
@@ -698,37 +633,10 @@ export const STRINGS = {
       longRentalDiscount: 'Long-term Rental Discount:',
       longDiscountBadge3: '10% Off (>= 3 days)',
       longDiscountBadge7: '20% Off (>= 7 days)',
-      voucherDiscount: 'Promo Voucher Discount:',
-      depositLabel: 'Security Deposit (Escrow):',
-      depositTooltip: 'Security deposit is safely preserved and refunded 100% immediately after device return without incident.',
+      depositLabel: 'Security Deposit:',
       totalAmountLabel: 'Total Payment:',
       submitBtn: 'Confirm & Book Now',
       submittingBtn: 'Creating Booking...',
-      guarantees: {
-        item1: '100% Renter Protection via Escrow',
-        item2: 'Fast 24h Deposit Refund',
-        item3: '24/7 TechShare Support',
-      },
-    },
-
-    voucher: {
-      title: 'Discount Voucher',
-      placeholder: 'Enter promo code (e.g. WELCOME50)',
-      applyBtn: 'Apply',
-      appliedText: 'Applied Code',
-      removeBtn: 'Remove',
-      suggestionTitle: 'Available Offers:',
-      codes: {
-        welcome50: 'WELCOME50',
-        welcome50Desc: '50,000 VND off first booking',
-        weekend10: 'WEEKEND10',
-        weekend10Desc: '10% off rental fee',
-      },
-      errors: {
-        invalid: 'Invalid or expired voucher code.',
-        empty: 'Please enter a voucher code.',
-      },
-      success: 'Discount voucher applied successfully!',
     },
 
     successModal: {
@@ -836,11 +744,8 @@ export const STRINGS = {
         dailyRate: 'Daily Rate',
         rentalFee: 'Rental Fee',
         discount: 'Discounts',
-        voucher: 'Voucher',
-        deposit: 'Security Deposit (Escrow)',
+        deposit: 'Security Deposit',
         total: 'Total Payment',
-        paymentMethod: 'Payment Method',
-        paymentStatus: 'Payment Status',
         deliveryMethod: 'Method',
         recipient: 'Recipient',
         phone: 'Phone',
@@ -849,17 +754,6 @@ export const STRINGS = {
         note: 'Note for Owner',
         cancelReason: 'Cancellation Reason',
         rejectReason: 'Rejection Reason',
-      },
-      paymentMethods: {
-        escrow: 'TechShare Escrow Wallet',
-        bank_transfer: 'Bank Transfer (VietQR)',
-        cash_on_delivery: 'Pay Upon Handover (COD)',
-      },
-      paymentStatuses: {
-        unpaid: 'Unpaid',
-        deposit_held: 'Deposit Held',
-        paid: 'Paid',
-        refunded: 'Refunded',
       },
       deliveryMethods: {
         delivery: 'Home Delivery',
@@ -881,7 +775,7 @@ export const STRINGS = {
         pending: { title: 'Booking Created', desc: 'Request sent to owner' },
         approved: { title: 'Owner Approved', desc: 'Prepare for handover' },
         active: { title: 'Device Handed Over', desc: 'Rental in progress' },
-        completed: { title: 'Completed & Refunded', desc: 'Device returned, deposit released' },
+        completed: { title: 'Completed', desc: 'Device returned' },
         cancelled: { title: 'Booking Cancelled', desc: 'Cancelled by renter' },
         rejected: { title: 'Booking Rejected', desc: 'Declined by owner' },
       },
@@ -926,7 +820,6 @@ export const STRINGS = {
       dailyRateLabel: 'Daily Rate:',
       subtotalLabel: 'Additional Rental Fee:',
       depositLabel: 'Security Deposit:',
-      depositNote: 'Existing deposit remains held in Escrow; no extra deposit required.',
       totalPayable: 'Total Additional Payment:',
       reasonLabel: 'Reason / Note for Owner (Optional):',
       reasonPlaceholder: 'e.g. Project shoot extended, need 3 more days with the equipment...',
