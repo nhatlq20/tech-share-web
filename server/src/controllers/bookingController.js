@@ -4,6 +4,7 @@ import Booking from '../models/Booking.js';
 import User from '../models/User.js';
 import Account from '../models/Account.js';
 import Review from '../models/Review.js';
+import Voucher from '../models/Voucher.js';
 import { createAndSendNotification } from '../services/notificationService.js';
 import { getIO } from '../socket.js';
 import { uploadToCloudinary } from '../services/cloudinaryService.js';
@@ -598,7 +599,49 @@ export const createBooking = async (req, res, next) => {
       longRentalDiscount = Math.round(rentalFee * 0.1);
     }
 
-    const discountAmount = longRentalDiscount;
+    let appliedVoucherCode = '';
+    let appliedVoucherDiscount = 0;
+
+    if (voucherCode && typeof voucherCode === 'string' && voucherCode.trim()) {
+      const cleanCode = voucherCode.trim().toUpperCase();
+      const now = new Date();
+      // Atomic increment preventing race condition if multiple concurrent bookings redeem the last available voucher
+      const voucherDoc = await Voucher.findOneAndUpdate(
+        {
+          code: cleanCode,
+          isActive: true,
+          expiryDate: { $gte: now },
+          $expr: { $lt: ['$usedCount', '$usageLimit'] },
+        },
+        { $inc: { usedCount: 1 } },
+        { new: true }
+      );
+
+      if (!voucherDoc) {
+        return res.status(400).json({
+          success: false,
+          message: 'Mã giảm giá không tồn tại, đã hết hạn hoặc đã hết lượt sử dụng.',
+        });
+      }
+
+      if (totalDays < (voucherDoc.minDays || 1)) {
+        await Voucher.updateOne({ _id: voucherDoc._id }, { $inc: { usedCount: -1 } });
+        return res.status(400).json({
+          success: false,
+          message: `Mã giảm giá chỉ áp dụng cho đơn thuê từ ${voucherDoc.minDays} ngày trở lên.`,
+        });
+      }
+
+      appliedVoucherCode = voucherDoc.code;
+      if (voucherDoc.type === 'percent') {
+        const calculated = Math.round(rentalFee * (voucherDoc.value / 100));
+        appliedVoucherDiscount = voucherDoc.maxDiscount > 0 ? Math.min(calculated, voucherDoc.maxDiscount) : calculated;
+      } else {
+        appliedVoucherDiscount = Math.min(rentalFee, voucherDoc.value);
+      }
+    }
+
+    const discountAmount = longRentalDiscount + appliedVoucherDiscount;
     const depositFee = device.depositValue ?? device.depositAmount ?? 0;
     const finalRentalFee = Math.max(0, rentalFee - discountAmount);
     const totalAmount = finalRentalFee + depositFee;
@@ -655,8 +698,8 @@ export const createBooking = async (req, res, next) => {
       rentalFee,
       discountPercent,
       discountAmount,
-      voucherCode: '',
-      voucherDiscount: 0,
+      voucherCode: appliedVoucherCode,
+      voucherDiscount: appliedVoucherDiscount,
       depositFee,
       depositValue: depositFee,
       totalAmount,
@@ -1070,7 +1113,39 @@ export const validatePricing = async (req, res, next) => {
       longRentalDiscount = Math.round(rentalFee * 0.1);
     }
 
-    const discountAmount = longRentalDiscount;
+    let voucherDiscount = 0;
+    let voucherValid = false;
+    let voucherMessage = '';
+
+    if (voucherCode && typeof voucherCode === 'string' && voucherCode.trim()) {
+      const cleanCode = voucherCode.trim().toUpperCase();
+      const now = new Date();
+      const v = await Voucher.findOne({ code: cleanCode, isActive: true });
+      if (!v) {
+        voucherValid = false;
+        voucherMessage = 'Mã giảm giá không tồn tại hoặc đã bị vô hiệu hóa.';
+      } else if (v.expiryDate && new Date(v.expiryDate) < now) {
+        voucherValid = false;
+        voucherMessage = 'Mã giảm giá đã hết hạn sử dụng.';
+      } else if (v.usageLimit && v.usedCount >= v.usageLimit) {
+        voucherValid = false;
+        voucherMessage = 'Mã giảm giá đã hết lượt sử dụng.';
+      } else if (totalDays < (v.minDays || 1)) {
+        voucherValid = false;
+        voucherMessage = `Mã giảm giá chỉ áp dụng cho đơn thuê từ ${v.minDays} ngày trở lên.`;
+      } else {
+        voucherValid = true;
+        voucherMessage = 'Áp dụng mã giảm giá thành công.';
+        if (v.type === 'percent') {
+          const calculated = Math.round(rentalFee * (v.value / 100));
+          voucherDiscount = v.maxDiscount > 0 ? Math.min(calculated, v.maxDiscount) : calculated;
+        } else {
+          voucherDiscount = Math.min(rentalFee, v.value);
+        }
+      }
+    }
+
+    const discountAmount = longRentalDiscount + voucherDiscount;
     const depositFee = device.depositValue ?? device.depositAmount ?? 0;
     const finalRentalFee = Math.max(0, rentalFee - discountAmount);
     const totalAmount = finalRentalFee + depositFee;

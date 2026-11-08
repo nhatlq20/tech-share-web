@@ -122,12 +122,16 @@ export const ChatDetailView = ({
 
   const [messages, setMessages] = useState([]);
   const [bookingContext, setBookingContext] = useState(conversation || null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [partnerTyping, setPartnerTyping] = useState(false);
   const [lightboxImage, setLightboxImage] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
   const [isSwitcherOpen, setIsSwitcherOpen] = useState(false);
 
+  // Cache tin nhắn theo bookingId trong bộ nhớ client để chuyển tab hội thoại tức thì 0ms
+  const messageCacheRef = useRef(new Map());
+  const abortControllerRef = useRef(null);
+  const prevRoomRef = useRef(null);
   const messagesEndRef = useRef(null);
   const typingTimerRef = useRef(null);
   const currentBookingIdRef = useRef(bookingId);
@@ -167,90 +171,154 @@ export const ChatDetailView = ({
     }
   }, []);
 
-  // 1. Tải lịch sử tin nhắn & thông tin booking context
-  const fetchHistoryAndMarkRead = useCallback(async (bId, retryCount = 0) => {
-    if (!bId) return;
-    try {
-      setLoading(true);
-      setErrorMsg(null);
-      const res = await getMessages(bId);
-      if (res) {
-        // Hỗ trợ linh hoạt cả 2 định dạng response:
-        // 1) res.data là mảng tin nhắn
-        // 2) res.data là object { booking, otherUser/partner, messages }
-        const rawList = Array.isArray(res.data)
-          ? res.data
-          : Array.isArray(res.data?.messages)
-          ? res.data.messages
-          : Array.isArray(res.messages)
-          ? res.messages
-          : [];
-        setMessages(rawList);
+  // 1. Tải lịch sử tin nhắn & quản lý cache, AbortController và Room Socket
+  const loadMessagesForBooking = useCallback(
+    async (bId) => {
+      if (!bId) return;
 
-        // Trích xuất booking context
-        const rawBooking = res.booking || res.data?.booking;
-        if (rawBooking) {
-          setBookingContext((prev) => ({ ...(prev || {}), ...rawBooking }));
+      // 1.1. Kiểm tra cache tin nhắn client-side
+      const cached = messageCacheRef.current.get(bId);
+      if (cached && Array.isArray(cached.messages)) {
+        // Cache hit: hiển thị ngay lập tức (0ms delay), không spinner che toàn màn hình
+        setMessages(cached.messages);
+        if (cached.bookingContext) {
+          setBookingContext((prev) => ({ ...(prev || {}), ...cached.bookingContext }));
+        }
+        setLoading(false);
+        setErrorMsg(null);
+      } else {
+        // Cache miss: chuẩn bị màn hình cho cuộc trò chuyện mới
+        setMessages([]);
+        if (conversation) {
+          setBookingContext(conversation);
+        }
+        setLoading(true);
+        setErrorMsg(null);
+      }
+
+      // 1.2. Chuyển phòng Socket.io (Rời phòng cũ, tham gia phòng mới)
+      const prevRoom = prevRoomRef.current;
+      if (prevRoom && prevRoom !== bId) {
+        leaveChat(prevRoom);
+      }
+      prevRoomRef.current = bId;
+      joinChat(bId);
+
+      // 1.3. Huỷ bỏ in-flight request cũ nếu người dùng chuyển nhanh giữa các cuộc trò chuyện
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+
+      // 1.4. Gọi API tải lịch sử tin nhắn (Stale-while-revalidate nếu đã có cache)
+      try {
+        const res = await getMessages(bId, { signal: controller.signal });
+        if (controller.signal.aborted || currentBookingIdRef.current !== bId) {
+          return;
         }
 
-        // Trích xuất partner (nếu API trả otherUser)
-        const rawPartner = res.partner || res.data?.otherUser || res.data?.partner;
-        if (rawPartner) {
-          setBookingContext((prev) => ({
-            ...(prev || {}),
-            partner: {
+        const rawList = Array.isArray(res?.data)
+          ? res.data
+          : Array.isArray(res?.data?.messages)
+          ? res.data.messages
+          : Array.isArray(res?.messages)
+          ? res.messages
+          : [];
+
+        const rawBooking = res?.booking || res?.data?.booking;
+        const rawPartner = res?.partner || res?.data?.otherUser || res?.data?.partner;
+
+        let nextContext = null;
+        setBookingContext((prev) => {
+          const updated = { ...(prev || {}), ...(rawBooking || {}) };
+          if (rawPartner) {
+            updated.partner = {
               _id: rawPartner._id?.toString() || rawPartner.id,
               name: rawPartner.name || 'Người dùng TechShare',
               avatar: rawPartner.avatar || '',
               role: rawPartner.role || 'user',
               isVerified: Boolean(rawPartner.isVerified),
-            },
-          }));
+            };
+          }
+          nextContext = updated;
+          return updated;
+        });
+
+        setMessages(rawList);
+        setErrorMsg(null);
+
+        // Lưu bản snapshot vào bộ nhớ cache client
+        messageCacheRef.current.set(bId, {
+          messages: rawList,
+          bookingContext: nextContext,
+          timestamp: Date.now(),
+        });
+
+        // Đánh dấu đã đọc trong nền
+        apiMarkAsRead(bId).catch(() => {});
+        setTimeout(() => scrollToBottom('auto'), 50);
+      } catch (err) {
+        if (controller.signal.aborted || err?.name === 'AbortError') {
+          return; // Request bị huỷ chủ động khi đổi cuộc trò chuyện, bỏ qua hoàn toàn
+        }
+        console.error('Error fetching chat messages:', err);
+        // Nếu đã có cache tin nhắn thì không hiển thị error box che mất giao diện
+        if (!cached) {
+          const isNetworkErr =
+            err.message === 'Failed to fetch' || err.message?.includes('NetworkError');
+          setErrorMsg(
+            isNetworkErr
+              ? 'Kết nối máy chủ bị gián đoạn. Vui lòng bấm thử lại.'
+              : (err.message || 'Không thể tải lịch sử trò chuyện.')
+          );
+        }
+      } finally {
+        if (!controller.signal.aborted && currentBookingIdRef.current === bId) {
+          setLoading(false);
         }
       }
-      // Đánh dấu đã đọc
-      apiMarkAsRead(bId).catch(() => {});
-      setTimeout(() => scrollToBottom('auto'), 100);
-    } catch (err) {
-      console.error('Error fetching chat messages:', err);
-      // Tự động thử lại 1 lần nếu gặp sự cố mạng hoặc dev server reload
-      if (retryCount < 1) {
-        setTimeout(() => {
-          fetchHistoryAndMarkRead(bId, retryCount + 1);
-        }, 500);
-        return;
-      }
-      const isNetworkErr =
-        err.message === 'Failed to fetch' ||
-        err.name === 'AbortError' ||
-        err.message?.includes('NetworkError');
-      setErrorMsg(
-        isNetworkErr
-          ? 'Kết nối máy chủ bị gián đoạn. Vui lòng bấm thử lại.'
-          : (err.message || 'Không thể tải lịch sử trò chuyện.')
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, [scrollToBottom]);
+    },
+    [conversation, scrollToBottom]
+  );
 
-  // 2. Lifecycle Socket & Room Management
+  // Kích hoạt nạp tin nhắn khi bookingId thay đổi
   useEffect(() => {
-    if (!bookingId) return;
+    if (bookingId) {
+      loadMessagesForBooking(bookingId);
+    }
+  }, [bookingId, loadMessagesForBooking]);
 
-    fetchHistoryAndMarkRead(bookingId);
-
+  // 2. Lifecycle Socket.io Event Listeners (Đăng ký 1 lần duy nhất trong suốt vòng đời Component)
+  useEffect(() => {
     const socket = getSocket();
-    joinChat(bookingId);
+    if (!socket) return;
 
-    // Xử lý tin nhắn mới nhận từ socket
-    const handleNewMessage = (msg) => {
+    // Xử lý tin nhắn mới nhận từ socket (hỗ trợ cả new_message và receive_message)
+    const handleIncomingMessage = (msg) => {
       if (!msg) return;
       const msgBookingId = (msg.bookingId?._id || msg.bookingId)?.toString();
-      if (msgBookingId === bookingId) {
+
+      // Cập nhật vào cache của booking tương ứng
+      const cached = messageCacheRef.current.get(msgBookingId);
+      if (cached && Array.isArray(cached.messages)) {
+        const list = cached.messages;
+        const exists = list.some(
+          (m) => m._id === msg._id || (m.tempId && m.tempId === msg.tempId)
+        );
+        const nextList = exists
+          ? list.map((m) => (m._id === msg._id || (m.tempId && m.tempId === msg.tempId) ? msg : m))
+          : [...list, msg];
+        messageCacheRef.current.set(msgBookingId, {
+          ...cached,
+          messages: nextList,
+        });
+      }
+
+      // Nếu tin nhắn thuộc cuộc trò chuyện đang hiển thị trên màn hình
+      if (msgBookingId === currentBookingIdRef.current) {
         setMessages((prev) => {
           const list = Array.isArray(prev) ? prev : [];
-          // Tránh duplicate nếu tin nhắn đã có
           const exists = list.some(
             (m) => m._id === msg._id || (m.tempId && m.tempId === msg.tempId)
           );
@@ -262,10 +330,10 @@ export const ChatDetailView = ({
           return [...list, msg];
         });
 
-        // Nếu tin nhắn là từ đối phương gửi cho mình -> đánh dấu đã đọc ngay
+        // Nếu là tin nhắn từ đối tác gửi tới -> đánh dấu đã đọc
         const senderIdStr = (msg.senderId?._id || msg.senderId)?.toString();
         if (senderIdStr !== currentUserId) {
-          apiMarkAsRead(bookingId).catch(() => {});
+          apiMarkAsRead(msgBookingId).catch(() => {});
         }
 
         setTimeout(() => scrollToBottom('smooth'), 50);
@@ -274,23 +342,34 @@ export const ChatDetailView = ({
 
     // Xử lý sự kiện tin nhắn đã được đối phương đọc
     const handleMessagesRead = (payload) => {
-      if (payload && payload.bookingId === bookingId) {
-        setMessages((prev) => {
-          const list = Array.isArray(prev) ? prev : [];
-          return list.map((m) => {
+      if (payload && payload.bookingId) {
+        const bId = payload.bookingId.toString();
+
+        // Cập nhật cache
+        const cached = messageCacheRef.current.get(bId);
+        if (cached && Array.isArray(cached.messages)) {
+          cached.messages = cached.messages.map((m) => {
             const senderIdStr = (m.senderId?._id || m.senderId)?.toString();
-            if (senderIdStr === currentUserId) {
-              return { ...m, status: 'read' };
-            }
-            return m;
+            return senderIdStr === currentUserId ? { ...m, status: 'read' } : m;
           });
-        });
+        }
+
+        // Cập nhật state nếu đang xem
+        if (bId === currentBookingIdRef.current) {
+          setMessages((prev) => {
+            const list = Array.isArray(prev) ? prev : [];
+            return list.map((m) => {
+              const senderIdStr = (m.senderId?._id || m.senderId)?.toString();
+              return senderIdStr === currentUserId ? { ...m, status: 'read' } : m;
+            });
+          });
+        }
       }
     };
 
     // Xử lý typing indicator
     const handleUserTyping = (data) => {
-      if (data && data.bookingId === bookingId && data.userId !== currentUserId) {
+      if (data && data.bookingId === currentBookingIdRef.current && data.userId !== currentUserId) {
         setPartnerTyping(true);
         if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
         typingTimerRef.current = setTimeout(() => {
@@ -300,35 +379,39 @@ export const ChatDetailView = ({
     };
 
     const handleUserStopTyping = (data) => {
-      if (data && data.bookingId === bookingId) {
+      if (data && data.bookingId === currentBookingIdRef.current) {
         setPartnerTyping(false);
         if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
       }
     };
 
-    socket.on('new_message', handleNewMessage);
+    socket.on('new_message', handleIncomingMessage);
+    socket.on('receive_message', handleIncomingMessage);
     socket.on('messages_read', handleMessagesRead);
     socket.on('user_typing', handleUserTyping);
     socket.on('user_stop_typing', handleUserStopTyping);
 
     // Page Visibility API: khi tab active trở lại, tự động đánh dấu đã đọc
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && currentBookingIdRef.current === bookingId) {
-        apiMarkAsRead(bookingId).catch(() => {});
+      if (document.visibilityState === 'visible' && currentBookingIdRef.current) {
+        apiMarkAsRead(currentBookingIdRef.current).catch(() => {});
       }
     };
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
-      leaveChat(bookingId);
-      socket.off('new_message', handleNewMessage);
+      socket.off('new_message', handleIncomingMessage);
+      socket.off('receive_message', handleIncomingMessage);
       socket.off('messages_read', handleMessagesRead);
       socket.off('user_typing', handleUserTyping);
       socket.off('user_stop_typing', handleUserStopTyping);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+      if (prevRoomRef.current) {
+        leaveChat(prevRoomRef.current);
+      }
     };
-  }, [bookingId, currentUserId, fetchHistoryAndMarkRead, scrollToBottom]);
+  }, [currentUserId, scrollToBottom]);
 
   // 3. Optimistic UI: Gửi tin nhắn tức thì (0ms delay)
   const handleSendMessage = async (payload) => {
@@ -351,8 +434,15 @@ export const ChatDetailView = ({
       createdAt: new Date().toISOString(),
     };
 
-    // Đẩy ngay vào state local (Optimistic UI)
-    setMessages((prev) => [...(Array.isArray(prev) ? prev : []), optimisticMessage]);
+    // Đẩy ngay vào state local và cache (Optimistic UI)
+    setMessages((prev) => {
+      const nextList = [...(Array.isArray(prev) ? prev : []), optimisticMessage];
+      const cached = messageCacheRef.current.get(bookingId);
+      if (cached) {
+        cached.messages = nextList;
+      }
+      return nextList;
+    });
     setTimeout(() => scrollToBottom('smooth'), 20);
 
     try {
@@ -376,10 +466,15 @@ export const ChatDetailView = ({
 
       const savedMessage = res?.data?.message || res?.data || res?.message || res;
 
-      // Cập nhật tin nhắn tạm bằng tin nhắn chính thức từ DB
+      // Cập nhật tin nhắn tạm bằng tin nhắn chính thức từ DB trong cả state & cache
       setMessages((prev) => {
         const list = Array.isArray(prev) ? prev : [];
-        return list.map((m) => (m.tempId === tempId ? { ...savedMessage, tempId } : m));
+        const nextList = list.map((m) => (m.tempId === tempId ? { ...savedMessage, tempId } : m));
+        const cached = messageCacheRef.current.get(bookingId);
+        if (cached) {
+          cached.messages = nextList;
+        }
+        return nextList;
       });
 
       if (onMessageSent) {
@@ -387,12 +482,17 @@ export const ChatDetailView = ({
       }
     } catch (err) {
       console.error('Failed to send message:', err);
-      // Đánh dấu lỗi để người dùng có thể thử lại
+      // Đánh dấu lỗi để người dùng có thể bấm gửi lại
       setMessages((prev) => {
         const list = Array.isArray(prev) ? prev : [];
-        return list.map((m) =>
+        const nextList = list.map((m) =>
           m.tempId === tempId ? { ...m, status: 'error', errorMsg: err.message } : m
         );
+        const cached = messageCacheRef.current.get(bookingId);
+        if (cached) {
+          cached.messages = nextList;
+        }
+        return nextList;
       });
     }
   };
@@ -401,7 +501,12 @@ export const ChatDetailView = ({
   const handleRetryMessage = (failedMsg) => {
     setMessages((prev) => {
       const list = Array.isArray(prev) ? prev : [];
-      return list.filter((m) => m.tempId !== failedMsg.tempId);
+      const nextList = list.filter((m) => m.tempId !== failedMsg.tempId);
+      const cached = messageCacheRef.current.get(bookingId);
+      if (cached) {
+        cached.messages = nextList;
+      }
+      return nextList;
     });
     handleSendMessage({
       type: failedMsg.type,
@@ -658,7 +763,7 @@ export const ChatDetailView = ({
             <p>{errorMsg}</p>
             <button
               type="button"
-              onClick={() => fetchHistoryAndMarkRead(bookingId)}
+              onClick={() => loadMessagesForBooking(bookingId)}
               className="px-3 py-1 bg-rose-600 text-white rounded-lg text-xs font-semibold hover:bg-rose-700 transition"
             >
               Thử lại

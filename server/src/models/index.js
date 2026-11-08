@@ -12,4 +12,5 @@ export { Dispute } from './Dispute.js';
 export { EkycRequest } from './EkycRequest.js';
 export { AiCache } from './AiCache.js';
 export { Otp } from './Otp.js';
-
+export { AdminAuditLog } from './AdminAuditLog.js';
+export { SystemSetting } from './SystemSetting.js';

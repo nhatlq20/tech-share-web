@@ -6,6 +6,16 @@ import { AdminOverviewTab } from './AdminOverviewTab';
 import { AdminUsersTab } from './AdminUsersTab';
 import { AdminDevicesTab } from './AdminDevicesTab';
 import { AdminEkycTab } from './AdminEkycTab';
+import { AdminBookingsTab } from './AdminBookingsTab';
+import { AdminDisputesTab } from './AdminDisputesTab';
+import { AdminWalletTab } from './AdminWalletTab';
+import { AdminAuditLogsTab } from './AdminAuditLogsTab';
+import { AdminVouchersTab } from './AdminVouchersTab';
+import { AdminReviewsTab } from './AdminReviewsTab';
+import { AdminRolesTab } from './AdminRolesTab';
+import { AdminNotificationsTab } from './AdminNotificationsTab';
+import { AdminAdvancedAnalyticsTab } from './AdminAdvancedAnalyticsTab';
+import { AdminSettingsTab } from './AdminSettingsTab';
 import { NotificationDropdown } from '../notifications/NotificationDropdown';
 import { STRINGS } from '../../constants/strings';
 import { ROUTES } from '../../routes/routes';
@@ -20,6 +30,7 @@ const DEFAULT_KPI = {
   availableDevices: 12,
   activeBookings: 19,
   pendingEkyc: 3,
+  pendingDisputes: 0,
   totalRevenue: 48750000,
   revenueFormatted: '48.750.000 ₫'
 };
@@ -74,6 +85,15 @@ export const AdminDashboardScreen = () => {
     if (pathname === ROUTES.ADMIN_USER_MANAGER || pathname === ROUTES.ADMIN_USERS) return 'users';
     if (pathname === ROUTES.ADMIN_DEVICE_MANAGER || pathname === ROUTES.ADMIN_DEVICES) return 'devices';
     if (pathname === ROUTES.ADMIN_EKYC_VERIFICATION || pathname === ROUTES.ADMIN_EKYC) return 'ekyc';
+    if (pathname === ROUTES.ADMIN_BOOKINGS) return 'bookings';
+    if (pathname === ROUTES.ADMIN_DISPUTES) return 'disputes';
+    if (pathname === ROUTES.ADMIN_WALLET) return 'wallet';
+    if (pathname === ROUTES.ADMIN_AUDIT_LOGS) return 'audit-logs';
+    if (pathname === ROUTES.ADMIN_VOUCHERS) return 'vouchers';
+    if (pathname === ROUTES.ADMIN_REVIEWS) return 'reviews';
+    if (pathname === ROUTES.ADMIN_ROLES) return 'roles';
+    if (pathname === ROUTES.ADMIN_ANALYTICS) return 'analytics';
+    if (pathname === ROUTES.ADMIN_NOTIFICATIONS) return 'notifications';
     if (pathname === ROUTES.ADMIN_SETTINGS) return 'settings';
     return 'overview';
   }, []);
@@ -96,7 +116,16 @@ export const AdminDashboardScreen = () => {
     } else {
       if (tabId === 'users') navigate(ROUTES.ADMIN_USER_MANAGER);
       else if (tabId === 'devices') navigate(ROUTES.ADMIN_DEVICE_MANAGER);
+      else if (tabId === 'bookings') navigate(ROUTES.ADMIN_BOOKINGS);
       else if (tabId === 'ekyc') navigate(ROUTES.ADMIN_EKYC_VERIFICATION);
+      else if (tabId === 'disputes') navigate(ROUTES.ADMIN_DISPUTES);
+      else if (tabId === 'wallet') navigate(ROUTES.ADMIN_WALLET);
+      else if (tabId === 'audit-logs') navigate(ROUTES.ADMIN_AUDIT_LOGS);
+      else if (tabId === 'vouchers') navigate(ROUTES.ADMIN_VOUCHERS);
+      else if (tabId === 'reviews') navigate(ROUTES.ADMIN_REVIEWS);
+      else if (tabId === 'roles') navigate(ROUTES.ADMIN_ROLES);
+      else if (tabId === 'analytics') navigate(ROUTES.ADMIN_ANALYTICS);
+      else if (tabId === 'notifications') navigate(ROUTES.ADMIN_NOTIFICATIONS);
       else if (tabId === 'settings') navigate(ROUTES.ADMIN_SETTINGS);
       else navigate(ROUTES.ADMIN_DASHBOARD);
     }
@@ -139,6 +168,7 @@ export const AdminDashboardScreen = () => {
             pendingDevices: kpiSource.pendingDevices ?? 0,
             activeBookings: kpiSource.activeBookings ?? 3,
             pendingEkyc: kpiSource.pendingEkyc ?? kpiSource.pendingTasks?.ekyc ?? 0,
+            pendingDisputes: kpiSource.pendingDisputes ?? kpiSource.pendingTasks?.disputes ?? 0,
             totalRevenue: totalRev,
             revenueFormatted: kpiSource.revenueFormatted || new Intl.NumberFormat('vi-VN', {
               style: 'currency',
@@ -528,6 +558,7 @@ export const AdminDashboardScreen = () => {
         onSelectTab={handleSelectTab}
         pendingEkycCount={pendingEkycCount}
         pendingDevicesCount={pendingDevicesCount}
+        pendingDisputesCount={kpi.pendingDisputes || 0}
         onLogout={logout}
         admin={adminProfile || user}
         user={user}
@@ -631,6 +662,26 @@ export const AdminDashboardScreen = () => {
           )}
 
           {currentTab === 'ekyc' && <AdminEkycTab requests={ekycRequests} onApprove={handleApproveEkyc} onReject={handleRejectEkyc} isLoading={isLoading} />}
+
+          {currentTab === 'bookings' && <AdminBookingsTab />}
+
+          {currentTab === 'disputes' && <AdminDisputesTab />}
+
+          {currentTab === 'wallet' && <AdminWalletTab />}
+
+          {currentTab === 'audit-logs' && <AdminAuditLogsTab />}
+
+          {currentTab === 'vouchers' && <AdminVouchersTab />}
+
+          {currentTab === 'reviews' && <AdminReviewsTab />}
+
+          {currentTab === 'roles' && <AdminRolesTab />}
+
+          {currentTab === 'analytics' && <AdminAdvancedAnalyticsTab />}
+
+          {currentTab === 'notifications' && <AdminNotificationsTab />}
+
+          {currentTab === 'settings' && <AdminSettingsTab />}
         </section>
       </main>
     </div>;

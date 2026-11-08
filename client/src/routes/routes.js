@@ -21,6 +21,7 @@ export const ROUTES = {
   LOGIN: '/login',
   REGISTER: '/register',
   FORGOT_PASSWORD: '/forgot-password',
+
   // Admin Hub Routes
   ADMIN: '/admin',
   ADMIN_DASHBOARD: '/admin/dashboard',
@@ -33,6 +34,22 @@ export const ROUTES = {
   ADMIN_EKYC_VERIFICATION: '/admin/ekyc-verification',
   ADMIN_SETTINGS: '/admin/settings',
   ADMIN_LOGIN: '/admin/login',
+
+  // Phase 1: Core Governance Admin Routes
+  ADMIN_BOOKINGS: '/admin/bookings',
+  ADMIN_DISPUTES: '/admin/disputes',
+  ADMIN_WALLET: '/admin/wallet',
+  ADMIN_AUDIT_LOGS: '/admin/audit-logs',
+
+  // Phase 2: Business Operations Admin Routes
+  ADMIN_VOUCHERS: '/admin/vouchers',
+  ADMIN_REVIEWS: '/admin/reviews',
+  ADMIN_ROLES: '/admin/roles',
+
+  // Phase 3: Platform Operations Admin Routes
+  ADMIN_ANALYTICS: '/admin/analytics',
+  ADMIN_NOTIFICATIONS: '/admin/notifications',
+
   PROFILE: '/profile',
   MESSAGES: '/messages',
   MESSAGES_CHAT: '/messages/:bookingId',

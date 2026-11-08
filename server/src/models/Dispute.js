@@ -32,13 +32,13 @@ const disputeSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['pending', 'resolved'],
+      enum: ['pending', 'in_review', 'resolved', 'dismissed'],
       default: 'pending',
       index: true,
     },
     adminDecision: {
       type: String,
-      enum: ['full_refund', 'partial_deduct', 'full_deduct', 'none'],
+      enum: ['full_refund', 'partial_deduct', 'full_deduct', 'dismiss', 'none'],
       default: 'none',
     },
     finalDeductAmount: {
@@ -83,4 +83,3 @@ disputeSchema.virtual('claimant', {
 
 export const Dispute = mongoose.models.Dispute || mongoose.model('Dispute', disputeSchema, 'disputes');
 export default Dispute;
-
