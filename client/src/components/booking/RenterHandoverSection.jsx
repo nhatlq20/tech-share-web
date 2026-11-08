@@ -188,38 +188,38 @@ export const RenterHandoverSection = ({ booking, onBookingUpdated, compact = fal
   return (
     <div
       id="renter-handover-section"
-      className={`bg-white rounded-3xl ${compact ? 'p-5' : 'p-6 sm:p-8 shadow-sm border border-teal-200/80 mb-6'} relative overflow-hidden`}
+      className={`bg-white rounded-2xl ${compact ? 'p-4' : 'p-4 sm:p-5 shadow-sm border border-teal-200/80 mb-3.5'} relative overflow-hidden`}
     >
       {/* Top Decorative Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-5 border-b border-slate-100">
-        <div className="flex items-start sm:items-center gap-3.5">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-teal-500 to-emerald-600 text-white flex items-center justify-center shadow-sm flex-shrink-0">
-            <QrCode className="w-6 h-6" />
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-3 border-b border-slate-100">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-500 to-emerald-600 text-white flex items-center justify-center shadow-2xs flex-shrink-0">
+            <QrCode className="w-4 h-4" />
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight">
+              <h2 className="text-sm font-extrabold text-slate-900 tracking-tight">
                 {isApproved
                   ? 'Handover QR Code & Before-Rental Photos'
                   : 'Handover Record & Before-Rental Photos'}
               </h2>
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-teal-50 text-teal-700 border border-teal-200">
-                <Sparkles className="w-3 h-3" />
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-50 text-teal-700 border border-teal-200">
+                <Sparkles className="w-2.5 h-2.5" />
                 {isApproved ? 'Ready for Handover' : 'Escrow Protected'}
               </span>
             </div>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-[11px] text-slate-500 mt-0.5">
               {isApproved
-                ? 'Your booking has been approved by the owner. Present the QR code below at pickup and upload device condition photos.'
-                : 'Before-rental inspection photos are stored on Cloudinary to protect your Escrow security deposit.'}
+                ? 'Present the QR code at pickup and upload device condition photos.'
+                : 'Before-rental inspection photos stored on Cloudinary to protect your deposit.'}
             </p>
           </div>
         </div>
 
         {photos.length > 0 && (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold self-start sm:self-auto shrink-0">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-            <span>{photos.length}/{MAX_PHOTOS} photos uploaded</span>
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[11px] font-bold self-start sm:self-auto shrink-0">
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+            <span>{photos.length}/{MAX_PHOTOS} photos</span>
           </span>
         )}
       </div>
@@ -258,37 +258,37 @@ export const RenterHandoverSection = ({ booking, onBookingUpdated, compact = fal
       )}
 
       {/* Main 2-column content */}
-      <div className="mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+      <div className="mt-3.5 grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
         {/* LEFT COLUMN: QR CODE HANDOVER */}
-        <div className="lg:col-span-5 flex flex-col justify-between rounded-2xl bg-gradient-to-b from-slate-50 to-teal-50/30 border border-slate-200/80 p-5">
+        <div className="lg:col-span-4 flex flex-col justify-between rounded-xl bg-gradient-to-b from-slate-50 to-teal-50/30 border border-slate-200/80 p-3.5">
           <div>
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-teal-800 flex items-center gap-1.5">
-                <QrCode className="w-4 h-4 text-teal-600" />
-                Order Handover QR Code
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-teal-800 flex items-center gap-1">
+                <QrCode className="w-3.5 h-3.5 text-teal-600" />
+                Handover QR
               </span>
               <button
                 type="button"
                 onClick={() => setIsQrZoomOpen(true)}
-                className="inline-flex items-center gap-1 text-[11px] font-semibold text-teal-700 hover:text-teal-900 bg-white px-2.5 py-1 rounded-lg border border-slate-200 shadow-2xs transition"
+                className="inline-flex items-center gap-1 text-[10px] font-semibold text-teal-700 hover:text-teal-900 bg-white px-2 py-0.5 rounded-md border border-slate-200 shadow-2xs transition"
                 title="Enlarge QR Code"
               >
-                <Maximize2 className="w-3 h-3" />
+                <Maximize2 className="w-2.5 h-2.5" />
                 <span>Enlarge</span>
               </button>
             </div>
 
             {/* QR Canvas Box */}
-            <div className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-xs flex flex-col items-center justify-center relative">
+            <div className="bg-white rounded-xl p-3 border border-slate-200/90 shadow-2xs flex flex-col items-center justify-center relative">
               <div
                 onClick={() => setIsQrZoomOpen(true)}
-                className="p-3 rounded-2xl bg-white border-2 border-teal-500/20 hover:border-teal-500/50 transition cursor-pointer shadow-2xs"
+                className="p-2 rounded-xl bg-white border border-teal-500/20 hover:border-teal-500/50 transition cursor-pointer"
                 title="Click to enlarge QR Code"
               >
                 <QRCodeSVG
                   id={`booking-handover-qr-${booking.bookingCode}`}
                   value={qrToken}
-                  size={176}
+                  size={128}
                   level="H"
                   includeMargin={false}
                   bgColor="#FFFFFF"
@@ -297,8 +297,8 @@ export const RenterHandoverSection = ({ booking, onBookingUpdated, compact = fal
               </div>
 
               {/* Token Badge & Copy */}
-              <div className="mt-3.5 flex items-center gap-2 bg-slate-100 hover:bg-slate-200/70 px-3 py-1.5 rounded-xl border border-slate-200 transition">
-                <span className="font-mono text-xs font-bold text-slate-800 select-all">
+              <div className="mt-2 flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200/70 px-2.5 py-1 rounded-lg border border-slate-200 transition">
+                <span className="font-mono text-[11px] font-bold text-slate-800 select-all">
                   {qrToken}
                 </span>
                 <button
@@ -308,52 +308,32 @@ export const RenterHandoverSection = ({ booking, onBookingUpdated, compact = fal
                   title="Copy QR Token"
                 >
                   {copiedQr ? (
-                    <Check className="w-3.5 h-3.5 text-emerald-600" />
+                    <Check className="w-3 h-3 text-emerald-600" />
                   ) : (
-                    <Copy className="w-3.5 h-3.5" />
+                    <Copy className="w-3 h-3" />
                   )}
                 </button>
               </div>
-
-              <p className="text-[11px] text-slate-400 mt-1.5 text-center">
-                Booking Code: <strong className="text-slate-600">#{booking.bookingCode}</strong>
-              </p>
             </div>
           </div>
 
-          {/* Instructions */}
-          <div className="mt-4 p-3.5 rounded-xl bg-white/90 border border-teal-100 text-xs text-slate-600 space-y-1.5">
-            <div className="font-bold text-teal-900 flex items-center gap-1.5">
-              <ShieldCheck className="w-4 h-4 text-teal-600 shrink-0" />
-              <span>Handover Instructions:</span>
-            </div>
-            <p className="text-[11px] leading-relaxed text-slate-600">
-              1. Inspect the device condition and accessories with the owner.
-            </p>
-            <p className="text-[11px] leading-relaxed text-slate-600">
-              2. Upload photos of the device upon receipt on the right panel.
-            </p>
-            <p className="text-[11px] leading-relaxed text-slate-600">
-              3. Show this QR code to the owner to scan and activate your rental.
-            </p>
-          </div>
+          <p className="mt-2 text-[10px] text-slate-500 text-center">
+            Show this QR code to the owner at pickup to activate rental.
+          </p>
         </div>
 
         {/* RIGHT COLUMN: BEFORE-RENTAL PHOTO UPLOADER (Cloudinary) */}
-        <div className="lg:col-span-7 flex flex-col justify-between rounded-2xl bg-slate-50/70 border border-slate-200/80 p-5">
+        <div className="lg:col-span-8 flex flex-col justify-between rounded-xl bg-slate-50/70 border border-slate-200/80 p-3.5">
           <div>
-            <div className="flex items-center justify-between gap-2 mb-1.5">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
-                <Camera className="w-4 h-4 text-teal-600" />
-                Before-Rental Device Photos (beforeRental)
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
+                <Camera className="w-3.5 h-3.5 text-teal-600" />
+                Before-Rental Photos (beforeRental)
               </span>
-              <span className="text-[11px] font-semibold text-slate-500">
-                {photos.length}/{MAX_PHOTOS} photos • Cloudinary
+              <span className="text-[10px] font-semibold text-slate-500">
+                {photos.length}/{MAX_PHOTOS} • Cloudinary
               </span>
             </div>
-            <p className="text-xs text-slate-500 mb-4">
-              Upload 1–6 photos of the device upon pickup (angles, serial number, included accessories) to ensure a 100% deposit refund.
-            </p>
 
             {/* Hidden File Input */}
             <input
@@ -386,11 +366,11 @@ export const RenterHandoverSection = ({ booking, onBookingUpdated, compact = fal
             )}
 
             {/* Photo Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5 mb-3">
               {photos.map((url, idx) => (
                 <div
                   key={`${url}-${idx}`}
-                  className="group relative h-32 rounded-xl overflow-hidden bg-white border border-slate-200 shadow-2xs"
+                  className="group relative h-24 rounded-xl overflow-hidden bg-white border border-slate-200 shadow-2xs"
                 >
                   <img
                     src={url}
@@ -398,18 +378,18 @@ export const RenterHandoverSection = ({ booking, onBookingUpdated, compact = fal
                     onClick={() => setPreviewPhotoUrl(url)}
                     className="w-full h-full object-cover cursor-pointer group-hover:scale-105 transition-transform duration-200"
                   />
-                  <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-slate-900/75 text-white text-[10px] font-semibold backdrop-blur-xs">
-                    Photo #{idx + 1}
+                  <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded bg-slate-900/75 text-white text-[9px] font-semibold">
+                    #{idx + 1}
                   </div>
                   {canEditPhotos && (
                     <button
                       type="button"
                       onClick={() => handleRemovePhoto(idx)}
                       disabled={isSavingDb || isUploadingCloudinary}
-                      className="absolute top-2 right-2 w-7 h-7 rounded-full bg-rose-600/90 hover:bg-rose-700 text-white flex items-center justify-center shadow-sm transition opacity-90 group-hover:opacity-100"
+                      className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-rose-600/90 hover:bg-rose-700 text-white flex items-center justify-center shadow-2xs transition opacity-90 group-hover:opacity-100"
                       title="Remove photo"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <Trash2 className="w-3 h-3" />
                     </button>
                   )}
                 </div>
@@ -421,71 +401,56 @@ export const RenterHandoverSection = ({ booking, onBookingUpdated, compact = fal
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isUploadingCloudinary || isSavingDb}
-                  className="h-32 rounded-xl border-2 border-dashed border-teal-300 hover:border-teal-500 bg-white hover:bg-teal-50/40 transition flex flex-col items-center justify-center gap-1.5 p-3 text-center cursor-pointer disabled:opacity-50"
+                  className="h-24 rounded-xl border-2 border-dashed border-teal-300 hover:border-teal-500 bg-white hover:bg-teal-50/40 transition flex flex-col items-center justify-center gap-1 p-2 text-center cursor-pointer disabled:opacity-50"
                 >
-                  <div className="w-9 h-9 rounded-full bg-teal-50 text-teal-600 flex items-center justify-center">
-                    <Upload className="w-4 h-4" />
-                  </div>
-                  <span className="text-xs font-bold text-teal-800">
-                    + Upload Photos
-                  </span>
-                  <span className="text-[10px] text-slate-400">
-                    JPG, PNG, WEBP (Max {MAX_PHOTOS} photos)
+                  <Upload className="w-4 h-4 text-teal-600" />
+                  <span className="text-[11px] font-bold text-teal-800">
+                    + Upload
                   </span>
                 </button>
               )}
 
               {photos.length === 0 && !canEditPhotos && (
-                <div className="col-span-full h-28 rounded-xl border border-slate-200 bg-white flex flex-col items-center justify-center text-slate-400 text-xs gap-1.5">
-                  <ImageIcon className="w-6 h-6 text-slate-300" />
+                <div className="col-span-full h-20 rounded-xl border border-slate-200 bg-white flex flex-col items-center justify-center text-slate-400 text-xs gap-1">
+                  <ImageIcon className="w-5 h-5 text-slate-300" />
                   <span>No before-rental photos uploaded yet.</span>
                 </div>
               )}
             </div>
 
-            {/* Condition Note Input */}
-            <div className="mt-2">
-              <label
-                htmlFor={`before-note-input-${booking.bookingCode}`}
-                className="block text-xs font-bold text-slate-700 mb-1.5"
-              >
-                Device Condition Note at Pickup (Optional)
-              </label>
-              <textarea
+            {/* Condition Note Input + Save Action in one row */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <input
                 id={`before-note-input-${booking.bookingCode}`}
-                rows={2}
+                type="text"
                 value={beforeNote}
                 onChange={(e) => setBeforeNote(e.target.value)}
                 disabled={!canEditPhotos || isSavingDb}
-                placeholder="e.g. Received device with original battery, charger, and carrying case in great condition..."
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-xs text-slate-800 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 focus:outline-none disabled:bg-slate-100"
+                placeholder="Device condition note at pickup (optional)..."
+                className="flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 placeholder:text-slate-400 focus:border-teal-500 focus:outline-none disabled:bg-slate-100"
               />
+              {canEditPhotos && (
+                <button
+                  type="button"
+                  onClick={handleSaveManual}
+                  disabled={isSavingDb || isUploadingCloudinary}
+                  className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold shadow-2xs transition disabled:opacity-50 shrink-0"
+                >
+                  {isSavingDb ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>Save Note</span>
+                    </>
+                  )}
+                </button>
+              )}
             </div>
           </div>
-
-          {/* Bottom Action Bar */}
-          {canEditPhotos && (
-            <div className="mt-4 pt-3 border-t border-slate-200/80 flex flex-wrap items-center justify-end gap-3">
-              <button
-                type="button"
-                onClick={handleSaveManual}
-                disabled={isSavingDb || isUploadingCloudinary}
-                className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold transition shadow-sm disabled:opacity-50"
-              >
-                {isSavingDb ? (
-                  <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>Saving...</span>
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>Save Photos &amp; Condition Note</span>
-                  </>
-                )}
-              </button>
-            </div>
-          )}
         </div>
       </div>
 
