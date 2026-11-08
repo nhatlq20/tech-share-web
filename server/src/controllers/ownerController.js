@@ -928,9 +928,34 @@ export const getOwnerBookings = async (req, res, next) => {
       .sort({ createdAt: -1 })
       .toArray();
 
+    // Lookup renter reviews from reviews collection
+    const reviewsCol = mongoose.connection.db.collection('reviews');
+    const bookingObjIds = bookings
+      .map((b) => b._id)
+      .filter((id) => id && mongoose.Types.ObjectId.isValid(id));
+    const renterReviewMap = new Map();
+    if (bookingObjIds.length > 0) {
+      try {
+        const renterReviews = await reviewsCol
+          .find({
+            bookingId: { $in: bookingObjIds },
+            targetType: 'renter',
+          })
+          .toArray();
+        renterReviews.forEach((rev) => {
+          if (rev.bookingId) {
+            renterReviewMap.set(rev.bookingId.toString(), rev);
+          }
+        });
+      } catch {
+        // Continue if review lookup fails
+      }
+    }
+
     // Enrich with renter info & device info
     const enriched = await Promise.all(
       bookings.map(async (b) => {
+        const renterReviewDoc = renterReviewMap.get(b._id.toString()) || null;
         let device = null;
         const rawDevId = b.deviceId || b.device;
         if (rawDevId) {
@@ -1010,6 +1035,17 @@ export const getOwnerBookings = async (req, res, next) => {
             beforeRental: b.handover?.beforePhotos || b.handoverPhotos?.beforeRental || [],
             afterRental: b.handover?.afterPhotos || b.handoverPhotos?.afterRental || [],
           },
+          isReviewed: Boolean(b.isReviewed),
+          isRenterReviewed: Boolean(b.isRenterReviewed || renterReviewDoc),
+          renterReviewId: renterReviewDoc?._id?.toString() || b.renterReviewId?.toString() || null,
+          renterReview: renterReviewDoc
+            ? {
+                _id: renterReviewDoc._id.toString(),
+                rating: renterReviewDoc.rating,
+                comment: renterReviewDoc.comment,
+                createdAt: renterReviewDoc.createdAt,
+              }
+            : null,
           createdAt: b.createdAt ? new Date(b.createdAt).toISOString() : new Date().toISOString(),
         };
       })

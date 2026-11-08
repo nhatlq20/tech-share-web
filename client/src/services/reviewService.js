@@ -13,7 +13,12 @@ export const reviewService = {
   replyToReview: (deviceId, reviewId, comment) => api.put(`${reviewPath(deviceId)}/${reviewId}/reply`, { comment }),
 };
 
-export const createReview = ({ deviceId, bookingId, rating, comment }) =>
-  reviewService.createReview(deviceId, { bookingId, rating, comment });
+export const createReview = ({ deviceId, bookingId, rating, comment, targetType }) =>
+  reviewService.createReview(deviceId, {
+    bookingId,
+    rating,
+    comment,
+    ...(targetType ? { targetType } : {}),
+  });
 
 export default reviewService;

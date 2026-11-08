@@ -11,11 +11,13 @@ import {
   UserCheck,
   MessageSquare,
   Eye,
+  Star,
 } from 'lucide-react';
 import { STRINGS } from '../../constants/strings';
 import { COLORS } from '../../constants/colors';
 import { ROUTES } from '../../routes/routes.js';
 import { CountdownBadge } from '../booking/CountdownBadge.jsx';
+import { BookingReviewModal } from '../booking/BookingReviewModal.jsx';
 import { OwnerBookingDetailModal } from './OwnerBookingDetailModal.jsx';
 
 const formatVND = (amount) =>
@@ -26,7 +28,8 @@ export const OwnerBookingsTab = ({
   onApprove, 
   onReject, 
   onHandover, 
-  onCompleteReturn 
+  onCompleteReturn,
+  onRenterReviewed,
 }) => {
   const t = STRINGS.owner.bookings;
   const navigate = useNavigate();
@@ -48,27 +51,43 @@ export const OwnerBookingsTab = ({
   // Detail modal state
   const [selectedBooking, setSelectedBooking] = useState(null);
 
+  // Renter review modal state + optimistic map
+  const [reviewingBooking, setReviewingBooking] = useState(null);
+  const [localReviewedMap, setLocalReviewedMap] = useState({});
+
+  const mergedBookings = useMemo(() => {
+    return bookings.map((b) => {
+      const localReview = localReviewedMap[b._id];
+      if (!localReview) return b;
+      return {
+        ...b,
+        isRenterReviewed: true,
+        renterReview: localReview,
+      };
+    });
+  }, [bookings, localReviewedMap]);
+
   // Filtered Bookings
   const filteredBookings = useMemo(() => {
-    return bookings.filter((b) => {
+    return mergedBookings.filter((b) => {
       const matchTab = activeTab === 'all' || b.status === activeTab;
       const matchSearch = b.bookingCode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         b.deviceName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         b.renter?.name?.toLowerCase().includes(searchTerm.toLowerCase());
       return matchTab && matchSearch;
     });
-  }, [bookings, activeTab, searchTerm]);
+  }, [mergedBookings, activeTab, searchTerm]);
 
   // Tab counts
   const tabCounts = useMemo(() => {
-    const counts = { all: bookings.length, pending: 0, approved: 0, active: 0, completed: 0, rejected: 0 };
-    bookings.forEach((b) => {
+    const counts = { all: mergedBookings.length, pending: 0, approved: 0, active: 0, completed: 0, rejected: 0 };
+    mergedBookings.forEach((b) => {
       if (counts[b.status] !== undefined) {
         counts[b.status]++;
       }
     });
     return counts;
-  }, [bookings]);
+  }, [mergedBookings]);
 
   // Confirm Reject
   const handleConfirmReject = () => {
@@ -287,6 +306,24 @@ export const OwnerBookingsTab = ({
                             <Camera size={12} />
                             <span>{t.actions.inspectReturn}</span>
                           </button>
+                        )}
+
+                        {b.status === 'completed' && (
+                          b.isRenterReviewed || b.renterReview ? (
+                            <span className="inline-flex items-center gap-1 py-1 px-2 rounded-lg text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 whitespace-nowrap">
+                              <Check size={12} />
+                              <span>{t.actions.renterReviewed || 'Renter Reviewed'}</span>
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              className="inline-flex items-center gap-1 py-1 px-2.5 rounded-lg text-xs font-semibold bg-amber-500 text-white hover:bg-amber-600 transition shadow-2xs whitespace-nowrap"
+                              onClick={() => setReviewingBooking(b)}
+                            >
+                              <Star size={12} className="fill-current" />
+                              <span>{t.actions.reviewRenter || 'Review Renter'}</span>
+                            </button>
+                          )
                         )}
 
                         <button
@@ -554,7 +591,15 @@ export const OwnerBookingsTab = ({
       {/* MODAL 4: Chi tiết đơn thuê Đẳng cấp & Layout Chuyên nghiệp */}
       {selectedBooking && (
         <OwnerBookingDetailModal
-          booking={selectedBooking}
+          booking={
+            localReviewedMap[selectedBooking._id]
+              ? {
+                  ...selectedBooking,
+                  isRenterReviewed: true,
+                  renterReview: localReviewedMap[selectedBooking._id],
+                }
+              : selectedBooking
+          }
           onClose={() => setSelectedBooking(null)}
           onApprove={(id) => {
             onApprove(id);
@@ -572,12 +617,33 @@ export const OwnerBookingsTab = ({
             setReturnBooking(b);
             setSelectedBooking(null);
           }}
+          onReviewRenter={(b) => {
+            setSelectedBooking(null);
+            setReviewingBooking(b);
+          }}
           onChat={(b) => {
             navigate(ROUTES.MESSAGES_PATH(b._id || b.id));
             setSelectedBooking(null);
           }}
         />
       )}
+
+      {/* MODAL 5: Đánh giá Khách thuê (Owner -> Renter Review) */}
+      <BookingReviewModal
+        isOpen={Boolean(reviewingBooking)}
+        booking={reviewingBooking}
+        mode="owner_to_renter"
+        onClose={() => setReviewingBooking(null)}
+        onReviewSaved={(updatedBooking) => {
+          if (updatedBooking?._id) {
+            setLocalReviewedMap((prev) => ({
+              ...prev,
+              [updatedBooking._id]: updatedBooking.renterReview || { rating: 5 },
+            }));
+            onRenterReviewed?.(updatedBooking._id, updatedBooking.renterReview);
+          }
+        }}
+      />
     </div>
   );
 };

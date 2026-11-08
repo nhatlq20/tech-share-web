@@ -17,7 +17,8 @@ import {
   AlertTriangle, 
   Truck, 
   Store,
-  PackageCheck
+  PackageCheck,
+  Star,
 } from 'lucide-react';
 import { CountdownBadge } from '../booking/CountdownBadge.jsx';
 
@@ -31,6 +32,7 @@ export const OwnerBookingDetailModal = ({
   onReject,
   onHandover,
   onReturn,
+  onReviewRenter,
   onChat,
 }) => {
   const [copied, setCopied] = useState(false);
@@ -406,6 +408,30 @@ export const OwnerBookingDetailModal = ({
                   <MessageSquare size={13} className="text-teal-600" />
                   <span>Nhắn tin với khách thuê</span>
                 </button>
+
+                {booking.status === 'completed' && (booking.isRenterReviewed || booking.renterReview) && (
+                  <div className="mt-3 p-3 rounded-xl bg-amber-50/70 border border-amber-200/80 text-xs">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-bold text-slate-800">Đánh giá của bạn về khách thuê</span>
+                      <div className="flex items-center gap-0.5">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Star
+                            key={star}
+                            size={12}
+                            className={
+                              star <= (booking.renterReview?.rating || 5)
+                                ? 'text-amber-400 fill-amber-400'
+                                : 'text-slate-300'
+                            }
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    {booking.renterReview?.comment && (
+                      <p className="text-slate-600 leading-relaxed">{booking.renterReview.comment}</p>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* 5. Financial Breakdown Card */}
@@ -519,6 +545,26 @@ export const OwnerBookingDetailModal = ({
                 <Camera size={14} />
                 <span>Kiểm tra &amp; Nhận lại máy</span>
               </button>
+            )}
+
+            {booking.status === 'completed' && (
+              booking.isRenterReviewed || booking.renterReview ? (
+                <span className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200">
+                  <Check size={14} strokeWidth={2.5} />
+                  <span>Renter Reviewed</span>
+                </span>
+              ) : (
+                onReviewRenter && (
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-xs font-bold bg-amber-500 text-white hover:bg-amber-600 transition shadow-sm hover:shadow-md"
+                    onClick={() => onReviewRenter(booking)}
+                  >
+                    <Star size={14} className="fill-current" />
+                    <span>Review Renter</span>
+                  </button>
+                )
+              )
             )}
 
             <button

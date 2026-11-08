@@ -506,6 +506,8 @@ export const STRINGS = {
         scanQr: 'QR Handover',
         inspectReturn: 'Inspect Return',
         viewDetail: 'Details',
+        reviewRenter: 'Review Renter',
+        renterReviewed: 'Renter Reviewed',
       },
       modalReject: {
         title: 'Reject Rental Request',
@@ -1215,8 +1217,11 @@ export const STRINGS = {
 
   REVIEW_MODAL: {
     HEADER_TITLE: 'Write a Review',
+    RENTER_HEADER_TITLE: 'Review Renter',
     DEFAULT_DEVICE_NAME: 'Rental Device',
+    DEFAULT_RENTER_NAME: 'Renter',
     RATING_TITLE: 'How satisfied are you with this rental?',
+    RENTER_RATING_TITLE: 'Rate how well the renter maintained your device and return punctuality',
     STAR_5: '5 Stars - Excellent',
     STAR_4: '4 Stars - Very Good',
     STAR_3: '3 Stars - Average',
@@ -1231,13 +1236,26 @@ export const STRINGS = {
       'Full accessories included',
       'Highly recommended, will rent again',
     ],
+    RENTER_TAGS: [
+      'Returned on time',
+      'Kept device in great condition',
+      'Complete accessories returned',
+      'Polite & cooperative',
+      'Careful device handling',
+      'Smooth communication',
+      'Highly recommended renter',
+    ],
     COMMENT_LABEL: 'Detailed review',
     COMMENT_PLACEHOLDER: 'Share your experience about device quality, battery life, and owner support...',
+    RENTER_COMMENT_PLACEHOLDER: 'Share feedback on how the renter cared for the device, communication, and return punctuality...',
     SUBMIT_BTN: 'Submit Review',
+    REVIEW_RENTER_BTN: 'Review Renter',
+    RENTER_REVIEWED_BADGE: 'Renter Reviewed',
     ERR_EMPTY_COMMENT: 'Please select a quick tag or write your review comment.',
     ERR_SUBMIT_FAILED: 'Could not submit review. Please try again.',
     SUCCESS_TITLE: 'Thank You!',
     SUCCESS_MSG: 'Your review has been submitted successfully.',
+    RENTER_SUCCESS_MSG: 'Your review and rating have been recorded on the renter profile.',
   },
 
   DEVICE_CARD: {

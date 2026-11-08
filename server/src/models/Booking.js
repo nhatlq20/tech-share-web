@@ -108,6 +108,12 @@ const bookingSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+
+    // 8. Đánh giá chất lượng dịch vụ & khách thuê (UC-R27, UC-O21)
+    isReviewed: { type: Boolean, default: false, index: true },
+    reviewId: { type: mongoose.Schema.Types.ObjectId, ref: 'Review' },
+    isRenterReviewed: { type: Boolean, default: false, index: true },
+    renterReviewId: { type: mongoose.Schema.Types.ObjectId, ref: 'Review' },
   },
   {
     timestamps: true,

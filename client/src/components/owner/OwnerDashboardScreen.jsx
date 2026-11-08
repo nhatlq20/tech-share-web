@@ -422,6 +422,16 @@ export const OwnerDashboardScreen = () => {
               onReject={handleRejectBooking}
               onHandover={handleHandover}
               onCompleteReturn={handleCompleteReturn}
+              onRenterReviewed={(bookingId, renterReview) => {
+                setBookings((prev) =>
+                  prev.map((b) =>
+                    b._id === bookingId
+                      ? { ...b, isRenterReviewed: true, renterReview }
+                      : b
+                  )
+                );
+                fetchOwnerData();
+              }}
             />
           )}
 
