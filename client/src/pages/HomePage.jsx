@@ -436,9 +436,6 @@ export const HomePage = () => {
                       {c.name} (100km)
                     </option>
                   ))}
-                  {browserLocation.latitude != null && (
-                    <option value="gps">GPS ({location.cityName || 'Current'})</option>
-                  )}
                 </select>
               </div>
 
